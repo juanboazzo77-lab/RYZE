@@ -8,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { displayWeight, weightUnitLabel } from '@/lib/units';
 import { cn } from '@/lib/utils';
-import { CalorieRing } from './calorie-ring';
-import { MacroBar } from './macro-bar';
+import { CalorieRing } from '@/components/charts/calorie-ring';
+import { MacroBar } from '@/components/charts/macro-bar';
 import type { DashboardData } from './queries';
 
 export function NutritionCard({ t, data }: { t: Dictionary; data: DashboardData['nutrition'] }) {
