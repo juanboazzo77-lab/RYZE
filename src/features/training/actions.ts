@@ -475,19 +475,29 @@ export async function finishWorkout(raw: FinishWorkoutInput): Promise<never | Re
     ? Math.max(0, Math.round((finishedAt.getTime() - w.startedAt.getTime()) / 1000))
     : null;
 
-  await db.workout.updateMany({
-    where: { id: d.workoutId },
-    data: {
-      status: 'COMPLETED',
-      finishedAt,
-      durationSeconds,
-      perceivedEffort: d.perceivedEffort ?? null,
-      notes: d.notes || null,
-    },
-  });
+  if (w.status !== 'COMPLETED') {
+    await db.workout.updateMany({
+      where: { id: d.workoutId },
+      data: {
+        status: 'COMPLETED',
+        finishedAt,
+        durationSeconds,
+        perceivedEffort: d.perceivedEffort ?? null,
+        notes: d.notes || null,
+      },
+    });
+    const { detectAndRecordPrs } = await import('./pr-detect');
+    try {
+      await detectAndRecordPrs(db, userId, d.workoutId, finishedAt);
+    } catch {
+      // La detección de PRs nunca bloquea el cierre del entrenamiento.
+    }
+  }
+
   revalidatePath('/training');
+  revalidatePath('/training/history');
   revalidatePath('/dashboard');
-  redirect('/training');
+  redirect(`/training/workouts/${d.workoutId}`);
 }
 
 export async function discardWorkout(raw: { id: string }): Promise<never | Result> {

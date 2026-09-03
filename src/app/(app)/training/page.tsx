@@ -23,7 +23,12 @@ export default async function TrainingPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight">{t.training.title}</h1>
-        <NewPlanButton />
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
+            <Link href="/training/history">{t.training.history.title}</Link>
+          </Button>
+          <NewPlanButton />
+        </div>
       </div>
 
       {data.activeWorkout ? (

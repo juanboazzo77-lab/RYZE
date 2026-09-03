@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Check, Loader2, Plus, Trash2 } from 'lucide-react';
@@ -192,7 +193,9 @@ function ExerciseBlock({
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-2 pb-2">
         <div className="min-w-0">
-          <p className="font-semibold">{ex.name}</p>
+          <Link href={`/training/exercises/${ex.exerciseId}`} className="font-semibold hover:underline">
+            {ex.name}
+          </Link>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             <Badge variant="secondary">{t.training.muscles[ex.primaryMuscle as 'CHEST']}</Badge>
             <span>
