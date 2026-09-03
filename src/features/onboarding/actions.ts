@@ -1,0 +1,95 @@
+'use server';
+
+import { redirect } from 'next/navigation';
+import { requireUser } from '@/server/context';
+import { forUser } from '@/server/user-db';
+import { prisma } from '@/server/db';
+import { computeTargets, ageFromBirthdate } from '@/lib/nutrition/targets';
+import { onboardingSchema, type OnboardingPayload } from './schema';
+
+export interface OnboardingResult {
+  error?: string;
+}
+
+export async function submitOnboarding(raw: OnboardingPayload): Promise<OnboardingResult> {
+  const parsed = onboardingSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const data = parsed.data;
+
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+
+  const birthdate = new Date(`${data.birthdate}T00:00:00Z`);
+  const ageYears = ageFromBirthdate(birthdate);
+
+  const targets = computeTargets({
+    sex: data.sex,
+    ageYears,
+    heightCm: data.heightCm,
+    weightKg: data.currentWeightKg,
+    activityLevel: data.activityLevel,
+    goal: data.primaryGoal,
+    weeklyRateKg: data.weeklyRateKg,
+  });
+
+  const today = new Date();
+  const todayDate = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+
+  await db.$transaction([
+    prisma.profile.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        sex: data.sex,
+        birthdate,
+        heightCm: data.heightCm,
+        experienceLevel: data.experienceLevel,
+        primaryGoal: data.primaryGoal,
+        trainingPlace: data.trainingPlace,
+        activityLevel: data.activityLevel,
+        daysAvailable: data.daysAvailable,
+        sessionMinutes: data.sessionMinutes,
+        equipment: data.equipment,
+        dietaryPrefs: data.dietaryPrefs,
+        excludedFoods: data.excludedFoods,
+        allergies: data.allergies,
+        mealsPerDay: data.mealsPerDay,
+        injuries: data.injuries || null,
+        trainingExperienceNote: data.trainingExperienceNote || null,
+        unitSystem: data.unitSystem,
+        locale: data.locale,
+        onboardingCompletedAt: new Date(),
+      },
+    }),
+    db.goal.updateMany({ where: { status: 'ACTIVE' }, data: { status: 'SUPERSEDED' } }),
+    db.goal.create({
+      data: {
+        userId,
+        type: data.primaryGoal,
+        startWeightKg: data.currentWeightKg,
+        targetWeightKg: data.targetWeightKg,
+        weeklyRateKg: data.weeklyRateKg,
+        status: 'ACTIVE',
+      },
+    }),
+    db.weightEntry.deleteMany({ where: { date: todayDate } }),
+    db.weightEntry.create({
+      data: { userId, date: todayDate, weightKg: data.currentWeightKg },
+    }),
+    db.nutritionTarget.updateMany({ where: { active: true }, data: { active: false } }),
+    db.nutritionTarget.create({
+      data: {
+        userId,
+        effectiveFrom: todayDate,
+        kcal: targets.kcal,
+        proteinG: targets.proteinG,
+        carbsG: targets.carbsG,
+        fatG: targets.fatG,
+        source: 'CALCULATED',
+        active: true,
+      },
+    }),
+  ]);
+
+  redirect('/dashboard');
+}

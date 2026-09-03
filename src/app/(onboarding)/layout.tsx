@@ -7,8 +7,8 @@ export default async function OnboardingLayout({ children }: { children: React.R
   if (!ctx.needsOnboarding) redirect('/dashboard');
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-10">
-      {children}
+    <div className="min-h-screen w-full px-4 py-8 sm:py-12">
+      <div className="mx-auto w-full max-w-md">{children}</div>
     </div>
   );
 }

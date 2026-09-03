@@ -1,4 +1,5 @@
-import { LogOut } from 'lucide-react';
+import Link from 'next/link';
+import { LogOut, Settings } from 'lucide-react';
 import { BottomNav } from './bottom-nav';
 import { SideNav } from './side-nav';
 import { ThemeToggle } from './theme-toggle';
@@ -23,7 +24,12 @@ export function AppShell({
               {email}
             </span>
             <ThemeToggle />
-            <form action={signOutAction}>
+            <Button variant="ghost" size="icon" aria-label="Ajustes" asChild>
+              <Link href="/settings">
+                <Settings className="size-4" />
+              </Link>
+            </Button>
+            <form action={signOutAction} className="hidden md:block">
               <Button variant="ghost" size="icon" type="submit" aria-label="Cerrar sesión">
                 <LogOut className="size-4" />
               </Button>
