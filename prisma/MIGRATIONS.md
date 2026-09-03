@@ -31,9 +31,14 @@ y luego se le agregó **a mano** al final:
 ## Flujo para cambiar el schema
 
 1. Editá `prisma/schema.prisma`.
-2. `pnpm db:migrate:new nombre_en_snake_case` → crea
-   `prisma/migrations/<timestamp>_<nombre>/migration.sql` comparando el estado
-   real de la base contra los modelos.
+2. Generá el `.sql`:
+   - **Preferido** (no toca la base): `pnpm db:migrate:diff` ×
+     `prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --script`
+     (necesita shadow DB). Si no hay shadow, escribí el `ALTER TABLE` a mano en
+     `prisma/migrations/<timestamp>_<nombre>/migration.sql`.
+   - `pnpm db:migrate:new` usa `--from-schema-datasource` (introspección de la
+     base real) y **falla** por la FK cross-schema `profile → auth.users`
+     (`P4002`). No la uses hasta resolver eso.
 3. **Revisá el SQL.** Lo que Prisma no modela se agrega a mano (RLS de tablas
    nuevas, triggers `set_updated_at`, índices especiales).
 4. `pnpm db:migrate:deploy`

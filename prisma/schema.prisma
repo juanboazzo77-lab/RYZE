@@ -521,13 +521,18 @@ model Workout {
 }
 
 model WorkoutExercise {
-  id         String   @id @default(uuid()) @db.Uuid
-  workoutId  String   @db.Uuid @map("workout_id")
-  workout    Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  exerciseId String   @db.Uuid @map("exercise_id")
-  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
-  orderIndex Int      @map("order_index")
-  notes      String?
+  id            String   @id @default(uuid()) @db.Uuid
+  workoutId     String   @db.Uuid @map("workout_id")
+  workout       Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exerciseId    String   @db.Uuid @map("exercise_id")
+  exercise      Exercise @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+  orderIndex    Int      @map("order_index")
+  // Objetivos copiados del plan al iniciar la sesión (editables durante el entreno).
+  targetRepsMin Int?     @map("target_reps_min")
+  targetRepsMax Int?     @map("target_reps_max")
+  targetRir     Float?   @map("target_rir")
+  restSeconds   Int?     @map("rest_seconds")
+  notes         String?
 
   sets WorkoutSet[]
 
