@@ -1,0 +1,3 @@
+# Este archivo lo gestiona Prisma. NO editar a mano.
+# Se versiona en git para fijar el motor de base de datos de las migraciones.
+provider = "postgresql"

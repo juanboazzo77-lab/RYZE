@@ -1,0 +1,41 @@
+import { LogOut } from 'lucide-react';
+import { BottomNav } from './bottom-nav';
+import { SideNav } from './side-nav';
+import { ThemeToggle } from './theme-toggle';
+import { signOutAction } from '@/app/(auth)/actions';
+import { Button } from '@/components/ui/button';
+
+export function AppShell({
+  email,
+  children,
+}: {
+  email: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen">
+      <SideNav />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur">
+          <span className="text-sm font-semibold md:hidden">FitAI</span>
+          <div className="ml-auto flex items-center gap-1">
+            <span className="hidden max-w-[16rem] truncate text-sm text-muted-foreground sm:inline">
+              {email}
+            </span>
+            <ThemeToggle />
+            <form action={signOutAction}>
+              <Button variant="ghost" size="icon" type="submit" aria-label="Cerrar sesión">
+                <LogOut className="size-4" />
+              </Button>
+            </form>
+          </div>
+        </header>
+
+        <main className="has-bottom-nav mx-auto w-full max-w-3xl flex-1 px-4 py-5 md:pb-8">
+          {children}
+        </main>
+      </div>
+      <BottomNav />
+    </div>
+  );
+}

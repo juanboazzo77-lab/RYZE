@@ -1,0 +1,147 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =====================================================================
+   FitAI — tokens de diseño
+   Estética premium/deportiva: superficies neutras profundas + acento
+   verde energía. Compatible con shadcn/ui.
+   ===================================================================== */
+:root {
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(220 18% 12%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220 18% 12%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(220 18% 12%);
+
+  --primary: hsl(151 66% 34%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(220 14% 96%);
+  --secondary-foreground: hsl(220 18% 20%);
+
+  --muted: hsl(220 14% 96%);
+  --muted-foreground: hsl(220 10% 42%);
+
+  --accent: hsl(151 70% 94%);
+  --accent-foreground: hsl(151 66% 22%);
+
+  --destructive: hsl(0 72% 48%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --success: hsl(151 66% 34%);
+  --warning: hsl(35 92% 45%);
+
+  --border: hsl(220 13% 90%);
+  --input: hsl(220 13% 88%);
+  --ring: hsl(151 66% 34%);
+
+  --radius: 0.75rem;
+
+  /* Anillos de macros del dashboard */
+  --chart-kcal: hsl(151 66% 40%);
+  --chart-protein: hsl(211 80% 52%);
+  --chart-carbs: hsl(35 92% 52%);
+  --chart-fat: hsl(275 60% 58%);
+}
+
+.dark {
+  --background: hsl(220 20% 7%);
+  --foreground: hsl(210 20% 96%);
+
+  --card: hsl(220 18% 10%);
+  --card-foreground: hsl(210 20% 96%);
+  --popover: hsl(220 18% 10%);
+  --popover-foreground: hsl(210 20% 96%);
+
+  --primary: hsl(151 70% 45%);
+  --primary-foreground: hsl(220 25% 6%);
+
+  --secondary: hsl(220 14% 15%);
+  --secondary-foreground: hsl(210 16% 90%);
+
+  --muted: hsl(220 14% 15%);
+  --muted-foreground: hsl(220 10% 60%);
+
+  --accent: hsl(151 40% 16%);
+  --accent-foreground: hsl(151 70% 80%);
+
+  --destructive: hsl(0 66% 55%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --success: hsl(151 70% 45%);
+  --warning: hsl(35 92% 58%);
+
+  --border: hsl(220 14% 18%);
+  --input: hsl(220 14% 20%);
+  --ring: hsl(151 70% 45%);
+
+  --chart-kcal: hsl(151 70% 48%);
+  --chart-protein: hsl(211 85% 62%);
+  --chart-carbs: hsl(35 92% 60%);
+  --chart-fat: hsl(275 65% 68%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-kcal: var(--chart-kcal);
+  --color-chart-protein: var(--chart-protein);
+  --color-chart-carbs: var(--chart-carbs);
+  --color-chart-fat: var(--chart-fat);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    color-scheme: light dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+  /* Deja espacio para la bottom-nav en móvil */
+  .has-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
