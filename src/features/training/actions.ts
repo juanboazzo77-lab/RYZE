@@ -461,7 +461,7 @@ export async function finishWorkout(raw: FinishWorkoutInput): Promise<never | Re
   const parsed = finishWorkoutSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
 
   const w = await db.workout.findFirst({
@@ -492,6 +492,8 @@ export async function finishWorkout(raw: FinishWorkoutInput): Promise<never | Re
     } catch {
       // La detección de PRs nunca bloquea el cierre del entrenamiento.
     }
+    const { syncAchievements } = await import('@/features/gamification/sync');
+    await syncAchievements(db, userId, profile.timezone);
   }
 
   revalidatePath('/training');

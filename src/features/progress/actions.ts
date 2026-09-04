@@ -28,7 +28,7 @@ export async function logWeight(raw: LogWeightInput): Promise<Result> {
   const parsed = logSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
   const date = isoToUtcDate(d.date);
 
@@ -41,6 +41,8 @@ export async function logWeight(raw: LogWeightInput): Promise<Result> {
       data: { userId, date, weightKg: d.weightKg, note: d.note || null },
     });
   }
+  const { syncAchievements } = await import('@/features/gamification/sync');
+  await syncAchievements(db, userId, profile.timezone);
   refresh();
   return { ok: true };
 }

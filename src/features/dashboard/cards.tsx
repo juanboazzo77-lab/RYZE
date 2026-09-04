@@ -227,8 +227,11 @@ export function ProgressCard({ t, data }: { t: Dictionary; data: DashboardData['
   const tp = t.dashboard.progress;
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex-row items-center justify-between">
         <CardTitle className="text-base">{tp.title}</CardTitle>
+        <Link href="/progress" className="text-muted-foreground hover:text-foreground">
+          <ChevronRight className="size-4" />
+        </Link>
       </CardHeader>
       <CardContent className="grid grid-cols-3 gap-3 text-center">
         <div>

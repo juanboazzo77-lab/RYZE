@@ -16,7 +16,12 @@ export default async function SettingsPage() {
   const rows: Array<{ href?: string; icon: typeof User; title: string; desc: string }> = [
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
-    { icon: Bell, title: t.settings.notifications, desc: t.settings.notificationsDesc },
+    {
+      href: '/settings/notifications',
+      icon: Bell,
+      title: t.settings.notifications,
+      desc: t.settings.notificationsDesc,
+    },
     { icon: ShieldCheck, title: t.settings.account, desc: t.settings.accountDesc },
   ];
 

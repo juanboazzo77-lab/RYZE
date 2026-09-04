@@ -56,7 +56,7 @@ export async function addFoodEntry(raw: AddEntryInput): Promise<Result<{ id: str
   const parsed = addEntrySchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
   const date = isoToUtcDate(d.date);
 
@@ -93,6 +93,8 @@ export async function addFoodEntry(raw: AddEntryInput): Promise<Result<{ id: str
     select: { id: true },
   });
 
+  const { syncAchievements } = await import('@/features/gamification/sync');
+  await syncAchievements(db, userId, profile.timezone);
   refresh();
   return { ok: true, data: { id: entry.id } };
 }

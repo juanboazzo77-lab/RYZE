@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { BarChart3, ClipboardCheck, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
@@ -45,6 +45,30 @@ export default async function ProgressPage({
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">{t.progress.title}</h1>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Link
+          href="/progress/stats"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <BarChart3 className="size-4 text-primary" />
+          {t.stats.title}
+        </Link>
+        <Link
+          href="/progress/achievements"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <Trophy className="size-4 text-warning" />
+          {t.gamification.title}
+        </Link>
+        <Link
+          href="/checkin"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <ClipboardCheck className="size-4 text-primary" />
+          {t.checkin.title}
+        </Link>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label={t.progress.current} value={`${d(data.currentKg)} ${unit}`} big />
