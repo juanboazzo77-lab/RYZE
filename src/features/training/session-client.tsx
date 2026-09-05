@@ -263,12 +263,14 @@ function SetRow({
       )}
     >
       <button
+        type="button"
         onClick={onWarmup}
+        aria-pressed={set.isWarmup}
         className={cn(
           'grid size-8 shrink-0 place-items-center rounded-md border text-xs font-bold',
           set.isWarmup ? 'border-warning bg-warning/15 text-warning' : 'text-muted-foreground',
         )}
-        aria-label="warmup"
+        aria-label={t.training.session.warmup}
       >
         {set.isWarmup ? t.training.session.warmup : set.setNumber}
       </button>
@@ -297,8 +299,10 @@ function SetRow({
       <span className="text-xs text-muted-foreground">{t.training.session.reps}</span>
 
       <button
+        type="button"
         onClick={onToggle}
         aria-label={t.training.session.done}
+        aria-pressed={set.isCompleted}
         className={cn(
           'grid size-11 shrink-0 place-items-center rounded-md border transition-colors',
           set.isCompleted
@@ -309,6 +313,7 @@ function SetRow({
         <Check className="size-5" />
       </button>
       <button
+        type="button"
         onClick={onRemove}
         aria-label={t.common.delete}
         className="shrink-0 text-muted-foreground hover:text-destructive"
@@ -347,7 +352,10 @@ function FinishDialog({
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
+                type="button"
                 onClick={() => setEffort(n === effort ? null : n)}
+                aria-pressed={effort === n}
+                aria-label={String(n)}
                 className={cn(
                   'size-9 rounded-md border text-sm font-medium tabular-nums',
                   effort === n ? 'border-primary bg-primary text-primary-foreground' : 'hover:border-primary',

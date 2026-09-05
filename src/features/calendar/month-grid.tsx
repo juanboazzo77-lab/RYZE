@@ -39,7 +39,8 @@ export function MonthGrid({ month, unitSystem }: { month: CalendarMonth; unitSys
           <div key={`b${i}`} />
         ))}
         {month.days.map((d) => {
-          const dayNum = DateTime.fromISO(d.dateISO, { zone: 'utc' }).day;
+          const dt = DateTime.fromISO(d.dateISO, { zone: 'utc' }).setLocale(locale);
+          const dayNum = dt.day;
           const isToday = d.dateISO === todayISO;
           const isSelected = d.dateISO === selected;
           const nutritionRatio =
@@ -47,7 +48,10 @@ export function MonthGrid({ month, unitSystem }: { month: CalendarMonth; unitSys
           return (
             <button
               key={d.dateISO}
+              type="button"
               onClick={() => setSelected(d.dateISO)}
+              aria-pressed={isSelected}
+              aria-label={dt.toFormat('cccc d LLLL')}
               className={cn(
                 'flex aspect-square flex-col items-center justify-center gap-0.5 rounded-lg border text-xs transition-colors',
                 isSelected ? 'border-primary bg-accent' : 'hover:bg-secondary/50',

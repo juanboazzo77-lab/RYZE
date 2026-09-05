@@ -17,6 +17,7 @@ export function LoginForm() {
   const params = useSearchParams();
   const next = params.get('next') ?? '/dashboard';
   const justReset = params.get('reset') === '1';
+  const justDeleted = params.get('deleted') === '1';
 
   return (
     <form action={action}>
@@ -46,7 +47,14 @@ export function LoginForm() {
 
         <FormMessage
           error={state.error}
-          message={state.message ?? (justReset ? t.auth.passwordUpdated : undefined)}
+          message={
+            state.message ??
+            (justReset
+              ? t.auth.passwordUpdated
+              : justDeleted
+                ? t.auth.accountDeleted
+                : undefined)
+          }
         />
 
         <SubmitButton idle={t.auth.signIn} pending={t.auth.signingIn} />

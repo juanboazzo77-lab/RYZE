@@ -22,7 +22,7 @@ export default async function SettingsPage() {
       title: t.settings.notifications,
       desc: t.settings.notificationsDesc,
     },
-    { icon: ShieldCheck, title: t.settings.account, desc: t.settings.accountDesc },
+    { href: '/settings/account', icon: ShieldCheck, title: t.settings.account, desc: t.settings.accountDesc },
   ];
 
   return (
