@@ -4,20 +4,20 @@ import {
   computeTargets,
   defaultWeeklyRateKg,
   goalAdjustmentPct,
-  mifflinStJeor,
+  harrisBenedict,
 } from './targets';
 
-describe('mifflinStJeor', () => {
-  it('hombre 80kg / 180cm / 30a ≈ 1780', () => {
-    expect(mifflinStJeor({ sex: 'MALE', weightKg: 80, heightCm: 180, ageYears: 30 })).toBeCloseTo(1780, 0);
+describe('harrisBenedict', () => {
+  it('hombre 80kg / 180cm / 30a ≈ 1853.6', () => {
+    expect(harrisBenedict({ sex: 'MALE', weightKg: 80, heightCm: 180, ageYears: 30 })).toBeCloseTo(1853.63, 1);
   });
-  it('mujer 60kg / 165cm / 30a ≈ 1320.25', () => {
-    expect(mifflinStJeor({ sex: 'FEMALE', weightKg: 60, heightCm: 165, ageYears: 30 })).toBeCloseTo(1320.25, 1);
+  it('mujer 60kg / 165cm / 30a ≈ 1383.7', () => {
+    expect(harrisBenedict({ sex: 'FEMALE', weightKg: 60, heightCm: 165, ageYears: 30 })).toBeCloseTo(1383.68, 1);
   });
   it('OTHER queda entre las dos fórmulas', () => {
-    const m = mifflinStJeor({ sex: 'MALE', weightKg: 70, heightCm: 170, ageYears: 30 });
-    const f = mifflinStJeor({ sex: 'FEMALE', weightKg: 70, heightCm: 170, ageYears: 30 });
-    const o = mifflinStJeor({ sex: 'OTHER', weightKg: 70, heightCm: 170, ageYears: 30 });
+    const m = harrisBenedict({ sex: 'MALE', weightKg: 70, heightCm: 170, ageYears: 30 });
+    const f = harrisBenedict({ sex: 'FEMALE', weightKg: 70, heightCm: 170, ageYears: 30 });
+    const o = harrisBenedict({ sex: 'OTHER', weightKg: 70, heightCm: 170, ageYears: 30 });
     expect(o).toBeGreaterThan(f);
     expect(o).toBeLessThan(m);
   });
@@ -50,8 +50,8 @@ describe('computeTargets', () => {
 
   it('mantener: kcal ≈ TDEE y macros cierran', () => {
     const r = computeTargets({ ...base, goal: 'MAINTAIN' });
-    expect(r.bmr).toBe(1780);
-    expect(r.tdee).toBe(Math.round(1780 * 1.55));
+    expect(r.bmr).toBe(1854);
+    expect(r.tdee).toBe(Math.round(1854 * 1.55));
     expect(r.kcal).toBe(Math.round((r.tdee / 10)) * 10);
     // kcal reconstruido desde macros dentro de ±30 (redondeo a 5g)
     const fromMacros = r.proteinG * 4 + r.carbsG * 4 + r.fatG * 9;

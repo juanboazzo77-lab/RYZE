@@ -1,7 +1,7 @@
 /**
- * Estimación inicial de objetivos nutricionales (Mifflin-St Jeor + factor de
- * actividad + ajuste por objetivo). Son ESTIMACIONES: la app las ajusta después
- * según evolución y adherencia (check-in semanal).
+ * Estimación inicial de objetivos nutricionales (Harris-Benedict revisada +
+ * factor de actividad + ajuste por objetivo). Son ESTIMACIONES: la app las
+ * ajusta después según evolución y adherencia (check-in semanal).
  *
  * Función pura y testeada. No toca la DB.
  */
@@ -48,12 +48,13 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-/** BMR Mifflin-St Jeor. `OTHER` promedia las fórmulas masculina y femenina. */
-export function mifflinStJeor(input: Pick<TargetInput, 'sex' | 'ageYears' | 'heightCm' | 'weightKg'>): number {
-  const base = 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.ageYears;
-  if (input.sex === 'MALE') return base + 5;
-  if (input.sex === 'FEMALE') return base - 161;
-  return base - 78; // promedio de +5 y -161
+/** BMR Harris-Benedict (revisada, Roza & Shizgal 1984). `OTHER` promedia las fórmulas masculina y femenina. */
+export function harrisBenedict(input: Pick<TargetInput, 'sex' | 'ageYears' | 'heightCm' | 'weightKg'>): number {
+  const male = 88.362 + 13.397 * input.weightKg + 4.799 * input.heightCm - 5.677 * input.ageYears;
+  const female = 447.593 + 9.247 * input.weightKg + 3.098 * input.heightCm - 4.33 * input.ageYears;
+  if (input.sex === 'MALE') return male;
+  if (input.sex === 'FEMALE') return female;
+  return (male + female) / 2;
 }
 
 /** % de ajuste sobre el TDEE según objetivo (y ritmo si se indica). */
@@ -88,7 +89,7 @@ export function goalAdjustmentPct(
 }
 
 export function computeTargets(input: TargetInput): TargetResult {
-  const bmr = Math.round(mifflinStJeor(input));
+  const bmr = Math.round(harrisBenedict(input));
   const tdee = Math.round(bmr * ACTIVITY_FACTOR[input.activityLevel]);
 
   const adjustmentPct = goalAdjustmentPct(input.goal, tdee, input.weeklyRateKg);

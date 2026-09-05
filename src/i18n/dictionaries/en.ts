@@ -175,7 +175,7 @@ export const en: Dictionary = {
       maintenance: 'Maintenance',
       deficit: 'Deficit',
       surplus: 'Surplus',
-      basedOn: 'Based on Mifflin-St Jeor + your activity and goal.',
+      basedOn: 'Based on Harris-Benedict + your activity and goal.',
     },
     errors: {
       required: 'Fill in this field.',

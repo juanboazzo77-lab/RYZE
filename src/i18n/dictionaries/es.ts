@@ -173,7 +173,7 @@ export const es = {
       maintenance: 'Mantenimiento',
       deficit: 'Déficit',
       surplus: 'Superávit',
-      basedOn: 'Basado en Mifflin-St Jeor + tu actividad y objetivo.',
+      basedOn: 'Basado en Harris-Benedict + tu actividad y objetivo.',
     },
     errors: {
       required: 'Completá este campo.',
