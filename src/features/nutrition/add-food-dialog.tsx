@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Check, Loader2, Search } from 'lucide-react';
 import type { MealType } from '@prisma/client';
+import type { BarcodeLookup } from '@/server/nutrition/food-provider';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +21,8 @@ import { useT } from '@/i18n/provider';
 import { MEASURE_UNITS, computeEntryMacros } from '@/lib/nutrition/food-math';
 import { cn } from '@/lib/utils';
 import type { FoodSearchResult } from '@/server/nutrition/food-provider';
-import { addFoodEntry, createCustomFood, searchFoodAction } from './actions';
+import { addFoodEntry, createCustomFood, lookupBarcodeAction, searchFoodAction } from './actions';
+import { BarcodeScanner } from './barcode-scanner';
 
 export function AddFoodDialog({
   date,
@@ -53,15 +55,26 @@ function Body({
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
+  const [tab, setTab] = useState('search');
+  const [prefillName, setPrefillName] = useState('');
+
+  function goManual(name?: string) {
+    if (name) setPrefillName(name);
+    setTab('manual');
+  }
+
   return (
     <>
       <DialogHeader>
         <DialogTitle>{td.title}</DialogTitle>
       </DialogHeader>
-      <Tabs defaultValue="search" className="flex min-h-0 flex-1 flex-col">
+      <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="w-full">
           <TabsTrigger value="search" className="flex-1">
             {td.searchTab}
+          </TabsTrigger>
+          <TabsTrigger value="scan" className="flex-1">
+            {td.scanTab}
           </TabsTrigger>
           <TabsTrigger value="manual" className="flex-1">
             {td.manualTab}
@@ -70,11 +83,123 @@ function Body({
         <TabsContent value="search" className="min-h-0 flex-1 overflow-y-auto">
           <SearchTab date={date} mealType={mealType} onDone={onDone} />
         </TabsContent>
+        <TabsContent value="scan" className="min-h-0 flex-1 overflow-y-auto">
+          <ScanTab date={date} mealType={mealType} onDone={onDone} onGoManual={goManual} />
+        </TabsContent>
         <TabsContent value="manual" className="min-h-0 flex-1 overflow-y-auto">
-          <ManualTab date={date} mealType={mealType} onDone={onDone} />
+          <ManualTab
+            date={date}
+            mealType={mealType}
+            onDone={onDone}
+            initialName={prefillName}
+          />
         </TabsContent>
       </Tabs>
     </>
+  );
+}
+
+/* ---------------- Escanear código de barras ---------------- */
+function ScanTab({
+  date,
+  mealType,
+  onDone,
+  onGoManual,
+}: {
+  date: string;
+  mealType: MealType;
+  onDone: () => void;
+  onGoManual: (name?: string) => void;
+}) {
+  const t = useT();
+  const td = t.nutrition.dialog;
+  const [looking, startLookup] = useTransition();
+  const [result, setResult] = useState<BarcodeLookup | null>(null);
+  const [manualCode, setManualCode] = useState('');
+
+  function handleDetected(code: string) {
+    startLookup(async () => {
+      try {
+        setResult(await lookupBarcodeAction(code));
+      } catch {
+        setResult({ status: 'error' });
+      }
+    });
+  }
+
+  const manualValid = /^\d{8,14}$/.test(manualCode.trim());
+
+  if (looking) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+        <Loader2 className="size-6 animate-spin" />
+        <p className="text-sm">{td.scanLooking}</p>
+      </div>
+    );
+  }
+
+  if (result?.status === 'ok') {
+    return (
+      <QuantityStep
+        food={result.food}
+        date={date}
+        mealType={mealType}
+        onBack={() => setResult(null)}
+        onDone={onDone}
+      />
+    );
+  }
+
+  if (result) {
+    const msg =
+      result.status === 'no_nutriments'
+        ? td.scanNoNutriments
+        : result.status === 'error'
+          ? td.scanError
+          : td.scanNotFound;
+    const prefill = result.status === 'no_nutriments' ? (result.name ?? undefined) : undefined;
+    return (
+      <div className="space-y-3 py-8 text-center">
+        <p className="text-sm text-muted-foreground">{msg}</p>
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" onClick={() => setResult(null)}>
+            {td.scanRetry}
+          </Button>
+          <Button onClick={() => onGoManual(prefill)}>{td.scanManualCta}</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <BarcodeScanner active onDetected={handleDetected} />
+      <div className="space-y-1.5">
+        <Label htmlFor="manual-barcode" className="text-xs text-muted-foreground">
+          {td.scanManualLabel}
+        </Label>
+        <div className="flex gap-2">
+          <Input
+            id="manual-barcode"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="7790000000000"
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value.replace(/\D/g, '').slice(0, 14))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && manualValid) handleDetected(manualCode.trim());
+            }}
+          />
+          <Button
+            variant="secondary"
+            disabled={!manualValid}
+            onClick={() => handleDetected(manualCode.trim())}
+          >
+            {td.scanLookupBtn}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -278,15 +403,17 @@ function ManualTab({
   date,
   mealType,
   onDone,
+  initialName = '',
 }: {
   date: string;
   mealType: MealType;
   onDone: () => void;
+  initialName?: string;
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
   const [mode, setMode] = useState<'totals' | 'per100'>('totals');
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName);
   const [v, setV] = useState({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
   const [quantity, setQuantity] = useState(100);
   const [pending, start] = useTransition();

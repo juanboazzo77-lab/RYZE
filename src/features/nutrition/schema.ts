@@ -34,6 +34,12 @@ export type UpdateEntryInput = z.infer<typeof updateEntrySchema>;
 
 export const idSchema = z.object({ id: z.string().uuid() });
 
+/** EAN-8 / UPC-A (12) / EAN-13 / ITF-14: sólo dígitos, 8 a 14. */
+export const barcodeSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{8,14}$/);
+
 export const createFoodSchema = z.object({
   name: z.string().trim().min(2).max(120),
   brand: z.string().trim().max(80).optional(),

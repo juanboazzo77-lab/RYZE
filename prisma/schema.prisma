@@ -324,7 +324,7 @@ model Food {
   name          String
   brand         String?
   source        FoodSource @default(USER)
-  externalId    String?    @map("external_id")
+  externalId    String?    @unique @map("external_id")
   createdById   String?    @db.Uuid @map("created_by")
   createdBy     Profile?   @relation("FoodCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   verified      Boolean    @default(false)

@@ -10,6 +10,7 @@ import { computeEntryMacros } from '@/lib/nutrition/food-math';
 import {
   addEntrySchema,
   addMealToDaySchema,
+  barcodeSchema,
   copyDaySchema,
   createFoodSchema,
   idSchema,
@@ -44,11 +45,12 @@ async function nextPosition(
   return count;
 }
 
-/** Alimento de la biblioteca accesible por el usuario (SYSTEM o propio). */
+/** Alimento accesible por el usuario: SYSTEM, propio (USER), o de una API
+ * pública como Open Food Facts (source API, sin dueño, se comparte). */
 async function loadUsableFood(foodId: string, userId: string) {
   const food = await prisma.food.findUnique({ where: { id: foodId } });
   if (!food) return null;
-  if (food.source !== 'SYSTEM' && food.createdById !== userId) return null;
+  if (food.source === 'USER' && food.createdById !== userId) return null;
   return food;
 }
 
@@ -347,4 +349,17 @@ export async function searchFoodAction(query: string) {
   const { userId } = await requireUser();
   const { searchFoods } = await import('@/server/nutrition/food-provider');
   return searchFoods(userId, query, 20);
+}
+
+/**
+ * Resuelve un código de barras a un alimento (biblioteca local u Open Food
+ * Facts). El diálogo de alta usa el resultado para precargar los macros y
+ * dejar que el usuario ajuste la cantidad antes de guardar.
+ */
+export async function lookupBarcodeAction(rawBarcode: string) {
+  const parsed = barcodeSchema.safeParse(rawBarcode);
+  if (!parsed.success) return { status: 'not_found' as const };
+  const { userId } = await requireUser();
+  const { lookupBarcode } = await import('@/server/nutrition/food-provider');
+  return lookupBarcode(userId, parsed.data);
 }
