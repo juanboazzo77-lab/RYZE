@@ -517,7 +517,8 @@ export const es = {
   },
   notifications: {
     title: 'Notificaciones',
-    subtitle: 'Elegí qué recordatorios querés recibir. Todavía son solo dentro de la app.',
+    subtitle: 'Elegí qué recordatorios querés recibir. Por ahora se ven dentro de la app.',
+    reminderDay: 'Día del recordatorio',
     kinds: {
       WORKOUT_TODAY: 'Entrenamiento del día',
       LOG_MEALS: 'Registrar comidas',
@@ -670,6 +671,11 @@ export const es = {
     greetingMorning: 'Buenos días',
     greetingAfternoon: 'Buenas tardes',
     greetingEvening: 'Buenas noches',
+    checkinReminder: {
+      title: 'Te toca tu revisión semanal',
+      body: 'Contale al Coach cómo fue tu semana para ajustar lo que haga falta.',
+      cta: 'Hacer la revisión',
+    },
     nutrition: {
       title: 'Nutrición de hoy',
       remaining: 'restantes',

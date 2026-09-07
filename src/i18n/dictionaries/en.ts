@@ -520,6 +520,7 @@ export const en: Dictionary = {
   notifications: {
     title: 'Notifications',
     subtitle: "Choose which reminders you want. They're in-app only for now.",
+    reminderDay: 'Reminder day',
     kinds: {
       WORKOUT_TODAY: "Today's workout",
       LOG_MEALS: 'Log meals',
@@ -668,6 +669,11 @@ export const en: Dictionary = {
     },
   },
   dashboard: {
+    checkinReminder: {
+      title: 'Your weekly check-in is due',
+      body: 'Tell the Coach how your week went so it can adjust anything that needs it.',
+      cta: 'Do the check-in',
+    },
     greetingMorning: 'Good morning',
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',

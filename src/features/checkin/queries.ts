@@ -1,4 +1,5 @@
 import 'server-only';
+import { DateTime } from 'luxon';
 import type { Profile, WeeklyCheckin } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
@@ -90,4 +91,29 @@ export async function getCheckinPage(profile: Profile): Promise<CheckinPageData>
   const currentStats = await computeWeekStats(profile, currentWeekStart);
 
   return { todayISO, currentWeekStart, currentStats, existing, history };
+}
+
+/**
+ * ¿Toca mostrar el recordatorio de la revisión semanal? True si el usuario
+ * activó el recordatorio, ya pasó (o es) el día elegido de esta semana, y
+ * todavía no hizo el check-in de la semana en curso.
+ */
+export async function isCheckinDue(profile: Profile): Promise<boolean> {
+  const db = forUser(profile.id);
+  const todayISO = localTodayISO(profile.timezone);
+  const weekStartDate = isoToUtcDate(weekStartISO(todayISO, profile.weekStart));
+  const todayWeekday = DateTime.fromISO(todayISO, { zone: 'utc' }).weekday; // 1..7
+
+  const [pref, existing] = await db.$transaction([
+    db.notificationPreference.findFirst({
+      where: { kind: 'WEEKLY_CHECKIN' },
+      select: { enabled: true, dayOfWeek: true },
+    }),
+    db.weeklyCheckin.findFirst({ where: { weekStart: weekStartDate }, select: { id: true } }),
+  ]);
+
+  if (existing) return false;
+  const enabled = pref?.enabled ?? true;
+  const day = pref?.dayOfWeek ?? 1;
+  return enabled && todayWeekday >= day;
 }

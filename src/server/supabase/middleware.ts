@@ -1,8 +1,15 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-/** Rutas accesibles sin sesión. */
-const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/auth'];
+/** Rutas accesibles sin sesión. Las de `/api` hacen su propia autenticación. */
+const PUBLIC_PATHS = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/auth',
+  '/api',
+];
 /**
  * Rutas de autenticación: si ya hay sesión, se redirige al dashboard.
  * `/reset-password` queda fuera a propósito: se llega con una sesión de

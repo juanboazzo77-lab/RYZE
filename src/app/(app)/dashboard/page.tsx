@@ -3,15 +3,23 @@ import { DateTime } from 'luxon';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { dayPart } from '@/lib/date';
+import { can } from '@/server/entitlements';
 import { getDashboardData } from '@/features/dashboard/queries';
+import { isCheckinDue } from '@/features/checkin/queries';
 import { NutritionCard, ProgressCard, TrainingCard, WeightCard } from '@/features/dashboard/cards';
+import { CheckinReminder } from '@/features/dashboard/checkin-reminder';
 import { QuickActions } from '@/features/dashboard/quick-actions';
 
 export const metadata: Metadata = { title: 'Inicio' };
 
 export default async function DashboardPage() {
   const [{ t, locale }, ctx] = await Promise.all([getT(), requireUser()]);
+  // Secuencial a propósito: DATABASE_URL usa connection_limit=1, dos $transaction
+  // en paralelo se pisan en el pool (P2024).
   const data = await getDashboardData(ctx.profile);
+  const checkinDue = can(ctx.entitlement, 'weekly_checkin')
+    ? await isCheckinDue(ctx.profile)
+    : false;
 
   const part = dayPart(ctx.profile.timezone);
   const greeting =
@@ -35,6 +43,8 @@ export default async function DashboardPage() {
           {ctx.profile.name ? `, ${ctx.profile.name}` : ''}
         </h1>
       </div>
+
+      {checkinDue ? <CheckinReminder t={t} /> : null}
 
       <QuickActions t={t} />
 
