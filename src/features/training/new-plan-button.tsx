@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,20 @@ export function NewPlanButton() {
         <DialogHeader>
           <DialogTitle>{t.training.newPlan}</DialogTitle>
         </DialogHeader>
+
+        <Button asChild variant="outline" className="w-full justify-start">
+          <Link href="/coach/new-plan">
+            <Sparkles className="size-4" />
+            {t.training.newPlanAi}
+          </Link>
+        </Button>
+
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {t.training.newPlanManual}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
         <div className="space-y-1.5">
           <Label>{t.auth.name}</Label>
           <Input

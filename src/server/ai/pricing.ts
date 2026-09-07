@@ -17,6 +17,14 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'claude-opus-5': { inputPerMTok: 5, outputPerMTok: 25, cacheWriteMult: 1.25, cacheReadMult: 0.1 },
   'claude-sonnet-5': { inputPerMTok: 2, outputPerMTok: 10, cacheWriteMult: 1.25, cacheReadMult: 0.1 },
   'claude-haiku-4-5': { inputPerMTok: 1, outputPerMTok: 5, cacheWriteMult: 1.25, cacheReadMult: 0.1 },
+  // Gemini API — estimaciones para el metering (el free tier factura 0).
+  // Los alias -latest usan el precio del flash/flash-lite vigente.
+  'gemini-flash-latest': { inputPerMTok: 0.3, outputPerMTok: 2.5, cacheWriteMult: 1, cacheReadMult: 0.1 },
+  'gemini-flash-lite-latest': { inputPerMTok: 0.1, outputPerMTok: 0.4, cacheWriteMult: 1, cacheReadMult: 0.1 },
+  'gemini-3.6-flash': { inputPerMTok: 0.3, outputPerMTok: 2.5, cacheWriteMult: 1, cacheReadMult: 0.1 },
+  'gemini-3.5-flash': { inputPerMTok: 0.3, outputPerMTok: 2.5, cacheWriteMult: 1, cacheReadMult: 0.1 },
+  'gemini-3.5-flash-lite': { inputPerMTok: 0.1, outputPerMTok: 0.4, cacheWriteMult: 1, cacheReadMult: 0.1 },
+  'gemini-2.5-flash': { inputPerMTok: 0.3, outputPerMTok: 2.5, cacheWriteMult: 1, cacheReadMult: 0.1 },
 };
 
 const FALLBACK_PRICING: ModelPricing = {
