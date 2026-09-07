@@ -2,11 +2,12 @@ import 'server-only';
 import type { Entitlement, Profile } from '@prisma/client';
 import { activeProvider, maxOutputTokensFor, modelFor } from './config';
 import { buildUserContextBlock } from './context';
-import { coachSystemPrompt, planSystemPrompt } from './prompts/fitai';
+import { checkinSystemPrompt, coachSystemPrompt, planSystemPrompt } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
 import type { AiChatMessage } from './providers/types';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
+import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 
 /**
  * Gateway: único punto por el que el resto de la app pide algo a la IA. Se
@@ -21,6 +22,7 @@ export interface CoachHistoryMsg {
 
 const COACH_TIMEOUT_MS = 70_000;
 const PLAN_TIMEOUT_MS = 110_000;
+const CHECKIN_TIMEOUT_MS = 80_000;
 const MAX_HISTORY = 16;
 
 /** Un turno del AI Coach. Devuelve el texto de respuesta del asistente. */
@@ -110,4 +112,118 @@ export async function generateWorkoutPlanDraft(args: {
 
   await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
   return { draft: res.data, raw: res.rawText };
+}
+
+/* ------------------------------------------------------------------ */
+/* Revisión semanal                                                   */
+/* ------------------------------------------------------------------ */
+
+export interface CheckinWeekReport {
+  weekStartISO: string;
+  weightChangeKg: number | null;
+  avgWeightKg: number | null;
+  kcalAdherencePct: number | null;
+  proteinAdherencePct: number | null;
+  workoutsCompleted: number;
+  workoutsPlanned: number;
+}
+
+export interface CheckinSubjective {
+  hunger: number | null;
+  energy: number | null;
+  sleep: number | null;
+  trainingFeel: number | null;
+  adherenceNote: string | null;
+  notes: string | null;
+}
+
+export interface CheckinHistoryEntry {
+  weekStartISO: string;
+  weightChangeKg: number | null;
+  kcalAdherencePct: number | null;
+  /** Qué se decidió esa semana: 'none' | 'nutrition_targets(2200 kcal)' etc. */
+  decision: string;
+  applied: boolean;
+}
+
+function scale(n: number | null): string {
+  if (n === null) return 's/d';
+  return `${n}/5`;
+}
+
+/**
+ * El AI Coach revisa la semana: resume qué pasó y decide si ajustar los
+ * objetivos nutricionales, teniendo en cuenta los ajustes de semanas previas
+ * (memoria) para no encadenar cambios. No persiste nada.
+ */
+export async function reviewWeeklyCheckin(args: {
+  profile: Profile;
+  entitlement: Pick<Entitlement, 'tier'>;
+  week: CheckinWeekReport;
+  subjective: CheckinSubjective;
+  currentTarget: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
+  history: CheckinHistoryEntry[];
+}): Promise<{ review: CheckinReview | null }> {
+  const { profile, week, subjective, currentTarget, history } = args;
+
+  const baseContext = await buildUserContextBlock(profile);
+  const model = modelFor('weekly_checkin');
+
+  const historyBlock =
+    history.length > 0
+      ? history
+          .map(
+            (h) =>
+              `  - Semana ${h.weekStartISO}: peso ${h.weightChangeKg ?? 's/d'} kg, ` +
+              `adherencia kcal ${h.kcalAdherencePct ?? 's/d'}%. Decisión: ${h.decision}` +
+              (h.applied ? ' (aplicada)' : ''),
+          )
+          .join('\n')
+      : '  (sin revisiones previas)';
+
+  const reportBlock = [
+    `Semana en revisión: ${week.weekStartISO}`,
+    `Entrenamientos: ${week.workoutsCompleted}/${week.workoutsPlanned}`,
+    `Cambio de peso en la semana: ${week.weightChangeKg ?? 's/d'} kg (promedio ${week.avgWeightKg ?? 's/d'} kg)`,
+    `Adherencia calorías: ${week.kcalAdherencePct ?? 's/d'}% de los días · proteína: ${week.proteinAdherencePct ?? 's/d'}%`,
+    `Subjetivo (1 mal – 5 muy bien): hambre ${scale(subjective.hunger)}, energía ${scale(subjective.energy)}, ` +
+      `sueño ${scale(subjective.sleep)}, entrenamientos ${scale(subjective.trainingFeel)}`,
+    subjective.adherenceNote ? `Dificultades: ${subjective.adherenceNote}` : null,
+    subjective.notes ? `Notas: ${subjective.notes}` : null,
+    currentTarget
+      ? `Objetivo nutricional actual: ${currentTarget.kcal} kcal · P ${currentTarget.proteinG} · C ${currentTarget.carbsG} · G ${currentTarget.fatG}`
+      : 'Sin objetivo nutricional activo.',
+    '',
+    'Historial de revisiones (memoria — respetalo):',
+    historyBlock,
+  ]
+    .filter((l) => l !== null)
+    .join('\n');
+
+  const system = checkinSystemPrompt(profile.locale, `${baseContext}\n\n${reportBlock}`);
+
+  const res = await activeProvider().generateStructured({
+    model,
+    system,
+    messages: [{ role: 'user', content: 'Revisá la semana y devolvé el JSON.' }],
+    schema: checkinReviewSchema,
+    schemaName: 'WeeklyCheckinReview',
+    maxOutputTokens: maxOutputTokensFor('weekly_checkin'),
+    timeoutMs: CHECKIN_TIMEOUT_MS,
+    temperature: 0.4,
+    thinking: true,
+    effort: 'low',
+  });
+
+  await recordUsage(profile.id, 'weekly_checkin', model, res.usage, profile.timezone, false);
+
+  if (!res.data) {
+    console.error('[ai] checkin review: salida inválida', {
+      model,
+      stopReason: res.stopReason,
+      rawHead: res.rawText.slice(0, 300),
+    });
+    return { review: null };
+  }
+  return { review: res.data };
 }

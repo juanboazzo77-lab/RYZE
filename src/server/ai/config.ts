@@ -6,7 +6,7 @@ import { getProvider, type AiProvider } from './providers';
  * Todo se lee de env con defaults sensatos para Gemini.
  */
 
-export type AiTask = 'coach_chat' | 'generate_plan' | 'parse';
+export type AiTask = 'coach_chat' | 'generate_plan' | 'weekly_checkin' | 'parse';
 
 const DEFAULT_PROVIDER = 'gemini';
 // `flash-lite` es rápido, barato y suficiente para coach y planes. Pinneado a
@@ -41,6 +41,8 @@ export function maxOutputTokensFor(task: AiTask): number {
       return 1200;
     case 'generate_plan':
       return 4000;
+    case 'weekly_checkin':
+      return 1400;
     case 'parse':
       return 700;
   }

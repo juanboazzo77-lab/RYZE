@@ -6,6 +6,8 @@ import { interpolate } from '@/i18n';
 import { can } from '@/server/entitlements';
 import { getCheckinPage } from '@/features/checkin/queries';
 import { CheckinForm } from '@/features/checkin/checkin-form';
+import { CheckinReview } from '@/features/checkin/checkin-review';
+import type { CheckinProposal } from '@/features/checkin/schema';
 import { UpsellCard } from '@/components/upsell-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -62,6 +64,15 @@ export default async function CheckinPage() {
           />
         </CardContent>
       </Card>
+
+      {data.existing?.aiSummary ? (
+        <CheckinReview
+          weekStart={data.currentWeekStart}
+          summary={data.existing.aiSummary}
+          proposal={(data.existing.aiProposal as CheckinProposal | null) ?? null}
+          status={data.existing.status}
+        />
+      ) : null}
 
       <CheckinForm existing={data.existing} />
 

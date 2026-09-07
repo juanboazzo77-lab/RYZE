@@ -27,7 +27,8 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
   const todayDate = isoToUtcDate(todayISO);
   const since30 = isoToUtcDate(addDaysISO(todayISO, -30));
 
-  const [goal, target, todayEntries, weights, plan, recentWorkouts, prs] = await db.$transaction([
+  const [goal, target, todayEntries, weights, plan, recentWorkouts, prs, checkins] =
+    await db.$transaction([
     db.goal.findFirst({ where: { status: 'ACTIVE' }, orderBy: { createdAt: 'desc' } }),
     db.nutritionTarget.findFirst({ where: { active: true }, orderBy: { createdAt: 'desc' } }),
     db.foodEntry.findMany({
@@ -83,6 +84,11 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
         achievedAt: true,
         exercise: { select: { name: true } },
       },
+    }),
+    db.weeklyCheckin.findMany({
+      orderBy: { weekStart: 'desc' },
+      take: 3,
+      select: { weekStart: true, aiSummary: true, aiProposal: true, status: true },
     }),
   ]);
 
@@ -177,6 +183,21 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
           .map((p) => `${p.exercise.name} ${p.type} ${p.value}${p.unit}`)
           .join(' · '),
     );
+  }
+
+  if (checkins.length > 0) {
+    lines.push('Revisiones semanales recientes:');
+    for (const c of checkins) {
+      const when = c.weekStart.toISOString().slice(0, 10);
+      const prop = c.aiProposal as { kind?: string; to?: { kcal?: number } } | null;
+      const decision =
+        c.status === 'APPLIED' && prop?.to?.kcal
+          ? `ajuste aplicado → ${prop.to.kcal} kcal`
+          : prop?.kind === 'nutrition_targets'
+            ? 'ajuste propuesto (no aplicado)'
+            : 'sin cambios';
+      lines.push(`  - ${when}: ${decision}. ${c.aiSummary ?? ''}`.trim());
+    }
   }
 
   return lines.join('\n');
