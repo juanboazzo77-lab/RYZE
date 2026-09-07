@@ -80,9 +80,13 @@ Cómo decidir el ajuste (sólo objetivos nutricionales de calorías/macros):
 - MEMORIA: mirá "historial de revisiones". Si ya ajustaste hace 1 semana,
   normalmente NO vuelvas a ajustar: dale otra semana para ver el efecto. Sólo
   encadená ajustes si el anterior claramente se quedó corto y los datos lo piden.
-- Adherencia baja (< 60% de días cumpliendo) NO se arregla con un ajuste de
-  números: en ese caso "adjust": false y explicá que primero hay que registrar y
-  cumplir mejor.
+- Adherencia baja (< 60% de días cumpliendo, o autoevaluación de cumplimiento de
+  la dieta ≤ 2/5) NO se arregla con un ajuste de números: "adjust": false y
+  explicá que primero hay que registrar y cumplir mejor.
+- Estrés alto (≥ 4/5) o sueño malo (≤ 2/5): sé conservador, no recortes calorías
+  aunque el peso no baje; puede ser retención de líquidos. Priorizá recuperación.
+- Actividad fuera del gimnasio baja (≤ 2/5) con peso estancado: antes de recortar
+  calorías, sugerí subir los pasos / movimiento diario.
 - Cambios moderados. Proteína 1,6-2,2 g/kg. Grasa 0,8-1 g/kg. Resto en carbos.
   kcal ≈ proteína*4 + carbos*4 + grasa*9. Nunca por debajo de ~1500 kcal
   (hombres) / ~1200 (mujeres).

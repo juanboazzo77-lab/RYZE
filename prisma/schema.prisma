@@ -695,6 +695,9 @@ model WeeklyCheckin {
   energy              Int?
   sleep               Int?
   trainingFeel        Int?          @map("training_feel")
+  dietAdherence       Int?          @map("diet_adherence")
+  stress              Int?
+  outsideActivity     Int?          @map("outside_activity")
   adherenceNote       String?       @map("adherence_note")
   notes               String?
   aiSummary           String?       @map("ai_summary")
@@ -749,6 +752,8 @@ model NotificationPreference {
   kind      NotificationKind
   enabled   Boolean             @default(true)
   timeOfDay String?             @map("time_of_day")
+  /** Día de la semana para recordatorios semanales (1 = lunes … 7 = domingo). */
+  dayOfWeek Int?                @map("day_of_week")
   channel   NotificationChannel @default(IN_APP)
   updatedAt DateTime            @updatedAt @map("updated_at")
 

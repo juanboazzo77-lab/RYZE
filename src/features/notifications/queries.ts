@@ -14,11 +14,22 @@ export const NOTIFICATION_KINDS: NotificationKind[] = [
 export interface NotificationPrefView {
   kind: NotificationKind;
   enabled: boolean;
+  /** Sólo para recordatorios semanales (WEEKLY_CHECKIN): 1 lunes … 7 domingo. */
+  dayOfWeek: number | null;
 }
 
 export async function getNotificationPrefs(profile: Profile): Promise<NotificationPrefView[]> {
   const db = forUser(profile.id);
-  const rows = await db.notificationPreference.findMany({ select: { kind: true, enabled: true } });
-  const byKind = new Map(rows.map((r) => [r.kind, r.enabled]));
-  return NOTIFICATION_KINDS.map((kind) => ({ kind, enabled: byKind.get(kind) ?? true }));
+  const rows = await db.notificationPreference.findMany({
+    select: { kind: true, enabled: true, dayOfWeek: true },
+  });
+  const byKind = new Map(rows.map((r) => [r.kind, r]));
+  return NOTIFICATION_KINDS.map((kind) => {
+    const row = byKind.get(kind);
+    return {
+      kind,
+      enabled: row?.enabled ?? true,
+      dayOfWeek: row?.dayOfWeek ?? (kind === 'WEEKLY_CHECKIN' ? 1 : null),
+    };
+  });
 }

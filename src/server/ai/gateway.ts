@@ -133,6 +133,9 @@ export interface CheckinSubjective {
   energy: number | null;
   sleep: number | null;
   trainingFeel: number | null;
+  dietAdherence: number | null;
+  stress: number | null;
+  outsideActivity: number | null;
   adherenceNote: string | null;
   notes: string | null;
 }
@@ -186,8 +189,12 @@ export async function reviewWeeklyCheckin(args: {
     `Entrenamientos: ${week.workoutsCompleted}/${week.workoutsPlanned}`,
     `Cambio de peso en la semana: ${week.weightChangeKg ?? 's/d'} kg (promedio ${week.avgWeightKg ?? 's/d'} kg)`,
     `Adherencia calorías: ${week.kcalAdherencePct ?? 's/d'}% de los días · proteína: ${week.proteinAdherencePct ?? 's/d'}%`,
-    `Subjetivo (1 mal – 5 muy bien): hambre ${scale(subjective.hunger)}, energía ${scale(subjective.energy)}, ` +
-      `sueño ${scale(subjective.sleep)}, entrenamientos ${scale(subjective.trainingFeel)}`,
+    `Subjetivo (1-5): hambre ${scale(subjective.hunger)} (1 mucha–5 bajo control), ` +
+      `energía ${scale(subjective.energy)} (1 mal–5 muy bien), sueño ${scale(subjective.sleep)} (1 mal–5 muy bien), ` +
+      `sensación en entrenos ${scale(subjective.trainingFeel)} (1 mal–5 muy bien)`,
+    `Autoevaluación (1-5): cumplimiento de la dieta ${scale(subjective.dietAdherence)} (1 nada–5 al 100%), ` +
+      `estrés de la semana ${scale(subjective.stress)} (1 poco–5 mucho; alto = negativo para recuperación/adherencia), ` +
+      `actividad fuera del gimnasio ${scale(subjective.outsideActivity)} (1 poca–5 mucha; baja = TDEE más bajo)`,
     subjective.adherenceNote ? `Dificultades: ${subjective.adherenceNote}` : null,
     subjective.notes ? `Notas: ${subjective.notes}` : null,
     currentTarget

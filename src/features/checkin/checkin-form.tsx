@@ -56,6 +56,11 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
   const [energy, setEnergy] = useState<number | null>(existing?.energy ?? null);
   const [sleep, setSleep] = useState<number | null>(existing?.sleep ?? null);
   const [trainingFeel, setTrainingFeel] = useState<number | null>(existing?.trainingFeel ?? null);
+  const [dietAdherence, setDietAdherence] = useState<number | null>(existing?.dietAdherence ?? null);
+  const [stress, setStress] = useState<number | null>(existing?.stress ?? null);
+  const [outsideActivity, setOutsideActivity] = useState<number | null>(
+    existing?.outsideActivity ?? null,
+  );
   const [adherenceNote, setAdherenceNote] = useState(existing?.adherenceNote ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
   const [pending, start] = useTransition();
@@ -67,6 +72,9 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
         energy,
         sleep,
         trainingFeel,
+        dietAdherence,
+        stress,
+        outsideActivity,
         adherenceNote: adherenceNote.trim() || undefined,
         notes: notes.trim() || undefined,
       });
@@ -91,6 +99,27 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
           onChange={setTrainingFeel}
           lowLabel={tc.scaleLow}
           highLabel={tc.scaleHigh}
+        />
+        <ScaleField
+          label={tc.questions.dietAdherence}
+          value={dietAdherence}
+          onChange={setDietAdherence}
+          lowLabel={tc.scaleNone}
+          highLabel={tc.scaleFull}
+        />
+        <ScaleField
+          label={tc.questions.stress}
+          value={stress}
+          onChange={setStress}
+          lowLabel={tc.scaleLowAmount}
+          highLabel={tc.scaleHighAmount}
+        />
+        <ScaleField
+          label={tc.questions.outsideActivity}
+          value={outsideActivity}
+          onChange={setOutsideActivity}
+          lowLabel={tc.scaleLowAmount}
+          highLabel={tc.scaleHighAmount}
         />
         <div className="space-y-1.5">
           <p className="text-sm font-medium">{tc.questions.adherenceNote}</p>
