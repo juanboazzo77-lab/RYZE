@@ -1,15 +1,18 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { DateTime } from 'luxon';
+import type { NotificationKind } from '@prisma/client';
 import { prisma } from '@/server/db';
 import { limitsFor } from '@/server/entitlements';
 import { sendPushToUser } from '@/server/push';
+import { computeNudges } from '@/server/nudges';
 
 /**
- * Worker de recordatorios. Pensado para Vercel Cron (corre cada hora):
- *  1. Crea la notificación del check-in semanal para quienes eligieron ese día y
- *     todavía no lo hicieron (idempotente por día).
- *  2. Entrega por Web Push todas las notificaciones pendientes (`sent_at` NULL)
- *     y las marca como enviadas.
+ * Worker de notificaciones. Pensado para Vercel Cron (corre cada hora):
+ *  1. Recordatorio del check-in semanal (PRO) en el día elegido.
+ *  2. Coach proactivo: avisos condicionales (entreno de hoy, registrar comidas,
+ *     proteína, peso, racha) — máx. 2/día por usuario, respetando sus toggles.
+ *  3. Entrega por Web Push de todo lo pendiente (`sent_at` NULL) y lo marca.
+ * Todo es idempotente por día (dedup contra `notification`).
  *
  * Auth: header `Authorization: Bearer <CRON_SECRET>` (lo manda Vercel Cron) o
  * `?key=<CRON_SECRET>` para pruebas manuales.
@@ -20,9 +23,46 @@ export const dynamic = 'force-dynamic';
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;
-  const header = req.headers.get('authorization');
-  if (header === `Bearer ${secret}`) return true;
+  if (req.headers.get('authorization') === `Bearer ${secret}`) return true;
   return req.nextUrl.searchParams.get('key') === secret;
+}
+
+const NUDGE_KINDS = ['WORKOUT_TODAY', 'LOG_MEALS', 'WEIGH_IN', 'PROTEIN_GOAL', 'STREAK'] as const;
+
+async function maybeCheckinReminder(
+  u: { id: string; timezone: string; weekStart: number },
+  day: number,
+): Promise<boolean> {
+  const now = DateTime.now().setZone(u.timezone);
+  if (now.weekday !== day) return false;
+
+  const diff = (now.weekday - u.weekStart + 7) % 7;
+  const weekStartDate = new Date(`${now.minus({ days: diff }).toISODate()}T00:00:00.000Z`);
+  const startOfLocalDay = new Date(`${now.toISODate()}T00:00:00.000Z`);
+
+  const [alreadyDone, alreadySent] = await Promise.all([
+    prisma.weeklyCheckin.findFirst({
+      where: { userId: u.id, weekStart: weekStartDate },
+      select: { id: true },
+    }),
+    prisma.notification.findFirst({
+      where: { userId: u.id, kind: 'WEEKLY_CHECKIN', createdAt: { gte: startOfLocalDay } },
+      select: { id: true },
+    }),
+  ]);
+  if (alreadyDone || alreadySent) return false;
+
+  await prisma.notification.create({
+    data: {
+      userId: u.id,
+      kind: 'WEEKLY_CHECKIN',
+      title: 'Revisión semanal',
+      body: 'Contale al Coach cómo fue tu semana para ajustar lo que haga falta.',
+      url: '/checkin',
+      scheduledFor: new Date(),
+    },
+  });
+  return true;
 }
 
 export async function GET(req: NextRequest) {
@@ -40,57 +80,42 @@ export async function GET(req: NextRequest) {
       timezone: true,
       weekStart: true,
       entitlement: { select: { tier: true } },
-      notificationPreferences: {
-        where: { kind: 'WEEKLY_CHECKIN' },
-        select: { enabled: true, dayOfWeek: true },
-      },
+      notificationPreferences: { select: { kind: true, enabled: true, dayOfWeek: true } },
     },
   });
 
   let created = 0;
-  let considered = 0;
+  let nudged = 0;
 
   for (const u of users) {
-    if (!u.entitlement || !limitsFor(u.entitlement).features.weekly_checkin) continue;
+    const prefByKind = new Map(u.notificationPreferences.map((p) => [p.kind, p]));
 
-    const pref = u.notificationPreferences[0];
-    const enabled = pref?.enabled ?? true;
-    const day = pref?.dayOfWeek ?? 1;
-    if (!enabled) continue;
+    if (u.entitlement && limitsFor(u.entitlement).features.weekly_checkin) {
+      const cp = prefByKind.get('WEEKLY_CHECKIN');
+      if ((cp?.enabled ?? true) && (await maybeCheckinReminder(u, cp?.dayOfWeek ?? 1))) {
+        created++;
+      }
+    }
 
-    const now = DateTime.now().setZone(u.timezone);
-    if (now.weekday !== day) continue;
-    considered++;
-
-    // Inicio de la semana del usuario (weekStart 1=lunes … 7=domingo).
-    const diff = (now.weekday - u.weekStart + 7) % 7;
-    const weekStart = now.minus({ days: diff }).startOf('day');
-    const weekStartDate = new Date(`${weekStart.toISODate()}T00:00:00.000Z`);
-    const startOfLocalDay = new Date(`${now.toISODate()}T00:00:00.000Z`);
-
-    const [alreadyDone, alreadySent] = await Promise.all([
-      prisma.weeklyCheckin.findFirst({
-        where: { userId: u.id, weekStart: weekStartDate },
-        select: { id: true },
-      }),
-      prisma.notification.findFirst({
-        where: { userId: u.id, kind: 'WEEKLY_CHECKIN', createdAt: { gte: startOfLocalDay } },
-        select: { id: true },
-      }),
-    ]);
-    if (alreadyDone || alreadySent) continue;
-
-    await prisma.notification.create({
-      data: {
-        userId: u.id,
-        kind: 'WEEKLY_CHECKIN',
-        title: 'Revisión semanal',
-        body: 'Contale al Coach cómo fue tu semana para ajustar lo que haga falta.',
-        url: '/checkin',
-        scheduledFor: new Date(),
-      },
-    });
-    created++;
+    const enabledKinds = new Set<NotificationKind>(
+      NUDGE_KINDS.filter((k) => prefByKind.get(k)?.enabled ?? true),
+    );
+    if (enabledKinds.size > 0) {
+      const nudges = await computeNudges(u.id, u.timezone, u.weekStart, enabledKinds);
+      for (const n of nudges) {
+        await prisma.notification.create({
+          data: {
+            userId: u.id,
+            kind: n.kind,
+            title: n.title,
+            body: n.body,
+            url: n.url,
+            scheduledFor: new Date(),
+          },
+        });
+        nudged++;
+      }
+    }
   }
 
   // --- Entrega por Web Push de todo lo pendiente ---
@@ -119,8 +144,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     users: users.length,
-    considered,
     created,
+    nudged,
     delivered: pending.length,
     pushed,
   });
