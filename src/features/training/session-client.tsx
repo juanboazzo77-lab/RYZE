@@ -55,6 +55,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [finishOpen, setFinishOpen] = useState(false);
+  const [savedLocally, setSavedLocally] = useState(false);
 
   useEffect(() => {
     hydrate(session);
@@ -65,20 +66,36 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     return () => clearInterval(h);
   }, []);
 
-  // Autosave debounced.
+  // Autosave debounced. Si falla (offline), la sesión queda en localStorage
+  // (persist de Zustand) y se reintenta al recuperar la conexión.
   const savingRef = useRef(false);
+  const [retryTick, setRetryTick] = useState(0);
   useEffect(() => {
     if (!dirty || savingRef.current) return;
     const h = setTimeout(() => {
       savingRef.current = true;
       startSave(async () => {
-        const res = await saveWorkout(useSession.getState().payload());
-        if (res.ok) markClean();
-        savingRef.current = false;
+        try {
+          const res = await saveWorkout(useSession.getState().payload());
+          if (res.ok) {
+            markClean();
+            setSavedLocally(false);
+          }
+        } catch {
+          setSavedLocally(true); // sin conexión: queda guardado en el dispositivo
+        } finally {
+          savingRef.current = false;
+        }
       });
     }, 1500);
     return () => clearTimeout(h);
-  }, [dirty, exercises, markClean]);
+  }, [dirty, exercises, markClean, retryTick]);
+
+  useEffect(() => {
+    const onOnline = () => setRetryTick((n) => n + 1);
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
 
   async function saveNow() {
     if (useSession.getState().dirty) {
@@ -99,6 +116,9 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
             {saving ? ' · ' : ''}
             {saving ? <Loader2 className="inline size-3 animate-spin" /> : null}
           </p>
+          {savedLocally ? (
+            <p className="text-xs text-warning">{t.training.session.savedOffline}</p>
+          ) : null}
         </div>
         <Button size="sm" onClick={() => setFinishOpen(true)}>
           {t.training.session.finish}
@@ -159,8 +179,13 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
         onOpenChange={setFinishOpen}
         onDiscard={() => discardWorkout({ id: session.id })}
         onFinish={async (effort) => {
-          await saveNow();
-          await finishWorkout({ workoutId: session.id, perceivedEffort: effort });
+          try {
+            await saveNow();
+            await finishWorkout({ workoutId: session.id, perceivedEffort: effort });
+          } catch {
+            toast.error(t.training.session.finishOffline);
+            throw new Error('offline');
+          }
         }}
       />
     </div>
@@ -389,12 +414,14 @@ function FinishDialog({
             disabled={pending}
             onClick={() =>
               start(async () => {
+                // Primero terminar en el servidor; recién ahí limpiar el
+                // localStorage. Si falla (offline), la sesión NO se pierde.
+                await onFinish(effort);
                 try {
                   useSession.persist.clearStorage();
                 } catch {
                   /* noop */
                 }
-                await onFinish(effort);
               })
             }
           >

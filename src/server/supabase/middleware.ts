@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   '/reset-password',
   '/auth',
   '/api',
+  '/offline',
 ];
 /**
  * Rutas de autenticación: si ya hay sesión, se redirige al dashboard.
