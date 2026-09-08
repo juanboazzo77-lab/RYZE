@@ -84,6 +84,7 @@ export const en: Dictionary = {
       MAINTAIN: 'Maintain weight',
       STRENGTH: 'Get stronger',
       PERFORMANCE: 'Improve performance',
+      UNDECIDED: "I'm not sure yet",
     },
     trainingPlace: { GYM: 'Gym', HOME: 'Home', BOTH: 'Both' },
     activityLevel: {
@@ -130,6 +131,14 @@ export const en: Dictionary = {
     stepOf: 'Step {n} of {total}',
     finishLater: 'Go to home',
     start: 'Start',
+    goalPhotos: {
+      title: 'Photos for the Coach to recommend (optional)',
+      hint: "Upload 1 to 4 photos and the Coach will recommend a goal (lose fat, gain muscle or recomposition) and what to improve, e.g. which muscle groups to prioritize. The photos are not stored: they're only analyzed for this recommendation.",
+      add: 'Add photo',
+      remove: 'Remove',
+      max: 'You can upload up to 4 photos.',
+      error: "Couldn't process the image.",
+    },
     steps: {
       about: { title: 'About you', desc: 'Basic data to estimate your needs.' },
       weightGoal: { title: 'Weight & goal', desc: 'Where you are and where you want to go.' },
@@ -228,6 +237,8 @@ export const en: Dictionary = {
   goals: {
     title: 'Goals',
     goalSection: 'Main goal',
+    coachAdviceTitle: "Coach's recommendation",
+    coachAdviceHint: 'Pick the goal below to set your calories and macros. You can follow the recommendation or change it.',
     targetsSection: 'Daily nutrition targets',
     recalc: 'Recalculate with the formula',
     recalcApplied: 'Targets recalculated. Review and save.',

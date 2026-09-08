@@ -16,7 +16,7 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
   if (!parsed.success) return { error: 'INVALID' };
   const data = parsed.data;
 
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
 
   const birthdate = new Date(`${data.birthdate}T00:00:00Z`);
@@ -90,6 +90,41 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
       },
     }),
   ]);
+
+  // Objetivo "indeciso": el Coach recomienda uno concreto a partir de los datos
+  // y las fotos (efímeras, no se guardan). Best-effort: no bloquea el onboarding.
+  if (data.primaryGoal === 'UNDECIDED') {
+    try {
+      const { recommendGoalFromPhotos } = await import('@/server/ai/gateway');
+      const profileFacts = [
+        `Sexo: ${data.sex}`,
+        `Edad: ${ageYears} años`,
+        `Altura: ${data.heightCm} cm`,
+        `Peso: ${data.currentWeightKg} kg`,
+        `Experiencia: ${data.experienceLevel}`,
+        `Actividad diaria: ${data.activityLevel}`,
+        `Días de entrenamiento por semana: ${data.daysAvailable}`,
+      ].join(' · ');
+
+      const { advice } = await recommendGoalFromPhotos({
+        userId,
+        locale: data.locale,
+        timezone: profile.timezone,
+        profileFacts,
+        photos: data.photos ?? [],
+      });
+
+      if (advice) {
+        const note =
+          `Recomendación del Coach: ${advice.recommendedGoal}. ${advice.reasoning}\n\n` +
+          `A mejorar: ${advice.improvements}`;
+        await db.goal.updateMany({ where: { status: 'ACTIVE' }, data: { note } });
+      }
+    } catch (e) {
+      console.error('[onboarding] recomendación de objetivo falló', e instanceof Error ? e.message : e);
+    }
+    redirect('/settings/goals');
+  }
 
   redirect('/dashboard');
 }

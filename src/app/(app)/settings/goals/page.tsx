@@ -8,6 +8,7 @@ import { forUser } from '@/server/user-db';
 import { computeTargets, ageFromBirthdate } from '@/lib/nutrition/targets';
 import { GoalsForm } from '@/features/settings/goals-form';
 import type { GoalUpdatePayload } from '@/features/settings/schema';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Objetivos' };
 
@@ -56,6 +57,21 @@ export default async function GoalsSettingsPage() {
         {t.settings.title}
       </Link>
       <h1 className="text-2xl font-bold tracking-tight">{t.goals.title}</h1>
+
+      {goal?.type === 'UNDECIDED' && goal.note ? (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t.goals.coachAdviceTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-0 text-sm text-muted-foreground">
+            {goal.note.split('\n\n').map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+            <p className="text-xs text-muted-foreground/70">{t.goals.coachAdviceHint}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <GoalsForm
         initial={initial}
         unitSystem={profile.unitSystem}

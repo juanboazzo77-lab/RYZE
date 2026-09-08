@@ -65,6 +65,7 @@ export function OnboardingWizard({
     trainingExperienceNote: '',
     unitSystem: initial.unitSystem,
     locale: initial.locale,
+    photos: [],
   });
 
   const patch = (p: Partial<OnboardingData>) => {
@@ -133,6 +134,7 @@ export function OnboardingWizard({
       ...data,
       injuries: data.injuries ?? '',
       trainingExperienceNote: data.trainingExperienceNote ?? '',
+      photos: data.primaryGoal === 'UNDECIDED' && data.photos.length > 0 ? data.photos : undefined,
     });
     if (!payload.success) {
       toast.error(t.onboarding.errors.generic);

@@ -49,6 +49,8 @@ enum PrimaryGoal {
   MAINTAIN
   STRENGTH
   PERFORMANCE
+  /// El usuario no sabe qué objetivo elegir; el Coach lo recomienda (con fotos).
+  UNDECIDED
 }
 
 enum TrainingPlace {

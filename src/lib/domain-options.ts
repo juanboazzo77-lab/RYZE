@@ -21,6 +21,7 @@ export const GOAL_OPTIONS: PrimaryGoal[] = [
   'MAINTAIN',
   'STRENGTH',
   'PERFORMANCE',
+  'UNDECIDED',
 ];
 
 export const TRAINING_PLACE_OPTIONS: TrainingPlace[] = ['GYM', 'HOME', 'BOTH'];

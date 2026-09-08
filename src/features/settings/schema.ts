@@ -21,7 +21,15 @@ export const profileUpdateSchema = z.object({
 export type ProfileUpdatePayload = z.infer<typeof profileUpdateSchema>;
 
 export const goalUpdateSchema = z.object({
-  primaryGoal: z.enum(['LOSE_FAT', 'GAIN_MUSCLE', 'RECOMP', 'MAINTAIN', 'STRENGTH', 'PERFORMANCE']),
+  primaryGoal: z.enum([
+    'LOSE_FAT',
+    'GAIN_MUSCLE',
+    'RECOMP',
+    'MAINTAIN',
+    'STRENGTH',
+    'PERFORMANCE',
+    'UNDECIDED',
+  ]),
   targetWeightKg: z.number().min(30).max(400).nullable(),
   weeklyRateKg: z.number().min(0).max(2).nullable(),
   kcal: z.number().int().min(800).max(8000),

@@ -1,13 +1,19 @@
 import 'server-only';
-import type { Entitlement, Profile } from '@prisma/client';
+import type { Entitlement, Locale, Profile } from '@prisma/client';
 import { activeProvider, maxOutputTokensFor, modelFor } from './config';
 import { buildUserContextBlock } from './context';
-import { checkinSystemPrompt, coachSystemPrompt, planSystemPrompt } from './prompts/fitai';
+import {
+  checkinSystemPrompt,
+  coachSystemPrompt,
+  goalAdviceSystemPrompt,
+  planSystemPrompt,
+} from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
 import type { AiChatMessage, AiContentBlock } from './providers/types';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
+import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 
 /**
  * Gateway: único punto por el que el resto de la app pide algo a la IA. Se
@@ -112,6 +118,59 @@ export async function generateWorkoutPlanDraft(args: {
 
   await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
   return { draft: res.data, raw: res.rawText };
+}
+
+/* ------------------------------------------------------------------ */
+/* Recomendación de objetivo (onboarding "indeciso")                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Para un usuario que eligió objetivo "indeciso": recomienda un objetivo
+ * concreto y qué mejorar, a partir de sus datos y (si mandó) sus fotos. Las
+ * fotos son efímeras: no se persisten. Best-effort: nunca bloquea el onboarding.
+ */
+export async function recommendGoalFromPhotos(args: {
+  userId: string;
+  locale: Locale;
+  timezone: string;
+  profileFacts: string;
+  photos: string[];
+}): Promise<{ advice: GoalAdvice | null }> {
+  const { userId, locale, timezone, profileFacts, photos } = args;
+  const model = modelFor('weekly_checkin');
+
+  const system = goalAdviceSystemPrompt(
+    locale,
+    `${profileFacts}\n\nFotos adjuntas: ${photos.length > 0 ? `${photos.length}` : 'ninguna'}.`,
+  );
+
+  const askText = 'Recomendá el objetivo y qué mejorar. Devolvé el JSON.';
+  const userContent: AiContentBlock[] = [{ type: 'text', text: askText }];
+  for (const p of photos) {
+    const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(p);
+    if (m && m[1] && m[2]) userContent.push({ type: 'image', mediaType: m[1], dataBase64: m[2] });
+  }
+
+  try {
+    const res = await activeProvider().generateStructured({
+      model,
+      system,
+      messages: [{ role: 'user', content: userContent.length > 1 ? userContent : askText }],
+      schema: goalAdviceSchema,
+      schemaName: 'GoalAdvice',
+      maxOutputTokens: maxOutputTokensFor('weekly_checkin'),
+      timeoutMs: CHECKIN_TIMEOUT_MS,
+      temperature: 0.4,
+      thinking: true,
+      effort: 'low',
+    });
+    await recordUsage(userId, 'weekly_checkin', model, res.usage, timezone, false);
+    return { advice: res.data };
+  } catch (e) {
+    if (e instanceof AiError) console.error('[ai] goal advice', e.code, '-', e.message);
+    else console.error('[ai] goal advice falló', e instanceof Error ? e.message : e);
+    return { advice: null };
+  }
 }
 
 /* ------------------------------------------------------------------ */

@@ -3,6 +3,7 @@
 import type { Dictionary } from '@/i18n';
 import { Field } from '@/components/form/field';
 import { OptionCards } from '@/components/form/option-cards';
+import { PhotoPicker } from '@/components/form/photo-picker';
 import { ChipMulti } from '@/components/form/chip-multi';
 import { TagInput } from '@/components/form/tag-input';
 import { NumberStepper } from '@/components/form/number-stepper';
@@ -128,6 +129,23 @@ export function StepWeightGoal({ data, patch, t, errors }: StepProps) {
           onChange={onGoal}
         />
       </Field>
+
+      {data.primaryGoal === 'UNDECIDED' ? (
+        <div className="space-y-2 rounded-lg border border-dashed p-3">
+          <p className="text-sm font-medium">{t.onboarding.goalPhotos.title}</p>
+          <p className="text-xs text-muted-foreground">{t.onboarding.goalPhotos.hint}</p>
+          <PhotoPicker
+            value={data.photos}
+            onChange={(photos) => patch({ photos })}
+            labels={{
+              add: t.onboarding.goalPhotos.add,
+              remove: t.onboarding.goalPhotos.remove,
+              max: t.onboarding.goalPhotos.max,
+              error: t.onboarding.goalPhotos.error,
+            }}
+          />
+        </div>
+      ) : null}
 
       {needsTarget ? (
         <Field label={f.targetWeight} error={errors.targetWeightKg}>

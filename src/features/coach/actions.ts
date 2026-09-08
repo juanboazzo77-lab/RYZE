@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { MuscleGroup } from '@prisma/client';
+import type { MuscleGroup, PrimaryGoal } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
@@ -122,14 +122,7 @@ function nutritionDraftFor(profile: {
     | 'ACTIVE'
     | 'VERY_ACTIVE'
     | null;
-  primaryGoal:
-    | 'LOSE_FAT'
-    | 'GAIN_MUSCLE'
-    | 'RECOMP'
-    | 'MAINTAIN'
-    | 'STRENGTH'
-    | 'PERFORMANCE'
-    | null;
+  primaryGoal: PrimaryGoal | null;
 }, weightKg: number | null, weeklyRateKg: number | null): NutritionDraft | null {
   if (
     !profile.sex ||

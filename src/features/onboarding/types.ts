@@ -31,6 +31,8 @@ export interface OnboardingData {
   trainingExperienceNote: string;
   unitSystem: UnitSystem;
   locale: Locale;
+  /** Fotos para la recomendación de objetivo cuando el objetivo es "indeciso". */
+  photos: string[];
 }
 
 /** Objetivos que necesitan un peso meta. */

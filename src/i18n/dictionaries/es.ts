@@ -82,6 +82,7 @@ export const es = {
       MAINTAIN: 'Mantener peso',
       STRENGTH: 'Mejorar fuerza',
       PERFORMANCE: 'Mejorar rendimiento',
+      UNDECIDED: 'Todavía no lo sé',
     },
     trainingPlace: { GYM: 'Gimnasio', HOME: 'Casa', BOTH: 'Ambos' },
     activityLevel: {
@@ -128,6 +129,14 @@ export const es = {
     stepOf: 'Paso {n} de {total}',
     finishLater: 'Ir al inicio',
     start: 'Empezar',
+    goalPhotos: {
+      title: 'Fotos para que el Coach te recomiende (opcional)',
+      hint: 'Subí 1 a 4 fotos y el Coach te va a recomendar un objetivo (perder grasa, ganar músculo o recomposición) y qué mejorar, por ejemplo qué grupos musculares priorizar. Las fotos no se guardan: sólo se analizan para esta recomendación.',
+      add: 'Agregar foto',
+      remove: 'Quitar',
+      max: 'Podés subir hasta 4 fotos.',
+      error: 'No se pudo procesar la imagen.',
+    },
     steps: {
       about: { title: 'Sobre vos', desc: 'Datos básicos para calcular tus necesidades.' },
       weightGoal: { title: 'Peso y objetivo', desc: '¿Dónde estás y a dónde querés llegar?' },
@@ -226,6 +235,8 @@ export const es = {
   goals: {
     title: 'Objetivos',
     goalSection: 'Objetivo principal',
+    coachAdviceTitle: 'Recomendación del Coach',
+    coachAdviceHint: 'Elegí el objetivo abajo para fijar tus calorías y macros. Podés seguir la recomendación o cambiarla.',
     targetsSection: 'Objetivos nutricionales diarios',
     recalc: 'Recalcular con la fórmula',
     recalcApplied: 'Objetivos recalculados. Revisá y guardá.',

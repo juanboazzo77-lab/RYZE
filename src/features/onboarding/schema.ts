@@ -13,6 +13,7 @@ export const onboardingSchema = z.object({
     'MAINTAIN',
     'STRENGTH',
     'PERFORMANCE',
+    'UNDECIDED',
   ]),
   targetWeightKg: z.number().min(30).max(400).nullable(),
   weeklyRateKg: z.number().min(0).max(2).nullable(),
@@ -30,6 +31,15 @@ export const onboardingSchema = z.object({
   trainingExperienceNote: z.string().max(1000),
   unitSystem: z.enum(['METRIC', 'IMPERIAL']),
   locale: z.enum(['ES', 'EN']),
+  /**
+   * Fotos para la recomendación de objetivo (sólo si `primaryGoal` es
+   * UNDECIDED). Data URLs ya reducidas en el cliente. NO se guardan: se mandan
+   * al modelo para la recomendación y se descartan.
+   */
+  photos: z
+    .array(z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/).max(4_000_000))
+    .max(4)
+    .optional(),
 });
 
 export type OnboardingPayload = z.infer<typeof onboardingSchema>;
