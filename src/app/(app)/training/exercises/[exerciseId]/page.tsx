@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
@@ -6,6 +7,10 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { getExerciseProgress } from '@/features/training/history-queries';
 import { ExerciseProgressView } from '@/features/training/exercise-progress-view';
+import {
+  ExerciseGuideCard,
+  ExerciseGuideSkeleton,
+} from '@/features/training/exercise-guide-card';
 
 export const metadata: Metadata = { title: 'Progreso del ejercicio' };
 
@@ -38,6 +43,10 @@ export default async function ExerciseProgressPage({
         {t.training.history.title}
       </Link>
       <ExerciseProgressView data={data} />
+
+      <Suspense fallback={<ExerciseGuideSkeleton />}>
+        <ExerciseGuideCard exerciseId={exerciseId} />
+      </Suspense>
     </div>
   );
 }

@@ -303,6 +303,11 @@ export const es = {
       notes: 'Notas',
       muscle: 'Grupo muscular',
     },
+    guide: {
+      muscles: 'Músculos',
+      howTo: 'Cómo se hace',
+      alternatives: 'Alternativas',
+    },
     muscles: {
       CHEST: 'Pecho',
       BACK: 'Espalda',

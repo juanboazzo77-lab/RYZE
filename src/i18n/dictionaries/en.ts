@@ -305,6 +305,11 @@ export const en: Dictionary = {
       notes: 'Notes',
       muscle: 'Muscle group',
     },
+    guide: {
+      muscles: 'Muscles',
+      howTo: 'How to do it',
+      alternatives: 'Alternatives',
+    },
     muscles: {
       CHEST: 'Chest',
       BACK: 'Back',

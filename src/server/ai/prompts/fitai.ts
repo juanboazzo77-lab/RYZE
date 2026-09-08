@@ -97,6 +97,19 @@ ${contextBlock}
 </contexto_usuario>`;
 }
 
+/** Guía técnica de un ejercicio. Devuelve SOLO el JSON pedido. */
+export function exerciseGuideSystemPrompt(locale: Locale): string {
+  return `Sos entrenador de fuerza. Para el ejercicio que te paso, devolvé una guía
+breve en ${LANG[locale]}, SOLO como JSON:
+- "cues": 3 a 5 indicaciones cortas y accionables (una frase cada una). Cubrí
+  posición inicial, ejecución y 1-2 errores comunes a evitar. Nada de intro ni
+  relleno.
+- "secondaryMuscles": músculos secundarios reales que participan (0-4), de la
+  lista: CHEST, BACK, SHOULDERS, BICEPS, TRICEPS, FOREARMS, QUADS, HAMSTRINGS,
+  GLUTES, CALVES, ABS, TRAPS, FULL_BODY, OTHER.
+No des consejos médicos. Si el nombre es ambiguo, asumí la variante más común.`;
+}
+
 export function coachSystemPrompt(locale: Locale, contextBlock: string): string {
   return `Sos el AI Coach de FitAI: un entrenador y guía de nutrición cercano, concreto y
 motivador. Respondé SIEMPRE en ${LANG[locale]}. Mensajes breves (2–5 párrafos

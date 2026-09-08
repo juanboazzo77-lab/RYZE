@@ -422,6 +422,9 @@ model Exercise {
   primaryMuscle    MuscleGroup @map("primary_muscle")
   secondaryMuscles Json        @default("[]") @map("secondary_muscles")
   equipment        String?
+  /** Cues de técnica (array de strings). Se completan con IA la 1ª vez y se cachean. */
+  cues             Json        @default("[]")
+  guideGeneratedAt DateTime?   @map("guide_generated_at")
   isCustom         Boolean     @default(false) @map("is_custom")
   createdById      String?     @db.Uuid @map("created_by")
   createdBy        Profile?    @relation("ExerciseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)

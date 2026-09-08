@@ -5,6 +5,7 @@ import { buildUserContextBlock } from './context';
 import {
   checkinSystemPrompt,
   coachSystemPrompt,
+  exerciseGuideSystemPrompt,
   goalAdviceSystemPrompt,
   mealPlanSystemPrompt,
   planSystemPrompt,
@@ -16,6 +17,7 @@ import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
+import { exerciseGuideSchema, type ExerciseGuideAi } from '@/features/training/exercise-guide-schema';
 
 /**
  * Gateway: único punto por el que el resto de la app pide algo a la IA. Se
@@ -120,6 +122,49 @@ export async function generateWorkoutPlanDraft(args: {
 
   await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
   return { draft: res.data, raw: res.rawText };
+}
+
+/* ------------------------------------------------------------------ */
+/* Guía de ejercicio                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Genera cues de técnica + músculos secundarios de un ejercicio. Barato
+ *  (modelo rápido, sin thinking). Quien llama lo cachea en `exercise`. */
+export async function describeExercise(args: {
+  userId: string;
+  timezone: string;
+  locale: Profile['locale'];
+  name: string;
+  primaryMuscle: string;
+  equipment: string | null;
+}): Promise<ExerciseGuideAi | null> {
+  const { userId, timezone, locale, name, primaryMuscle, equipment } = args;
+  const model = modelFor('parse');
+  try {
+    const res = await activeProvider().generateStructured({
+      model,
+      system: exerciseGuideSystemPrompt(locale),
+      messages: [
+        {
+          role: 'user',
+          content: `Ejercicio: ${name}. Músculo principal: ${primaryMuscle}.${
+            equipment ? ` Equipo: ${equipment}.` : ''
+          }`,
+        },
+      ],
+      schema: exerciseGuideSchema,
+      schemaName: 'ExerciseGuide',
+      maxOutputTokens: maxOutputTokensFor('parse'),
+      timeoutMs: 25_000,
+      temperature: 0.3,
+      thinking: false,
+    });
+    await recordUsage(userId, 'parse', model, res.usage, timezone, false);
+    return res.data;
+  } catch (e) {
+    console.error('[ai] describeExercise falló', e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ */
