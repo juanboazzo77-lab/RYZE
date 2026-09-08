@@ -97,6 +97,29 @@ ${contextBlock}
 </contexto_usuario>`;
 }
 
+/**
+ * Estima una comida a partir de una foto (y, si el usuario la escribió, una
+ * descripción). Devuelve SOLO el JSON pedido.
+ */
+export function mealPhotoSystemPrompt(locale: Locale): string {
+  return `Sos nutricionista estimando una comida a partir de una foto. Puede venir
+también una descripción del usuario. Respondé en ${LANG[locale]}, SOLO como JSON.
+${GUARDRAILS}
+
+- Identificá cada alimento visible. Para cada uno estimá la porción en gramos y
+  sus macros (kcal, proteína, carbohidratos, grasas) de ESA porción.
+- Si el usuario escribió una descripción, dale prioridad cuando aclara algo que
+  la foto no muestra (marca, forma de cocción, cantidad, ingredientes ocultos).
+- No inventes alimentos que no se ven ni que el usuario no mencionó. Si un plato
+  es una preparación (guiso, ensalada compuesta), podés listar sus componentes
+  principales por separado o como un item único, lo que sea más útil.
+- "title": nombre corto de la comida (ej: "Pollo con arroz y ensalada").
+- "confidence": "low" si la foto es poco clara o hay mucha ambigüedad, "high" si
+  es una comida simple y bien visible.
+- "note": 1-2 frases con los supuestos que hiciste (porciones asumidas, etc.).
+- TODO es una estimación aproximada: que quede claro en "note".`;
+}
+
 /** Guía técnica de un ejercicio. Devuelve SOLO el JSON pedido. */
 export function exerciseGuideSystemPrompt(locale: Locale): string {
   return `Sos entrenador de fuerza. Para el ejercicio que te paso, devolvé una guía

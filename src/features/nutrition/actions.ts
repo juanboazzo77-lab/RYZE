@@ -363,3 +363,73 @@ export async function lookupBarcodeAction(rawBarcode: string) {
   const { lookupBarcode } = await import('@/server/nutrition/food-provider');
   return lookupBarcode(userId, parsed.data);
 }
+
+/**
+ * Estima una comida a partir de una foto (+ descripción opcional). La foto vive
+ * SÓLO en esta variable local: se manda al modelo y se descarta. Devuelve el
+ * estimado para que el usuario lo ajuste antes de guardar.
+ */
+export async function estimateMealPhotoAction(raw: {
+  photo: string;
+  note?: string;
+}): Promise<Result<import('./meal-photo-schema').MealPhotoEstimate>> {
+  const { estimateMealPhotoSchema } = await import('./meal-photo-schema');
+  const parsed = estimateMealPhotoSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId, profile } = await requireUser();
+  const { aiConfigured } = await import('@/server/ai/config');
+  if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
+
+  try {
+    const { estimateMealFromPhoto } = await import('@/server/ai/gateway');
+    const est = await estimateMealFromPhoto({
+      userId,
+      timezone: profile.timezone,
+      locale: profile.locale,
+      photo: parsed.data.photo,
+      note: parsed.data.note,
+    });
+    if (!est) return { error: 'INVALID_OUTPUT' };
+    return { ok: true, data: est };
+  } catch (e) {
+    console.error('[meal-photo] falló', e instanceof Error ? e.message : e);
+    return { error: 'PROVIDER_ERROR' };
+  }
+}
+
+/** Agrega al día los items estimados de una foto (ya ajustados por el usuario). */
+export async function addPhotoMealEntries(
+  raw: import('./meal-photo-schema').AddPhotoMealInput,
+): Promise<Result<{ count: number }>> {
+  const { addPhotoMealSchema } = await import('./meal-photo-schema');
+  const parsed = addPhotoMealSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { date, mealType, items } = parsed.data;
+  const { userId, profile } = await requireUser();
+  const db = forUser(userId);
+  const d = isoToUtcDate(date);
+
+  const base = await nextPosition(db, d, mealType);
+  await db.foodEntry.createMany({
+    data: items.map((it, i) => ({
+      userId,
+      date: d,
+      mealType,
+      customName: it.name,
+      quantity: Math.max(1, Math.round(it.grams)),
+      unit: 'g',
+      kcal: Math.round(it.kcal),
+      proteinG: Math.round(it.proteinG * 10) / 10,
+      carbsG: Math.round(it.carbsG * 10) / 10,
+      fatG: Math.round(it.fatG * 10) / 10,
+      isEstimated: true,
+      source: 'AI_PARSE' as const,
+      position: base + i,
+    })),
+  });
+
+  const { syncAchievements } = await import('@/features/gamification/sync');
+  await syncAchievements(db, userId, profile.timezone);
+  refresh();
+  return { ok: true, data: { count: items.length } };
+}

@@ -7,6 +7,7 @@ import {
   coachSystemPrompt,
   exerciseGuideSystemPrompt,
   goalAdviceSystemPrompt,
+  mealPhotoSystemPrompt,
   mealPlanSystemPrompt,
   planSystemPrompt,
 } from './prompts/fitai';
@@ -17,6 +18,10 @@ import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
+import {
+  mealPhotoEstimateSchema,
+  type MealPhotoEstimate,
+} from '@/features/nutrition/meal-photo-schema';
 import { exerciseGuideSchema, type ExerciseGuideAi } from '@/features/training/exercise-guide-schema';
 
 /**
@@ -122,6 +127,57 @@ export async function generateWorkoutPlanDraft(args: {
 
   await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
   return { draft: res.data, raw: res.rawText };
+}
+
+/* ------------------------------------------------------------------ */
+/* Estimar comida desde foto                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Estima alimentos + macros de una comida a partir de una foto (data URL) y una
+ * descripción opcional. La foto es efímera: se manda al modelo y NO se guarda.
+ */
+export async function estimateMealFromPhoto(args: {
+  userId: string;
+  timezone: string;
+  locale: Profile['locale'];
+  photo: string;
+  note?: string;
+}): Promise<MealPhotoEstimate | null> {
+  const { userId, timezone, locale, photo, note } = args;
+  const model = modelFor('parse');
+
+  const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(photo);
+  if (!m || !m[1] || !m[2]) return null;
+
+  const content: AiContentBlock[] = [
+    {
+      type: 'text',
+      text: note?.trim()
+        ? `Descripción del usuario: ${note.trim()}\nEstimá la comida de la foto.`
+        : 'Estimá la comida de la foto.',
+    },
+    { type: 'image', mediaType: m[1], dataBase64: m[2] },
+  ];
+
+  try {
+    const res = await activeProvider().generateStructured({
+      model,
+      system: mealPhotoSystemPrompt(locale),
+      messages: [{ role: 'user', content }],
+      schema: mealPhotoEstimateSchema,
+      schemaName: 'MealPhotoEstimate',
+      maxOutputTokens: 1200,
+      timeoutMs: 30_000,
+      temperature: 0.3,
+      thinking: false,
+    });
+    await recordUsage(userId, 'parse', model, res.usage, timezone, false);
+    return res.data;
+  } catch (e) {
+    console.error('[ai] estimateMealFromPhoto falló', e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------------ */
