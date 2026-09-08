@@ -725,6 +725,8 @@ model WeeklyCheckin {
   /** Análisis de las fotos de físico. Las fotos NO se guardan: sólo este texto. */
   aiPhotoNote         String?       @map("ai_photo_note")
   aiProposal          Json?         @map("ai_proposal")
+  /** Propuesta de progresión de entrenamiento (call + resumen + ajustes por ejercicio). */
+  aiTrainingProposal  Json?         @map("ai_training_proposal")
   status              CheckinStatus @default(DRAFT)
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")

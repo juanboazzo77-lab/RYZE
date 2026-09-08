@@ -665,6 +665,16 @@ export const en: Dictionary = {
       dismissed: 'Adjustment dismissed.',
       noChange: "The Coach doesn't recommend changing your targets this week: {reason}",
     },
+    training: {
+      title: 'Training progression',
+      calls: { progress: 'Push', hold: 'Hold', deload: 'Deload' },
+      apply: 'Apply to plan',
+      dismiss: 'Ignore',
+      gotIt: 'Got it',
+      appliedN: 'Bumped targets on {n} exercise(s) in your plan.',
+      appliedNone: 'Guidance saved. No automatic changes (load up/down is on you in the gym).',
+      doneNote: 'Guidance applied.',
+    },
   },
   gamification: {
     title: 'Achievements',

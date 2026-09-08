@@ -76,6 +76,137 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
   };
 }
 
+/**
+ * Rendimiento de entrenamiento de la semana vs. plan y semanas previas, como
+ * bloque de texto compacto para el Coach. `hasData` es false si no hubo
+ * entrenamientos completados.
+ */
+export async function computeTrainingWeek(
+  profile: Profile,
+  weekStartStr: string,
+): Promise<{ hasData: boolean; block: string }> {
+  const db = forUser(profile.id);
+  const weekStartDate = isoToUtcDate(weekStartStr);
+  const weekEnd = isoToUtcDate(addDaysISO(weekStartStr, 7));
+  const prevStart = isoToUtcDate(addDaysISO(weekStartStr, -14));
+
+  const [workouts, plan] = await db.$transaction([
+    db.workout.findMany({
+      where: { status: 'COMPLETED', finishedAt: { gte: prevStart, lt: weekEnd } },
+      select: {
+        finishedAt: true,
+        exercises: {
+          select: {
+            exercise: { select: { name: true } },
+            sets: {
+              where: { isWarmup: false, isCompleted: true },
+              select: { weightKg: true, reps: true, rir: true },
+            },
+          },
+        },
+      },
+    }),
+    db.workoutPlan.findFirst({
+      where: { isActive: true },
+      select: {
+        days: {
+          select: {
+            exercises: {
+              select: {
+                targetSets: true,
+                targetRepsMin: true,
+                targetRepsMax: true,
+                targetRir: true,
+                exercise: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  interface Agg {
+    topW: number;
+    topR: number;
+    vol: number;
+    sets: number;
+    rirSum: number;
+    rirN: number;
+  }
+  const thisWeek = new Map<string, Agg>();
+  const prevWeeks = new Map<string, { topW: number; topR: number }>();
+
+  for (const w of workouts) {
+    const inWeek = w.finishedAt && w.finishedAt >= weekStartDate;
+    for (const we of w.exercises) {
+      const name = we.exercise.name;
+      for (const s of we.sets) {
+        const kg = s.weightKg ?? 0;
+        const reps = s.reps ?? 0;
+        if (reps <= 0) continue;
+        if (inWeek) {
+          const a = thisWeek.get(name) ?? { topW: 0, topR: 0, vol: 0, sets: 0, rirSum: 0, rirN: 0 };
+          a.vol += kg * reps;
+          a.sets += 1;
+          if (s.rir != null) {
+            a.rirSum += s.rir;
+            a.rirN += 1;
+          }
+          if (kg > a.topW || (kg === a.topW && reps > a.topR)) {
+            a.topW = kg;
+            a.topR = reps;
+          }
+          thisWeek.set(name, a);
+        } else {
+          const p = prevWeeks.get(name) ?? { topW: 0, topR: 0 };
+          if (kg > p.topW || (kg === p.topW && reps > p.topR)) {
+            prevWeeks.set(name, { topW: kg, topR: reps });
+          }
+        }
+      }
+    }
+  }
+
+  if (thisWeek.size === 0) return { hasData: false, block: 'Sin entrenamientos completados esta semana.' };
+
+  const planByName = new Map<string, { sets: number; rMin: number | null; rMax: number | null; rir: number | null }>();
+  for (const d of plan?.days ?? []) {
+    for (const pe of d.exercises) {
+      planByName.set(pe.exercise.name, {
+        sets: pe.targetSets,
+        rMin: pe.targetRepsMin,
+        rMax: pe.targetRepsMax,
+        rir: pe.targetRir,
+      });
+    }
+  }
+
+  const lines = [...thisWeek.entries()]
+    .sort((a, b) => b[1].vol - a[1].vol)
+    .slice(0, 10)
+    .map(([name, a]) => {
+      const avgRir = a.rirN > 0 ? Math.round((a.rirSum / a.rirN) * 10) / 10 : null;
+      const pt = planByName.get(name);
+      const target = pt
+        ? `objetivo ${pt.sets}x${pt.rMin ?? '?'}-${pt.rMax ?? '?'} @RIR ${pt.rir ?? '?'}`
+        : 'sin objetivo en el plan';
+      const prev = prevWeeks.get(name);
+      const trend = prev
+        ? ` · 2 sem antes: ${prev.topW || '–'}kg x ${prev.topR}`
+        : '';
+      return (
+        `  - ${name}: mejor serie ${a.topW || '–'}kg x ${a.topR}` +
+        ` (RIR ${avgRir ?? 's/d'}), ${a.sets} series, volumen ${Math.round(a.vol)} · ${target}${trend}`
+      );
+    });
+
+  return {
+    hasData: true,
+    block: ['Rendimiento de entrenamiento de la semana (top 10 por volumen):', ...lines].join('\n'),
+  };
+}
+
 export interface CheckinPageData {
   todayISO: string;
   currentWeekStart: string;

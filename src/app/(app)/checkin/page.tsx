@@ -7,7 +7,8 @@ import { can } from '@/server/entitlements';
 import { getCheckinPage } from '@/features/checkin/queries';
 import { CheckinForm } from '@/features/checkin/checkin-form';
 import { CheckinReview } from '@/features/checkin/checkin-review';
-import type { CheckinProposal } from '@/features/checkin/schema';
+import { CheckinTraining } from '@/features/checkin/checkin-training';
+import type { CheckinProposal, TrainingProposal } from '@/features/checkin/schema';
 import { UpsellCard } from '@/components/upsell-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -75,6 +76,13 @@ export default async function CheckinPage() {
           summary={data.existing.aiSummary}
           proposal={(data.existing.aiProposal as CheckinProposal | null) ?? null}
           status={data.existing.status}
+        />
+      ) : null}
+
+      {data.existing?.aiTrainingProposal ? (
+        <CheckinTraining
+          weekStart={data.currentWeekStart}
+          proposal={data.existing.aiTrainingProposal as unknown as TrainingProposal}
         />
       ) : null}
 

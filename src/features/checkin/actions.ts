@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { Profile } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
+import { prisma } from '@/server/db';
 import { can } from '@/server/entitlements';
 import { isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { buildCheckinSummary } from '@/lib/checkin/summary';
@@ -14,8 +15,13 @@ import {
   reviewWeeklyCheckin,
   type CheckinHistoryEntry,
 } from '@/server/ai/gateway';
-import { computeWeekStats } from './queries';
-import { weekActionSchema, type CheckinProposal, type WeekActionInput } from './schema';
+import { computeTrainingWeek, computeWeekStats } from './queries';
+import {
+  weekActionSchema,
+  type CheckinProposal,
+  type TrainingProposal,
+  type WeekActionInput,
+} from './schema';
 
 export interface Result {
   ok?: boolean;
@@ -153,6 +159,8 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         applied: h.status === 'APPLIED',
       }));
 
+      const trainingWeek = await computeTrainingWeek(profile, weekStart);
+
       const { review } = await reviewWeeklyCheckin({
         profile,
         entitlement,
@@ -171,6 +179,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         currentTarget: currentTarget ?? null,
         history,
         photos,
+        trainingBlock: trainingWeek.hasData ? trainingWeek.block : null,
       });
 
       if (review) {
@@ -198,12 +207,18 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         const photoNote =
           photos.length > 0 ? { aiPhotoNote: review.physiqueNote?.trim() || null } : {};
 
+        const trainingProposal: TrainingProposal | null =
+          trainingWeek.hasData && review.training ? { ...review.training, applied: false } : null;
+
         await db.weeklyCheckin.updateMany({
           where: { weekStart: weekStartDate },
           data: {
             aiSummary: review.summary,
             ...photoNote,
             aiProposal: proposal as unknown as object,
+            ...(trainingProposal
+              ? { aiTrainingProposal: trainingProposal as unknown as object }
+              : {}),
             status: 'REVIEWED',
           },
         });
@@ -288,6 +303,109 @@ export async function dismissCheckinAdjustment(raw: WeekActionInput): Promise<Re
         ? { ...proposal, kind: 'none', to: null }
         : { kind: 'none', rationale: '', from: null, to: null }) as unknown as object,
     },
+  });
+  revalidatePath('/checkin');
+  return { ok: true };
+}
+
+/**
+ * Aplica la progresión de entrenamiento propuesta: sube objetivos de reps/series
+ * en el plan activo para los ejercicios marcados `add_reps`/`add_set`. El resto
+ * (subir/bajar carga) es sólo guía. Best-effort: no falla si algún ejercicio no
+ * matchea con el plan.
+ */
+export async function applyCheckinTraining(raw: WeekActionInput): Promise<Result & { changed?: number }> {
+  const parsed = weekActionSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId, entitlement } = await requireUser();
+  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
+
+  const db = forUser(userId);
+  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
+
+  const checkin = await db.weeklyCheckin.findFirst({
+    where: { weekStart: weekStartDate },
+    select: { aiTrainingProposal: true },
+  });
+  const proposal = checkin?.aiTrainingProposal as TrainingProposal | null;
+  if (!proposal || proposal.applied) return { error: 'NO_ADJUSTMENT' };
+
+  const plan = await db.workoutPlan.findFirst({
+    where: { isActive: true },
+    select: {
+      days: {
+        select: {
+          exercises: {
+            select: {
+              id: true,
+              targetSets: true,
+              targetRepsMin: true,
+              targetRepsMax: true,
+              exercise: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const byName = new Map<string, { id: string; sets: number; rMin: number | null; rMax: number | null }>();
+  for (const day of plan?.days ?? []) {
+    for (const pe of day.exercises) {
+      byName.set(pe.exercise.name.trim().toLowerCase(), {
+        id: pe.id,
+        sets: pe.targetSets,
+        rMin: pe.targetRepsMin,
+        rMax: pe.targetRepsMax,
+      });
+    }
+  }
+
+  let changed = 0;
+  for (const adj of proposal.adjustments) {
+    if (adj.action !== 'add_reps' && adj.action !== 'add_set') continue;
+    const pe = byName.get(adj.exercise.trim().toLowerCase());
+    if (!pe) continue;
+    const data =
+      adj.action === 'add_set'
+        ? { targetSets: Math.min(8, pe.sets + 1) }
+        : {
+            targetRepsMax: Math.min(40, (pe.rMax ?? pe.rMin ?? 8) + 1),
+            ...(pe.rMin != null ? { targetRepsMin: Math.min(38, pe.rMin + 1) } : {}),
+          };
+    await prisma.planExercise.update({ where: { id: pe.id }, data });
+    changed++;
+  }
+
+  await db.weeklyCheckin.updateMany({
+    where: { weekStart: weekStartDate },
+    data: { aiTrainingProposal: { ...proposal, applied: true } as unknown as object },
+  });
+
+  revalidatePath('/checkin');
+  revalidatePath('/training');
+  return { ok: true, changed };
+}
+
+/** Marca la propuesta de entrenamiento como vista, sin tocar el plan. */
+export async function dismissCheckinTraining(raw: WeekActionInput): Promise<Result> {
+  const parsed = weekActionSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId, entitlement } = await requireUser();
+  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
+
+  const db = forUser(userId);
+  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
+  const checkin = await db.weeklyCheckin.findFirst({
+    where: { weekStart: weekStartDate },
+    select: { aiTrainingProposal: true },
+  });
+  const proposal = checkin?.aiTrainingProposal as TrainingProposal | null;
+  if (!proposal) return { ok: true };
+
+  await db.weeklyCheckin.updateMany({
+    where: { weekStart: weekStartDate },
+    data: { aiTrainingProposal: { ...proposal, applied: true } as unknown as object },
   });
   revalidatePath('/checkin');
   return { ok: true };

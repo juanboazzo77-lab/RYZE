@@ -663,6 +663,16 @@ export const es = {
       dismissed: 'Ajuste descartado.',
       noChange: 'El Coach no recomienda cambiar los objetivos esta semana: {reason}',
     },
+    training: {
+      title: 'Progresión de entrenamiento',
+      calls: { progress: 'Subir', hold: 'Mantener', deload: 'Descarga' },
+      apply: 'Aplicar al plan',
+      dismiss: 'Ignorar',
+      gotIt: 'Entendido',
+      appliedN: 'Se subieron los objetivos de {n} ejercicio(s) en tu plan.',
+      appliedNone: 'Guía guardada. No hubo cambios automáticos (subir/bajar carga lo hacés vos en el gimnasio).',
+      doneNote: 'Guía aplicada.',
+    },
   },
   gamification: {
     title: 'Logros',

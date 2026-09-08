@@ -231,8 +231,10 @@ export async function reviewWeeklyCheckin(args: {
    * mandan al modelo para el análisis y NO se persisten en ningún lado.
    */
   photos?: string[];
+  /** Bloque de texto con el rendimiento de entrenamiento de la semana. */
+  trainingBlock?: string | null;
 }): Promise<{ review: CheckinReview | null }> {
-  const { profile, week, subjective, currentTarget, history, photos = [] } = args;
+  const { profile, week, subjective, currentTarget, history, photos = [], trainingBlock = null } = args;
 
   const baseContext = await buildUserContextBlock(profile);
   const model = modelFor('weekly_checkin');
@@ -270,6 +272,10 @@ export async function reviewWeeklyCheckin(args: {
       ? `El usuario adjuntó ${photos.length} foto(s) de físico. Analizalas y completá "physiqueNote" ` +
         `según su objetivo actual (${profile.primaryGoal ?? 's/d'}). Las fotos son efímeras: no se guardan.`
       : 'Sin fotos de físico esta semana (dejá "physiqueNote" en "").',
+    '',
+    trainingBlock
+      ? `${trainingBlock}\n\nCompletá "training" (call + summary + adjustments por ejercicio).`
+      : 'Sin datos de entrenamiento esta semana (omití "training").',
     '',
     'Historial de revisiones (memoria — respetalo):',
     historyBlock,
