@@ -24,6 +24,16 @@ export interface Result {
 
 const scale = z.number().int().min(1).max(5).nullable();
 
+/**
+ * Foto de físico: data URL de imagen, ya reducida en el cliente. Tope ~4 MB por
+ * las dudas. NUNCA se guarda: sólo se manda a la IA para el análisis de esta
+ * revisión y se descarta.
+ */
+const photo = z
+  .string()
+  .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/)
+  .max(4_000_000);
+
 const submitSchema = z.object({
   hunger: scale,
   energy: scale,
@@ -34,6 +44,7 @@ const submitSchema = z.object({
   outsideActivity: scale,
   adherenceNote: z.string().trim().max(500).optional(),
   notes: z.string().trim().max(500).optional(),
+  photos: z.array(photo).max(4).optional(),
 });
 export type SubmitCheckinInput = z.infer<typeof submitSchema>;
 
@@ -68,6 +79,9 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   const parsed = submitSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
+  // Privacidad: las fotos viven SÓLO en esta variable local. No entran en
+  // `baseData` ni en ninguna escritura a la DB; sólo se pasan a la IA.
+  const photos = d.photos ?? [];
   const { userId, profile, entitlement } = await requireUser();
 
   if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
@@ -156,6 +170,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         },
         currentTarget: currentTarget ?? null,
         history,
+        photos,
       });
 
       if (review) {
@@ -178,10 +193,16 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
           proposal = { kind: 'none', rationale: review.rationale, from: currentTarget ?? null, to: null };
         }
 
+        // Sólo tocar el análisis de fotos si se mandaron fotos en este envío;
+        // re-enviar el check-in sin fotos no borra un análisis previo.
+        const photoNote =
+          photos.length > 0 ? { aiPhotoNote: review.physiqueNote?.trim() || null } : {};
+
         await db.weeklyCheckin.updateMany({
           where: { weekStart: weekStartDate },
           data: {
             aiSummary: review.summary,
+            ...photoNote,
             aiProposal: proposal as unknown as object,
             status: 'REVIEWED',
           },

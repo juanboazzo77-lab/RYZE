@@ -10,6 +10,8 @@ export const checkinReviewSchema = z.object({
   carbsG: z.number().int().min(0).max(900),
   fatG: z.number().int().min(15).max(300),
   rationale: z.string().min(5).max(600),
+  /** Análisis de las fotos de físico. Presente sólo si el usuario adjuntó fotos. */
+  physiqueNote: z.string().max(900).optional(),
 });
 export type CheckinReview = z.infer<typeof checkinReviewSchema>;
 

@@ -1,14 +1,23 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { ImagePlus, Loader2, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
+import { downscaleImage } from '@/lib/image/downscale';
 import type { WeeklyCheckin } from '@prisma/client';
 import { submitCheckin } from './actions';
+
+const MAX_PHOTOS = 4;
+
+interface PhotoItem {
+  id: string;
+  dataUrl: string;
+}
 
 function ScaleField({
   label,
@@ -63,7 +72,32 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
   );
   const [adherenceNote, setAdherenceNote] = useState(existing?.adherenceNote ?? '');
   const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [pending, start] = useTransition();
+
+  async function addFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const room = MAX_PHOTOS - photos.length;
+    if (room <= 0) {
+      toast.error(tc.photos.max);
+      return;
+    }
+    setProcessingPhotos(true);
+    const next: PhotoItem[] = [];
+    for (const file of Array.from(files).slice(0, room)) {
+      if (!file.type.startsWith('image/')) continue;
+      try {
+        next.push({ id: crypto.randomUUID(), dataUrl: await downscaleImage(file) });
+      } catch {
+        toast.error(tc.photos.error);
+      }
+    }
+    setPhotos((p) => [...p, ...next]);
+    setProcessingPhotos(false);
+    if (fileInput.current) fileInput.current.value = '';
+  }
 
   function submit() {
     start(async () => {
@@ -77,9 +111,12 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
         outsideActivity,
         adherenceNote: adherenceNote.trim() || undefined,
         notes: notes.trim() || undefined,
+        photos: photos.length > 0 ? photos.map((p) => p.dataUrl) : undefined,
       });
-      if (res.ok) toast.success(tc.submitted);
-      else toast.error(tc.genericError);
+      if (res.ok) {
+        toast.success(tc.submitted);
+        setPhotos([]); // las fotos no se guardan: se descartan del cliente también
+      } else toast.error(tc.genericError);
     });
   }
 
@@ -129,7 +166,61 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
           <p className="text-sm font-medium">{tc.questions.notes}</p>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} />
         </div>
-        <Button onClick={submit} disabled={pending} className="w-full" size="lg">
+
+        <div className="space-y-2 rounded-lg border border-dashed p-3">
+          <p className="text-sm font-medium">{tc.photos.title}</p>
+          <p className="text-xs text-muted-foreground">{tc.photos.privacyNote}</p>
+
+          {photos.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {photos.map((p) => (
+                <div key={p.id} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.dataUrl}
+                    alt=""
+                    className="size-20 rounded-md object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPhotos((list) => list.filter((x) => x.id !== p.id))}
+                    aria-label={tc.photos.remove}
+                    className="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-destructive text-destructive-foreground"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => addFiles(e.target.files)}
+          />
+          {photos.length < MAX_PHOTOS ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={processingPhotos}
+              onClick={() => fileInput.current?.click()}
+            >
+              {processingPhotos ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <ImagePlus className="size-4" />
+              )}
+              {tc.photos.add}
+            </Button>
+          ) : null}
+        </div>
+
+        <Button onClick={submit} disabled={pending || processingPhotos} className="w-full" size="lg">
           {pending ? t.common.saving : existing ? tc.resubmit : tc.submit}
         </Button>
       </CardContent>

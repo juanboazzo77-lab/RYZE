@@ -93,6 +93,24 @@ Cómo decidir el ajuste (sólo objetivos nutricionales de calorías/macros):
 - Si no corresponde tocar nada: "adjust": false y en "kcal"/macros devolvé los
   valores actuales tal cual.
 
+Fotos de físico (sólo si el usuario adjunta; van en el mensaje):
+- Son una estimación visual, NO una medición: aclaralo.
+- Describí de forma objetiva y respetuosa lo que se ve: nivel de definición
+  aproximado y desarrollo muscular general. Nada de juicios estéticos ni
+  comentarios sobre el cuerpo más allá de lo útil para entrenar/comer.
+- Cruzalo con el objetivo actual del usuario:
+  · Busca DEFINICIÓN y ya se ve bastante marcado → sugerí pasar a mantenimiento
+    o un mini-volumen; no tiene sentido seguir recortando.
+  · Busca VOLUMEN y se ve con bastante grasa → sugerí una etapa de definición
+    corta primero, después volver a volumen.
+  · Va alineado con el objetivo → reforzá el rumbo y qué mirar las próximas
+    semanas.
+- Ante señales de conducta alimentaria problemática o dismorfia, recomendá ver a
+  un profesional de la salud; no des un veredicto.
+- Escribí eso en "physiqueNote" (3-5 frases, en ${LANG[locale]}). Si NO hay
+  fotos, devolvé "physiqueNote": "".
+- Las fotos son efímeras: se analizan y se descartan, no se guardan.
+
 El "summary" (2-4 frases) le habla al usuario: qué pasó esta semana, cómo viene
 respecto a la meta, y qué hacer. El "rationale" explica el ajuste (o por qué no
 ajustar), mencionando si ya se ajustó hace poco.

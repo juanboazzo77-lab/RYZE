@@ -595,6 +595,17 @@ export const es = {
     scaleFull: 'Al 100%',
     scaleLowAmount: 'Poco',
     scaleHighAmount: 'Mucho',
+    photos: {
+      title: 'Fotos de físico (opcional)',
+      privacyNote:
+        'La IA las analiza para darte feedback según tu objetivo (mantener, volumen o definición). No se guardan en ningún lado: sólo se envían al modelo para esta revisión y se descartan.',
+      add: 'Agregar foto',
+      remove: 'Quitar',
+      max: 'Podés subir hasta 4 fotos.',
+      error: 'No se pudo procesar la imagen.',
+      analysisTitle: 'Análisis de fotos',
+      notStored: 'Las fotos no se guardaron. Este texto es lo único que queda.',
+    },
     submit: 'Guardar check-in',
     resubmit: 'Actualizar check-in',
     submitted: 'Check-in guardado',

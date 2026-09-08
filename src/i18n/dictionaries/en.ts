@@ -597,6 +597,17 @@ export const en: Dictionary = {
     scaleFull: '100%',
     scaleLowAmount: 'Low',
     scaleHighAmount: 'High',
+    photos: {
+      title: 'Physique photos (optional)',
+      privacyNote:
+        'The AI analyzes them to give you feedback for your goal (maintain, bulk or cut). They are not stored anywhere: they are only sent to the model for this review and then discarded.',
+      add: 'Add photo',
+      remove: 'Remove',
+      max: 'You can upload up to 4 photos.',
+      error: "Couldn't process the image.",
+      analysisTitle: 'Photo analysis',
+      notStored: 'The photos were not saved. This text is all that remains.',
+    },
     submit: 'Save check-in',
     resubmit: 'Update check-in',
     submitted: 'Check-in saved',

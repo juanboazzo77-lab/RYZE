@@ -74,6 +74,18 @@ export default async function CheckinPage() {
         />
       ) : null}
 
+      {data.existing?.aiPhotoNote ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t.checkin.photos.analysisTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 pt-0">
+            <p className="text-sm text-muted-foreground">{data.existing.aiPhotoNote}</p>
+            <p className="text-[11px] text-muted-foreground/70">{t.checkin.photos.notStored}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <CheckinForm existing={data.existing} />
 
       <p className="text-center text-xs text-muted-foreground">{t.checkin.recommendation}</p>

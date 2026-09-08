@@ -701,6 +701,8 @@ model WeeklyCheckin {
   adherenceNote       String?       @map("adherence_note")
   notes               String?
   aiSummary           String?       @map("ai_summary")
+  /** Análisis de las fotos de físico. Las fotos NO se guardan: sólo este texto. */
+  aiPhotoNote         String?       @map("ai_photo_note")
   aiProposal          Json?         @map("ai_proposal")
   status              CheckinStatus @default(DRAFT)
   createdAt           DateTime      @default(now()) @map("created_at")

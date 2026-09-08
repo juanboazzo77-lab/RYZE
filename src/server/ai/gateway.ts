@@ -5,7 +5,7 @@ import { buildUserContextBlock } from './context';
 import { checkinSystemPrompt, coachSystemPrompt, planSystemPrompt } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
-import type { AiChatMessage } from './providers/types';
+import type { AiChatMessage, AiContentBlock } from './providers/types';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 
@@ -166,8 +166,13 @@ export async function reviewWeeklyCheckin(args: {
   subjective: CheckinSubjective;
   currentTarget: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
   history: CheckinHistoryEntry[];
+  /**
+   * Fotos de físico como data URLs (`data:image/...;base64,...`). Efímeras: se
+   * mandan al modelo para el análisis y NO se persisten en ningún lado.
+   */
+  photos?: string[];
 }): Promise<{ review: CheckinReview | null }> {
-  const { profile, week, subjective, currentTarget, history } = args;
+  const { profile, week, subjective, currentTarget, history, photos = [] } = args;
 
   const baseContext = await buildUserContextBlock(profile);
   const model = modelFor('weekly_checkin');
@@ -200,6 +205,10 @@ export async function reviewWeeklyCheckin(args: {
     currentTarget
       ? `Objetivo nutricional actual: ${currentTarget.kcal} kcal · P ${currentTarget.proteinG} · C ${currentTarget.carbsG} · G ${currentTarget.fatG}`
       : 'Sin objetivo nutricional activo.',
+    photos.length > 0
+      ? `El usuario adjuntó ${photos.length} foto(s) de físico. Analizalas y completá "physiqueNote" ` +
+        `según su objetivo actual (${profile.primaryGoal ?? 's/d'}). Las fotos son efímeras: no se guardan.`
+      : 'Sin fotos de físico esta semana (dejá "physiqueNote" en "").',
     '',
     'Historial de revisiones (memoria — respetalo):',
     historyBlock,
@@ -209,10 +218,20 @@ export async function reviewWeeklyCheckin(args: {
 
   const system = checkinSystemPrompt(profile.locale, `${baseContext}\n\n${reportBlock}`);
 
+  const userContent: AiContentBlock[] = [
+    { type: 'text', text: 'Revisá la semana y devolvé el JSON.' },
+  ];
+  for (const p of photos) {
+    const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(p);
+    if (m && m[1] && m[2]) userContent.push({ type: 'image', mediaType: m[1], dataBase64: m[2] });
+  }
+
   const res = await activeProvider().generateStructured({
     model,
     system,
-    messages: [{ role: 'user', content: 'Revisá la semana y devolvé el JSON.' }],
+    messages: [
+      { role: 'user', content: userContent.length > 1 ? userContent : 'Revisá la semana y devolvé el JSON.' },
+    ],
     schema: checkinReviewSchema,
     schemaName: 'WeeklyCheckinReview',
     maxOutputTokens: maxOutputTokensFor('weekly_checkin'),
