@@ -62,6 +62,10 @@ export default async function CheckinPage() {
             label={t.checkin.stats.proteinAdherence}
             value={s.proteinAdherencePct === null ? na : `${s.proteinAdherencePct}%`}
           />
+          <StatBox
+            label={t.checkin.stats.avgSteps}
+            value={s.avgSteps === null ? na : s.avgSteps.toLocaleString('es-AR')}
+          />
         </CardContent>
       </Card>
 

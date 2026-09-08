@@ -71,6 +71,7 @@ async function wipeUserData(userId: string) {
     prisma.foodEntry.deleteMany({ where: { userId } }),
     prisma.meal.deleteMany({ where: { userId } }), // cascada: mealItem
     prisma.weightEntry.deleteMany({ where: { userId } }),
+    prisma.dailyActivity.deleteMany({ where: { userId } }),
     prisma.nutritionTarget.deleteMany({ where: { userId } }),
     prisma.goal.deleteMany({ where: { userId } }),
     prisma.aiConversation.deleteMany({ where: { userId } }),
@@ -158,6 +159,16 @@ async function main() {
     weights.push({ date: utcDay(i), weightKg: w });
   }
   await prisma.weightEntry.createMany({ data: weights.map((w) => ({ userId, ...w })) });
+
+  // ---- 30 días de actividad (pasos ~7k con ruido, más los días de gym) ----
+  const steps: { date: Date; steps: number; activeMinutes: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    if (i % 6 === 3) continue; // algún día sin registrar
+    const base = 7000 + Math.round(Math.sin(i * 0.9) * 1500);
+    const gymBonus = i % 2 === 0 ? 1800 : 0;
+    steps.push({ date: utcDay(i), steps: base + gymBonus, activeMinutes: 30 + (i % 3) * 15 });
+  }
+  await prisma.dailyActivity.createMany({ data: steps.map((s) => ({ userId, ...s })) });
 
   // ---- Biblioteca de ejercicios ----
   const exRows = await prisma.exercise.findMany({ select: { id: true, name: true } });

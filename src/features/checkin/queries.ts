@@ -13,6 +13,7 @@ export interface WeekStats {
   proteinAdherencePct: number | null;
   workoutsCompleted: number;
   workoutsPlanned: number;
+  avgSteps: number | null;
 }
 
 export async function computeWeekStats(profile: Profile, weekStartStr: string): Promise<WeekStats> {
@@ -20,7 +21,7 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
   const weekStartDate = isoToUtcDate(weekStartStr);
   const weekEndExclusive = isoToUtcDate(addDaysISO(weekStartStr, 7));
 
-  const [weights, target, foodByDay, workoutsCompleted] = await db.$transaction([
+  const [weights, target, foodByDay, workoutsCompleted, activity] = await db.$transaction([
     db.weightEntry.findMany({
       where: { date: { gte: weekStartDate, lt: weekEndExclusive } },
       orderBy: { date: 'asc' },
@@ -34,6 +35,10 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
     }),
     db.workout.count({
       where: { status: 'COMPLETED', finishedAt: { gte: weekStartDate, lt: weekEndExclusive } },
+    }),
+    db.dailyActivity.aggregate({
+      where: { date: { gte: weekStartDate, lt: weekEndExclusive } },
+      _avg: { steps: true },
     }),
   ]);
 
@@ -67,6 +72,7 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
     proteinAdherencePct,
     workoutsCompleted,
     workoutsPlanned: profile.daysAvailable ?? 3,
+    avgSteps: activity._avg.steps !== null ? Math.round(activity._avg.steps) : null,
   };
 }
 

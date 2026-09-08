@@ -6,9 +6,11 @@ import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
 import { displayWeight, weightUnitLabel } from '@/lib/units';
 import { getWeightPage } from '@/features/progress/queries';
+import { getActivity } from '@/features/activity/queries';
 import { WeightChart } from '@/features/progress/weight-chart';
 import { LogWeightDialog } from '@/features/progress/log-weight-dialog';
 import { EntryList } from '@/features/progress/entry-list';
+import { ActivitySection } from '@/features/activity/activity-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +25,9 @@ export default async function ProgressPage({
 }) {
   const [{ t }, ctx, sp] = await Promise.all([getT(), requireUser(), searchParams]);
   const range = RANGES.includes((sp.range ?? '30') as (typeof RANGES)[number]) ? sp.range! : '30';
+  // Secuencial: connection_limit=1.
   const data = await getWeightPage(ctx.profile, rangeToDays(range));
+  const activity = await getActivity(ctx.profile);
 
   const us = ctx.profile.unitSystem;
   const unit = weightUnitLabel(us);
@@ -147,6 +151,8 @@ export default async function ProgressPage({
           <EntryList entries={data.entries} todayISO={data.todayISO} unitSystem={us} />
         </CardContent>
       </Card>
+
+      <ActivitySection data={activity} />
     </div>
   );
 }

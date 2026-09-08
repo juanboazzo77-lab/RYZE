@@ -12,6 +12,7 @@ export const USER_MODELS = new Set<string>([
   'Workout',
   'PersonalRecord',
   'WeightEntry',
+  'DailyActivity',
   'AiConversation',
   'AiGeneration',
   'AiActionDraft',

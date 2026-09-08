@@ -185,6 +185,7 @@ export interface CheckinWeekReport {
   proteinAdherencePct: number | null;
   workoutsCompleted: number;
   workoutsPlanned: number;
+  avgSteps: number | null;
 }
 
 export interface CheckinSubjective {
@@ -253,6 +254,7 @@ export async function reviewWeeklyCheckin(args: {
     `Entrenamientos: ${week.workoutsCompleted}/${week.workoutsPlanned}`,
     `Cambio de peso en la semana: ${week.weightChangeKg ?? 's/d'} kg (promedio ${week.avgWeightKg ?? 's/d'} kg)`,
     `Adherencia calorías: ${week.kcalAdherencePct ?? 's/d'}% de los días · proteína: ${week.proteinAdherencePct ?? 's/d'}%`,
+    `Pasos promedio del día: ${week.avgSteps ?? 's/d'}${week.avgSteps !== null ? ' (dato objetivo de actividad/NEAT)' : ''}`,
     `Subjetivo (1-5): hambre ${scale(subjective.hunger)} (1 mucha–5 bajo control), ` +
       `energía ${scale(subjective.energy)} (1 mal–5 muy bien), sueño ${scale(subjective.sleep)} (1 mal–5 muy bien), ` +
       `sensación en entrenos ${scale(subjective.trainingFeel)} (1 mal–5 muy bien)`,

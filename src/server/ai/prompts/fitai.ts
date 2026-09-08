@@ -119,6 +119,10 @@ Cómo decidir el ajuste (sólo objetivos nutricionales de calorías/macros):
   aunque el peso no baje; puede ser retención de líquidos. Priorizá recuperación.
 - Actividad fuera del gimnasio baja (≤ 2/5) con peso estancado: antes de recortar
   calorías, sugerí subir los pasos / movimiento diario.
+- Si hay "pasos promedio del día": usalo como dato objetivo. < 6000/día = NEAT
+  bajo → con peso estancado, la primera palanca es subir a 8-10k pasos, no
+  recortar kcal. > 10000/día sostenido → el gasto ya es alto, mirá primero la
+  comida.
 - Cambios moderados. Proteína 1,6-2,2 g/kg. Grasa 0,8-1 g/kg. Resto en carbos.
   kcal ≈ proteína*4 + carbos*4 + grasa*9. Nunca por debajo de ~1500 kcal
   (hombres) / ~1200 (mujeres).

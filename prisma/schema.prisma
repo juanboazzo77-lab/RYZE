@@ -261,6 +261,7 @@ model Profile {
   notificationPreferences NotificationPreference[]
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
+  dailyActivities         DailyActivity[]
 
   @@map("profile")
 }
@@ -597,6 +598,23 @@ model WeightEntry {
   @@unique([userId, date])
   @@index([userId, date])
   @@map("weight_entry")
+}
+
+/// Actividad diaria (pasos y minutos activos). Cargada a mano; deja el terreno
+/// listo para una sync con Health Connect / Google Fit desde una app nativa.
+model DailyActivity {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid @map("user_id")
+  user          Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          DateTime @db.Date
+  steps         Int
+  activeMinutes Int?     @map("active_minutes")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("daily_activity")
 }
 
 // ---------------------------------------------------------------------
