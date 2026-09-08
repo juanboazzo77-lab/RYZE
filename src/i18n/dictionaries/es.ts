@@ -726,6 +726,13 @@ export const es = {
       body: 'Contale al Coach cómo fue tu semana para ajustar lo que haga falta.',
       cta: 'Hacer la revisión',
     },
+    firstPlan: {
+      title: 'Empezá con una rutina',
+      body: 'Todavía no tenés ninguna. El Coach puede armarte una con tus datos en un minuto.',
+      ctaAi: 'Generar con IA',
+      ctaManual: 'Armar a mano',
+      ctaManualPrimary: 'Crear rutina',
+    },
     nutrition: {
       title: 'Nutrición de hoy',
       remaining: 'restantes',

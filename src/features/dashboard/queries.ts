@@ -31,6 +31,7 @@ export type TrainingToday =
 
 export interface DashboardData {
   todayISO: string;
+  hasPlan: boolean;
   nutrition: { target: Macros | null; consumed: Macros };
   training: TrainingToday;
   weight: {
@@ -62,7 +63,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
 
   // Un solo round-trip / una sola conexión (DATABASE_URL usa connection_limit=1,
   // así que Promise.all de muchas queries se pisaría en el pool).
-  const [target, todayEntries, weights, goal, existingWorkout, activePlan, completed, weekCount, weekByDay] =
+  const [target, todayEntries, weights, goal, existingWorkout, activePlan, completed, weekCount, weekByDay, planCount] =
     await db.$transaction([
       db.nutritionTarget.findFirst({
         where: { active: true },
@@ -114,6 +115,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
         _sum: { kcal: true, proteinG: true },
         orderBy: { date: 'asc' },
       }),
+      db.workoutPlan.count(),
     ]);
 
   // --- Nutrición ---
@@ -186,6 +188,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
 
   return {
     todayISO,
+    hasPlan: planCount > 0,
     nutrition: { target: target ?? null, consumed: roundedConsumed },
     training,
     weight: {

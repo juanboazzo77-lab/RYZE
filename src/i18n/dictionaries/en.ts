@@ -724,6 +724,13 @@ export const en: Dictionary = {
       body: 'Tell the Coach how your week went so it can adjust anything that needs it.',
       cta: 'Do the check-in',
     },
+    firstPlan: {
+      title: 'Start with a routine',
+      body: "You don't have one yet. The Coach can build one from your data in a minute.",
+      ctaAi: 'Generate with AI',
+      ctaManual: 'Build manually',
+      ctaManualPrimary: 'Create routine',
+    },
     greetingMorning: 'Good morning',
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',

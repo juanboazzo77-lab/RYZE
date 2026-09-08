@@ -4,10 +4,12 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { dayPart } from '@/lib/date';
 import { can } from '@/server/entitlements';
+import { aiConfigured } from '@/server/ai/config';
 import { getDashboardData } from '@/features/dashboard/queries';
 import { isCheckinDue } from '@/features/checkin/queries';
 import { NutritionCard, ProgressCard, TrainingCard, WeightCard } from '@/features/dashboard/cards';
 import { CheckinReminder } from '@/features/dashboard/checkin-reminder';
+import { FirstPlanCard } from '@/features/dashboard/first-plan-card';
 import { QuickActions } from '@/features/dashboard/quick-actions';
 
 export const metadata: Metadata = { title: 'Inicio' };
@@ -45,6 +47,8 @@ export default async function DashboardPage() {
       </div>
 
       {checkinDue ? <CheckinReminder t={t} /> : null}
+
+      {!data.hasPlan ? <FirstPlanCard t={t} aiReady={aiConfigured()} /> : null}
 
       <QuickActions t={t} />
 
