@@ -260,6 +260,7 @@ model Profile {
   userAchievements        UserAchievement[]
   notificationPreferences NotificationPreference[]
   notifications           Notification[]
+  pushSubscriptions       PushSubscription[]
 
   @@map("profile")
 }
@@ -772,6 +773,7 @@ model Notification {
   kind         NotificationKind
   title        String
   body         String?
+  url          String?
   scheduledFor DateTime         @map("scheduled_for")
   sentAt       DateTime?        @map("sent_at")
   readAt       DateTime?        @map("read_at")
@@ -779,5 +781,23 @@ model Notification {
 
   @@index([userId, scheduledFor])
   @@index([userId, readAt])
+  @@index([sentAt])
   @@map("notification")
+}
+
+/// Suscripción Web Push de un navegador. Se envía el aviso a cada endpoint;
+/// si el push service responde 404/410 la fila se borra.
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("push_subscription")
 }

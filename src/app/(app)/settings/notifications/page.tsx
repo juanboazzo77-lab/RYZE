@@ -5,6 +5,7 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { getNotificationPrefs } from '@/features/notifications/queries';
 import { NotificationToggles } from '@/features/notifications/notification-toggles';
+import { PushToggle } from '@/features/notifications/push-toggle';
 
 export const metadata: Metadata = { title: 'Notificaciones' };
 
@@ -25,6 +26,7 @@ export default async function NotificationsSettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">{t.notifications.title}</h1>
         <p className="text-sm text-muted-foreground">{t.notifications.subtitle}</p>
       </div>
+      <PushToggle />
       <NotificationToggles initial={prefs} />
     </div>
   );

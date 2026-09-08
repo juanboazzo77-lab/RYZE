@@ -2,11 +2,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { DateTime } from 'luxon';
 import { prisma } from '@/server/db';
 import { limitsFor } from '@/server/entitlements';
+import { sendPushToUser } from '@/server/push';
 
 /**
- * Worker de recordatorios. Pensado para Vercel Cron (corre cada hora): crea la
- * notificación del check-in semanal para los usuarios que eligieron ese día y
- * todavía no lo hicieron. Idempotente por día (dedup contra `notification`).
+ * Worker de recordatorios. Pensado para Vercel Cron (corre cada hora):
+ *  1. Crea la notificación del check-in semanal para quienes eligieron ese día y
+ *     todavía no lo hicieron (idempotente por día).
+ *  2. Entrega por Web Push todas las notificaciones pendientes (`sent_at` NULL)
+ *     y las marca como enviadas.
  *
  * Auth: header `Authorization: Bearer <CRON_SECRET>` (lo manda Vercel Cron) o
  * `?key=<CRON_SECRET>` para pruebas manuales.
@@ -83,11 +86,42 @@ export async function GET(req: NextRequest) {
         kind: 'WEEKLY_CHECKIN',
         title: 'Revisión semanal',
         body: 'Contale al Coach cómo fue tu semana para ajustar lo que haga falta.',
+        url: '/checkin',
         scheduledFor: new Date(),
       },
     });
     created++;
   }
 
-  return NextResponse.json({ ok: true, users: users.length, considered, created });
+  // --- Entrega por Web Push de todo lo pendiente ---
+  const pending = await prisma.notification.findMany({
+    where: { sentAt: null, scheduledFor: { lte: new Date() } },
+    orderBy: { scheduledFor: 'asc' },
+    take: 500,
+  });
+
+  let pushed = 0;
+  for (const n of pending) {
+    try {
+      const { sent } = await sendPushToUser(n.userId, {
+        title: n.title,
+        body: n.body ?? undefined,
+        url: n.url ?? '/dashboard',
+        tag: n.kind.toLowerCase(),
+      });
+      pushed += sent;
+    } catch (e) {
+      console.error('[cron] push falló', n.id, (e as Error).message);
+    }
+    await prisma.notification.update({ where: { id: n.id }, data: { sentAt: new Date() } });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    users: users.length,
+    considered,
+    created,
+    delivered: pending.length,
+    pushed,
+  });
 }

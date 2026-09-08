@@ -528,8 +528,15 @@ export const es = {
   },
   notifications: {
     title: 'Notificaciones',
-    subtitle: 'Elegí qué recordatorios querés recibir. Por ahora se ven dentro de la app.',
+    subtitle: 'Activá las notificaciones push y elegí qué recordatorios querés recibir.',
     reminderDay: 'Día del recordatorio',
+    push: {
+      title: 'Notificaciones push',
+      desc: 'Recibí los avisos en este dispositivo aunque tengas la app cerrada.',
+      unsupported: 'Este navegador no soporta notificaciones push.',
+      denied: 'Bloqueaste las notificaciones para este sitio.',
+      blockedHint: 'Están bloqueadas en el navegador. Habilitalas en los ajustes del sitio.',
+    },
     kinds: {
       WORKOUT_TODAY: 'Entrenamiento del día',
       LOG_MEALS: 'Registrar comidas',

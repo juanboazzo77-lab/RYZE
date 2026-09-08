@@ -530,8 +530,15 @@ export const en: Dictionary = {
   },
   notifications: {
     title: 'Notifications',
-    subtitle: "Choose which reminders you want. They're in-app only for now.",
+    subtitle: 'Turn on push notifications and pick which reminders you want.',
     reminderDay: 'Reminder day',
+    push: {
+      title: 'Push notifications',
+      desc: 'Get alerts on this device even when the app is closed.',
+      unsupported: "This browser doesn't support push notifications.",
+      denied: 'You blocked notifications for this site.',
+      blockedHint: "They're blocked in the browser. Enable them in the site settings.",
+    },
     kinds: {
       WORKOUT_TODAY: "Today's workout",
       LOG_MEALS: 'Log meals',

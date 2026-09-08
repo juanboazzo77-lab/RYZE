@@ -20,6 +20,7 @@ export const USER_MODELS = new Set<string>([
   'UserAchievement',
   'NotificationPreference',
   'Notification',
+  'PushSubscription',
 ]);
 
 export const WHERE_OPS = new Set([
