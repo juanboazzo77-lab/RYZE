@@ -10,6 +10,7 @@ import type { Entitlement, EntitlementTier } from '@prisma/client';
 export type Feature =
   | 'ai_coach_message'
   | 'ai_generate_plan'
+  | 'ai_meal_plan'
   | 'weekly_checkin'
   | 'advanced_stats'
   | 'progression_analysis';
@@ -29,6 +30,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
+      ai_meal_plan: false,
       weekly_checkin: false,
       advanced_stats: false,
       progression_analysis: false,
@@ -40,6 +42,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
+      ai_meal_plan: true,
       weekly_checkin: true,
       advanced_stats: true,
       progression_analysis: true,

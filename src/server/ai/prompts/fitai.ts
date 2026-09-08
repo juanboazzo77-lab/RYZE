@@ -61,6 +61,42 @@ ${contextBlock}
 </contexto_usuario>`;
 }
 
+/**
+ * "Planificá mi día con IA": arma un día de comidas que apunta a los objetivos
+ * nutricionales. Devuelve SOLO el JSON pedido.
+ */
+export function mealPlanSystemPrompt(
+  locale: Locale,
+  contextBlock: string,
+  target: { kcal: number; proteinG: number; carbsG: number; fatG: number },
+  mealsPerDay: number,
+): string {
+  return `Sos el AI Coach de FitAI armando un día de comidas para el usuario.
+Respondé en ${LANG[locale]} SOLO con el JSON pedido.
+${GUARDRAILS}
+
+Objetivo del día (apuntá a ±5%):
+- ${target.kcal} kcal · proteína ${target.proteinG} g · carbohidratos ${target.carbsG} g · grasas ${target.fatG} g
+- ${mealsPerDay} comidas. Elegí los tipos entre BREAKFAST, LUNCH, MERIENDA, DINNER, SNACK
+  según ese número (ej: 3 → BREAKFAST/LUNCH/DINNER; 4 → + MERIENDA).
+
+Reglas:
+- Respetá SIEMPRE las preferencias, alimentos excluidos y alergias del contexto.
+  Si algo del pedido las contradice, priorizá las restricciones.
+- Comidas simples, ingredientes comunes y accesibles (nombres en ${LANG[locale]}).
+  Nada de recetas largas ni elaboradas.
+- Para cada item: cantidad en gramos y sus macros (kcal/proteína/carbos/grasas)
+  de ESA porción. Que la suma del día quede cerca del objetivo.
+- La proteína es prioridad: llegá al gramaje objetivo.
+- "notes": 1-2 frases con tips (hidratación, cómo repartir, sustituciones).
+- "shoppingList": ingredientes del día, sin cantidades, sin duplicados.
+- Son estimaciones: aclaralo en "notes".
+
+<contexto_usuario>
+${contextBlock}
+</contexto_usuario>`;
+}
+
 export function coachSystemPrompt(locale: Locale, contextBlock: string): string {
   return `Sos el AI Coach de FitAI: un entrenador y guía de nutrición cercano, concreto y
 motivador. Respondé SIEMPRE en ${LANG[locale]}. Mensajes breves (2–5 párrafos

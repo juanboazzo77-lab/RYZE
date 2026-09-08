@@ -6,6 +6,7 @@ import {
   checkinSystemPrompt,
   coachSystemPrompt,
   goalAdviceSystemPrompt,
+  mealPlanSystemPrompt,
   planSystemPrompt,
 } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
@@ -14,6 +15,7 @@ import type { AiChatMessage, AiContentBlock } from './providers/types';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
+import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 
 /**
  * Gateway: único punto por el que el resto de la app pide algo a la IA. Se
@@ -118,6 +120,47 @@ export async function generateWorkoutPlanDraft(args: {
 
   await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
   return { draft: res.data, raw: res.rawText };
+}
+
+/* ------------------------------------------------------------------ */
+/* Planificación de comidas                                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Genera un día de comidas que apunta a los objetivos nutricionales del usuario
+ * respetando sus preferencias/exclusiones. No persiste nada.
+ */
+export async function generateMealPlan(args: {
+  profile: Profile;
+  entitlement: Pick<Entitlement, 'tier'>;
+  target: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  brief: string;
+}): Promise<{ plan: MealPlan | null; raw: string }> {
+  const { profile, target, brief } = args;
+  const contextBlock = await buildUserContextBlock(profile);
+  const model = modelFor('generate_plan');
+
+  const system = mealPlanSystemPrompt(profile.locale, contextBlock, target, profile.mealsPerDay ?? 4);
+
+  const userMessage =
+    'Generá el día de comidas ahora.' +
+    (brief.trim() ? ` Pedido del usuario (respetá las reglas): ${brief.trim()}` : ' Sin pedidos extra.');
+
+  const res = await activeProvider().generateStructured({
+    model,
+    system,
+    messages: [{ role: 'user', content: userMessage }],
+    schema: mealPlanSchema,
+    schemaName: 'MealPlan',
+    maxOutputTokens: maxOutputTokensFor('generate_plan'),
+    timeoutMs: PLAN_TIMEOUT_MS,
+    temperature: 0.6,
+    thinking: true,
+    effort: 'low',
+  });
+
+  await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, false);
+  return { plan: res.data, raw: res.rawText };
 }
 
 /* ------------------------------------------------------------------ */

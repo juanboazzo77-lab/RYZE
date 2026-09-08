@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CalendarClock, CopyPlus } from 'lucide-react';
+import { CalendarClock, CopyPlus, Sparkles } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { localTodayISO } from '@/lib/date';
@@ -33,6 +33,12 @@ export default async function NutritionPage({
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold tracking-tight">{t.nutrition.title}</h1>
         <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="text-muted-foreground" asChild>
+            <Link href="/nutrition/plan">
+              <Sparkles className="size-4" />
+              <span className="hidden sm:inline">{t.nutrition.planWithAi}</span>
+            </Link>
+          </Button>
           <CopyDayDialog toDate={dateISO} todayISO={todayISO}>
             <Button variant="ghost" size="sm" className="text-muted-foreground">
               <CopyPlus className="size-4" />
