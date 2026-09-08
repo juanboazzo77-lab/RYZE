@@ -60,10 +60,13 @@ export function localFoodProvider(userId: string): FoodProvider {
                serving_qty, serving_unit, serving_label, verified
         FROM "food"
         WHERE (source = 'SYSTEM' OR created_by = ${userId}::uuid)
-          AND name ILIKE ${'%' + q + '%'}
+          AND (
+            unaccent(name) ILIKE unaccent(${'%' + q + '%'})
+            OR similarity(unaccent(name), unaccent(${q})) > 0.2
+          )
         ORDER BY
-          (name ILIKE ${q + '%'}) DESC,
-          similarity(name, ${q}) DESC,
+          (unaccent(name) ILIKE unaccent(${q + '%'})) DESC,
+          similarity(unaccent(name), unaccent(${q})) DESC,
           verified DESC,
           name ASC
         LIMIT ${limit}

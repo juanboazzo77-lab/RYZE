@@ -61,16 +61,19 @@ const EXERCISES: Array<{ name: string; primaryMuscle: MuscleGroup; equipment: st
 
 // Valores aproximados por 100 g (crudo salvo aclaración). Fuente: tablas
 // nutricionales de referencia. Marcados como no verificados.
-const FOODS: Array<{
+type FoodSeed = {
   name: string;
   kcal: number;
   p: number;
   c: number;
   f: number;
+  verified?: boolean;
   servingQty?: number;
   servingUnit?: string;
   servingLabel?: string;
-}> = [
+};
+
+const FOODS: FoodSeed[] = [
   { name: 'Pechuga de pollo (cocida)', kcal: 165, p: 31, c: 0, f: 3.6 },
   { name: 'Huevo entero', kcal: 143, p: 12.6, c: 0.7, f: 9.5, servingQty: 50, servingUnit: 'g', servingLabel: '1 unidad' },
   { name: 'Arroz blanco (cocido)', kcal: 130, p: 2.7, c: 28, f: 0.3 },
@@ -91,6 +94,80 @@ const FOODS: Array<{
   { name: 'Batata (cocida)', kcal: 90, p: 2, c: 21, f: 0.2 },
   { name: 'Queso port salut light', kcal: 245, p: 24, c: 2, f: 16 },
   { name: 'Proteína de suero (polvo)', kcal: 400, p: 80, c: 8, f: 6, servingQty: 30, servingUnit: 'g', servingLabel: '1 scoop' },
+];
+
+/**
+ * Verduras y hortalizas. Valores por 100 g de porción comestible, crudas salvo
+ * que se aclare "(cocida/o)". Fuente: tablas nutricionales de referencia
+ * (USDA / composición de alimentos). Marcadas como verificadas.
+ */
+const VEGETABLES: FoodSeed[] = [
+  // Hojas / ensalada
+  { name: 'Lechuga', kcal: 15, p: 1.4, c: 2.9, f: 0.2, verified: true },
+  { name: 'Rúcula', kcal: 25, p: 2.6, c: 3.7, f: 0.7, verified: true },
+  { name: 'Espinaca (cruda)', kcal: 23, p: 2.9, c: 3.6, f: 0.4, verified: true },
+  { name: 'Espinaca (cocida)', kcal: 23, p: 3, c: 3.8, f: 0.3, verified: true },
+  { name: 'Acelga (cruda)', kcal: 19, p: 1.8, c: 3.7, f: 0.2, verified: true },
+  { name: 'Acelga (cocida)', kcal: 20, p: 1.9, c: 4.1, f: 0.1, verified: true },
+  { name: 'Berro', kcal: 11, p: 2.3, c: 1.3, f: 0.1, verified: true },
+  { name: 'Radicheta', kcal: 23, p: 1.7, c: 4.7, f: 0.3, verified: true },
+  { name: 'Kale', kcal: 49, p: 4.3, c: 8.8, f: 0.9, verified: true },
+  { name: 'Repollo blanco', kcal: 25, p: 1.3, c: 5.8, f: 0.1, verified: true },
+  { name: 'Repollo colorado', kcal: 31, p: 1.4, c: 7.4, f: 0.2, verified: true },
+  { name: 'Endivia', kcal: 17, p: 1.3, c: 3.4, f: 0.2, verified: true },
+  { name: 'Pak choi', kcal: 13, p: 1.5, c: 2.2, f: 0.2, verified: true },
+  // Crucíferas
+  { name: 'Brócoli (crudo)', kcal: 34, p: 2.8, c: 6.6, f: 0.4, verified: true },
+  { name: 'Brócoli (cocido)', kcal: 35, p: 2.4, c: 7.2, f: 0.4, verified: true },
+  { name: 'Coliflor (cruda)', kcal: 25, p: 1.9, c: 5, f: 0.3, verified: true },
+  { name: 'Coliflor (cocida)', kcal: 23, p: 1.8, c: 4.1, f: 0.5, verified: true },
+  { name: 'Repollitos de Bruselas (cocidos)', kcal: 36, p: 2.6, c: 7.1, f: 0.5, verified: true },
+  // Frutos
+  { name: 'Tomate', kcal: 18, p: 0.9, c: 3.9, f: 0.2, verified: true },
+  { name: 'Tomate cherry', kcal: 18, p: 0.9, c: 3.9, f: 0.2, verified: true },
+  { name: 'Morrón rojo', kcal: 31, p: 1, c: 6, f: 0.3, verified: true },
+  { name: 'Morrón verde', kcal: 20, p: 0.9, c: 4.6, f: 0.2, verified: true },
+  { name: 'Morrón amarillo', kcal: 27, p: 1, c: 6.3, f: 0.2, verified: true },
+  { name: 'Berenjena (cruda)', kcal: 25, p: 1, c: 5.9, f: 0.2, verified: true },
+  { name: 'Berenjena (cocida)', kcal: 35, p: 0.8, c: 8.7, f: 0.2, verified: true },
+  { name: 'Zapallito / Zucchini', kcal: 17, p: 1.2, c: 3.1, f: 0.3, verified: true },
+  { name: 'Zapallo (cocido)', kcal: 26, p: 1, c: 6.5, f: 0.1, verified: true },
+  { name: 'Zapallo anco (cocido)', kcal: 45, p: 1, c: 12, f: 0.1, verified: true },
+  { name: 'Pepino', kcal: 15, p: 0.7, c: 3.6, f: 0.1, verified: true },
+  { name: 'Chaucha (cocida)', kcal: 35, p: 1.9, c: 7.9, f: 0.3, verified: true },
+  // Raíces / bulbos
+  { name: 'Zanahoria (cruda)', kcal: 41, p: 0.9, c: 9.6, f: 0.2, verified: true },
+  { name: 'Zanahoria (cocida)', kcal: 35, p: 0.8, c: 8.2, f: 0.2, verified: true },
+  { name: 'Remolacha (cruda)', kcal: 43, p: 1.6, c: 9.6, f: 0.2, verified: true },
+  { name: 'Remolacha (cocida)', kcal: 44, p: 1.7, c: 10, f: 0.2, verified: true },
+  { name: 'Cebolla', kcal: 40, p: 1.1, c: 9.3, f: 0.1, verified: true },
+  { name: 'Cebolla morada', kcal: 40, p: 1.1, c: 9.3, f: 0.1, verified: true },
+  { name: 'Cebolla de verdeo', kcal: 32, p: 1.8, c: 7.3, f: 0.2, verified: true },
+  { name: 'Puerro', kcal: 61, p: 1.5, c: 14, f: 0.3, verified: true },
+  { name: 'Ajo', kcal: 149, p: 6.4, c: 33, f: 0.5, verified: true, servingQty: 3, servingUnit: 'g', servingLabel: '1 diente' },
+  { name: 'Rabanito', kcal: 16, p: 0.7, c: 3.4, f: 0.1, verified: true },
+  { name: 'Nabo', kcal: 28, p: 0.9, c: 6.4, f: 0.1, verified: true },
+  { name: 'Jengibre', kcal: 80, p: 1.8, c: 18, f: 0.8, verified: true },
+  // Otras
+  { name: 'Apio', kcal: 16, p: 0.7, c: 3, f: 0.2, verified: true },
+  { name: 'Hinojo', kcal: 31, p: 1.2, c: 7.3, f: 0.2, verified: true },
+  { name: 'Espárragos (cocidos)', kcal: 22, p: 2.4, c: 4.1, f: 0.2, verified: true },
+  { name: 'Alcaucil (cocido)', kcal: 53, p: 2.9, c: 12, f: 0.3, verified: true },
+  { name: 'Palmito (en conserva)', kcal: 28, p: 2.5, c: 4.6, f: 0.6, verified: true },
+  { name: 'Champiñón', kcal: 22, p: 3.1, c: 3.3, f: 0.3, verified: true },
+  { name: 'Portobello', kcal: 22, p: 2.1, c: 3.9, f: 0.4, verified: true },
+  { name: 'Choclo (cocido)', kcal: 96, p: 3.4, c: 21, f: 1.5, verified: true },
+  { name: 'Arvejas (cocidas)', kcal: 84, p: 5.4, c: 15.6, f: 0.2, verified: true },
+  { name: 'Habas (cocidas)', kcal: 88, p: 8, c: 15, f: 0.5, verified: true },
+  // Hierbas frescas
+  { name: 'Perejil', kcal: 36, p: 3, c: 6.3, f: 0.8, verified: true },
+  { name: 'Cilantro', kcal: 23, p: 2.1, c: 3.7, f: 0.5, verified: true },
+  { name: 'Albahaca', kcal: 23, p: 3.2, c: 2.7, f: 0.6, verified: true },
+  // Legumbres de uso frecuente
+  { name: 'Garbanzos (cocidos)', kcal: 164, p: 8.9, c: 27, f: 2.6, verified: true },
+  { name: 'Poroto negro (cocido)', kcal: 132, p: 8.9, c: 24, f: 0.5, verified: true },
+  { name: 'Poroto colorado (cocido)', kcal: 127, p: 8.7, c: 23, f: 0.5, verified: true },
+  { name: 'Poroto blanco (cocido)', kcal: 139, p: 9.7, c: 25, f: 0.4, verified: true },
 ];
 
 async function main() {
@@ -119,12 +196,21 @@ async function main() {
     console.log('· ejercicios: ya había datos, se omite');
   }
 
-  if ((await prisma.food.count()) === 0) {
-    await prisma.food.createMany({
-      data: FOODS.map((f) => ({
+  // Alimentos: additivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que
+  // faltan. Secuencial por el connection_limit=1 del pooler.
+  const allFoods = [...FOODS, ...VEGETABLES];
+  let addedFoods = 0;
+  for (const f of allFoods) {
+    const existing = await prisma.food.findFirst({
+      where: { name: f.name, source: 'SYSTEM' },
+      select: { id: true },
+    });
+    if (existing) continue;
+    await prisma.food.create({
+      data: {
         name: f.name,
-        source: 'SYSTEM' as const,
-        verified: false,
+        source: 'SYSTEM',
+        verified: f.verified ?? false,
         kcalPer100: f.kcal,
         proteinPer100: f.p,
         carbsPer100: f.c,
@@ -132,12 +218,11 @@ async function main() {
         servingQty: f.servingQty ?? null,
         servingUnit: f.servingUnit ?? null,
         servingLabel: f.servingLabel ?? null,
-      })),
+      },
     });
-    console.log(`✓ ${FOODS.length} alimentos`);
-  } else {
-    console.log('· alimentos: ya había datos, se omite');
+    addedFoods++;
   }
+  console.log(`✓ alimentos: +${addedFoods} nuevos (${allFoods.length} en la lista, ${VEGETABLES.length} verduras)`);
 }
 
 main()
