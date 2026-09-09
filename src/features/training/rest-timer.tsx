@@ -36,7 +36,7 @@ export function RestTimer({
   }, [remaining, onSkip]);
 
   return (
-    <div className="fixed inset-x-0 bottom-16 z-40 mx-auto max-w-3xl px-4 md:bottom-4">
+    <div className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-2xl px-4">
       <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3 shadow-lg">
         <Timer className="size-5 text-primary" />
         <div className="flex-1">

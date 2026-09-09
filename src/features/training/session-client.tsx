@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,12 +27,13 @@ import {
   discardWorkout,
   finishWorkout,
   removeWorkoutExercise,
+  restartWorkoutClock,
   saveWorkout,
 } from './actions';
 
-function elapsedStr(fromISO: string | null, now: number): string {
-  if (!fromISO) return '0:00';
-  const s = Math.max(0, Math.floor((now - new Date(fromISO).getTime()) / 1000));
+function elapsedStr(fromMs: number | null, now: number): string {
+  if (!fromMs) return '0:00';
+  const s = Math.max(0, Math.floor((now - fromMs) / 1000));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
@@ -41,9 +42,18 @@ function elapsedStr(fromISO: string | null, now: number): string {
     : `${m}:${String(sec).padStart(2, '0')}`;
 }
 
+function estMinutes(exs: WorkoutSession['exercises']): number {
+  const secs = exs.reduce((acc, e) => {
+    const sets = e.sets.length || 3;
+    return acc + sets * ((e.restSeconds ?? 90) + 45);
+  }, 0);
+  return Math.max(1, Math.round(secs / 60));
+}
+
 export function SessionClient({ session }: { session: WorkoutSession }) {
   const t = useT();
   const router = useRouter();
+  const ts = t.training.session;
 
   const hydrate = useSession((s) => s.hydrate);
   const exercises = useSession((s) => s.exercises);
@@ -51,6 +61,15 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
   const markClean = useSession((s) => s.markClean);
   const dropExercise = useSession((s) => s.dropExercise);
 
+  const alreadyLogged = useMemo(
+    () => session.exercises.some((e) => e.sets.some((s) => s.isCompleted)),
+    [session.exercises],
+  );
+
+  const [started, setStarted] = useState(alreadyLogged);
+  const [clockStart, setClockStart] = useState<number | null>(
+    session.startedAt ? new Date(session.startedAt).getTime() : null,
+  );
   const [saving, startSave] = useTransition();
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -60,6 +79,15 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
   useEffect(() => {
     hydrate(session);
   }, [session, hydrate]);
+
+  // Modo foco: sin scroll del fondo mientras dura el entreno.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     const h = setInterval(() => setNow(Date.now()), 1000);
@@ -82,7 +110,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
             setSavedLocally(false);
           }
         } catch {
-          setSavedLocally(true); // sin conexión: queda guardado en el dispositivo
+          setSavedLocally(true);
         } finally {
           savingRef.current = false;
         }
@@ -106,64 +134,116 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     return true;
   }
 
+  function begin() {
+    setStarted(true);
+    if (!alreadyLogged) {
+      setClockStart(Date.now());
+      void restartWorkoutClock({ id: session.id });
+    }
+  }
+
+  const setStats = useMemo(() => {
+    let done = 0;
+    let total = 0;
+    for (const ex of exercises) {
+      for (const s of ex.sets) {
+        if (s.isWarmup) continue;
+        total += 1;
+        if (s.isCompleted) done += 1;
+      }
+    }
+    return { done, total };
+  }, [exercises]);
+
   return (
-    <div className="space-y-4">
-      <div className="sticky top-14 z-30 -mx-4 flex items-center justify-between gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur">
-        <div>
-          <p className="font-semibold leading-tight">{session.name}</p>
-          <p className="text-xs text-muted-foreground tabular-nums">
-            {t.training.session.elapsed}: {elapsedStr(session.startedAt, now)}
-            {saving ? ' · ' : ''}
-            {saving ? <Loader2 className="inline size-3 animate-spin" /> : null}
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      {!started ? (
+        <ReadyScreen t={t} session={session} onStart={begin} />
+      ) : null}
+
+      {/* Barra superior compacta */}
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        <Link
+          href="/training"
+          aria-label={ts.minimize}
+          className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
+        >
+          <ChevronLeft className="size-5" />
+        </Link>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold leading-tight">{session.name}</p>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
+            <span>{elapsedStr(clockStart, now)}</span>
+            <span>·</span>
+            <span>
+              {setStats.done}/{setStats.total} {ts.setsShort}
+            </span>
+            {saving ? <Loader2 className="size-3 animate-spin" /> : null}
           </p>
-          {savedLocally ? (
-            <p className="text-xs text-warning">{t.training.session.savedOffline}</p>
-          ) : null}
         </div>
         <Button size="sm" onClick={() => setFinishOpen(true)}>
-          {t.training.session.finish}
+          {ts.finish}
         </Button>
       </div>
 
-      {exercises.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            {t.training.session.emptyWorkout}
-          </CardContent>
-        </Card>
-      ) : (
-        exercises.map((ex) => (
-          <ExerciseBlock
-            key={ex.id}
-            t={t}
-            ex={ex}
-            onCompleted={(restSeconds) =>
-              setRestEndsAt(Date.now() + (restSeconds ?? 90) * 1000)
-            }
-            onRemove={async () => {
-              dropExercise(ex.id);
-              await removeWorkoutExercise({ id: ex.id });
-            }}
-          />
-        ))
-      )}
+      {savedLocally ? (
+        <p className="bg-warning/10 px-3 py-1 text-center text-xs text-warning">{ts.savedOffline}</p>
+      ) : null}
 
-      <ExercisePicker
-        onPick={async (exerciseId) => {
-          const res = await addWorkoutExercise({ workoutId: session.id, exerciseId });
-          if (res.ok && res.data) {
-            toast.success(t.training.toast.exerciseAdded);
-            router.refresh();
-          } else {
-            toast.error(t.training.toast.genericError);
-          }
-        }}
-      >
-        <Button variant="outline" className="w-full">
-          <Plus className="size-4" />
-          {t.training.addExercise}
-        </Button>
-      </ExercisePicker>
+      {/* Progreso */}
+      {setStats.total > 0 ? (
+        <div className="h-1 w-full bg-secondary">
+          <div
+            className="h-full bg-primary transition-[width] duration-300"
+            style={{ width: `${Math.round((setStats.done / setStats.total) * 100)}%` }}
+          />
+        </div>
+      ) : null}
+
+      {/* Contenido */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-3 pb-28 pt-3">
+        <div className="mx-auto max-w-2xl space-y-3">
+          {exercises.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                {ts.emptyWorkout}
+              </CardContent>
+            </Card>
+          ) : (
+            exercises.map((ex) => (
+              <ExerciseBlock
+                key={ex.id}
+                t={t}
+                ex={ex}
+                onCompleted={(restSeconds) =>
+                  setRestEndsAt(Date.now() + (restSeconds ?? 90) * 1000)
+                }
+                onRemove={async () => {
+                  dropExercise(ex.id);
+                  await removeWorkoutExercise({ id: ex.id });
+                }}
+              />
+            ))
+          )}
+
+          <ExercisePicker
+            onPick={async (exerciseId) => {
+              const res = await addWorkoutExercise({ workoutId: session.id, exerciseId });
+              if (res.ok && res.data) {
+                toast.success(t.training.toast.exerciseAdded);
+                router.refresh();
+              } else {
+                toast.error(t.training.toast.genericError);
+              }
+            }}
+          >
+            <Button variant="outline" className="w-full">
+              <Plus className="size-4" />
+              {t.training.addExercise}
+            </Button>
+          </ExercisePicker>
+        </div>
+      </div>
 
       {restEndsAt ? (
         <RestTimer
@@ -183,7 +263,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
             await saveNow();
             await finishWorkout({ workoutId: session.id, perceivedEffort: effort });
           } catch {
-            toast.error(t.training.session.finishOffline);
+            toast.error(ts.finishOffline);
             throw new Error('offline');
           }
         }}
@@ -191,6 +271,152 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     </div>
   );
 }
+
+/* ================================================================== */
+/* Pantalla de arranque + cuenta regresiva                            */
+/* ================================================================== */
+
+function ReadyScreen({
+  t,
+  session,
+  onStart,
+}: {
+  t: Dictionary;
+  session: WorkoutSession;
+  onStart: () => void;
+}) {
+  const tr = t.training.session.ready;
+  const [counting, setCounting] = useState(false);
+
+  const line = useMemo(() => {
+    const arr = tr.lines;
+    return arr[Math.floor(Math.random() * arr.length)] ?? '';
+  }, [tr.lines]);
+
+  const muscles = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const e of session.exercises) {
+      if (seen.has(e.primaryMuscle)) continue;
+      seen.add(e.primaryMuscle);
+      out.push(t.training.muscles[e.primaryMuscle as 'CHEST']);
+    }
+    return out.slice(0, 5);
+  }, [session.exercises, t.training.muscles]);
+
+  const mins = estMinutes(session.exercises);
+
+  if (counting) {
+    return <Countdown label={tr.go} onDone={onStart} />;
+  }
+
+  return (
+    <div className="absolute inset-0 z-10 flex flex-col bg-background">
+      <div className="flex-1 overflow-y-auto px-5 pt-10">
+        <div className="mx-auto max-w-md">
+          <div className="mb-6 flex items-center gap-2 text-primary">
+            <Dumbbell className="size-5" />
+            <span className="text-sm font-medium uppercase tracking-wide">{tr.kicker}</span>
+          </div>
+
+          <h1 className="text-3xl font-extrabold leading-tight">{session.name}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{line}</p>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <Badge variant="secondary">
+              {session.exercises.length} {tr.exercises}
+            </Badge>
+            <Badge variant="secondary">
+              <Timer className="size-3.5" />~{mins} min
+            </Badge>
+            {muscles.map((m) => (
+              <Badge key={m}>{m}</Badge>
+            ))}
+          </div>
+
+          {session.exercises.length > 0 ? (
+            <ol className="mt-6 space-y-1.5">
+              {session.exercises.map((e, i) => {
+                const target =
+                  e.targetRepsMin && e.targetRepsMax
+                    ? `${e.sets.length || 3}×${e.targetRepsMin}-${e.targetRepsMax}`
+                    : `${e.sets.length || 3} ${tr.sets}`;
+                return (
+                  <li
+                    key={e.id}
+                    className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm"
+                  >
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold tabular-nums">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{e.name}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{target}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">{tr.freeHint}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t bg-background/95 p-4 backdrop-blur">
+        <Button
+          size="lg"
+          className="mx-auto flex h-14 w-full max-w-md text-base font-bold tracking-wide"
+          onClick={() => setCounting(true)}
+        >
+          {tr.start}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Countdown({ label, onDone }: { label: string; onDone: () => void }) {
+  const [step, setStep] = useState(0); // 0..2 = 3/2/1, 3 = go
+  const doneRef = useRef(false);
+
+  function finish() {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onDone();
+  }
+
+  useEffect(() => {
+    const seq = [700, 700, 700, 600];
+    const h = setTimeout(() => {
+      if (step < 3) setStep(step + 1);
+      else finish();
+    }, seq[step]);
+    return () => clearTimeout(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const text = step < 3 ? String(3 - step) : label;
+
+  return (
+    <button
+      type="button"
+      onClick={finish}
+      aria-label={label}
+      className="absolute inset-0 z-20 grid place-items-center bg-background"
+    >
+      <span
+        key={step}
+        className={cn(
+          'animate-count-pop select-none font-extrabold tabular-nums',
+          step < 3 ? 'text-8xl' : 'text-6xl text-primary',
+        )}
+      >
+        {text}
+      </span>
+    </button>
+  );
+}
+
+/* ================================================================== */
 
 function ExerciseBlock({
   t,
@@ -414,8 +640,6 @@ function FinishDialog({
             disabled={pending}
             onClick={() =>
               start(async () => {
-                // Primero terminar en el servidor; recién ahí limpiar el
-                // localStorage. Si falla (offline), la sesión NO se pierde.
                 await onFinish(effort);
                 try {
                   useSession.persist.clearStorage();

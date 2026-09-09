@@ -511,3 +511,29 @@ export async function discardWorkout(raw: { id: string }): Promise<never | Resul
   revalidatePath('/training');
   redirect('/training');
 }
+
+/**
+ * Pone el cronómetro en marcha "ahora" al tocar EMPEZAR en la pantalla de
+ * arranque. Sólo si la sesión está activa y todavía no se completó ninguna
+ * serie (así no se pisa el tiempo de un entreno ya empezado). Best-effort.
+ */
+export async function restartWorkoutClock(raw: { id: string }): Promise<Result> {
+  const parsed = idSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+
+  const w = await db.workout.findFirst({
+    where: { id: parsed.data.id, status: 'ACTIVE' },
+    select: { exercises: { select: { sets: { where: { isCompleted: true }, select: { id: true } } } } },
+  });
+  if (!w) return { error: 'NOT_FOUND' };
+  const anyDone = w.exercises.some((e) => e.sets.length > 0);
+  if (anyDone) return { ok: true };
+
+  await db.workout.updateMany({
+    where: { id: parsed.data.id, status: 'ACTIVE' },
+    data: { startedAt: new Date() },
+  });
+  return { ok: true };
+}
