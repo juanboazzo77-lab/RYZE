@@ -170,6 +170,129 @@ const VEGETABLES: FoodSeed[] = [
   { name: 'Poroto blanco (cocido)', kcal: 139, p: 9.7, c: 25, f: 0.4, verified: true },
 ];
 
+/**
+ * Carnes. Valores por 100 g de porción comestible, "(crudo/a)" o "(cocido/a)".
+ * Al cocinarse la carne pierde agua: los valores cocidos vienen más
+ * concentrados (más kcal / proteína / grasa por 100 g que en crudo).
+ * Fuente: USDA FoodData Central y tablas de composición de referencia.
+ * Fiambres y embutidos van listos para consumir (sin crudo/cocido).
+ */
+const MEATS: FoodSeed[] = [
+  // --- Vaca / res ---
+  { name: 'Carne picada común 80/20 (cruda)', kcal: 254, p: 17.2, c: 0, f: 20, verified: true },
+  { name: 'Carne picada común 80/20 (cocida)', kcal: 254, p: 25.7, c: 0, f: 16.2, verified: true },
+  { name: 'Carne picada magra 90/10 (cruda)', kcal: 176, p: 20, c: 0, f: 10, verified: true },
+  { name: 'Carne picada magra 90/10 (cocida)', kcal: 217, p: 26.1, c: 0, f: 11.8, verified: true },
+  { name: 'Carne picada extra magra 95/5 (cruda)', kcal: 137, p: 21.4, c: 0, f: 5, verified: true },
+  { name: 'Carne picada extra magra 95/5 (cocida)', kcal: 171, p: 26.6, c: 0, f: 6.2, verified: true },
+  { name: 'Nalga de vaca (cruda)', kcal: 116, p: 22, c: 0, f: 2.9, verified: true },
+  { name: 'Nalga de vaca (cocida)', kcal: 178, p: 30, c: 0, f: 5.5, verified: true },
+  { name: 'Cuadril de vaca (crudo)', kcal: 123, p: 21.5, c: 0, f: 3.6, verified: true },
+  { name: 'Cuadril de vaca (cocido)', kcal: 183, p: 29.5, c: 0, f: 6.4, verified: true },
+  { name: 'Lomo de vaca (crudo)', kcal: 120, p: 22, c: 0, f: 3, verified: true },
+  { name: 'Lomo de vaca (cocido)', kcal: 200, p: 29, c: 0, f: 8.7, verified: true },
+  { name: 'Bife ancho / Ojo de bife (crudo)', kcal: 250, p: 19.5, c: 0, f: 19, verified: true },
+  { name: 'Bife ancho / Ojo de bife (cocido)', kcal: 291, p: 25, c: 0, f: 20.7, verified: true },
+  { name: 'Bife de chorizo (crudo)', kcal: 200, p: 20, c: 0, f: 13, verified: true },
+  { name: 'Bife de chorizo (cocido)', kcal: 250, p: 27, c: 0, f: 15.5, verified: true },
+  { name: 'Vacío de vaca (crudo)', kcal: 172, p: 20, c: 0, f: 10, verified: true },
+  { name: 'Vacío de vaca (cocido)', kcal: 225, p: 26, c: 0, f: 13, verified: true },
+  { name: 'Falda / Matambre de vaca (crudo)', kcal: 210, p: 18, c: 0, f: 15, verified: true },
+  { name: 'Entraña (cruda)', kcal: 220, p: 18, c: 0, f: 16, verified: true },
+  { name: 'Entraña (cocida)', kcal: 280, p: 24, c: 0, f: 20, verified: true },
+  { name: 'Asado de tira (crudo)', kcal: 290, p: 16, c: 0, f: 25, verified: true },
+  { name: 'Asado de tira (cocido)', kcal: 373, p: 22.5, c: 0, f: 31, verified: true },
+  { name: 'Peceto (crudo)', kcal: 116, p: 22, c: 0, f: 2.9, verified: true },
+  { name: 'Roast beef / Peceto (cocido)', kcal: 155, p: 27, c: 0, f: 4.5, verified: true },
+  { name: 'Osobuco de vaca (crudo)', kcal: 150, p: 21, c: 0, f: 7, verified: true },
+  { name: 'Osobuco de vaca (cocido)', kcal: 215, p: 28, c: 0, f: 11, verified: true },
+  { name: 'Hígado de vaca (crudo)', kcal: 135, p: 20.4, c: 3.9, f: 3.6, verified: true },
+  { name: 'Hígado de vaca (cocido)', kcal: 175, p: 26.5, c: 5.1, f: 4.7, verified: true },
+  { name: 'Lengua de vaca (cocida)', kcal: 284, p: 22, c: 0, f: 21, verified: true },
+  { name: 'Mondongo (cocido)', kcal: 85, p: 12, c: 1.7, f: 3.4, verified: true },
+  { name: 'Riñón de vaca (cocido)', kcal: 144, p: 24, c: 0.4, f: 4.7, verified: true },
+  { name: 'Corazón de vaca (cocido)', kcal: 165, p: 24, c: 0.5, f: 6.4, verified: true },
+  // --- Ternera ---
+  { name: 'Ternera magra (cruda)', kcal: 112, p: 20, c: 0, f: 3, verified: true },
+  { name: 'Ternera magra (cocida)', kcal: 172, p: 31, c: 0, f: 4.5, verified: true },
+  // --- Pollo ---
+  { name: 'Pechuga de pollo sin piel (cruda)', kcal: 120, p: 22.5, c: 0, f: 2.6, verified: true },
+  { name: 'Pechuga de pollo sin piel (cocida)', kcal: 165, p: 31, c: 0, f: 3.6, verified: true },
+  { name: 'Pechuga de pollo con piel (cruda)', kcal: 172, p: 20.8, c: 0, f: 9.2, verified: true },
+  { name: 'Pechuga de pollo con piel (cocida)', kcal: 197, p: 29.8, c: 0, f: 7.8, verified: true },
+  { name: 'Muslo de pollo sin piel (crudo)', kcal: 121, p: 19.7, c: 0, f: 4.1, verified: true },
+  { name: 'Muslo de pollo sin piel (cocido)', kcal: 209, p: 26, c: 0, f: 10.9, verified: true },
+  { name: 'Muslo de pollo con piel (crudo)', kcal: 211, p: 16.5, c: 0, f: 15.5, verified: true },
+  { name: 'Muslo de pollo con piel (cocido)', kcal: 247, p: 25, c: 0, f: 15.5, verified: true },
+  { name: 'Pata muslo de pollo con piel (cruda)', kcal: 187, p: 16.8, c: 0, f: 13, verified: true },
+  { name: 'Ala de pollo con piel (cruda)', kcal: 222, p: 18.3, c: 0, f: 16, verified: true },
+  { name: 'Ala de pollo con piel (cocida)', kcal: 290, p: 26.9, c: 0, f: 19.5, verified: true },
+  { name: 'Pollo entero con piel (crudo)', kcal: 215, p: 18.6, c: 0, f: 15.1, verified: true },
+  { name: 'Pollo entero con piel (cocido)', kcal: 239, p: 27.3, c: 0, f: 13.6, verified: true },
+  { name: 'Hígado de pollo (crudo)', kcal: 116, p: 16.9, c: 0.7, f: 4.8, verified: true },
+  { name: 'Hígado de pollo (cocido)', kcal: 167, p: 24.5, c: 0.9, f: 6.5, verified: true },
+  { name: 'Carne picada de pollo (cruda)', kcal: 143, p: 17.4, c: 0, f: 8.1, verified: true },
+  { name: 'Carne picada de pollo (cocida)', kcal: 189, p: 23.9, c: 0, f: 10.9, verified: true },
+  // --- Pavo ---
+  { name: 'Pechuga de pavo sin piel (cruda)', kcal: 111, p: 24, c: 0, f: 1.5, verified: true },
+  { name: 'Pechuga de pavo sin piel (cocida)', kcal: 147, p: 30, c: 0, f: 2, verified: true },
+  { name: 'Pechuga de pavo con piel (cruda)', kcal: 157, p: 21.8, c: 0, f: 7, verified: true },
+  { name: 'Pechuga de pavo con piel (cocida)', kcal: 189, p: 28.7, c: 0, f: 7.4, verified: true },
+  { name: 'Muslo de pavo sin piel (crudo)', kcal: 144, p: 19.5, c: 0, f: 6.8, verified: true },
+  { name: 'Muslo de pavo sin piel (cocido)', kcal: 177, p: 28.6, c: 0, f: 6.2, verified: true },
+  { name: 'Carne picada de pavo (cruda)', kcal: 148, p: 19.7, c: 0, f: 7.7, verified: true },
+  { name: 'Carne picada de pavo (cocida)', kcal: 203, p: 27, c: 0, f: 10.4, verified: true },
+  { name: 'Carne picada de pavo magra 93/7 (cruda)', kcal: 120, p: 18.7, c: 0, f: 4.7, verified: true },
+  { name: 'Carne picada de pavo magra 93/7 (cocida)', kcal: 176, p: 24.5, c: 0, f: 8.3, verified: true },
+  // --- Cerdo ---
+  { name: 'Lomo / Solomillo de cerdo (crudo)', kcal: 120, p: 20.9, c: 0, f: 3.4, verified: true },
+  { name: 'Carré / Chuleta de cerdo (cruda)', kcal: 155, p: 21, c: 0, f: 7.5, verified: true },
+  { name: 'Carré / Chuleta de cerdo (cocida)', kcal: 231, p: 27, c: 0, f: 13, verified: true },
+  { name: 'Bondiola de cerdo (cruda)', kcal: 216, p: 17, c: 0, f: 16, verified: true },
+  { name: 'Bondiola de cerdo (cocida)', kcal: 269, p: 24, c: 0, f: 18.5, verified: true },
+  { name: 'Pechito / Costilla de cerdo (cruda)', kcal: 277, p: 15.5, c: 0, f: 23.4, verified: true },
+  { name: 'Pechito / Costilla de cerdo (cocida)', kcal: 397, p: 29, c: 0, f: 30.3, verified: true },
+  { name: 'Pernil / Jamón fresco de cerdo (crudo)', kcal: 136, p: 20.5, c: 0, f: 5.5, verified: true },
+  { name: 'Pernil / Jamón fresco de cerdo (cocido)', kcal: 179, p: 25, c: 0, f: 8, verified: true },
+  { name: 'Matambre de cerdo (crudo)', kcal: 250, p: 17, c: 0, f: 20, verified: true },
+  { name: 'Panceta de cerdo fresca (cruda)', kcal: 518, p: 9.3, c: 0, f: 53, verified: true },
+  { name: 'Panceta / Tocino (cocido)', kcal: 541, p: 37, c: 1.4, f: 42, verified: true },
+  { name: 'Carne picada de cerdo (cruda)', kcal: 263, p: 16.9, c: 0, f: 21.2, verified: true },
+  { name: 'Carne picada de cerdo (cocida)', kcal: 297, p: 25.7, c: 0, f: 20.8, verified: true },
+  { name: 'Chorizo fresco de cerdo (crudo)', kcal: 330, p: 14, c: 1.9, f: 30, verified: true },
+  { name: 'Chorizo (cocido)', kcal: 360, p: 19, c: 2, f: 30, verified: true },
+  // --- Cordero ---
+  { name: 'Cordero magro (crudo)', kcal: 134, p: 20.6, c: 0, f: 5.2, verified: true },
+  { name: 'Cordero magro (cocido)', kcal: 191, p: 28.3, c: 0, f: 7.7, verified: true },
+  { name: 'Costilla de cordero (cruda)', kcal: 291, p: 15, c: 0, f: 25, verified: true },
+  { name: 'Costilla de cordero (cocida)', kcal: 361, p: 25, c: 0, f: 28, verified: true },
+  { name: 'Paleta de cordero (cruda)', kcal: 176, p: 17.6, c: 0, f: 11.4, verified: true },
+  { name: 'Paleta de cordero (cocida)', kcal: 259, p: 24.7, c: 0, f: 17, verified: true },
+  // --- Conejo ---
+  { name: 'Conejo (crudo)', kcal: 136, p: 20, c: 0, f: 5.5, verified: true },
+  { name: 'Conejo (cocido)', kcal: 197, p: 29, c: 0, f: 8, verified: true },
+  // --- Pato ---
+  { name: 'Pechuga de pato sin piel (cruda)', kcal: 135, p: 18.3, c: 0, f: 6, verified: true },
+  { name: 'Pechuga de pato sin piel (cocida)', kcal: 201, p: 23.5, c: 0, f: 11.2, verified: true },
+  { name: 'Pato con piel (crudo)', kcal: 404, p: 11.5, c: 0, f: 39.3, verified: true },
+  { name: 'Pato con piel (cocido)', kcal: 337, p: 19, c: 0, f: 28.4, verified: true },
+  // --- Cabra / chivito ---
+  { name: 'Cabra / Chivito (crudo)', kcal: 109, p: 20.6, c: 0, f: 2.3, verified: true },
+  { name: 'Cabra / Chivito (cocido)', kcal: 143, p: 27.1, c: 0, f: 3, verified: true },
+  // --- Fiambres y embutidos (listos para consumir) ---
+  { name: 'Jamón cocido', kcal: 145, p: 18, c: 1.5, f: 7, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Jamón cocido natural (magro)', kcal: 107, p: 18.5, c: 1.3, f: 3, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Jamón crudo / Serrano', kcal: 241, p: 31, c: 0.3, f: 12.9, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Paleta cocida (fiambre)', kcal: 130, p: 16, c: 2, f: 6.5, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Lomito ahumado', kcal: 130, p: 22, c: 1, f: 4, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Salame', kcal: 407, p: 22, c: 1.6, f: 33, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 rodaja' },
+  { name: 'Mortadela', kcal: 311, p: 16, c: 3, f: 25, verified: true, servingQty: 15, servingUnit: 'g', servingLabel: '1 feta' },
+  { name: 'Salchicha tipo viena', kcal: 260, p: 11, c: 3, f: 23, verified: true, servingQty: 45, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Chorizo colorado / español', kcal: 455, p: 24, c: 1.9, f: 38, verified: true },
+  { name: 'Morcilla', kcal: 379, p: 14.6, c: 1.3, f: 34.5, verified: true },
+  { name: 'Panceta ahumada', kcal: 458, p: 13, c: 0.7, f: 45, verified: true, servingQty: 8, servingUnit: 'g', servingLabel: '1 lonja' },
+];
+
 async function main() {
   // Secuencial a propósito: DATABASE_URL usa connection_limit=1 (pooler).
   for (const a of ACHIEVEMENTS) {
@@ -198,7 +321,7 @@ async function main() {
 
   // Alimentos: additivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que
   // faltan. Secuencial por el connection_limit=1 del pooler.
-  const allFoods = [...FOODS, ...VEGETABLES];
+  const allFoods = [...FOODS, ...VEGETABLES, ...MEATS];
   let addedFoods = 0;
   for (const f of allFoods) {
     const existing = await prisma.food.findFirst({
@@ -222,7 +345,10 @@ async function main() {
     });
     addedFoods++;
   }
-  console.log(`✓ alimentos: +${addedFoods} nuevos (${allFoods.length} en la lista, ${VEGETABLES.length} verduras)`);
+  console.log(
+    `✓ alimentos: +${addedFoods} nuevos (${allFoods.length} en la lista; ` +
+      `${VEGETABLES.length} verduras, ${MEATS.length} carnes)`,
+  );
 }
 
 main()
