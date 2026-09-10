@@ -66,6 +66,9 @@ export function OnboardingWizard({
     unitSystem: initial.unitSystem,
     locale: initial.locale,
     photos: [],
+    doesSport: false,
+    sport: { name: '', level: 'amateur', sessionsPerWeek: 3, sessionDays: [], goal: '' },
+    competition: { name: '', date: '', priority: 'B' },
   });
 
   const patch = (p: Partial<OnboardingData>) => {
@@ -130,11 +133,32 @@ export function OnboardingWizard({
   }
 
   function submit() {
+    const sport =
+      data.doesSport && data.sport.name.trim()
+        ? {
+            name: data.sport.name.trim(),
+            level: data.sport.level || undefined,
+            sessionsPerWeek: data.sport.sessionsPerWeek,
+            sessionDays: data.sport.sessionDays,
+            goal: data.sport.goal.trim() || undefined,
+          }
+        : undefined;
+    const competition =
+      sport && data.competition.name.trim() && /^\d{4}-\d{2}-\d{2}$/.test(data.competition.date)
+        ? {
+            name: data.competition.name.trim(),
+            date: data.competition.date,
+            priority: data.competition.priority as 'A' | 'B' | 'C',
+          }
+        : undefined;
+
     const payload = onboardingSchema.safeParse({
       ...data,
       injuries: data.injuries ?? '',
       trainingExperienceNote: data.trainingExperienceNote ?? '',
       photos: data.primaryGoal === 'UNDECIDED' && data.photos.length > 0 ? data.photos : undefined,
+      sport,
+      competition,
     });
     if (!payload.success) {
       toast.error(t.onboarding.errors.generic);

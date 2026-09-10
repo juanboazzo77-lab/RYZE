@@ -40,6 +40,24 @@ export const onboardingSchema = z.object({
     .array(z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/).max(4_000_000))
     .max(4)
     .optional(),
+  /** Deporte que practica además del gimnasio (opcional). */
+  sport: z
+    .object({
+      name: z.string().trim().min(1).max(60),
+      level: z.string().trim().max(30).optional(),
+      sessionsPerWeek: z.number().int().min(0).max(21),
+      sessionDays: z.array(z.number().int().min(1).max(7)).max(7),
+      goal: z.string().trim().max(200).optional(),
+    })
+    .optional(),
+  /** Próxima competencia (opcional; requiere `sport`). */
+  competition: z
+    .object({
+      name: z.string().trim().min(1).max(100),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      priority: z.enum(['A', 'B', 'C']),
+    })
+    .optional(),
 });
 
 export type OnboardingPayload = z.infer<typeof onboardingSchema>;

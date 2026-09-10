@@ -72,6 +72,15 @@ describe('computeTargets', () => {
     expect(bulk.kcal).toBeGreaterThan(maintain.kcal);
   });
 
+  it('deporte sube el TDEE (3,5% por sesión, tope 25%)', () => {
+    const none = computeTargets({ ...base, goal: 'MAINTAIN' });
+    const some = computeTargets({ ...base, goal: 'MAINTAIN', sportSessionsPerWeek: 4 });
+    const capped = computeTargets({ ...base, goal: 'MAINTAIN', sportSessionsPerWeek: 20 });
+    expect(some.tdee).toBeGreaterThan(none.tdee);
+    expect(some.tdee).toBe(Math.round(none.tdee * 1.14));
+    expect(capped.tdee).toBe(Math.round(none.tdee * 1.25));
+  });
+
   it('todos los macros son no negativos y múltiplos de 5', () => {
     const r = computeTargets({ ...base, goal: 'LOSE_FAT', weeklyRateKg: 0.5 });
     for (const v of [r.proteinG, r.carbsG, r.fatG]) {

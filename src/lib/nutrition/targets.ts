@@ -16,6 +16,11 @@ export interface TargetInput {
   goal: PrimaryGoal;
   /** Ritmo de cambio de peso deseado (kg/semana, siempre positivo). Opcional. */
   weeklyRateKg?: number | null;
+  /**
+   * Sesiones de deporte por semana (además del gimnasio). Suben el gasto:
+   * ~3,5 % de TDEE por sesión, tope +25 %.
+   */
+  sportSessionsPerWeek?: number | null;
 }
 
 export interface TargetResult {
@@ -90,7 +95,9 @@ export function goalAdjustmentPct(
 
 export function computeTargets(input: TargetInput): TargetResult {
   const bmr = Math.round(harrisBenedict(input));
-  const tdee = Math.round(bmr * ACTIVITY_FACTOR[input.activityLevel]);
+  const base = Math.round(bmr * ACTIVITY_FACTOR[input.activityLevel]);
+  const sportPct = clamp((input.sportSessionsPerWeek ?? 0) * 3.5, 0, 25) / 100;
+  const tdee = Math.round(base * (1 + sportPct));
 
   const adjustmentPct = goalAdjustmentPct(input.goal, tdee, input.weeklyRateKg);
   const kcal = round(tdee * (1 + adjustmentPct / 100), 10);

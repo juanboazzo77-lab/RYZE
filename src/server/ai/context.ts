@@ -4,6 +4,7 @@ import { DateTime } from 'luxon';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/compute';
+import { buildSportContextLines } from '@/features/sports/queries';
 
 /** Edad en años a partir de la fecha de nacimiento. */
 function ageFrom(birthdate: Date | null): number | null {
@@ -127,6 +128,9 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
       `excluye: ${asList(profile.excludedFoods)}, alergias: ${asList(profile.allergies)}.`,
   );
   if (profile.injuries) lines.push(`Lesiones/limitaciones: ${profile.injuries}`);
+
+  const sportLines = await buildSportContextLines(profile);
+  if (sportLines.length > 0) lines.push(...sportLines);
 
   if (goal) {
     lines.push(

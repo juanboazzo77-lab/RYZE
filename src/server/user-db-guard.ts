@@ -22,6 +22,9 @@ export const USER_MODELS = new Set<string>([
   'NotificationPreference',
   'Notification',
   'PushSubscription',
+  'DailyActivity',
+  'SportProfile',
+  'Competition',
 ]);
 
 export const WHERE_OPS = new Set([

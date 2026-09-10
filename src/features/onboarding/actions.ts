@@ -30,6 +30,7 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
     activityLevel: data.activityLevel,
     goal: data.primaryGoal,
     weeklyRateKg: data.weeklyRateKg,
+    sportSessionsPerWeek: data.sport?.sessionsPerWeek ?? null,
   });
 
   const today = new Date();
@@ -90,6 +91,33 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
       },
     }),
   ]);
+
+  // Deporte + competencia (opcionales, fuera de la transacción principal).
+  if (data.sport) {
+    const sport = await db.sportProfile.create({
+      data: {
+        userId,
+        name: data.sport.name,
+        level: data.sport.level ?? null,
+        sessionsPerWeek: data.sport.sessionsPerWeek,
+        sessionDays: data.sport.sessionDays,
+        goal: data.sport.goal ?? null,
+        isPrimary: true,
+      },
+      select: { id: true },
+    });
+    if (data.competition) {
+      await db.competition.create({
+        data: {
+          userId,
+          sportProfileId: sport.id,
+          name: data.competition.name,
+          date: new Date(`${data.competition.date}T00:00:00.000Z`),
+          priority: data.competition.priority,
+        },
+      });
+    }
+  }
 
   // Objetivo "indeciso": el Coach recomienda uno concreto a partir de los datos
   // y las fotos (efímeras, no se guardan). Best-effort: no bloquea el onboarding.

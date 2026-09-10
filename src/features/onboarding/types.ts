@@ -33,6 +33,17 @@ export interface OnboardingData {
   locale: Locale;
   /** Fotos para la recomendación de objetivo cuando el objetivo es "indeciso". */
   photos: string[];
+  /** ¿Practica algún deporte además del gimnasio? */
+  doesSport: boolean;
+  sport: {
+    name: string;
+    level: string;
+    sessionsPerWeek: number;
+    sessionDays: number[];
+    goal: string;
+  };
+  /** Próxima competencia (opcional). */
+  competition: { name: string; date: string; priority: string };
 }
 
 /** Objetivos que necesitan un peso meta. */

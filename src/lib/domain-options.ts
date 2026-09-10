@@ -69,3 +69,45 @@ export function defaultEquipmentFor(place: TrainingPlace): Equipment[] {
   if (place === 'HOME') return ['DUMBBELLS', 'BANDS', 'BODYWEIGHT'];
   return ['FULL_GYM', 'DUMBBELLS', 'BODYWEIGHT'];
 }
+
+/** Deportes frecuentes para el autocompletado (texto libre, no es un enum). */
+export const COMMON_SPORTS = [
+  'Fútbol',
+  'Running',
+  'Ciclismo',
+  'Natación',
+  'Básquet',
+  'Tenis',
+  'Pádel',
+  'Vóley',
+  'Rugby',
+  'Hockey',
+  'Handball',
+  'CrossFit',
+  'Escalada',
+  'Boxeo',
+  'MMA',
+  'Jiu-jitsu',
+  'Judo',
+  'Karate',
+  'Atletismo',
+  'Triatlón',
+  'Remo',
+  'Golf',
+  'Surf',
+  'Ski / Snowboard',
+  'Patín',
+  'Powerlifting',
+  'Halterofilia',
+  'Calistenia',
+  'Yoga',
+  'Pilates',
+  'Danza',
+  'Trekking / Montañismo',
+] as const;
+
+export const SPORT_LEVELS = ['recreativo', 'amateur', 'competitivo', 'profesional'] as const;
+export type SportLevel = (typeof SPORT_LEVELS)[number];
+
+export const COMPETITION_PRIORITIES = ['A', 'B', 'C'] as const;
+export type CompetitionPriority = (typeof COMPETITION_PRIORITIES)[number];

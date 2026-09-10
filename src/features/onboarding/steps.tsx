@@ -7,16 +7,21 @@ import { PhotoPicker } from '@/components/form/photo-picker';
 import { ChipMulti } from '@/components/form/chip-multi';
 import { TagInput } from '@/components/form/tag-input';
 import { NumberStepper } from '@/components/form/number-stepper';
+import { Segmented } from '@/components/form/segmented';
+import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   ACTIVITY_OPTIONS,
+  COMMON_SPORTS,
+  COMPETITION_PRIORITIES,
   DIETARY_PREF_OPTIONS,
   EQUIPMENT_OPTIONS,
   EXPERIENCE_OPTIONS,
   GOAL_OPTIONS,
   SEX_OPTIONS,
+  SPORT_LEVELS,
   TRAINING_PLACE_OPTIONS,
   defaultEquipmentFor,
 } from '@/lib/domain-options';
@@ -237,6 +242,118 @@ export function StepTraining({ data, patch, t, errors }: StepProps) {
           onChange={(activityLevel) => patch({ activityLevel })}
         />
       </Field>
+
+      <SportSection data={data} patch={patch} t={t} />
+    </div>
+  );
+}
+
+const WEEKDAY_SHORT = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+function SportSection({ data, patch, t }: Pick<StepProps, 'data' | 'patch' | 't'>) {
+  const f = t.onboarding.sport;
+  const s = data.sport;
+  const patchSport = (p: Partial<OnboardingData['sport']>) => patch({ sport: { ...s, ...p } });
+  const patchComp = (p: Partial<OnboardingData['competition']>) =>
+    patch({ competition: { ...data.competition, ...p } });
+
+  return (
+    <div className="space-y-4 rounded-xl border p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">{f.doesSport}</p>
+          <p className="text-xs text-muted-foreground">{f.doesSportHint}</p>
+        </div>
+        <Switch
+          checked={data.doesSport}
+          onCheckedChange={(doesSport) => patch({ doesSport })}
+          aria-label={f.doesSport}
+        />
+      </div>
+
+      {data.doesSport ? (
+        <div className="space-y-4 border-t pt-4">
+          <Field label={f.name}>
+            <Input
+              list="common-sports"
+              value={s.name}
+              onChange={(e) => patchSport({ name: e.target.value })}
+              placeholder={f.namePh}
+            />
+            <datalist id="common-sports">
+              {COMMON_SPORTS.map((sp) => (
+                <option key={sp} value={sp} />
+              ))}
+            </datalist>
+          </Field>
+
+          <Field label={f.level}>
+            <Segmented
+              options={SPORT_LEVELS.map((v) => ({ value: v, label: t.onboarding.sport.levels[v] }))}
+              value={s.level as (typeof SPORT_LEVELS)[number]}
+              onChange={(level) => patchSport({ level })}
+            />
+          </Field>
+
+          <div className="flex flex-wrap items-start gap-6">
+            <Field label={f.sessions}>
+              <NumberStepper
+                value={s.sessionsPerWeek}
+                min={0}
+                max={14}
+                onChange={(sessionsPerWeek) => patchSport({ sessionsPerWeek })}
+              />
+            </Field>
+          </div>
+
+          <Field label={f.days}>
+            <ChipMulti
+              options={WEEKDAY_SHORT.map((label, i) => ({ value: String(i + 1), label }))}
+              value={s.sessionDays.map(String)}
+              onChange={(vals) => patchSport({ sessionDays: vals.map(Number).sort((a, b) => a - b) })}
+            />
+          </Field>
+
+          <Field label={f.goal} hint={f.goalHint}>
+            <Input
+              value={s.goal}
+              onChange={(e) => patchSport({ goal: e.target.value })}
+              placeholder={f.goalPh}
+            />
+          </Field>
+
+          <div className="space-y-3 border-t pt-4">
+            <p className="text-sm font-medium">{f.competition}</p>
+            <p className="text-xs text-muted-foreground">{f.competitionHint}</p>
+            <div className="flex flex-wrap gap-3">
+              <Field label={f.compName}>
+                <Input
+                  value={data.competition.name}
+                  onChange={(e) => patchComp({ name: e.target.value })}
+                  placeholder={f.compNamePh}
+                />
+              </Field>
+              <Field label={f.compDate}>
+                <Input
+                  type="date"
+                  value={data.competition.date}
+                  onChange={(e) => patchComp({ date: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label={f.compPriority}>
+              <Segmented
+                options={COMPETITION_PRIORITIES.map((v) => ({
+                  value: v,
+                  label: t.onboarding.sport.priorities[v],
+                }))}
+                value={data.competition.priority as (typeof COMPETITION_PRIORITIES)[number]}
+                onChange={(priority) => patchComp({ priority })}
+              />
+            </Field>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

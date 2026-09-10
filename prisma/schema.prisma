@@ -262,6 +262,8 @@ model Profile {
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
   dailyActivities         DailyActivity[]
+  sportProfiles           SportProfile[]
+  competitions            Competition[]
 
   @@map("profile")
 }
@@ -618,6 +620,49 @@ model DailyActivity {
   @@unique([userId, date])
   @@index([userId, date])
   @@map("daily_activity")
+}
+
+/// Un deporte que practica el usuario además del gimnasio. El gimnasio es
+/// complementario a esto; el AI Coach programa fuerza y nutrición alrededor de
+/// las sesiones de deporte y de las competencias.
+model SportProfile {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @db.Uuid @map("user_id")
+  user            Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  /// recreativo / amateur / competitivo / profesional
+  level           String?
+  sessionsPerWeek Int           @default(3) @map("sessions_per_week")
+  /// Días de la semana con sesión de deporte (1 = lunes … 7 = domingo).
+  sessionDays     Json          @default("[]") @map("session_days")
+  goal            String?
+  notes           String?
+  isPrimary       Boolean       @default(false) @map("is_primary")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  competitions    Competition[]
+
+  @@index([userId])
+  @@map("sport_profile")
+}
+
+/// Una competencia / evento del usuario. `priority` A = objetivo principal,
+/// B = importante, C = de preparación.
+model Competition {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @db.Uuid @map("user_id")
+  user           Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sportProfileId String?       @db.Uuid @map("sport_profile_id")
+  sportProfile   SportProfile? @relation(fields: [sportProfileId], references: [id], onDelete: SetNull)
+  name           String
+  date           DateTime      @db.Date
+  priority       String        @default("B")
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId, date])
+  @@map("competition")
 }
 
 // ---------------------------------------------------------------------

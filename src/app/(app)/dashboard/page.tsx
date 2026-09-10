@@ -11,6 +11,7 @@ import { NutritionCard, ProgressCard, TrainingCard, WeightCard } from '@/feature
 import { CheckinReminder } from '@/features/dashboard/checkin-reminder';
 import { FirstPlanCard } from '@/features/dashboard/first-plan-card';
 import { QuickActions } from '@/features/dashboard/quick-actions';
+import { CompetitionBanner } from '@/features/sports/competition-banner';
 
 export const metadata: Metadata = { title: 'Inicio' };
 
@@ -47,6 +48,8 @@ export default async function DashboardPage() {
       </div>
 
       {checkinDue ? <CheckinReminder t={t} /> : null}
+
+      <CompetitionBanner profile={ctx.profile} />
 
       {!data.hasPlan ? <FirstPlanCard t={t} aiReady={aiConfigured()} /> : null}
 

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Bell, ChevronRight, LogOut, ShieldCheck, Target, User } from 'lucide-react';
+import { Bell, ChevronRight, LogOut, ShieldCheck, Target, Trophy, User } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { signOutAction } from '@/app/(auth)/actions';
@@ -16,6 +16,7 @@ export default async function SettingsPage() {
   const rows: Array<{ href?: string; icon: typeof User; title: string; desc: string }> = [
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
+    { href: '/settings/sports', icon: Trophy, title: t.settings.sports, desc: t.settings.sportsDesc },
     {
       href: '/settings/notifications',
       icon: Bell,

@@ -26,7 +26,14 @@ export function GoalsForm({
   unitSystem,
 }: {
   initial: GoalUpdatePayload;
-  calc: { sex: Sex; birthdate: string; heightCm: number; activityLevel: ActivityLevel; currentWeightKg: number };
+  calc: {
+    sex: Sex;
+    birthdate: string;
+    heightCm: number;
+    activityLevel: ActivityLevel;
+    currentWeightKg: number;
+    sportSessionsPerWeek?: number;
+  };
   unitSystem: 'METRIC' | 'IMPERIAL';
 }) {
   const t = useT();
@@ -50,6 +57,7 @@ export function GoalsForm({
       activityLevel: calc.activityLevel,
       goal: d.primaryGoal,
       weeklyRateKg: d.weeklyRateKg,
+      sportSessionsPerWeek: calc.sportSessionsPerWeek ?? null,
     });
     patch({ kcal: r.kcal, proteinG: r.proteinG, carbsG: r.carbsG, fatG: r.fatG, targetSource: 'CALCULATED' });
     toast.message(t.goals.recalcApplied);

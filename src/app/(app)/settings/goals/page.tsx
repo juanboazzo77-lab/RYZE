@@ -6,6 +6,7 @@ import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { computeTargets, ageFromBirthdate } from '@/lib/nutrition/targets';
+import { totalSportSessionsPerWeek } from '@/features/sports/queries';
 import { GoalsForm } from '@/features/settings/goals-form';
 import type { GoalUpdatePayload } from '@/features/settings/schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ export default async function GoalsSettingsPage() {
 
   const currentWeightKg = lastWeight?.weightKg ?? goal?.startWeightKg ?? 70;
   const birthdateStr = profile.birthdate.toISOString().slice(0, 10);
+  const sportSessions = await totalSportSessionsPerWeek(profile);
 
   const computed = computeTargets({
     sex: profile.sex,
@@ -37,6 +39,7 @@ export default async function GoalsSettingsPage() {
     activityLevel: profile.activityLevel,
     goal: profile.primaryGoal,
     weeklyRateKg: goal?.weeklyRateKg ?? null,
+    sportSessionsPerWeek: sportSessions,
   });
 
   const initial: GoalUpdatePayload = {
@@ -81,6 +84,7 @@ export default async function GoalsSettingsPage() {
           heightCm: profile.heightCm,
           activityLevel: profile.activityLevel,
           currentWeightKg,
+          sportSessionsPerWeek: sportSessions,
         }}
       />
     </div>
