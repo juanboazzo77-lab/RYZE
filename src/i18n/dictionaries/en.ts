@@ -48,14 +48,16 @@ export const en: Dictionary = {
   coachProfile: {
     title: 'Coach profile',
     subtitle:
-      'Tell us who you are so your diet and training are 100% yours. All optional, all one tap.',
-    navHint: 'All optional — the more you answer, the less generic the plan.',
-    progressLabel: '{n}% complete',
+      'Tell us who you are so your diet and training are 100% yours. No field is required — answer what you want.',
+    navHint: 'Nothing is required — answer what you want and save.',
+    progressLabel: '{n}%',
+    saveHint: 'Saves whatever you have. Come back and add more anytime.',
     savedToast: 'Profile updated',
     settingsRow: 'Coach profile',
     settingsRowDesc: 'Likes, health, equipment, your day… so the plan is 100% yours.',
     nudgeTitle: 'Make the plan yours',
-    nudgeBody: 'Your profile is {n}% done. The more the coach knows, the less generic the plan.',
+    nudgeBody:
+      'You answered {n}%. Add whatever you like — the more the coach knows, the more tailored the plan.',
     sections: {
       health: { title: 'Your body', desc: 'Health, aches, sleep and stress.' },
       food: { title: 'Your food', desc: 'Likes, cooking, budget and supplements.' },

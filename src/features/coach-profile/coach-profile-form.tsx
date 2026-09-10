@@ -68,9 +68,9 @@ export function CoachProfileForm({
   return (
     <div className="space-y-4">
       <div className="sticky top-14 z-10 -mx-4 border-b bg-background/90 px-4 py-2 backdrop-blur md:top-0">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>{c.navHint}</span>
-          <span className="font-medium tabular-nums text-foreground">
+          <span className="shrink-0 font-medium tabular-nums text-foreground">
             {interpolate(c.progressLabel, { n: completion.pct })}
           </span>
         </div>
@@ -444,6 +444,7 @@ export function CoachProfileForm({
         </CardContent>
       </Card>
 
+      <p className="text-center text-xs text-muted-foreground">{c.saveHint}</p>
       <div className="sticky bottom-16 z-10 md:bottom-0">
         <Button size="lg" className="w-full shadow-lg" onClick={save} disabled={pending}>
           {pending ? t.common.saving : t.common.save}

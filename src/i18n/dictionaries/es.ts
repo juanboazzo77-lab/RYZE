@@ -46,14 +46,16 @@ export const es = {
   coachProfile: {
     title: 'Perfil para el coach',
     subtitle:
-      'Contanos cómo sos para que la dieta y el entrenamiento sean 100% tuyos. Todo es opcional y a un toque.',
-    navHint: 'Todo opcional — mientras más respondas, menos genérico el plan.',
-    progressLabel: '{n}% completo',
+      'Contanos cómo sos para que la dieta y el entrenamiento sean 100% tuyos. Ningún campo es obligatorio: respondé lo que quieras.',
+    navHint: 'Nada es obligatorio — respondé lo que quieras y guardá.',
+    progressLabel: '{n}%',
+    saveHint: 'Guardás lo que tengas. Podés volver y sumar más cuando quieras.',
     savedToast: 'Perfil actualizado',
     settingsRow: 'Perfil para el coach',
     settingsRowDesc: 'Gustos, salud, equipo, tu día… para que el plan sea 100% tuyo.',
     nudgeTitle: 'Hacé tu plan más tuyo',
-    nudgeBody: 'Tenés el {n}% del perfil. Cuanto más sepa el coach, menos genérico el plan.',
+    nudgeBody:
+      'Respondiste el {n}%. Sumá lo que quieras: cuanto más sabe el coach, más a tu medida el plan.',
     sections: {
       health: { title: 'Tu cuerpo', desc: 'Salud, molestias, sueño y estrés.' },
       food: { title: 'Tu comida', desc: 'Gustos, cocina, presupuesto y suplementos.' },
