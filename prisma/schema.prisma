@@ -264,6 +264,7 @@ model Profile {
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
   competitions            Competition[]
+  coachProfile            CoachProfile?
 
   @@map("profile")
 }
@@ -663,6 +664,24 @@ model Competition {
 
   @@index([userId, date])
   @@map("competition")
+}
+
+/// Perfil de coaching detallado: preferencias del cliente para que los planes de
+/// dieta y entrenamiento sean 100% individualizados. Todo opcional; se completa
+/// de a poco. Cada sección es un JSON validado por Zod en la capa de features.
+model CoachProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  health    Json     @default("{}")
+  food      Json     @default("{}")
+  training  Json     @default("{}")
+  goal      Json     @default("{}")
+  lifestyle Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("coach_profile")
 }
 
 // ---------------------------------------------------------------------

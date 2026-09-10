@@ -5,6 +5,7 @@ import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/compute';
 import { buildSportContextLines } from '@/features/sports/queries';
+import { buildCoachProfileLines } from '@/features/coach-profile/queries';
 
 /** Edad en años a partir de la fecha de nacimiento. */
 function ageFrom(birthdate: Date | null): number | null {
@@ -131,6 +132,9 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
 
   const sportLines = await buildSportContextLines(profile);
   if (sportLines.length > 0) lines.push(...sportLines);
+
+  const coachProfileLines = await buildCoachProfileLines(profile);
+  if (coachProfileLines.length > 0) lines.push(...coachProfileLines);
 
   if (goal) {
     lines.push(
