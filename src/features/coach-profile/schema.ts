@@ -217,16 +217,18 @@ export interface CoachProfileData {
   lifestyle: LifestyleSection;
 }
 
-/** Payload que acepta la Server Action: cualquier subconjunto de secciones. */
-export const saveCoachProfileSchema = z
-  .object({
-    health: healthSchema,
-    food: foodSchema,
-    training: trainingSchema,
-    goal: goalSchema,
-    lifestyle: lifestyleSchema,
-  })
-  .partial();
+/**
+ * Payload de la Server Action. El formulario siempre manda las 5 secciones
+ * completas (con sus defaults), así el guardado es un único upsert. Una sección
+ * ausente se toma como vacía.
+ */
+export const saveCoachProfileSchema = z.object({
+  health: healthSchema.default({}),
+  food: foodSchema.default({}),
+  training: trainingSchema.default({}),
+  goal: goalSchema.default({}),
+  lifestyle: lifestyleSchema.default({}),
+});
 export type SaveCoachProfileInput = z.infer<typeof saveCoachProfileSchema>;
 
 /** Devuelve una sección completa con todos sus defaults. */

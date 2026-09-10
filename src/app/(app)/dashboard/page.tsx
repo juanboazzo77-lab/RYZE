@@ -52,7 +52,10 @@ export default async function DashboardPage() {
 
       <CompetitionBanner profile={ctx.profile} />
 
-      <CoachProfileNudge profile={ctx.profile} />
+      <CoachProfileNudge
+        pct={data.coachProfilePct}
+        onboarded={Boolean(ctx.profile.onboardingCompletedAt)}
+      />
 
       {!data.hasPlan ? <FirstPlanCard t={t} aiReady={aiConfigured()} /> : null}
 

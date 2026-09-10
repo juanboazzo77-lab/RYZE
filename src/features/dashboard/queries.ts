@@ -3,6 +3,7 @@ import { DateTime } from 'luxon';
 import type { Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
+import { coachProfileCompletion, parseSection } from '@/features/coach-profile/schema';
 import {
   nutritionAdherence,
   weeklyWeightChangeKg,
@@ -32,6 +33,8 @@ export type TrainingToday =
 export interface DashboardData {
   todayISO: string;
   hasPlan: boolean;
+  /** % del perfil de coaching completado (para el nudge). */
+  coachProfilePct: number;
   nutrition: { target: Macros | null; consumed: Macros };
   training: TrainingToday;
   weight: {
@@ -63,7 +66,19 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
 
   // Un solo round-trip / una sola conexión (DATABASE_URL usa connection_limit=1,
   // así que Promise.all de muchas queries se pisaría en el pool).
-  const [target, todayEntries, weights, goal, existingWorkout, activePlan, completed, weekCount, weekByDay, planCount] =
+  const [
+    target,
+    todayEntries,
+    weights,
+    goal,
+    existingWorkout,
+    activePlan,
+    completed,
+    weekCount,
+    weekByDay,
+    planCount,
+    coachProfileRow,
+  ] =
     await db.$transaction([
       db.nutritionTarget.findFirst({
         where: { active: true },
@@ -116,7 +131,20 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
         orderBy: { date: 'asc' },
       }),
       db.workoutPlan.count(),
+      db.coachProfile.findFirst({
+        select: { health: true, food: true, training: true, goal: true, lifestyle: true },
+      }),
     ]);
+
+  const coachProfilePct = coachProfileRow
+    ? coachProfileCompletion({
+        health: parseSection('health', coachProfileRow.health),
+        food: parseSection('food', coachProfileRow.food),
+        training: parseSection('training', coachProfileRow.training),
+        goal: parseSection('goal', coachProfileRow.goal),
+        lifestyle: parseSection('lifestyle', coachProfileRow.lifestyle),
+      }).pct
+    : 0;
 
   // --- Nutrición ---
   const consumed = todayEntries.reduce<Macros>(
@@ -189,6 +217,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
   return {
     todayISO,
     hasPlan: planCount > 0,
+    coachProfilePct,
     nutrition: { target: target ?? null, consumed: roundedConsumed },
     training,
     weight: {

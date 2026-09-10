@@ -38,12 +38,13 @@ describe('coach-profile schema', () => {
     expect(parsed).not.toHaveProperty('basura');
   });
 
-  it('la Server Action acepta secciones parciales', () => {
+  it('la Server Action completa las secciones ausentes con sus defaults', () => {
     const r = saveCoachProfileSchema.safeParse({ health: { sleepQuality: 'buena' } });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data.health?.sleepQuality).toBe('buena');
-      expect(r.data.food).toBeUndefined();
+      expect(r.data.health.sleepQuality).toBe('buena');
+      expect(r.data.food.dietStyle).toBeNull();
+      expect(r.data.food.favoriteFoods).toEqual([]);
     }
   });
 

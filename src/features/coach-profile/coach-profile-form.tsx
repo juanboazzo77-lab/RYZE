@@ -48,9 +48,14 @@ export function CoachProfileForm({
 
   function save() {
     start(async () => {
-      const res = await saveCoachProfile(d);
-      if (res.ok) toast.success(c.savedToast);
-      else toast.error(t.onboarding.errors.generic);
+      try {
+        const res = await saveCoachProfile(d);
+        if (res.ok) toast.success(c.savedToast);
+        else toast.error(t.onboarding.errors.generic);
+      } catch {
+        // fallo de red / timeout: no romper la pantalla, dejar reintentar
+        toast.error(t.onboarding.errors.generic);
+      }
     });
   }
 
