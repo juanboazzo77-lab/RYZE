@@ -1,7 +1,8 @@
 import 'server-only';
-import type { Profile } from '@prisma/client';
+import type { Entitlement, Profile } from '@prisma/client';
 import { DateTime } from 'luxon';
 import { forUser } from '@/server/user-db';
+import { can } from '@/server/entitlements';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/compute';
 import { buildSportContextLines } from '@/features/sports/queries';
@@ -22,7 +23,10 @@ function asList(v: unknown): string {
  * Snapshot compacto del usuario para el AI Coach / generador de planes.
  * Una sola query (connection_limit=1). Devuelve texto plano para el prompt.
  */
-export async function buildUserContextBlock(profile: Profile): Promise<string> {
+export async function buildUserContextBlock(
+  profile: Profile,
+  entitlement: Pick<Entitlement, 'tier'>,
+): Promise<string> {
   const db = forUser(profile.id);
   const tz = profile.timezone;
   const todayISO = localTodayISO(tz);
@@ -133,8 +137,11 @@ export async function buildUserContextBlock(profile: Profile): Promise<string> {
   const sportLines = await buildSportContextLines(profile);
   if (sportLines.length > 0) lines.push(...sportLines);
 
-  const coachProfileLines = await buildCoachProfileLines(profile);
-  if (coachProfileLines.length > 0) lines.push(...coachProfileLines);
+  // Individualización a partir del perfil de coaching: exclusiva del plan COACH.
+  if (can(entitlement, 'coach_profile')) {
+    const coachProfileLines = await buildCoachProfileLines(profile);
+    if (coachProfileLines.length > 0) lines.push(...coachProfileLines);
+  }
 
   if (goal) {
     lines.push(

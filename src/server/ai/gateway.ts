@@ -50,7 +50,7 @@ export async function runCoachTurn(args: {
   const { profile, entitlement, history, userMessage } = args;
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
 
-  const contextBlock = await buildUserContextBlock(profile);
+  const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = coachSystemPrompt(profile.locale, contextBlock);
   const model = modelFor('coach_chat');
 
@@ -89,7 +89,7 @@ export async function generateWorkoutPlanDraft(args: {
   const { profile, entitlement, brief } = args;
   await assertWithinLimits(profile.id, entitlement, 'generate_plan', profile.timezone);
 
-  const contextBlock = await buildUserContextBlock(profile);
+  const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = planSystemPrompt(profile.locale, contextBlock);
   const model = modelFor('generate_plan');
 
@@ -237,8 +237,8 @@ export async function generateMealPlan(args: {
   target: { kcal: number; proteinG: number; carbsG: number; fatG: number };
   brief: string;
 }): Promise<{ plan: MealPlan | null; raw: string }> {
-  const { profile, target, brief } = args;
-  const contextBlock = await buildUserContextBlock(profile);
+  const { profile, entitlement, target, brief } = args;
+  const contextBlock = await buildUserContextBlock(profile, entitlement);
   const model = modelFor('generate_plan');
 
   const system = mealPlanSystemPrompt(profile.locale, contextBlock, target, profile.mealsPerDay ?? 4);
@@ -378,9 +378,18 @@ export async function reviewWeeklyCheckin(args: {
   /** Bloque de texto con el rendimiento de entrenamiento de la semana. */
   trainingBlock?: string | null;
 }): Promise<{ review: CheckinReview | null }> {
-  const { profile, week, subjective, currentTarget, history, photos = [], trainingBlock = null } = args;
+  const {
+    profile,
+    entitlement,
+    week,
+    subjective,
+    currentTarget,
+    history,
+    photos = [],
+    trainingBlock = null,
+  } = args;
 
-  const baseContext = await buildUserContextBlock(profile);
+  const baseContext = await buildUserContextBlock(profile, entitlement);
   const model = modelFor('weekly_checkin');
 
   const historyBlock =

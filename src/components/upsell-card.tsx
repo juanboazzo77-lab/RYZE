@@ -2,8 +2,22 @@ import { Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Dictionary } from '@/i18n';
 
-/** Bloqueo de una feature PRO. Sin cobro: informativo hasta que haya facturación. */
-export function UpsellCard({ t, description }: { t: Dictionary; description: string }) {
+/**
+ * Bloqueo de una feature del plan pago. Sin cobro: informativo hasta que haya
+ * facturación. Por defecto habla de PRO; pasá `title`/`badge` para otro plan
+ * (ej. COACH).
+ */
+export function UpsellCard({
+  t,
+  description,
+  title,
+  badge,
+}: {
+  t: Dictionary;
+  description: string;
+  title?: string;
+  badge?: string;
+}) {
   return (
     <Card className="border-primary/30 bg-accent">
       <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
@@ -11,11 +25,11 @@ export function UpsellCard({ t, description }: { t: Dictionary; description: str
           <Sparkles className="size-6" />
         </span>
         <div>
-          <p className="font-semibold">{t.pro.title}</p>
+          <p className="font-semibold">{title ?? t.pro.title}</p>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
         </div>
         <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
-          {t.pro.badge}
+          {badge ?? t.pro.badge}
         </span>
       </CardContent>
     </Card>

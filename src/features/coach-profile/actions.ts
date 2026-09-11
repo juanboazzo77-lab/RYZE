@@ -2,6 +2,8 @@
 
 import { getSession } from '@/server/context';
 import { forUser } from '@/server/user-db';
+import { prisma } from '@/server/db';
+import { can } from '@/server/entitlements';
 import { saveCoachProfileSchema } from './schema';
 
 export interface Result {
@@ -25,6 +27,16 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
   // P2024 al guardar).
   const user = await getSession();
   if (!user) return { error: 'NO_SESSION' };
+
+  // Defensa en profundidad: la pantalla ya bloquea el acceso, pero la Server
+  // Action se puede llamar directo. Sólo un `findUnique` liviano (no el upsert
+  // de requireUser) para no sumar latencia al guardado.
+  const entitlement = await prisma.entitlement.findUnique({
+    where: { userId: user.id },
+    select: { tier: true },
+  });
+  if (!entitlement || !can(entitlement, 'coach_profile')) return { error: 'FORBIDDEN' };
+
   const db = forUser(user.id);
 
   // Un único statement (INSERT ... ON CONFLICT). Sin revalidatePath: las páginas

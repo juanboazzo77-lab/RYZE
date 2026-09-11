@@ -140,6 +140,9 @@ enum PrType {
 enum EntitlementTier {
   FREE
   PRO
+  /// Plan más top: entrenador de verdad — desbloquea el perfil de coaching y
+  /// la individualización 100% a medida en todos los planes que arma la IA.
+  COACH
 }
 
 enum EntitlementStatus {

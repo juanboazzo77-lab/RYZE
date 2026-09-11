@@ -89,10 +89,12 @@ async function main() {
     update: {},
     create: { id: userId, email: DEMO_EMAIL },
   });
+  // COACH: el plan más top, para que la demo muestre también el perfil de
+  // coaching y la individualización a medida (features exclusivas de ese plan).
   await prisma.entitlement.upsert({
     where: { userId },
-    update: { tier: 'PRO', status: 'ACTIVE' },
-    create: { userId, tier: 'PRO', status: 'ACTIVE' },
+    update: { tier: 'COACH', status: 'ACTIVE' },
+    create: { userId, tier: 'COACH', status: 'ACTIVE' },
   });
 
   await wipeUserData(userId);

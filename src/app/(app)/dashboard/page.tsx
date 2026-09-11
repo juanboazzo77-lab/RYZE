@@ -55,6 +55,7 @@ export default async function DashboardPage() {
       <CoachProfileNudge
         pct={data.coachProfilePct}
         onboarded={Boolean(ctx.profile.onboardingCompletedAt)}
+        hasAccess={can(ctx.entitlement, 'coach_profile')}
       />
 
       {!data.hasPlan ? <FirstPlanCard t={t} aiReady={aiConfigured()} /> : null}

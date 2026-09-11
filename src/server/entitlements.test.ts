@@ -9,9 +9,19 @@ describe('entitlements', () => {
     expect(can({ tier: 'FREE' }, 'ai_coach_message')).toBe(true);
   });
 
-  it('PRO habilita todas las features y sube los límites', () => {
+  it('PRO habilita las features PRO pero no el perfil de coaching', () => {
     expect(limitsFor({ tier: 'PRO' }).aiCoachMessagesPerDay).toBeGreaterThan(5);
     expect(can({ tier: 'PRO' }, 'weekly_checkin')).toBe(true);
     expect(can({ tier: 'PRO' }, 'progression_analysis')).toBe(true);
+    expect(can({ tier: 'PRO' }, 'coach_profile')).toBe(false);
+  });
+
+  it('COACH es el plan más top: todo lo de PRO + el perfil de coaching', () => {
+    expect(can({ tier: 'COACH' }, 'coach_profile')).toBe(true);
+    expect(can({ tier: 'COACH' }, 'weekly_checkin')).toBe(true);
+    expect(can({ tier: 'COACH' }, 'advanced_stats')).toBe(true);
+    expect(limitsFor({ tier: 'COACH' }).aiCoachMessagesPerDay).toBeGreaterThan(
+      limitsFor({ tier: 'PRO' }).aiCoachMessagesPerDay,
+    );
   });
 });

@@ -56,6 +56,8 @@ export const es = {
     nudgeTitle: 'Hacé tu plan más tuyo',
     nudgeBody:
       'Respondiste el {n}%. Sumá lo que quieras: cuanto más sabe el coach, más a tu medida el plan.',
+    upsellNudgeTitle: 'Perfil de coaching — plan COACH',
+    upsellNudgeBody: 'Desbloqueá la individualización 100% a medida con el plan más top de FitAI.',
     sections: {
       health: { title: 'Tu cuerpo', desc: 'Salud, molestias, sueño y estrés.' },
       food: { title: 'Tu comida', desc: 'Gustos, cocina, presupuesto y suplementos.' },
@@ -266,6 +268,10 @@ export const es = {
       'El check-in semanal con seguimiento de adherencia y recomendaciones es parte de FitAI PRO. Todavía no hay cobros habilitados; esta pantalla queda lista para cuando se active la suscripción.',
     statsDesc:
       'Las estadísticas avanzadas (volumen semanal, promedios y adherencia detallada) son parte de FitAI PRO.',
+    coachTierTitle: 'Función del plan COACH',
+    coachTierBadge: 'FitAI COACH',
+    coachProfileDesc:
+      'El perfil de coaching (salud, comida, entrenamiento, objetivo y tu día a día) y la individualización 100% a medida que arma la IA con esos datos son exclusivos del plan COACH, el más top de FitAI.',
   },
   nav: {
     home: 'Inicio',

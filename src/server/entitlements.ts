@@ -2,9 +2,13 @@ import 'server-only';
 import type { Entitlement, EntitlementTier } from '@prisma/client';
 
 /**
- * Modelo freemium. La fuente de verdad de qué puede hacer cada tier vive acá.
- * Sin pagos en v1: todos arrancan en FREE; el upgrade a PRO se hará con Stripe
- * (la tabla `entitlement` ya tiene los campos `stripe_*`).
+ * Modelo freemium de 3 planes. La fuente de verdad de qué puede hacer cada
+ * tier vive acá. Sin pagos en v1: todos arrancan en FREE; el upgrade se hará
+ * con Stripe (la tabla `entitlement` ya tiene los campos `stripe_*`).
+ *
+ * COACH es el plan más top: todo lo de PRO + el perfil de coaching
+ * (`src/features/coach-profile`) y la individualización 100% a medida que la
+ * IA arma a partir de esos datos (`coach_profile`, ver `buildUserContextBlock`).
  */
 
 export type Feature =
@@ -13,7 +17,8 @@ export type Feature =
   | 'ai_meal_plan'
   | 'weekly_checkin'
   | 'advanced_stats'
-  | 'progression_analysis';
+  | 'progression_analysis'
+  | 'coach_profile';
 
 export interface TierLimits {
   /** Mensajes/día con el AI Coach. `Infinity` = sin límite. */
@@ -34,6 +39,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       weekly_checkin: false,
       advanced_stats: false,
       progression_analysis: false,
+      coach_profile: false,
     },
   },
   PRO: {
@@ -46,6 +52,20 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       weekly_checkin: true,
       advanced_stats: true,
       progression_analysis: true,
+      coach_profile: false,
+    },
+  },
+  COACH: {
+    aiCoachMessagesPerDay: 300,
+    aiPlansPerMonth: 60,
+    features: {
+      ai_coach_message: true,
+      ai_generate_plan: true,
+      ai_meal_plan: true,
+      weekly_checkin: true,
+      advanced_stats: true,
+      progression_analysis: true,
+      coach_profile: true,
     },
   },
 };

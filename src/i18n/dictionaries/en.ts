@@ -58,6 +58,8 @@ export const en: Dictionary = {
     nudgeTitle: 'Make the plan yours',
     nudgeBody:
       'You answered {n}%. Add whatever you like — the more the coach knows, the more tailored the plan.',
+    upsellNudgeTitle: 'Coach profile — COACH plan',
+    upsellNudgeBody: "Unlock 100% tailored individualization with FitAI's top plan.",
     sections: {
       health: { title: 'Your body', desc: 'Health, aches, sleep and stress.' },
       food: { title: 'Your food', desc: 'Likes, cooking, budget and supplements.' },
@@ -268,6 +270,10 @@ export const en: Dictionary = {
       "The weekly check-in with adherence tracking and recommendations is part of FitAI PRO. Billing isn't enabled yet; this screen is ready for when the subscription goes live.",
     statsDesc:
       'Advanced stats (weekly volume, averages and detailed adherence) are part of FitAI PRO.',
+    coachTierTitle: 'COACH plan feature',
+    coachTierBadge: 'FitAI COACH',
+    coachProfileDesc:
+      "The coach profile (health, food, training, goal and your day) and the 100% tailored individualization the AI builds from it are exclusive to the COACH plan, FitAI's top tier.",
   },
   nav: {
     home: 'Home',

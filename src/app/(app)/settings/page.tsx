@@ -12,9 +12,11 @@ import {
 } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
+import { can } from '@/server/entitlements';
 import { signOutAction } from '@/app/(auth)/actions';
 import { AppearancePanel } from '@/features/settings/appearance-panel';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Ajustes' };
@@ -22,7 +24,7 @@ export const metadata: Metadata = { title: 'Ajustes' };
 export default async function SettingsPage() {
   const [{ t }, ctx] = await Promise.all([getT(), requireUser()]);
 
-  const rows: Array<{ href?: string; icon: typeof User; title: string; desc: string }> = [
+  const rows: Array<{ href?: string; icon: typeof User; title: string; desc: string; badge?: string }> = [
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
     { href: '/settings/sports', icon: Trophy, title: t.settings.sports, desc: t.settings.sportsDesc },
@@ -31,6 +33,7 @@ export default async function SettingsPage() {
       icon: Sparkles,
       title: t.coachProfile.settingsRow,
       desc: t.coachProfile.settingsRowDesc,
+      badge: can(ctx.entitlement, 'coach_profile') ? undefined : t.pro.coachTierBadge,
     },
     {
       href: '/settings/notifications',
@@ -51,7 +54,10 @@ export default async function SettingsPage() {
             <div className="flex items-center gap-3 px-4 py-3.5">
               <r.icon className="size-5 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium">{r.title}</div>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  {r.title}
+                  {r.badge ? <Badge className="text-[10px]">{r.badge}</Badge> : null}
+                </div>
                 <div className="truncate text-xs text-muted-foreground">{r.desc}</div>
               </div>
               {r.href ? <ChevronRight className="size-4 shrink-0 text-muted-foreground" /> : null}
