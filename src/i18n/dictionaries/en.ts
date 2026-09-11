@@ -274,6 +274,34 @@ export const en: Dictionary = {
     coachTierBadge: 'FitAI COACH',
     coachProfileDesc:
       "The coach profile (health, food, training, goal and your day) and the 100% tailored individualization the AI builds from it are exclusive to the COACH plan, FitAI's top tier.",
+    viewPlans: 'View plans',
+  },
+  plans: {
+    title: 'Plans',
+    subtitle: 'Pick the plan that fits you best.',
+    settingsDesc: 'Compare FREE, PRO and COACH.',
+    perMonth: '/mo',
+    free: 'Free',
+    currentPlan: 'Your current plan',
+    choose: 'Choose plan',
+    comingSoon: "Coming soon — billing isn't connected yet. You'll be able to subscribe soon.",
+    topPlan: 'Top plan',
+    billingNote:
+      "Prices are for reference; billing isn't connected yet. You'll be able to subscribe soon.",
+    tiers: {
+      FREE: { name: 'FREE', tagline: 'To get started and try the app.' },
+      PRO: { name: 'PRO', tagline: 'For serious training, with real tracking.' },
+      COACH: { name: 'COACH', tagline: 'A coach that actually knows you.' },
+    },
+    features: {
+      aiCoachMessages: 'AI Coach messages/day',
+      aiPlans: 'AI-generated plans/month',
+      ai_meal_plan: 'AI meal planning',
+      weekly_checkin: 'Weekly check-in with adjustments',
+      advanced_stats: 'Advanced stats',
+      progression_analysis: 'Progression analysis',
+      coach_profile: 'Coach profile + 100% tailored individualization',
+    },
   },
   nav: {
     home: 'Home',

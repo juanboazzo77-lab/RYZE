@@ -1,22 +1,28 @@
+import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import type { Dictionary } from '@/i18n';
 
 /**
  * Bloqueo de una feature del plan pago. Sin cobro: informativo hasta que haya
  * facturación. Por defecto habla de PRO; pasá `title`/`badge` para otro plan
- * (ej. COACH).
+ * (ej. COACH). `ctaHref` agrega un botón (ej. a la comparativa de planes).
  */
 export function UpsellCard({
   t,
   description,
   title,
   badge,
+  ctaHref,
+  ctaLabel,
 }: {
   t: Dictionary;
   description: string;
   title?: string;
   badge?: string;
+  ctaHref?: string;
+  ctaLabel?: string;
 }) {
   return (
     <Card className="border-primary/30 bg-accent">
@@ -31,6 +37,11 @@ export function UpsellCard({
         <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-primary">
           {badge ?? t.pro.badge}
         </span>
+        {ctaHref ? (
+          <Button asChild size="sm" className="mt-1">
+            <Link href={ctaHref}>{ctaLabel}</Link>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

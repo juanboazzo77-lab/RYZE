@@ -39,6 +39,8 @@ export default async function CoachProfileSettingsPage() {
           title={t.pro.coachTierTitle}
           badge={t.pro.coachTierBadge}
           description={t.pro.coachProfileDesc}
+          ctaHref="/settings/plans"
+          ctaLabel={t.pro.viewPlans}
         />
       </div>
     );

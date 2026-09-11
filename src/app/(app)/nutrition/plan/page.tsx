@@ -33,7 +33,12 @@ export default async function MealPlanPage() {
       <div className="space-y-4">
         {back}
         {title}
-        <UpsellCard t={t} description={t.nutrition.mealPlan.upsell} />
+        <UpsellCard
+          t={t}
+          description={t.nutrition.mealPlan.upsell}
+          ctaHref="/settings/plans"
+          ctaLabel={t.pro.viewPlans}
+        />
       </div>
     );
   }

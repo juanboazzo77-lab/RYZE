@@ -26,7 +26,7 @@ export async function CoachProfileNudge({
 
   return (
     <Link
-      href="/settings/about"
+      href={hasAccess ? '/settings/about' : '/settings/plans'}
       className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/5 p-3 transition-colors hover:bg-primary/10"
     >
       {hasAccess ? (

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {
   Bell,
   ChevronRight,
+  CreditCard,
   LogOut,
   ShieldCheck,
   Sparkles,
@@ -34,6 +35,12 @@ export default async function SettingsPage() {
       title: t.coachProfile.settingsRow,
       desc: t.coachProfile.settingsRowDesc,
       badge: can(ctx.entitlement, 'coach_profile') ? undefined : t.pro.coachTierBadge,
+    },
+    {
+      href: '/settings/plans',
+      icon: CreditCard,
+      title: t.plans.title,
+      desc: t.plans.settingsDesc,
     },
     {
       href: '/settings/notifications',

@@ -272,6 +272,34 @@ export const es = {
     coachTierBadge: 'FitAI COACH',
     coachProfileDesc:
       'El perfil de coaching (salud, comida, entrenamiento, objetivo y tu día a día) y la individualización 100% a medida que arma la IA con esos datos son exclusivos del plan COACH, el más top de FitAI.',
+    viewPlans: 'Ver planes',
+  },
+  plans: {
+    title: 'Planes',
+    subtitle: 'Elegí el plan que mejor se adapta a vos.',
+    settingsDesc: 'Compará FREE, PRO y COACH.',
+    perMonth: '/mes',
+    free: 'Gratis',
+    currentPlan: 'Tu plan actual',
+    choose: 'Elegir plan',
+    comingSoon: 'Disponible pronto — todavía no hay cobros conectados. Pronto vas a poder suscribirte.',
+    topPlan: 'El más top',
+    billingNote:
+      'Los precios son de referencia; todavía no hay cobros conectados. Vas a poder suscribirte pronto.',
+    tiers: {
+      FREE: { name: 'FREE', tagline: 'Para arrancar y probar la app.' },
+      PRO: { name: 'PRO', tagline: 'Para entrenar en serio, con seguimiento real.' },
+      COACH: { name: 'COACH', tagline: 'Un entrenador que te conoce de verdad.' },
+    },
+    features: {
+      aiCoachMessages: 'mensajes/día con el AI Coach',
+      aiPlans: 'planes con IA por mes',
+      ai_meal_plan: 'Planificación de comidas con IA',
+      weekly_checkin: 'Check-in semanal con ajustes',
+      advanced_stats: 'Estadísticas avanzadas',
+      progression_analysis: 'Análisis de progresión',
+      coach_profile: 'Perfil de coaching + individualización 100% a medida',
+    },
   },
   nav: {
     home: 'Inicio',

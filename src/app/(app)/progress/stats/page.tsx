@@ -34,7 +34,12 @@ export default async function StatsPage() {
     return (
       <div className="space-y-4">
         {header}
-        <UpsellCard t={t} description={t.pro.statsDesc} />
+        <UpsellCard
+          t={t}
+          description={t.pro.statsDesc}
+          ctaHref="/settings/plans"
+          ctaLabel={t.pro.viewPlans}
+        />
       </div>
     );
   }

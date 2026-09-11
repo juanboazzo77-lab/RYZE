@@ -21,7 +21,12 @@ export default async function CheckinPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold tracking-tight">{t.checkin.title}</h1>
-        <UpsellCard t={t} description={t.pro.checkinDesc} />
+        <UpsellCard
+          t={t}
+          description={t.pro.checkinDesc}
+          ctaHref="/settings/plans"
+          ctaLabel={t.pro.viewPlans}
+        />
       </div>
     );
   }
