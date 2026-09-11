@@ -23,6 +23,10 @@ export const es = {
     gUnit: 'g',
     saved: 'Cambios guardados',
   },
+  ads: {
+    placeholder: 'Espacio publicitario',
+    removeAds: 'Sin anuncios en PRO y COACH',
+  },
   sports: {
     title: 'Deportes',
     subtitle:
@@ -294,6 +298,7 @@ export const es = {
     features: {
       aiCoachMessages: 'mensajes/día con el AI Coach',
       aiPlans: 'planes con IA por mes',
+      noAds: 'Sin anuncios',
       ai_meal_plan: 'Planificación de comidas con IA',
       weekly_checkin: 'Check-in semanal con ajustes',
       advanced_stats: 'Estadísticas avanzadas',

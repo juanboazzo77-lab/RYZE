@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, limitsFor } from './entitlements';
+import { can, limitsFor, showAds } from './entitlements';
 
 describe('entitlements', () => {
   it('FREE limita mensajes de coach y no habilita features PRO', () => {
@@ -23,5 +23,11 @@ describe('entitlements', () => {
     expect(limitsFor({ tier: 'COACH' }).aiCoachMessagesPerDay).toBeGreaterThan(
       limitsFor({ tier: 'PRO' }).aiCoachMessagesPerDay,
     );
+  });
+
+  it('sólo FREE ve publicidad', () => {
+    expect(showAds({ tier: 'FREE' })).toBe(true);
+    expect(showAds({ tier: 'PRO' })).toBe(false);
+    expect(showAds({ tier: 'COACH' })).toBe(false);
   });
 });

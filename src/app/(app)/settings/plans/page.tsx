@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { ChevronLeft, Check, X, Crown } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
-import { TIER_LIMITS } from '@/server/entitlements';
+import { TIER_LIMITS, showAds } from '@/server/entitlements';
 import { PLAN_ORDER, PLAN_PRICE_USD, FEATURE_ROWS } from '@/features/billing/plans';
 import { PlanSelectButton } from '@/features/billing/plan-select-button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -78,6 +78,16 @@ export default async function PlansPage() {
                     <Check className="mt-0.5 size-4 shrink-0 text-primary" />
                     <span>
                       {limits.aiPlansPerMonth} {p.features.aiPlans}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    {showAds({ tier }) ? (
+                      <X className="mt-0.5 size-4 shrink-0 text-muted-foreground/50" />
+                    ) : (
+                      <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                    )}
+                    <span className={cn(showAds({ tier }) && 'text-muted-foreground/70')}>
+                      {p.features.noAds}
                     </span>
                   </li>
                   {FEATURE_ROWS.map((feature) => {

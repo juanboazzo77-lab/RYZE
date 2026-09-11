@@ -78,3 +78,8 @@ export function limitsFor(entitlement: Pick<Entitlement, 'tier'>): TierLimits {
 export function can(entitlement: Pick<Entitlement, 'tier'>, feature: Feature): boolean {
   return TIER_LIMITS[entitlement.tier].features[feature];
 }
+
+/** FREE ve publicidad; PRO y COACH no (la venden como beneficio del plan pago). */
+export function showAds(entitlement: Pick<Entitlement, 'tier'>): boolean {
+  return entitlement.tier === 'FREE';
+}

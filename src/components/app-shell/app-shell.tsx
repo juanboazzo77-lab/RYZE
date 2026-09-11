@@ -5,12 +5,18 @@ import { SideNav } from './side-nav';
 import { ThemeToggle } from './theme-toggle';
 import { signOutAction } from '@/app/(auth)/actions';
 import { Button } from '@/components/ui/button';
+import { AdSlot } from '@/components/ad-slot';
+import type { Dictionary } from '@/i18n';
 
 export function AppShell({
   email,
+  showAds,
+  adCopy,
   children,
 }: {
   email: string;
+  showAds: boolean;
+  adCopy: Dictionary['ads'];
   children: React.ReactNode;
 }) {
   return (
@@ -43,6 +49,7 @@ export function AppShell({
         </header>
 
         <main className="has-bottom-nav mx-auto w-full max-w-3xl flex-1 px-4 py-5 md:pb-8">
+          {showAds ? <AdSlot label={adCopy.placeholder} removeAdsLabel={adCopy.removeAds} /> : null}
           {children}
         </main>
       </div>

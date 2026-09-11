@@ -25,6 +25,10 @@ export const en: Dictionary = {
     gUnit: 'g',
     saved: 'Changes saved',
   },
+  ads: {
+    placeholder: 'Advertisement space',
+    removeAds: 'No ads on PRO and COACH',
+  },
   sports: {
     title: 'Sports',
     subtitle:
@@ -296,6 +300,7 @@ export const en: Dictionary = {
     features: {
       aiCoachMessages: 'AI Coach messages/day',
       aiPlans: 'AI-generated plans/month',
+      noAds: 'No ads',
       ai_meal_plan: 'AI meal planning',
       weekly_checkin: 'Weekly check-in with adjustments',
       advanced_stats: 'Advanced stats',
