@@ -43,8 +43,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   PRO: {
-    aiCoachMessagesPerDay: 200,
-    aiPlansPerMonth: 30,
+    aiCoachMessagesPerDay: 100,
+    aiPlansPerMonth: 10,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -56,8 +56,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   COACH: {
-    aiCoachMessagesPerDay: 300,
-    aiPlansPerMonth: 60,
+    aiCoachMessagesPerDay: 200,
+    aiPlansPerMonth: 30,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
