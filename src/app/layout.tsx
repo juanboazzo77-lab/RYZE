@@ -5,12 +5,12 @@ import { getT } from '@/i18n/server';
 
 export const metadata: Metadata = {
   title: {
-    default: 'FitAI',
-    template: '%s · FitAI',
+    default: 'GYMO',
+    template: '%s · GYMO',
   },
   description: 'Alimentación, entrenamiento, progreso y un entrenador con IA en un solo lugar.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'FitAI', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'GYMO', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {

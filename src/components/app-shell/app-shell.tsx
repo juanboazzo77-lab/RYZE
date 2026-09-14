@@ -24,7 +24,7 @@ export function AppShell({
       <SideNav />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur">
-          <span className="text-sm font-semibold md:hidden">FitAI</span>
+          <span className="text-sm font-semibold md:hidden">GYMO</span>
           <div className="ml-auto flex items-center gap-1">
             <span className="hidden max-w-[16rem] truncate text-sm text-muted-foreground sm:inline">
               {email}

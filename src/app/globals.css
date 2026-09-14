@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =====================================================================
-   FitAI — tokens de diseño
+   GYMO — tokens de diseño
    Estética premium/deportiva: superficies neutras profundas + acento
    verde energía. Compatible con shadcn/ui.
    ===================================================================== */

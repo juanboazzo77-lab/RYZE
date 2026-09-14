@@ -13,7 +13,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             className="inline-flex items-center gap-2 text-2xl font-bold tracking-tight"
           >
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-              F
+              G
             </span>
             {t.common.appName}
           </Link>

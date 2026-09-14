@@ -48,7 +48,7 @@ export class AiPermissionError extends AiError {
     super(
       'PERMISSION_DENIED',
       `La feature "${feature}" no está disponible en el plan actual`,
-      'Esta función es parte de FitAI PRO.',
+      'Esta función es parte de GYMO PRO.',
     );
     this.name = 'AiPermissionError';
   }

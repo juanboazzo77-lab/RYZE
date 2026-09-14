@@ -3,7 +3,7 @@ import type { Dictionary } from '../index';
 /** Dicionário em português (Brasil). Precisa ter a mesma estrutura de `es`. */
 export const pt: Dictionary = {
   common: {
-    appName: 'FitAI',
+    appName: 'GYMO',
     save: 'Salvar',
     saving: 'Salvando…',
     cancel: 'Cancelar',
@@ -64,7 +64,7 @@ export const pt: Dictionary = {
     nudgeBody:
       'Você respondeu {n}%. Complete o que quiser: quanto mais o coach sabe, mais personalizado o plano.',
     upsellNudgeTitle: 'Perfil de coaching — plano COACH',
-    upsellNudgeBody: 'Desbloqueie a individualização 100% sob medida com o plano mais top do FitAI.',
+    upsellNudgeBody: 'Desbloqueie a individualização 100% sob medida com o plano mais top do GYMO.',
     physiqueHint: 'Envie de 1 a 3 fotos. São analisadas e descartadas, nunca salvas.',
     physiqueBodyFat: 'Gordura corporal aprox.',
     physiqueAnalyze: 'Analisar físico',
@@ -293,15 +293,15 @@ export const pt: Dictionary = {
   },
   pro: {
     title: 'Função PRO',
-    badge: 'FitAI PRO',
+    badge: 'GYMO PRO',
     checkinDesc:
-      'O check-in semanal com acompanhamento de adesão e recomendações faz parte do FitAI PRO. Ainda não há cobrança habilitada; esta tela já está pronta para quando a assinatura for ativada.',
+      'O check-in semanal com acompanhamento de adesão e recomendações faz parte do GYMO PRO. Ainda não há cobrança habilitada; esta tela já está pronta para quando a assinatura for ativada.',
     statsDesc:
-      'As estatísticas avançadas (volume semanal, médias e adesão detalhada) fazem parte do FitAI PRO.',
+      'As estatísticas avançadas (volume semanal, médias e adesão detalhada) fazem parte do GYMO PRO.',
     coachTierTitle: 'Função do plano COACH',
-    coachTierBadge: 'FitAI COACH',
+    coachTierBadge: 'GYMO COACH',
     coachProfileDesc:
-      'O perfil de coaching (saúde, comida, treino, objetivo e seu dia a dia) e a individualização 100% sob medida que a IA cria com esses dados são exclusivos do plano COACH, o mais top do FitAI.',
+      'O perfil de coaching (saúde, comida, treino, objetivo e seu dia a dia) e a individualização 100% sob medida que a IA cria com esses dados são exclusivos do plano COACH, o mais top do GYMO.',
     viewPlans: 'Ver planos',
   },
   plans: {

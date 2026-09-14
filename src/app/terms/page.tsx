@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
-export const metadata: Metadata = { title: 'Términos de Servicio · FitAI' };
+export const metadata: Metadata = { title: 'Términos de Servicio · GYMO' };
 
 const LAST_UPDATED = '14 de septiembre de 2026';
 const CONTACT_EMAIL = 'gymoia3@gmail.com';
@@ -28,19 +28,19 @@ export default function TermsPage() {
         Volver
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold tracking-tight">Términos de Servicio de FitAI</h1>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight">Términos de Servicio de GYMO</h1>
       <p className="mt-1 text-xs text-muted-foreground">Última actualización: {LAST_UPDATED}</p>
 
       <P>
-        Al crear una cuenta o usar FitAI (&ldquo;la app&rdquo;) aceptás estos términos. Si no estás de
+        Al crear una cuenta o usar GYMO (&ldquo;la app&rdquo;) aceptás estos términos. Si no estás de
         acuerdo con alguno, no uses la app. Los operamos como desarrollador independiente, Juan
         Boazzo — contacto:{' '}
         <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </P>
 
-      <H2>⚠ FitAI no es un profesional de la salud</H2>
+      <H2>⚠ GYMO no es un profesional de la salud</H2>
       <P>
-        Esto es lo más importante de estos términos, léelo con atención. FitAI —incluido todo lo que
+        Esto es lo más importante de estos términos, léelo con atención. GYMO —incluido todo lo que
         te diga el AI Coach— es una herramienta de organización y estimación, <strong
         className="text-foreground">no reemplaza a un médico, nutricionista ni entrenador licenciado
         </strong>. No diagnostica, no prescribe tratamientos y no debe usarse como única fuente de
@@ -52,7 +52,7 @@ export default function TermsPage() {
         entrenar y consultá a un médico.
       </P>
 
-      <H2>Quién puede usar FitAI</H2>
+      <H2>Quién puede usar GYMO</H2>
       <P>
         Necesitás al menos 13 años para crear una cuenta. Si sos menor de 18, necesitás el permiso de
         tu padre, madre o tutor. Al registrarte, confirmás que la información que nos das es real y
@@ -75,7 +75,7 @@ export default function TermsPage() {
 
       <H2>Planes y suscripciones</H2>
       <P>
-        FitAI tiene un plan gratuito (FREE) y planes pagos (PRO, COACH) con más funciones.{' '}
+        GYMO tiene un plan gratuito (FREE) y planes pagos (PRO, COACH) con más funciones.{' '}
         <strong className="text-foreground">Hoy no hay cobros activos</strong>: los planes pagos
         todavía no se pueden contratar dentro de la app. Cuando se habilite el pago, estos términos se
         van a actualizar con los detalles de facturación, renovación y cancelación, y ese cambio se te
@@ -103,13 +103,13 @@ export default function TermsPage() {
       <H2>Propiedad</H2>
       <P>
         Vos sos dueño de los datos que cargás (tu perfil, tus registros, tus fotos antes de que las
-        borremos). FitAI y su diseño, marca y código son propiedad de sus desarrolladores. No podés
+        borremos). GYMO y su diseño, marca y código son propiedad de sus desarrolladores. No podés
         copiar, redistribuir ni crear trabajos derivados de la app sin permiso.
       </P>
 
       <H2>Sin garantías</H2>
       <P>
-        FitAI se ofrece &ldquo;tal cual&rdquo;. No garantizamos que el servicio esté libre de errores,
+        GYMO se ofrece &ldquo;tal cual&rdquo;. No garantizamos que el servicio esté libre de errores,
         interrupciones o que vaya a cumplir un resultado específico (por ejemplo, no garantizamos que
         vayas a bajar de peso o mejorar tu rendimiento siguiendo la app). Hacemos lo posible para que
         funcione bien, pero es software en desarrollo activo.
@@ -117,7 +117,7 @@ export default function TermsPage() {
 
       <H2>Límite de responsabilidad</H2>
       <P>
-        En la máxima medida permitida por la ley, FitAI y sus desarrolladores no son responsables por
+        En la máxima medida permitida por la ley, GYMO y sus desarrolladores no son responsables por
         daños indirectos, pérdida de datos, lesiones o cualquier perjuicio derivado del uso de la app,
         incluyendo decisiones de salud, entrenamiento o alimentación tomadas a partir de su contenido.
         Usás la app bajo tu propio criterio y responsabilidad.

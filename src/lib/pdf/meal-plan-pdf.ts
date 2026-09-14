@@ -100,5 +100,5 @@ export function downloadMealPlanPdf(args: {
   ensureSpace(10);
   line(t.nutrition.estimatedBadge.toUpperCase(), { size: 8, color: 150, gap: 4 });
 
-  doc.save(`fitai-plan-comidas-${dateISO}.pdf`);
+  doc.save(`gymo-plan-comidas-${dateISO}.pdf`);
 }
