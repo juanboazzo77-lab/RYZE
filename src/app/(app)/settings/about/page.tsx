@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { can } from '@/server/entitlements';
+import { aiConfigured } from '@/server/ai/config';
 import { getCoachProfile } from '@/features/coach-profile/queries';
 import { CoachProfileForm } from '@/features/coach-profile/coach-profile-form';
 import { UpsellCard } from '@/components/upsell-card';
@@ -51,7 +52,7 @@ export default async function CoachProfileSettingsPage() {
   return (
     <div className="space-y-4">
       {header}
-      <CoachProfileForm initial={initial} sex={ctx.profile.sex} />
+      <CoachProfileForm initial={initial} sex={ctx.profile.sex} aiReady={aiConfigured()} />
     </div>
   );
 }

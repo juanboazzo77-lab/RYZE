@@ -271,6 +271,7 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
       targetRepsMax: number;
       targetRir: number;
       restSeconds: number;
+      notes: string | null;
     }>;
   }> = [];
   for (const d of draft.days) {
@@ -286,6 +287,7 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
         targetRepsMax: Math.max(e.repsMin, e.repsMax),
         targetRir: e.rir,
         restSeconds: e.restSeconds,
+        notes: e.note?.trim() || null,
       });
     }
     dayResolved.push({ name: d.name, weekday: d.weekday, exercises });

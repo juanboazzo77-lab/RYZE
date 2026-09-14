@@ -1,14 +1,17 @@
 'use server';
 
-import { getSession } from '@/server/context';
+import { getSession, requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { can } from '@/server/entitlements';
+import { aiConfigured } from '@/server/ai/config';
 import { saveCoachProfileSchema } from './schema';
+import { analyzePhysiqueSchema, type PhysiqueAnalysis } from './physique-schema';
 
-export interface Result {
+export interface Result<T = void> {
   ok?: boolean;
   error?: string;
+  data?: T;
 }
 
 const j = (v: unknown) => JSON.stringify(v ?? {});
@@ -75,4 +78,30 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
     }
   }
   return { error: 'SAVE_FAILED' };
+}
+
+/**
+ * Análisis de físico por foto (% graso aproximado + puntos débiles). Sólo
+ * COACH. Las fotos viven en esta variable local: se mandan al modelo y se
+ * descartan, nunca se guardan.
+ */
+export async function analyzePhysiqueAction(raw: {
+  photos: string[];
+}): Promise<Result<PhysiqueAnalysis>> {
+  const parsed = analyzePhysiqueSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+
+  const { profile, entitlement } = await requireUser();
+  if (!can(entitlement, 'coach_profile')) return { error: 'FORBIDDEN' };
+  if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
+
+  try {
+    const { analyzePhysique } = await import('@/server/ai/gateway');
+    const analysis = await analyzePhysique({ profile, entitlement, photos: parsed.data.photos });
+    if (!analysis) return { error: 'INVALID_OUTPUT' };
+    return { ok: true, data: analysis };
+  } catch (e) {
+    console.error('[physique] falló', e instanceof Error ? e.message : e);
+    return { error: 'PROVIDER_ERROR' };
+  }
 }

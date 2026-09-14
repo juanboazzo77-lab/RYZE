@@ -101,6 +101,7 @@ export const CARDIO_TYPES = [
 ] as const;
 export const JOB_ACTIVITY = ['sentado', 'mixto', 'de_pie', 'fisico'] as const;
 export const ROUTINE_STYLE = ['full_body', 'ppl', 'torso_pierna', 'que_decida_coach'] as const;
+export const SPORT_PRIORITY = ['deporte', 'gimnasio', 'equilibrado'] as const;
 
 export const AGGRESSIVENESS = ['tranquilo', 'equilibrado', 'a_full'] as const;
 export const MAIN_PRIORITY = ['estetica', 'salud', 'rendimiento', 'fuerza'] as const;
@@ -191,6 +192,8 @@ export const trainingSchema = z.object({
   cardioTypes: chips(CARDIO_TYPES),
   jobActivity: optEnum(JOB_ACTIVITY),
   routineStyle: optEnum(ROUTINE_STYLE),
+  sportPriority: optEnum(SPORT_PRIORITY),
+  trainsSportAlone: optEnum(YES_NO),
 });
 
 export const goalSchema = z.object({
@@ -200,6 +203,9 @@ export const goalSchema = z.object({
   aggressiveness: optEnum(AGGRESSIVENESS),
   mainPriority: optEnum(MAIN_PRIORITY),
   triedBefore: note(),
+  /** Análisis de físico por foto (IA): % graso estimado + puntos débiles. Lo
+   * escribe la IA, el usuario lo puede editar. Foto NUNCA se guarda. */
+  physiqueNote: note(700),
 });
 
 export const lifestyleSchema = z.object({
@@ -296,7 +302,7 @@ export const COMPLETION_FIELDS: Record<SectionKey, string[]> = {
     'jobActivity',
     'routineStyle',
   ],
-  goal: ['goalInWords', 'aggressiveness', 'mainPriority'],
+  goal: ['goalInWords', 'aggressiveness', 'mainPriority', 'physiqueNote'],
   lifestyle: ['scheduleType', 'travelFrequency', 'consistency', 'planFreedom', 'adjustCadence'],
 };
 

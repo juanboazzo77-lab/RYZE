@@ -217,6 +217,10 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
   if (tr.cardioTypes.length) tp.push(`cardio preferido: ${list(tr.cardioTypes)}`);
   if (tr.jobActivity) tp.push(`trabajo: ${lab(tr.jobActivity)}`);
   if (tr.routineStyle) tp.push(`prefiere: ${lab(tr.routineStyle)}`);
+  if (tr.sportPriority) tp.push(`prioridad deporte vs. gimnasio: ${lab(tr.sportPriority)}`);
+  if (tr.trainsSportAlone) {
+    tp.push(`entrena su deporte ${tr.trainsSportAlone === 'si' ? 'solo' : 'acompañado'}`);
+  }
   if (tp.length) out.push(`  Entrenamiento: ${tp.join('; ')}.`);
 
   // --- objetivo ---
@@ -231,6 +235,7 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
   if (g.aggressiveness) gp.push(`ritmo: ${lab(g.aggressiveness)}`);
   if (g.mainPriority) gp.push(`prioridad: ${lab(g.mainPriority)}`);
   if (g.triedBefore) gp.push(`antes probó (no funcionó): ${g.triedBefore}`);
+  if (g.physiqueNote) gp.push(`físico (análisis previo): ${g.physiqueNote}`);
   if (gp.length) out.push(`  Objetivo: ${gp.join('; ')}.`);
 
   // --- día a día ---

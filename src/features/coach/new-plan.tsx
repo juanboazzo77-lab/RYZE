@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Sparkles } from 'lucide-react';
@@ -24,9 +24,13 @@ interface Draft {
 export function NewPlanFlow({
   initialDraft,
   usage,
+  autoGenerate = false,
 }: {
   initialDraft: Draft | null;
   usage: { used: number; limit: number };
+  /** Viene de guardar el perfil de coach: generá apenas se monta, sin que el
+   * usuario tenga que tocar nada. No pisa ningún plan activo por sí sola. */
+  autoGenerate?: boolean;
 }) {
   const t = useT();
   const tp = t.coach.plan;
@@ -35,12 +39,13 @@ export function NewPlanFlow({
   const [brief, setBrief] = useState('');
   const [pending, start] = useTransition();
   const [used, setUsed] = useState(usage.used);
+  const [refining, setRefining] = useState(false);
   const atLimit = used >= usage.limit;
 
-  function generate() {
+  function generate(briefOverride?: string) {
     if (pending || atLimit) return;
     start(async () => {
-      const res = await generatePlan({ brief: brief.trim() });
+      const res = await generatePlan({ brief: (briefOverride ?? brief).trim() });
       if (res.ok && res.data) {
         setDraft(res.data);
         setUsed((n) => n + 1);
@@ -50,17 +55,24 @@ export function NewPlanFlow({
     });
   }
 
+  useEffect(() => {
+    if (autoGenerate && !initialDraft && !atLimit) generate('');
+    // Sólo al montar: es un disparo único desde ?auto=1, no un efecto reactivo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!draft) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{tp.intro}</p>
+        <p className="text-sm text-muted-foreground">{refining ? tp.refineIntro : tp.intro}</p>
         <div className="space-y-1.5">
-          <Label htmlFor="brief">{tp.briefLabel}</Label>
+          <Label htmlFor="brief">{refining ? tp.refineLabel : tp.briefLabel}</Label>
           <Textarea
             id="brief"
+            autoFocus={refining}
             value={brief}
             onChange={(e) => setBrief(e.target.value)}
-            placeholder={tp.briefPlaceholder}
+            placeholder={refining ? tp.refinePlaceholder : tp.briefPlaceholder}
             rows={3}
             maxLength={600}
           />
@@ -69,7 +81,7 @@ export function NewPlanFlow({
           <span className="text-xs text-muted-foreground tabular-nums">
             {interpolate(tp.usage, { used, limit: usage.limit })}
           </span>
-          <Button onClick={generate} disabled={pending || atLimit}>
+          <Button onClick={() => generate()} disabled={pending || atLimit}>
             {pending ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
@@ -78,7 +90,7 @@ export function NewPlanFlow({
             ) : (
               <>
                 <Sparkles className="size-4" />
-                {tp.generate}
+                {refining ? tp.refineGenerate : tp.generate}
               </>
             )}
           </Button>
@@ -96,6 +108,8 @@ export function NewPlanFlow({
           await discardGeneratedPlan({ generationId: draft.generationId });
           toast.message(tp.discarded);
           setDraft(null);
+          setBrief('');
+          setRefining(true);
         })
       }
       onAccept={(name, applyNutrition) =>
@@ -160,7 +174,12 @@ function DraftReview({
               <ul className="divide-y text-sm">
                 {d.exercises.map((e, j) => (
                   <li key={j} className="flex items-center justify-between gap-3 py-2">
-                    <span className="min-w-0 truncate">{e.name}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate">{e.name}</span>
+                      {e.note ? (
+                        <span className="block text-xs text-muted-foreground">{e.note}</span>
+                      ) : null}
+                    </span>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       {interpolate(tp.setsReps, {
                         sets: e.sets,

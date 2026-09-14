@@ -13,6 +13,9 @@ export const planDraftExercise = z.object({
   repsMax: z.number().int().min(1).max(50),
   rir: z.number().int().min(0).max(5),
   restSeconds: z.number().int().min(15).max(600),
+  /** Aclaración corta: cue técnico, o qué significan sets/reps en un drill
+   * de cancha (ej. "series = rondas, reps = sprints de 20m"). */
+  note: z.string().max(140).optional(),
 });
 
 export const planDraftDay = z.object({

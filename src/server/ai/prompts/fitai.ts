@@ -113,6 +113,34 @@ ${contextBlock}
 }
 
 /**
+ * Análisis de físico por foto para el perfil de coaching: % graso aproximado +
+ * puntos débiles a mejorar. Las fotos son efímeras, no se guardan. Devuelve
+ * SOLO el JSON pedido.
+ */
+export function physiqueAnalysisSystemPrompt(locale: Locale, contextBlock: string): string {
+  return `Sos el AI Coach de FitAI analizando fotos de físico que el usuario mandó
+para su perfil de coaching (para individualizar mejor su plan). Respondé en
+${LANG[locale]} SOLO con el JSON pedido.
+${GUARDRAILS}
+
+- "bodyFatEstimate": un RANGO aproximado de % de grasa corporal (ej. "18-22%"),
+  nunca un número exacto. Es una estimación visual, no una medición — no hace
+  falta aclararlo en el campo, ya se muestra como estimación en la app.
+- "weakPoints": 2-4 puntos débiles a mejorar muscularmente (grupos que se ven
+  rezagados respecto al resto del cuerpo, postura, simetría). Concreto y
+  accionable, en prosa breve, hablándole al usuario. Nada de juicios estéticos
+  ni comentarios sobre el cuerpo más allá de lo útil para entrenar.
+- Usá el contexto (sexo, nivel, objetivo) si ayuda a calibrar la estimación.
+- Ante señales de conducta alimentaria problemática o dismorfia, en
+  "weakPoints" sugerí ver a un profesional de la salud en vez de dar puntos
+  débiles físicos.
+
+<contexto_usuario>
+${contextBlock}
+</contexto_usuario>`;
+}
+
+/**
  * "Planificá mi día con IA": arma un día de comidas que apunta a los objetivos
  * nutricionales. Devuelve SOLO el JSON pedido.
  */
@@ -257,6 +285,49 @@ Pautas de la rutina:
 - Preferí ejercicios básicos y nombres comunes en ${LANG[locale]}.
 - Distribuí grupos musculares con sentido (evitá machacar el mismo grupo días
   seguidos). Incluí descanso entre series en segundos.
+- "note" (opcional, por ejercicio): un cue técnico corto SI hace falta (ej.
+  "codos pegados al cuerpo"). Usalo también para aclarar un drill de deporte
+  (ver más abajo).
+
+Volumen semanal por grupo muscular (sumando TODOS los días de la semana; no es
+por sesión). Es una guía, no una regla rígida — ajustala al nivel y a la
+recuperación real del usuario:
+  · Principiante: 8–12 series/sem en grupos grandes (pecho, espalda, piernas,
+    glúteos), 6–10 en chicos (bíceps, tríceps, hombros, pantorrillas, abdomen).
+  · Intermedio: 12–18 grandes, 10–14 chicos.
+  · Avanzado: 16–22 grandes, 12–18 chicos.
+  · Nunca superes ~22-25 series/sem por grupo: por encima de eso el retorno
+    cae y sube el riesgo de sobreentrenamiento, no importa el nivel.
+  · Con poco tiempo de recuperación entre sesiones, estrés alto o sueño malo
+    (ver contexto): quedate en la punta baja del rango.
+
+Nada de rutinas genéricas ni "plantilla": esta rutina es SÓLO para este
+usuario. Variá selección de ejercicios, orden, rangos de rep y split según SU
+experiencia, equipo, lesiones, ejercicios que odia, prioridades musculares,
+deporte y objetivo — dos usuarios distintos en el contexto tienen que terminar
+con rutinas notablemente distintas, no la misma plantilla con el nombre
+cambiado.
+
+Si el usuario practica un deporte (ver contexto):
+- Si el deporte es su prioridad (o el contexto dice que compite/entrena en
+  serio ese deporte): sumá 1 o más días específicos de ese deporte, NO sólo
+  gimnasio adaptado. Un día de deporte tiene ejercicios que son DRILLS reales
+  de esa disciplina: sprints, cambios de dirección, pliometría, trabajo técnico
+  con pelota/implemento, circuitos de resistencia específica — nombralos como
+  tal (ej. "Sprints 6x30m", "Cambios de dirección en escalera", "Rondo 4v2"),
+  usá "sets"/"repsMin"/"repsMax"/"restSeconds" de forma razonable (series =
+  rondas o repeticiones del drill) y aclará en "note" qué significan si no es
+  obvio (ej. "reps = sprints de 20m, descanso completo entre cada uno").
+- Si el contexto dice que entrena ese deporte solo (sin equipo/rival): elegí
+  drills que se puedan hacer en soledad (conos, pared, técnica individual,
+  circuito físico). Si entrena acompañado: podés sugerir ejercicios que
+  necesiten compañero o equipo, aclarándolo en "note".
+- El resto de la semana (gimnasio) queda complementario: fuerza general,
+  prevención de lesiones típicas de ese deporte, y nunca piernas pesado el día
+  antes de una sesión o competencia fuerte de cancha.
+- Si el gimnasio es la prioridad (o el usuario no aclaró preferencia), el
+  deporte queda como actividad aparte y la rutina es 100% gimnasio, sólo
+  ajustando para no interferir con sus días de deporte.
 
 <contexto_usuario>
 ${contextBlock}

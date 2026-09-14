@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Loader2, Sparkles } from 'lucide-react';
 import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n';
 import { Button } from '@/components/ui/button';
@@ -15,10 +17,11 @@ import { ChipMulti } from '@/components/form/chip-multi';
 import { OptionCards } from '@/components/form/option-cards';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { TagInput } from '@/components/form/tag-input';
+import { PhotoPicker } from '@/components/form/photo-picker';
 import type { Sex } from '@prisma/client';
 import * as S from './schema';
 import type { CoachProfileData, SectionKey } from './schema';
-import { saveCoachProfile } from './actions';
+import { saveCoachProfile, analyzePhysiqueAction } from './actions';
 
 type OptMap = Record<string, string>;
 const optList = <T extends string>(vals: readonly T[], map: OptMap) =>
@@ -27,12 +30,15 @@ const optList = <T extends string>(vals: readonly T[], map: OptMap) =>
 export function CoachProfileForm({
   initial,
   sex,
+  aiReady,
 }: {
   initial: CoachProfileData;
   sex: Sex | null;
+  aiReady: boolean;
 }) {
   const t = useT();
   const c = t.coachProfile;
+  const router = useRouter();
   const [d, setD] = useState<CoachProfileData>(initial);
   const [pending, start] = useTransition();
 
@@ -50,8 +56,18 @@ export function CoachProfileForm({
     start(async () => {
       try {
         const res = await saveCoachProfile(d);
-        if (res.ok) toast.success(c.savedToast);
-        else toast.error(t.onboarding.errors.generic);
+        if (!res.ok) {
+          toast.error(t.onboarding.errors.generic);
+          return;
+        }
+        if (aiReady) {
+          // El borrador no reemplaza nada activo hasta que el usuario lo
+          // confirme en /coach/new-plan (ver NewPlanFlow con ?auto=1).
+          toast.success(c.savedGenerating);
+          router.push('/coach/new-plan?auto=1');
+        } else {
+          toast.success(c.savedToast);
+        }
       } catch {
         // fallo de red / timeout: no romper la pantalla, dejar reintentar
         toast.error(t.onboarding.errors.generic);
@@ -329,6 +345,20 @@ export function CoachProfileForm({
               onChange={(v) => set('training', { routineStyle: v })}
             />
           </Field>
+          <Field label={c.fields.sportPriority} hint={c.fields.sportPriorityHint}>
+            <Segmented
+              options={optList(S.SPORT_PRIORITY, c.opts.sportPriority)}
+              value={tr.sportPriority}
+              onChange={(v) => set('training', { sportPriority: v })}
+            />
+          </Field>
+          <Field label={c.fields.trainsSportAlone} hint={c.fields.trainsSportAloneHint}>
+            <Segmented
+              options={optList(S.YES_NO, c.opts.yesNo)}
+              value={tr.trainsSportAlone}
+              onChange={(v) => set('training', { trainsSportAlone: v })}
+            />
+          </Field>
         </CardContent>
       </Card>
 
@@ -385,6 +415,12 @@ export function CoachProfileForm({
               placeholder={c.fields.triedBeforePh}
               maxLength={300}
               onChange={(e) => set('goal', { triedBefore: e.target.value })}
+            />
+          </Field>
+          <Field label={c.fields.physiqueNote} hint={c.fields.physiqueNoteHint}>
+            <PhysiqueAnalyzer
+              value={g.physiqueNote}
+              onChange={(v) => set('goal', { physiqueNote: v })}
             />
           </Field>
         </CardContent>
@@ -455,6 +491,73 @@ export function CoachProfileForm({
       <div className="sticky bottom-16 z-10 md:bottom-0">
         <Button size="lg" className="w-full shadow-lg" onClick={save} disabled={pending}>
           {pending ? t.common.saving : t.common.save}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Analiza fotos de físico con IA (% graso aprox. + puntos débiles) y vuelca el
+ * resultado en un texto editable. Las fotos nunca se guardan: se mandan al
+ * modelo y se descartan también del cliente al terminar.
+ */
+function PhysiqueAnalyzer({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const t = useT();
+  const c = t.coachProfile;
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [analyzing, start] = useTransition();
+
+  function analyze() {
+    if (photos.length === 0) return;
+    start(async () => {
+      const res = await analyzePhysiqueAction({ photos });
+      if (res.ok && res.data) {
+        onChange(`${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}. ${res.data.weakPoints}`);
+        setPhotos([]);
+      } else {
+        toast.error(res.error === 'NOT_CONFIGURED' ? c.physiqueNotConfigured : c.physiqueError);
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-2">
+      <Textarea
+        value={value}
+        placeholder={c.fields.physiqueNotePh}
+        maxLength={700}
+        rows={3}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <div className="space-y-2 rounded-lg border border-dashed p-3">
+        <p className="text-xs text-muted-foreground">{c.physiqueHint}</p>
+        <PhotoPicker
+          value={photos}
+          onChange={setPhotos}
+          max={3}
+          labels={{
+            add: c.physiquePhotoAdd,
+            remove: t.common.delete,
+            max: c.physiquePhotoMax,
+            error: c.physiquePhotoError,
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={photos.length === 0 || analyzing}
+          onClick={analyze}
+        >
+          {analyzing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          {analyzing ? c.physiqueAnalyzing : c.physiqueAnalyze}
         </Button>
       </div>
     </div>

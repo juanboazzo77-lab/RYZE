@@ -12,8 +12,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 
 export const metadata: Metadata = { title: 'Generar plan con IA' };
 
-export default async function NewPlanPage() {
-  const [{ t }, ctx] = await Promise.all([getT(), requireUser()]);
+export default async function NewPlanPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ auto?: string }>;
+}) {
+  const [{ t }, ctx, sp] = await Promise.all([getT(), requireUser(), searchParams]);
 
   const back = (
     <Link
@@ -60,6 +64,7 @@ export default async function NewPlanPage() {
       <NewPlanFlow
         initialDraft={initialDraft}
         usage={{ used: usage.plansUsed, limit: usage.plansLimit }}
+        autoGenerate={sp.auto === '1'}
       />
     </div>
   );

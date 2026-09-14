@@ -10,6 +10,7 @@ import {
   mealPhotoSystemPrompt,
   mealTextSystemPrompt,
   mealPlanSystemPrompt,
+  physiqueAnalysisSystemPrompt,
   planSystemPrompt,
 } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
@@ -24,6 +25,10 @@ import {
   type MealPhotoEstimate,
 } from '@/features/nutrition/meal-photo-schema';
 import { exerciseGuideSchema, type ExerciseGuideAi } from '@/features/training/exercise-guide-schema';
+import {
+  physiqueAnalysisSchema,
+  type PhysiqueAnalysis,
+} from '@/features/coach-profile/physique-schema';
 
 /**
  * Gateway: único punto por el que el resto de la app pide algo a la IA. Se
@@ -348,6 +353,51 @@ export async function recommendGoalFromPhotos(args: {
     if (e instanceof AiError) console.error('[ai] goal advice', e.code, '-', e.message);
     else console.error('[ai] goal advice falló', e instanceof Error ? e.message : e);
     return { advice: null };
+  }
+}
+
+/**
+ * Análisis de físico para el perfil de coaching: % graso aproximado + puntos
+ * débiles. Fotos efímeras (no se guardan). Best-effort: nunca bloquea el
+ * guardado del perfil.
+ */
+export async function analyzePhysique(args: {
+  profile: Profile;
+  entitlement: Pick<Entitlement, 'tier'>;
+  photos: string[];
+}): Promise<PhysiqueAnalysis | null> {
+  const { profile, entitlement, photos } = args;
+  const model = modelFor('weekly_checkin');
+
+  const contextBlock = await buildUserContextBlock(profile, entitlement);
+  const system = physiqueAnalysisSystemPrompt(profile.locale, contextBlock);
+
+  const askText = 'Analizá el físico en las fotos. Devolvé el JSON.';
+  const userContent: AiContentBlock[] = [{ type: 'text', text: askText }];
+  for (const p of photos) {
+    const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(p);
+    if (m && m[1] && m[2]) userContent.push({ type: 'image', mediaType: m[1], dataBase64: m[2] });
+  }
+  if (userContent.length < 2) return null;
+
+  try {
+    const res = await activeProvider().generateStructured({
+      model,
+      system,
+      messages: [{ role: 'user', content: userContent }],
+      schema: physiqueAnalysisSchema,
+      schemaName: 'PhysiqueAnalysis',
+      maxOutputTokens: 600,
+      timeoutMs: CHECKIN_TIMEOUT_MS,
+      temperature: 0.4,
+      thinking: false,
+    });
+    await recordUsage(profile.id, 'weekly_checkin', model, res.usage, profile.timezone, false);
+    return res.data;
+  } catch (e) {
+    if (e instanceof AiError) console.error('[ai] physique', e.code, '-', e.message);
+    else console.error('[ai] physique falló', e instanceof Error ? e.message : e);
+    return null;
   }
 }
 
