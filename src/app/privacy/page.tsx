@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
-export const metadata: Metadata = { title: 'Política de Privacidad · RYZE' };
+export const metadata: Metadata = { title: 'Política de Privacidad · FORZA AI' };
 
 const LAST_UPDATED = '14 de septiembre de 2026';
 const CONTACT_EMAIL = 'gymoia3@gmail.com';
@@ -28,16 +28,16 @@ export default function PrivacyPage() {
         Volver
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold tracking-tight">Política de Privacidad de RYZE</h1>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight">Política de Privacidad de FORZA AI</h1>
       <p className="mt-1 text-xs text-muted-foreground">Última actualización: {LAST_UPDATED}</p>
 
       <P>
-        Esta política explica qué datos recopila RYZE (&ldquo;la app&rdquo;, &ldquo;nosotros&rdquo;),
+        Esta política explica qué datos recopila FORZA AI (&ldquo;la app&rdquo;, &ldquo;nosotros&rdquo;),
         para qué los usamos, con quién los compartimos y qué derechos tenés sobre ellos. Está escrita
         para ser leída y entendida por cualquier persona, sin necesidad de ser abogado.
       </P>
       <P>
-        Responsable del tratamiento de datos: Juan Boazzo, operando RYZE como desarrollador
+        Responsable del tratamiento de datos: Juan Boazzo, operando FORZA AI como desarrollador
         independiente. Contacto: <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </P>
 
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
       <P>
         Hoy la app <strong className="text-foreground">no tiene cobros activos</strong> — cuando se
         habilite el pago de suscripciones, esta política se va a actualizar para explicar qué datos de
-        pago procesa cada proveedor (Stripe, Google Play Billing o Apple, según corresponda); RYZE
+        pago procesa cada proveedor (Stripe, Google Play Billing o Apple, según corresponda); FORZA AI
         nunca va a ver ni guardar el número completo de tu tarjeta.
       </P>
 
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
         <Li>
           <strong className="text-foreground">Google (Gemini API):</strong> procesa los mensajes al AI
           Coach, la generación de planes y el análisis de fotos. Le mandamos sólo lo necesario para
-          esa consulta puntual; las fotos nunca quedan guardadas del lado de RYZE.
+          esa consulta puntual; las fotos nunca quedan guardadas del lado de FORZA AI.
         </Li>
         <Li>
           <strong className="text-foreground">Open Food Facts:</strong> buscador de alimentos por
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
       </ul>
       <P>
         Podríamos compartir información si la ley lo exige, o para proteger derechos, seguridad o
-        propiedad de RYZE o de terceros.
+        propiedad de FORZA AI o de terceros.
       </P>
 
       <H2>Cookies y almacenamiento local</H2>
@@ -167,7 +167,7 @@ export default function PrivacyPage() {
 
       <H2>Menores de edad</H2>
       <P>
-        RYZE no está pensada para menores de 13 años. Si sos menor de edad según las leyes de tu
+        FORZA AI no está pensada para menores de 13 años. Si sos menor de edad según las leyes de tu
         país, necesitás el permiso de tu padre, madre o tutor para usar la app. Dado que la app maneja
         datos de salud, si sos padre/madre/tutor y creés que un menor a tu cargo cargó datos sin tu
         consentimiento, escribinos y lo eliminamos.

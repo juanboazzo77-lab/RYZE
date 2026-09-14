@@ -3,7 +3,7 @@ import type { Dictionary } from '../index';
 /** Deutsches Wörterbuch. Muss dieselbe Struktur wie `es` haben. */
 export const de: Dictionary = {
   common: {
-    appName: 'RYZE',
+    appName: 'FORZA AI',
     save: 'Speichern',
     saving: 'Speichern…',
     cancel: 'Abbrechen',
@@ -64,7 +64,7 @@ export const de: Dictionary = {
     nudgeBody:
       'Du hast {n}% beantwortet. Ergänze, was du möchtest: Je mehr der Coach weiß, desto individueller der Plan.',
     upsellNudgeTitle: 'Coaching-Profil — COACH-Plan',
-    upsellNudgeBody: 'Schalte die 100 % maßgeschneiderte Individualisierung mit dem Top-Plan von RYZE frei.',
+    upsellNudgeBody: 'Schalte die 100 % maßgeschneiderte Individualisierung mit dem Top-Plan von FORZA AI frei.',
     physiqueHint: 'Lade 1 bis 3 Fotos hoch. Sie werden analysiert und danach verworfen, nie gespeichert.',
     physiqueBodyFat: 'Ca. Körperfettanteil',
     physiqueAnalyze: 'Körperbau analysieren',
@@ -293,15 +293,15 @@ export const de: Dictionary = {
   },
   pro: {
     title: 'PRO-Funktion',
-    badge: 'RYZE PRO',
+    badge: 'FORZA AI PRO',
     checkinDesc:
-      'Der wöchentliche Check-in mit Adhärenz-Tracking und Empfehlungen gehört zu RYZE PRO. Zahlungen sind noch nicht aktiviert; dieser Bildschirm ist bereit, sobald das Abo verfügbar ist.',
+      'Der wöchentliche Check-in mit Adhärenz-Tracking und Empfehlungen gehört zu FORZA AI PRO. Zahlungen sind noch nicht aktiviert; dieser Bildschirm ist bereit, sobald das Abo verfügbar ist.',
     statsDesc:
-      'Die erweiterten Statistiken (wöchentliches Volumen, Durchschnittswerte und detaillierte Adhärenz) gehören zu RYZE PRO.',
+      'Die erweiterten Statistiken (wöchentliches Volumen, Durchschnittswerte und detaillierte Adhärenz) gehören zu FORZA AI PRO.',
     coachTierTitle: 'Funktion des COACH-Plans',
-    coachTierBadge: 'RYZE COACH',
+    coachTierBadge: 'FORZA AI COACH',
     coachProfileDesc:
-      'Das Coaching-Profil (Gesundheit, Ernährung, Training, Ziel und dein Alltag) sowie die 100 % maßgeschneiderte Individualisierung, die die KI daraus erstellt, sind exklusiv für den COACH-Plan, den Top-Plan von RYZE.',
+      'Das Coaching-Profil (Gesundheit, Ernährung, Training, Ziel und dein Alltag) sowie die 100 % maßgeschneiderte Individualisierung, die die KI daraus erstellt, sind exklusiv für den COACH-Plan, den Top-Plan von FORZA AI.',
     viewPlans: 'Pläne ansehen',
   },
   plans: {

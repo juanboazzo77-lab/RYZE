@@ -3,7 +3,7 @@ import type { Dictionary } from '../index';
 /** Dictionnaire en français. Doit avoir la même structure que `es`. */
 export const fr: Dictionary = {
   common: {
-    appName: 'RYZE',
+    appName: 'FORZA AI',
     save: 'Enregistrer',
     saving: 'Enregistrement…',
     cancel: 'Annuler',
@@ -64,7 +64,7 @@ export const fr: Dictionary = {
     nudgeBody:
       'Vous avez répondu à {n}%. Complétez ce que vous voulez : plus le coach en sait, plus le plan est sur mesure.',
     upsellNudgeTitle: 'Profil de coaching — forfait COACH',
-    upsellNudgeBody: 'Débloquez l’individualisation 100% sur mesure avec le forfait le plus complet de RYZE.',
+    upsellNudgeBody: 'Débloquez l’individualisation 100% sur mesure avec le forfait le plus complet de FORZA AI.',
     physiqueHint: 'Envoyez 1 à 3 photos. Elles sont analysées puis supprimées, jamais enregistrées.',
     physiqueBodyFat: 'Masse grasse approx.',
     physiqueAnalyze: 'Analyser le physique',
@@ -293,15 +293,15 @@ export const fr: Dictionary = {
   },
   pro: {
     title: 'Fonctionnalité PRO',
-    badge: 'RYZE PRO',
+    badge: 'FORZA AI PRO',
     checkinDesc:
-      'Le bilan hebdomadaire avec suivi d’adhésion et recommandations fait partie de RYZE PRO. Le paiement n’est pas encore activé ; cet écran est prêt pour quand l’abonnement sera disponible.',
+      'Le bilan hebdomadaire avec suivi d’adhésion et recommandations fait partie de FORZA AI PRO. Le paiement n’est pas encore activé ; cet écran est prêt pour quand l’abonnement sera disponible.',
     statsDesc:
-      'Les statistiques avancées (volume hebdomadaire, moyennes et adhésion détaillée) font partie de RYZE PRO.',
+      'Les statistiques avancées (volume hebdomadaire, moyennes et adhésion détaillée) font partie de FORZA AI PRO.',
     coachTierTitle: 'Fonctionnalité du forfait COACH',
-    coachTierBadge: 'RYZE COACH',
+    coachTierBadge: 'FORZA AI COACH',
     coachProfileDesc:
-      'Le profil de coaching (santé, alimentation, entraînement, objectif et votre quotidien) et l’individualisation 100% sur mesure que l’IA construit avec ces données sont exclusifs au forfait COACH, le plus complet de RYZE.',
+      'Le profil de coaching (santé, alimentation, entraînement, objectif et votre quotidien) et l’individualisation 100% sur mesure que l’IA construit avec ces données sont exclusifs au forfait COACH, le plus complet de FORZA AI.',
     viewPlans: 'Voir les forfaits',
   },
   plans: {

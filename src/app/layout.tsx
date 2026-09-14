@@ -5,12 +5,12 @@ import { getT } from '@/i18n/server';
 
 export const metadata: Metadata = {
   title: {
-    default: 'RYZE',
-    template: '%s · RYZE',
+    default: 'FORZA AI',
+    template: '%s · FORZA AI',
   },
   description: 'Alimentación, entrenamiento, progreso y un entrenador con IA en un solo lugar.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, title: 'RYZE', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'FORZA AI', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {

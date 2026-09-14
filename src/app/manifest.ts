@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'RYZE',
-    short_name: 'RYZE',
+    name: 'FORZA AI',
+    short_name: 'FORZA AI',
     description: 'Alimentación, entrenamiento, progreso y un entrenador con IA.',
     start_url: '/dashboard',
     display: 'standalone',

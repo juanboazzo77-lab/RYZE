@@ -3,7 +3,7 @@ import type { Dictionary } from '../index';
 /** Dizionario in italiano. Deve avere la stessa struttura di `es`. */
 export const it: Dictionary = {
   common: {
-    appName: 'RYZE',
+    appName: 'FORZA AI',
     save: 'Salva',
     saving: 'Salvataggio…',
     cancel: 'Annulla',
@@ -64,7 +64,7 @@ export const it: Dictionary = {
     nudgeBody:
       'Hai risposto al {n}%. Aggiungi quello che vuoi: più il coach sa, più il piano è su misura.',
     upsellNudgeTitle: 'Profilo di coaching — piano COACH',
-    upsellNudgeBody: 'Sblocca l’individualizzazione 100% su misura con il piano più completo di RYZE.',
+    upsellNudgeBody: 'Sblocca l’individualizzazione 100% su misura con il piano più completo di FORZA AI.',
     physiqueHint: 'Carica da 1 a 3 foto. Vengono analizzate e poi eliminate, mai salvate.',
     physiqueBodyFat: 'Massa grassa approx.',
     physiqueAnalyze: 'Analizza fisico',
@@ -293,15 +293,15 @@ export const it: Dictionary = {
   },
   pro: {
     title: 'Funzione PRO',
-    badge: 'RYZE PRO',
+    badge: 'FORZA AI PRO',
     checkinDesc:
-      'Il check-in settimanale con monitoraggio dell’aderenza e raccomandazioni fa parte di RYZE PRO. I pagamenti non sono ancora attivi; questa schermata è pronta per quando l’abbonamento sarà disponibile.',
+      'Il check-in settimanale con monitoraggio dell’aderenza e raccomandazioni fa parte di FORZA AI PRO. I pagamenti non sono ancora attivi; questa schermata è pronta per quando l’abbonamento sarà disponibile.',
     statsDesc:
-      'Le statistiche avanzate (volume settimanale, medie e aderenza dettagliata) fanno parte di RYZE PRO.',
+      'Le statistiche avanzate (volume settimanale, medie e aderenza dettagliata) fanno parte di FORZA AI PRO.',
     coachTierTitle: 'Funzione del piano COACH',
-    coachTierBadge: 'RYZE COACH',
+    coachTierBadge: 'FORZA AI COACH',
     coachProfileDesc:
-      'Il profilo di coaching (salute, alimentazione, allenamento, obiettivo e la tua giornata) e l’individualizzazione 100% su misura che l’IA crea con questi dati sono esclusivi del piano COACH, il più completo di RYZE.',
+      'Il profilo di coaching (salute, alimentazione, allenamento, obiettivo e la tua giornata) e l’individualizzazione 100% su misura che l’IA crea con questi dati sono esclusivi del piano COACH, il più completo di FORZA AI.',
     viewPlans: 'Vedi i piani',
   },
   plans: {

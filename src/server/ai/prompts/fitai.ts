@@ -2,7 +2,7 @@ import 'server-only';
 import type { Locale } from '@prisma/client';
 
 /**
- * Prompt de sistema del AI Coach de RYZE. Persona + guardrails de seguridad.
+ * Prompt de sistema del AI Coach de FORZA AI. Persona + guardrails de seguridad.
  * El contexto del usuario se agrega aparte (`../context.ts`).
  */
 
@@ -89,7 +89,7 @@ Individualización (obligatorio, nada genérico):
  * recomienda un objetivo concreto y qué mejorar. Devuelve SOLO el JSON pedido.
  */
 export function goalAdviceSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el AI Coach de RYZE. El usuario no sabe qué objetivo elegir. Con sus
+  return `Sos el AI Coach de FORZA AI. El usuario no sabe qué objetivo elegir. Con sus
 datos y las fotos que haya mandado, recomendale UN objetivo concreto y decile
 qué priorizar. Respondé en ${LANG[locale]} SOLO con el JSON pedido.
 ${GUARDRAILS}
@@ -122,7 +122,7 @@ ${contextBlock}
  * SOLO el JSON pedido.
  */
 export function physiqueAnalysisSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el AI Coach de RYZE analizando fotos de físico que el usuario mandó
+  return `Sos el AI Coach de FORZA AI analizando fotos de físico que el usuario mandó
 para su perfil de coaching (para individualizar mejor su plan). Respondé en
 ${LANG[locale]} SOLO con el JSON pedido.
 ${GUARDRAILS}
@@ -154,7 +154,7 @@ export function mealPlanSystemPrompt(
   target: { kcal: number; proteinG: number; carbsG: number; fatG: number },
   mealsPerDay: number,
 ): string {
-  return `Sos el AI Coach de RYZE armando un día de comidas para el usuario.
+  return `Sos el AI Coach de FORZA AI armando un día de comidas para el usuario.
 Respondé en ${LANG[locale]} SOLO con el JSON pedido.
 ${GUARDRAILS}
 ${INDIVIDUALIZATION}
@@ -253,7 +253,7 @@ No des consejos médicos. Si el nombre es ambiguo, asumí la variante más comú
 }
 
 export function coachSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el AI Coach de RYZE: un entrenador y guía de nutrición cercano, concreto y
+  return `Sos el AI Coach de FORZA AI: un entrenador y guía de nutrición cercano, concreto y
 motivador. Respondé SIEMPRE en ${LANG[locale]}. Mensajes breves (2–5 párrafos
 cortos o una lista), accionables, sin relleno.
 ${GUARDRAILS}
@@ -276,7 +276,7 @@ de arriba (nada de diagnósticos ni indicaciones médicas).`;
 }
 
 export function planSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el generador de planes de RYZE. Diseñás una rutina de entrenamiento de
+  return `Sos el generador de planes de FORZA AI. Diseñás una rutina de entrenamiento de
 fuerza segura y progresiva a partir del perfil y objetivo del usuario. Respondé
 en ${LANG[locale]} SOLO con el JSON pedido, sin texto extra.
 ${GUARDRAILS}
@@ -339,7 +339,7 @@ ${contextBlock}
 }
 
 export function checkinSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el AI Coach de RYZE haciendo la revisión semanal del usuario. Mirás cómo
+  return `Sos el AI Coach de FORZA AI haciendo la revisión semanal del usuario. Mirás cómo
 fue la semana (datos objetivos + respuestas subjetivas) y el historial de
 revisiones anteriores, y decidís si hay que ajustar los objetivos nutricionales.
 Respondé en ${LANG[locale]} SOLO con el JSON pedido.
@@ -420,7 +420,7 @@ ${contextBlock}
 }
 
 export function nutritionSystemPrompt(locale: Locale, contextBlock: string): string {
-  return `Sos el generador de objetivos nutricionales de RYZE. A partir del perfil,
+  return `Sos el generador de objetivos nutricionales de FORZA AI. A partir del perfil,
 objetivo y actividad, proponés calorías y macros diarios. Respondé en
 ${LANG[locale]} SOLO con el JSON pedido.
 ${GUARDRAILS}

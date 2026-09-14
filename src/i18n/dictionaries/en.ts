@@ -3,7 +3,7 @@ import type { Dictionary } from '../index';
 /** English dictionary. Must match the shape of `es`. */
 export const en: Dictionary = {
   common: {
-    appName: 'RYZE',
+    appName: 'FORZA AI',
     save: 'Save',
     saving: 'Saving…',
     cancel: 'Cancel',
@@ -64,7 +64,7 @@ export const en: Dictionary = {
     nudgeBody:
       'You answered {n}%. Add whatever you like — the more the coach knows, the more tailored the plan.',
     upsellNudgeTitle: 'Coach profile — COACH plan',
-    upsellNudgeBody: "Unlock 100% tailored individualization with RYZE's top plan.",
+    upsellNudgeBody: "Unlock 100% tailored individualization with FORZA AI's top plan.",
     physiqueHint: 'Upload 1 to 3 photos. They’re analyzed and discarded, never saved.',
     physiqueBodyFat: 'Approx. body fat',
     physiqueAnalyze: 'Analyze physique',
@@ -293,15 +293,15 @@ export const en: Dictionary = {
   },
   pro: {
     title: 'PRO feature',
-    badge: 'RYZE PRO',
+    badge: 'FORZA AI PRO',
     checkinDesc:
-      "The weekly check-in with adherence tracking and recommendations is part of RYZE PRO. Billing isn't enabled yet; this screen is ready for when the subscription goes live.",
+      "The weekly check-in with adherence tracking and recommendations is part of FORZA AI PRO. Billing isn't enabled yet; this screen is ready for when the subscription goes live.",
     statsDesc:
-      'Advanced stats (weekly volume, averages and detailed adherence) are part of RYZE PRO.',
+      'Advanced stats (weekly volume, averages and detailed adherence) are part of FORZA AI PRO.',
     coachTierTitle: 'COACH plan feature',
-    coachTierBadge: 'RYZE COACH',
+    coachTierBadge: 'FORZA AI COACH',
     coachProfileDesc:
-      "The coach profile (health, food, training, goal and your day) and the 100% tailored individualization the AI builds from it are exclusive to the COACH plan, RYZE's top tier.",
+      "The coach profile (health, food, training, goal and your day) and the 100% tailored individualization the AI builds from it are exclusive to the COACH plan, FORZA AI's top tier.",
     viewPlans: 'View plans',
   },
   plans: {

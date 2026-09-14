@@ -100,5 +100,5 @@ export function downloadMealPlanPdf(args: {
   ensureSpace(10);
   line(t.nutrition.estimatedBadge.toUpperCase(), { size: 8, color: 150, gap: 4 });
 
-  doc.save(`ryze-plan-comidas-${dateISO}.pdf`);
+  doc.save(`forza-ai-plan-comidas-${dateISO}.pdf`);
 }

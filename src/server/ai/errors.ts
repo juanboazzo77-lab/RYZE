@@ -48,7 +48,7 @@ export class AiPermissionError extends AiError {
     super(
       'PERMISSION_DENIED',
       `La feature "${feature}" no está disponible en el plan actual`,
-      'Esta función es parte de RYZE PRO.',
+      'Esta función es parte de FORZA AI PRO.',
     );
     this.name = 'AiPermissionError';
   }
