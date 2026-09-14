@@ -140,10 +140,6 @@
     background: var(--primary);
     color: var(--primary-foreground);
   }
-  /* Deja espacio para la bottom-nav en móvil */
-  .has-bottom-nav {
-    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
-  }
 }
 
 /* Cuenta regresiva del arranque del entrenamiento */

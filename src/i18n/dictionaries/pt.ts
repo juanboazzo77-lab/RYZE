@@ -364,6 +364,9 @@ export const pt: Dictionary = {
     resetSent: 'Se o email existir, enviamos um link para redefinir a senha.',
     passwordUpdated: 'Senha atualizada. Você já pode entrar.',
     accountDeleted: 'Sua conta foi excluída. Esperamos te ver em breve.',
+    legalNotice: 'Ao criar uma conta você aceita nossos {terms} e nossa {privacy}.',
+    termsLink: 'Termos de Serviço',
+    privacyLink: 'Política de Privacidade',
   },
   enums: {
     sex: { MALE: 'Homem', FEMALE: 'Mulher', OTHER: 'Outro / prefiro não dizer' },

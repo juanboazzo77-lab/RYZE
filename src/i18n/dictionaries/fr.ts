@@ -364,6 +364,9 @@ export const fr: Dictionary = {
     resetSent: 'Si l’email existe, nous avons envoyé un lien de réinitialisation.',
     passwordUpdated: 'Mot de passe mis à jour. Vous pouvez maintenant vous connecter.',
     accountDeleted: 'Votre compte a été supprimé. À bientôt !',
+    legalNotice: 'En créant un compte, vous acceptez nos {terms} et notre {privacy}.',
+    termsLink: 'Conditions d’utilisation',
+    privacyLink: 'Politique de confidentialité',
   },
   enums: {
     sex: { MALE: 'Homme', FEMALE: 'Femme', OTHER: 'Autre / je préfère ne pas dire' },

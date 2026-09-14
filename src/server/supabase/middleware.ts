@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   '/auth',
   '/api',
   '/offline',
+  '/privacy',
+  '/terms',
 ];
 /**
  * Rutas de autenticación: si ya hay sesión, se redirige al dashboard.

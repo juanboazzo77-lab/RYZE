@@ -48,7 +48,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="has-bottom-nav mx-auto w-full max-w-3xl flex-1 px-4 py-5 md:pb-8">
+        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-5 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-8">
           {showAds ? <AdSlot label={adCopy.placeholder} removeAdsLabel={adCopy.removeAds} /> : null}
           {children}
         </main>

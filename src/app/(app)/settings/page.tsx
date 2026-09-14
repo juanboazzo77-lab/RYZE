@@ -91,7 +91,17 @@ export default async function SettingsPage() {
         </Button>
       </form>
 
-      <p className="text-center text-xs text-muted-foreground">{ctx.email}</p>
+      <p className="pb-2 text-center text-xs text-muted-foreground">
+        {ctx.email}
+        {' · '}
+        <Link href="/privacy" className="underline hover:text-foreground">
+          {t.auth.privacyLink}
+        </Link>
+        {' · '}
+        <Link href="/terms" className="underline hover:text-foreground">
+          {t.auth.termsLink}
+        </Link>
+      </p>
     </div>
   );
 }

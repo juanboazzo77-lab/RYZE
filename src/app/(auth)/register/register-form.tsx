@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { signUpAction, type AuthActionState } from '../actions';
-import { AuthFormShell, FormMessage, SubmitButton } from '../_ui';
+import { AuthFormShell, FormMessage, LegalNotice, SubmitButton } from '../_ui';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/i18n/provider';
@@ -42,6 +42,8 @@ export function RegisterForm() {
         <FormMessage error={state.error} message={state.message} />
 
         <SubmitButton idle={t.auth.signUp} pending={t.auth.creatingAccount} />
+
+        <LegalNotice />
 
         <p className="text-center text-sm text-muted-foreground">
           {t.auth.haveAccount}{' '}

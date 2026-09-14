@@ -362,6 +362,9 @@ export const es = {
     resetSent: 'Si el email existe, te enviamos un enlace para restablecer la contraseña.',
     passwordUpdated: 'Contraseña actualizada. Ya podés ingresar.',
     accountDeleted: 'Tu cuenta fue eliminada. Esperamos verte pronto.',
+    legalNotice: 'Al crear una cuenta aceptás nuestros {terms} y nuestra {privacy}.',
+    termsLink: 'Términos de Servicio',
+    privacyLink: 'Política de Privacidad',
   },
   enums: {
     sex: { MALE: 'Hombre', FEMALE: 'Mujer', OTHER: 'Otro / prefiero no decir' },

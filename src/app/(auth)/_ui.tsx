@@ -1,8 +1,10 @@
 'use client';
 
 import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useT } from '@/i18n/provider';
 
 export function AuthFormShell({
   children,
@@ -42,5 +44,24 @@ export function SubmitButton({ idle, pending }: { idle: string; pending: string 
     <Button type="submit" size="lg" className="w-full" disabled={isPending}>
       {isPending ? pending : idle}
     </Button>
+  );
+}
+
+/** "Al crear una cuenta aceptás nuestros Términos... y nuestra Política...". */
+export function LegalNotice() {
+  const t = useT();
+  const [before, mid, after] = t.auth.legalNotice.split(/\{terms\}|\{privacy\}/);
+  return (
+    <p className="text-center text-xs text-muted-foreground">
+      {before}
+      <Link href="/terms" className="underline hover:text-foreground" target="_blank">
+        {t.auth.termsLink}
+      </Link>
+      {mid}
+      <Link href="/privacy" className="underline hover:text-foreground" target="_blank">
+        {t.auth.privacyLink}
+      </Link>
+      {after}
+    </p>
   );
 }
