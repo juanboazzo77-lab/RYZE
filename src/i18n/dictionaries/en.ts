@@ -264,6 +264,7 @@ export const en: Dictionary = {
         que_decida_coach: 'Let the coach decide',
       },
       sportPriority: { deporte: 'The sport', gimnasio: 'The gym', equilibrado: 'Both equally' },
+      trainsSportAlone: { solo: 'Alone', acompanado: 'With others' },
       aggressiveness: {
         tranquilo: 'Easy',
         equilibrado: 'Balanced',
@@ -777,6 +778,7 @@ export const en: Dictionary = {
       addDate: 'Add to day',
       addToDay: 'Add to log',
       added: 'Meals added to the day',
+      downloadPdf: 'Download PDF',
     },
     addFood: 'Add food',
     addFrequent: 'Frequent meal',

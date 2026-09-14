@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { Locale } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
@@ -31,6 +32,15 @@ import {
   type UpdatePlanExerciseInput,
   type UpdatePlanInput,
 } from './schema';
+
+const FREE_WORKOUT_NAME: Record<Locale, string> = {
+  ES: 'Entrenamiento libre',
+  EN: 'Free workout',
+  PT: 'Treino livre',
+  FR: 'Séance libre',
+  DE: 'Freies Training',
+  IT: 'Allenamento libero',
+};
 
 export interface Result<T = void> {
   ok?: boolean;
@@ -341,7 +351,7 @@ export async function startWorkout(raw: StartWorkoutInput): Promise<never | Resu
   const w = await db.workout.create({
     data: {
       userId,
-      name: profile.locale === 'EN' ? 'Free workout' : 'Entrenamiento libre',
+      name: FREE_WORKOUT_NAME[profile.locale],
       status: 'ACTIVE',
       startedAt: new Date(),
     },

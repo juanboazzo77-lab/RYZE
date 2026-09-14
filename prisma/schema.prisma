@@ -34,6 +34,10 @@ enum UnitSystem {
 enum Locale {
   ES
   EN
+  PT
+  FR
+  DE
+  IT
 }
 
 enum ExperienceLevel {

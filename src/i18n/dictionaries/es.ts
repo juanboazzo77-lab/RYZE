@@ -262,6 +262,7 @@ export const es = {
         que_decida_coach: 'Que decida el coach',
       },
       sportPriority: { deporte: 'El deporte', gimnasio: 'El gimnasio', equilibrado: 'Los dos por igual' },
+      trainsSportAlone: { solo: 'Solo', acompanado: 'Acompañado' },
       aggressiveness: {
         tranquilo: 'Tranquilo',
         equilibrado: 'Equilibrado',
@@ -775,6 +776,7 @@ export const es = {
       addDate: 'Agregar al día',
       addToDay: 'Agregar al registro',
       added: 'Comidas agregadas al día',
+      downloadPdf: 'Descargar PDF',
     },
     addFood: 'Agregar alimento',
     addFrequent: 'Comida frecuente',

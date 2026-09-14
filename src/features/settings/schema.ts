@@ -41,7 +41,7 @@ export const goalUpdateSchema = z.object({
 export type GoalUpdatePayload = z.infer<typeof goalUpdateSchema>;
 
 export const appearanceSchema = z.object({
-  locale: z.enum(['ES', 'EN']).optional(),
+  locale: z.enum(['ES', 'EN', 'PT', 'FR', 'DE', 'IT']).optional(),
   unitSystem: z.enum(['METRIC', 'IMPERIAL']).optional(),
 });
 export type AppearancePayload = z.infer<typeof appearanceSchema>;

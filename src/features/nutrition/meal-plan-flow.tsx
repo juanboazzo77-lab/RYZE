@@ -3,13 +3,14 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, Loader2, Sparkles } from 'lucide-react';
+import { Check, Download, Loader2, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
+import { downloadMealPlanPdf } from '@/lib/pdf/meal-plan-pdf';
 import type { MealPlan } from './meal-plan-schema';
 import { addMealPlanToDay, generateMealPlanAction } from './meal-plan-actions';
 
@@ -41,6 +42,17 @@ export function MealPlanFlow({ todayISO, target }: { todayISO: string; target: T
         toast.success(tm.added);
         router.push(`/nutrition?date=${date}`);
       } else toast.error(tm.genError);
+    });
+  }
+
+  function downloadPdf() {
+    if (!plan) return;
+    downloadMealPlanPdf({
+      plan,
+      target,
+      dateISO: date,
+      mealLabel: (type) => t.nutrition.meals[type],
+      t,
     });
   }
 
@@ -115,15 +127,21 @@ export function MealPlanFlow({ todayISO, target }: { todayISO: string; target: T
 
           {totals ? (
             <Card>
-              <CardContent className="py-3 text-sm">
-                <p className="font-medium">{tm.dayTotal}</p>
-                <p className="tabular-nums text-muted-foreground">
-                  {Math.round(totals.kcal)} kcal · P {Math.round(totals.proteinG)} · C{' '}
-                  {Math.round(totals.carbsG)} · G {Math.round(totals.fatG)}
-                  <span className="ml-2 text-xs">
-                    ({tm.target}: {target.kcal} · {target.proteinG} · {target.carbsG} · {target.fatG})
-                  </span>
-                </p>
+              <CardContent className="space-y-3 py-3 text-sm">
+                <div>
+                  <p className="font-medium">{tm.dayTotal}</p>
+                  <p className="tabular-nums text-muted-foreground">
+                    {Math.round(totals.kcal)} kcal · P {Math.round(totals.proteinG)} · C{' '}
+                    {Math.round(totals.carbsG)} · G {Math.round(totals.fatG)}
+                    <span className="ml-2 text-xs">
+                      ({tm.target}: {target.kcal} · {target.proteinG} · {target.carbsG} · {target.fatG})
+                    </span>
+                  </p>
+                </div>
+                <Button variant="outline" size="sm" onClick={downloadPdf} className="w-full">
+                  <Download className="size-4" />
+                  {tm.downloadPdf}
+                </Button>
               </CardContent>
             </Card>
           ) : null}

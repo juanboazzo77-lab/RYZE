@@ -354,7 +354,7 @@ export function CoachProfileForm({
           </Field>
           <Field label={c.fields.trainsSportAlone} hint={c.fields.trainsSportAloneHint}>
             <Segmented
-              options={optList(S.YES_NO, c.opts.yesNo)}
+              options={optList(S.SPORT_ALONE, c.opts.trainsSportAlone)}
               value={tr.trainsSportAlone}
               onChange={(v) => set('training', { trainsSportAlone: v })}
             />

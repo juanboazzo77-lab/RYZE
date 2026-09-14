@@ -37,6 +37,20 @@ describe('buildCheckinSummary', () => {
     expect(text).toContain('80%');
   });
 
+  it('pt/fr/de/it: arman el resumen en cada idioma', () => {
+    const base = {
+      workoutsCompleted: 3,
+      workoutsPlanned: 4,
+      weightChangeKg: -0.3,
+      kcalAdherencePct: 75,
+      proteinAdherencePct: null,
+    };
+    expect(buildCheckinSummary(base, 'PT')).toContain('3/4 treinos');
+    expect(buildCheckinSummary(base, 'FR')).toContain('3/4 entraînements');
+    expect(buildCheckinSummary(base, 'DE')).toContain('3/4 Trainingseinheiten');
+    expect(buildCheckinSummary(base, 'IT')).toContain('3/4 allenamenti');
+  });
+
   it('omite líneas cuando falta data', () => {
     const text = buildCheckinSummary(
       { workoutsCompleted: 0, workoutsPlanned: 3, weightChangeKg: null, kcalAdherencePct: null, proteinAdherencePct: null },

@@ -9,6 +9,10 @@ import type { Locale } from '@prisma/client';
 const LANG: Record<Locale, string> = {
   ES: 'español rioplatense (voseo)',
   EN: 'English',
+  PT: 'português (Brasil)',
+  FR: 'français',
+  DE: 'Deutsch',
+  IT: 'italiano',
 };
 
 const GUARDRAILS = `

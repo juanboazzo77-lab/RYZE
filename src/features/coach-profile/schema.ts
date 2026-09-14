@@ -102,6 +102,7 @@ export const CARDIO_TYPES = [
 export const JOB_ACTIVITY = ['sentado', 'mixto', 'de_pie', 'fisico'] as const;
 export const ROUTINE_STYLE = ['full_body', 'ppl', 'torso_pierna', 'que_decida_coach'] as const;
 export const SPORT_PRIORITY = ['deporte', 'gimnasio', 'equilibrado'] as const;
+export const SPORT_ALONE = ['solo', 'acompanado'] as const;
 
 export const AGGRESSIVENESS = ['tranquilo', 'equilibrado', 'a_full'] as const;
 export const MAIN_PRIORITY = ['estetica', 'salud', 'rendimiento', 'fuerza'] as const;
@@ -193,7 +194,7 @@ export const trainingSchema = z.object({
   jobActivity: optEnum(JOB_ACTIVITY),
   routineStyle: optEnum(ROUTINE_STYLE),
   sportPriority: optEnum(SPORT_PRIORITY),
-  trainsSportAlone: optEnum(YES_NO),
+  trainsSportAlone: optEnum(SPORT_ALONE),
 });
 
 export const goalSchema = z.object({

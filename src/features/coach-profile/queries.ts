@@ -219,7 +219,7 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
   if (tr.routineStyle) tp.push(`prefiere: ${lab(tr.routineStyle)}`);
   if (tr.sportPriority) tp.push(`prioridad deporte vs. gimnasio: ${lab(tr.sportPriority)}`);
   if (tr.trainsSportAlone) {
-    tp.push(`entrena su deporte ${tr.trainsSportAlone === 'si' ? 'solo' : 'acompañado'}`);
+    tp.push(`entrena su deporte ${tr.trainsSportAlone === 'solo' ? 'solo' : 'acompañado'}`);
   }
   if (tp.length) out.push(`  Entrenamiento: ${tp.join('; ')}.`);
 

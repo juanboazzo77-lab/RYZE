@@ -6,10 +6,20 @@ import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field } from '@/components/form/field';
 import { Segmented } from '@/components/form/segmented';
+import { NativeSelect } from '@/components/ui/native-select';
 import { useI18n } from '@/i18n/provider';
-import { LOCALE_COOKIE } from '@/i18n/config';
+import { LOCALE_COOKIE, LOCALES, type Locale } from '@/i18n/config';
 import { updateAppearance } from './actions';
-import type { UnitSystem } from '@prisma/client';
+import type { Locale as PrismaLocale, UnitSystem } from '@prisma/client';
+
+const LANGUAGE_LABELS: Record<Locale, string> = {
+  es: 'Español',
+  en: 'English',
+  pt: 'Português',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+};
 
 export function AppearancePanel({ unitSystem }: { unitSystem: UnitSystem }) {
   const { t, locale } = useI18n();
@@ -38,20 +48,23 @@ export function AppearancePanel({ unitSystem }: { unitSystem: UnitSystem }) {
         </Field>
 
         <Field label={t.settings.language}>
-          <Segmented
-            options={[
-              { value: 'es', label: 'Español' },
-              { value: 'en', label: 'English' },
-            ]}
+          <NativeSelect
             value={locale}
-            onChange={(v) => {
+            onChange={(e) => {
+              const v = e.target.value as Locale;
               start(async () => {
-                await updateAppearance({ locale: v === 'en' ? 'EN' : 'ES' });
+                await updateAppearance({ locale: v.toUpperCase() as PrismaLocale });
                 document.cookie = `${LOCALE_COOKIE}=${v}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
                 window.location.reload();
               });
             }}
-          />
+          >
+            {LOCALES.map((l) => (
+              <option key={l} value={l}>
+                {LANGUAGE_LABELS[l]}
+              </option>
+            ))}
+          </NativeSelect>
         </Field>
 
         <Field label={t.settings.units}>
