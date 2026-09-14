@@ -294,7 +294,7 @@ const MEATS: FoodSeed[] = [
 ];
 
 async function main() {
-  // Secuencial a propósito: DATABASE_URL usa connection_limit=1 (pooler).
+  // Secuencial a propósito: DATABASE_URL usa connection_limit=15 (pooler).
   for (const a of ACHIEVEMENTS) {
     await prisma.achievement.upsert({
       where: { key: a.key },
@@ -320,7 +320,7 @@ async function main() {
   }
 
   // Alimentos: additivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que
-  // faltan. Secuencial por el connection_limit=1 del pooler.
+  // faltan. Secuencial por el connection_limit=15 del pooler.
   const allFoods = [...FOODS, ...VEGETABLES, ...MEATS];
   let addedFoods = 0;
   for (const f of allFoods) {

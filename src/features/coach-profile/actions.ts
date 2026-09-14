@@ -26,7 +26,7 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
   const d = parsed.data;
 
   // Sólo necesitamos el id de sesión: evitamos los dos upserts de requireUser()
-  // (con connection_limit=1 cada round-trip extra suma latencia y riesgo de
+  // (con connection_limit=15 cada round-trip extra suma latencia y riesgo de
   // P2024 al guardar).
   const user = await getSession();
   if (!user) return { error: 'NO_SESSION' };

@@ -296,7 +296,7 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
   const planName = parsed.data.overrides?.name?.trim() || draft.name;
 
   // Sin transacción interactiva: el create anidado (4 días × ~5 ejercicios) sobre
-  // el pooler con connection_limit=1 excede el timeout de 5s de Prisma (P2028).
+  // el pooler con connection_limit=15 excede el timeout de 5s de Prisma (P2028).
   // La ventana sin plan activo entre estos pasos es sub-segundo y tolerable.
   await db.workoutPlan.updateMany({ where: { isActive: true }, data: { isActive: false } });
   const plan = await db.workoutPlan.create({

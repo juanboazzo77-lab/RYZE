@@ -423,7 +423,7 @@ async function main() {
   }
 
   // ---- Logros ----
-  // connection_limit=1: contar en secuencia, no en Promise.all.
+  // connection_limit=15: contar en secuencia, no en Promise.all.
   const completed = await prisma.workout.count({ where: { userId, status: 'COMPLETED' } });
   const prCount = await prisma.personalRecord.count({ where: { userId } });
   const weightCount = await prisma.weightEntry.count({ where: { userId } });

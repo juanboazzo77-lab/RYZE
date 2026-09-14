@@ -21,7 +21,7 @@ function asList(v: unknown): string {
 
 /**
  * Snapshot compacto del usuario para el AI Coach / generador de planes.
- * Una sola query (connection_limit=1). Devuelve texto plano para el prompt.
+ * Una sola query (connection_limit=15). Devuelve texto plano para el prompt.
  */
 export async function buildUserContextBlock(
   profile: Profile,

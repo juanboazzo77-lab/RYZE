@@ -64,7 +64,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
   const since14 = isoToUtcDate(addDaysISO(todayISO, -14));
   const todayWeekday = DateTime.fromISO(todayISO, { zone: 'utc' }).weekday; // 1..7
 
-  // Un solo round-trip / una sola conexión (DATABASE_URL usa connection_limit=1,
+  // Un solo round-trip / una sola conexión (DATABASE_URL usa connection_limit=15,
   // así que Promise.all de muchas queries se pisaría en el pool).
   const [
     target,
