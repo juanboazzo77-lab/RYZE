@@ -20,6 +20,8 @@
     "db:migrate:baseline": "node scripts/baseline-migration.mjs",
     "test": "vitest run --dir src",
     "test:watch": "vitest --dir src",
+    "cap:sync": "cap sync android",
+    "cap:open:android": "cap open android",
     "bootstrap": "tsx scripts/bootstrap.ts"
   },
   "prisma": {
@@ -27,6 +29,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -60,6 +65,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@eslint/eslintrc": "^3.2.0",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/luxon": "^3.4.2",
@@ -70,6 +76,7 @@
     "eslint": "^9.17.0",
     "eslint-config-next": "^15.1.4",
     "prisma": "^6.2.1",
+    "sharp": "^0.35.4",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",

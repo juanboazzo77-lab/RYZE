@@ -6,11 +6,5 @@ allowBuilds:
   esbuild: true
   prisma: true
   protobufjs: false
+  sharp: true
   unrs-resolver: true
-onlyBuiltDependencies:
-  - '@prisma/client'
-  - '@prisma/engines'
-  - core-js
-  - esbuild
-  - prisma
-  - unrs-resolver
