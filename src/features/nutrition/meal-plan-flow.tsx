@@ -101,6 +101,7 @@ export function MealPlanFlow({ todayISO, target }: { todayISO: string; target: T
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{it.name}</span>
                         <span className="text-xs text-muted-foreground tabular-nums">
+                          {it.householdMeasure ? `${it.householdMeasure} · ` : ''}
                           {Math.round(it.grams)} g · {Math.round(it.kcal)} kcal · P{' '}
                           {Math.round(it.proteinG)} C {Math.round(it.carbsG)} G {Math.round(it.fatG)}
                         </span>

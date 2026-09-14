@@ -30,6 +30,7 @@ import {
   addPhotoMealEntries,
   createCustomFood,
   estimateMealPhotoAction,
+  estimateMealTextAction,
   lookupBarcodeAction,
   searchFoodAction,
 } from './actions';
@@ -90,6 +91,9 @@ function Body({
           <TabsTrigger value="photo" className="flex-1 px-1">
             {td.photoTab}
           </TabsTrigger>
+          <TabsTrigger value="describe" className="flex-1 px-1">
+            {td.describeTab}
+          </TabsTrigger>
           <TabsTrigger value="manual" className="flex-1 px-1">
             {td.manualTab}
           </TabsTrigger>
@@ -102,6 +106,9 @@ function Body({
         </TabsContent>
         <TabsContent value="photo" className="min-h-0 flex-1 overflow-y-auto">
           <PhotoTab date={date} mealType={mealType} onDone={onDone} />
+        </TabsContent>
+        <TabsContent value="describe" className="min-h-0 flex-1 overflow-y-auto">
+          <DescribeTab date={date} mealType={mealType} onDone={onDone} />
         </TabsContent>
         <TabsContent value="manual" className="min-h-0 flex-1 overflow-y-auto">
           <ManualTab
@@ -342,6 +349,43 @@ function PhotoTab({
   }
 
   return (
+    <EstimateReview
+      estimate={estimate}
+      rows={rows}
+      setRows={setRows}
+      total={total}
+      adding={adding}
+      onAnother={() => {
+        setEstimate(null);
+        setRows([]);
+        setNote('');
+      }}
+      onAdd={add}
+    />
+  );
+}
+
+/** Lista editable + totales + acciones, compartida entre foto y descripción. */
+function EstimateReview({
+  estimate,
+  rows,
+  setRows,
+  total,
+  adding,
+  onAnother,
+  onAdd,
+}: {
+  estimate: MealPhotoEstimate;
+  rows: PhotoRow[];
+  setRows: React.Dispatch<React.SetStateAction<PhotoRow[]>>;
+  total: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+  adding: boolean;
+  onAnother: () => void;
+  onAdd: () => void;
+}) {
+  const t = useT();
+  const tp = t.nutrition.dialog.photo;
+  return (
     <div className="space-y-3 py-2">
       <div>
         <p className="text-sm font-medium">{estimate.title}</p>
@@ -401,23 +445,128 @@ function PhotoTab({
       <p className="text-xs text-warning">{t.nutrition.estimatedBadge}</p>
 
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => {
-            setEstimate(null);
-            setRows([]);
-            setNote('');
-          }}
-        >
+        <Button variant="outline" className="flex-1" onClick={onAnother}>
           {tp.another}
         </Button>
-        <Button className="flex-1" onClick={add} disabled={adding || rows.length === 0}>
+        <Button className="flex-1" onClick={onAdd} disabled={adding || rows.length === 0}>
           {adding ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
           {tp.addToLog}
         </Button>
       </div>
     </div>
+  );
+}
+
+/* ---------------- Describir por texto ---------------- */
+function DescribeTab({
+  date,
+  mealType,
+  onDone,
+}: {
+  date: string;
+  mealType: MealType;
+  onDone: () => void;
+}) {
+  const t = useT();
+  const tp = t.nutrition.dialog.photo;
+  const td = t.nutrition.dialog.describe;
+  const [description, setDescription] = useState('');
+  const [estimate, setEstimate] = useState<MealPhotoEstimate | null>(null);
+  const [rows, setRows] = useState<PhotoRow[]>([]);
+  const [estimating, startEstimate] = useTransition();
+  const [adding, startAdd] = useTransition();
+
+  function estimateNow() {
+    if (description.trim().length < 3) return;
+    startEstimate(async () => {
+      const res = await estimateMealTextAction({ description: description.trim() });
+      if (res.ok && res.data) {
+        setEstimate(res.data);
+        setRows(
+          res.data.items.map((it) => ({
+            id: crypto.randomUUID(),
+            name: it.name,
+            grams: Math.round(it.grams),
+            base: { ...it, grams: it.grams },
+          })),
+        );
+      } else {
+        toast.error(res.error === 'NOT_CONFIGURED' ? tp.notConfigured : tp.estError);
+      }
+    });
+  }
+
+  const total = rows.reduce(
+    (a, r) => {
+      const s = scale(r);
+      return {
+        kcal: a.kcal + s.kcal,
+        proteinG: a.proteinG + s.proteinG,
+        carbsG: a.carbsG + s.carbsG,
+        fatG: a.fatG + s.fatG,
+      };
+    },
+    { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+  );
+
+  function add() {
+    if (rows.length === 0) return;
+    startAdd(async () => {
+      const res = await addPhotoMealEntries({
+        date,
+        mealType,
+        items: rows.map((r) => ({ name: r.name.trim(), grams: r.grams, ...scale(r) })),
+      });
+      if (res.ok) {
+        toast.success(t.nutrition.toast.added);
+        onDone();
+      } else toast.error(t.nutrition.toast.genericError);
+    });
+  }
+
+  if (estimating) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+        <Loader2 className="size-6 animate-spin" />
+        <p className="text-sm">{td.estimating}</p>
+      </div>
+    );
+  }
+
+  if (!estimate) {
+    return (
+      <div className="space-y-3 py-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">{td.label}</Label>
+          <Textarea
+            autoFocus
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={500}
+            rows={4}
+            placeholder={td.placeholder}
+          />
+        </div>
+        <Button onClick={estimateNow} disabled={description.trim().length < 3} className="w-full">
+          {tp.estimate}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <EstimateReview
+      estimate={estimate}
+      rows={rows}
+      setRows={setRows}
+      total={total}
+      adding={adding}
+      onAnother={() => {
+        setEstimate(null);
+        setRows([]);
+      }}
+      onAdd={add}
+    />
   );
 }
 

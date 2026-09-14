@@ -28,6 +28,10 @@ export const estimateMealPhotoSchema = z.object({
   note: z.string().trim().max(300).optional(),
 });
 
+export const estimateMealTextSchema = z.object({
+  description: z.string().trim().min(3).max(500),
+});
+
 export const addPhotoMealSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   mealType: z.enum(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK']),

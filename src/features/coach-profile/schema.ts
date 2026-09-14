@@ -24,6 +24,7 @@ export const HEALTH_CONDITIONS = [
   'higado_graso',
   'sop',
   'apnea',
+  'ninguna',
 ] as const;
 export const PAIN_AREAS = [
   'rodillas',
@@ -34,6 +35,7 @@ export const PAIN_AREAS = [
   'codos',
   'cadera',
   'tobillos',
+  'ninguna',
 ] as const;
 export const PREGNANCY = ['no', 'embarazo', 'posparto', 'lactancia'] as const;
 export const QUALITY_3 = ['mala', 'regular', 'buena'] as const;
@@ -61,6 +63,7 @@ export const SUPPLEMENTS = [
   'vitamina_d',
   'electrolitos',
   'multivitaminico',
+  'ninguno',
 ] as const;
 export const DAYTIME = ['manana', 'tarde', 'noche', 'todo_el_dia'] as const;
 
@@ -128,6 +131,19 @@ const tags = z
   .default([])
   .catch([]);
 const note = (max = 300) => z.string().trim().max(max).default('').catch('');
+
+/**
+ * Chips con un valor "ninguno/a" mutuamente excluyente: elegirlo saca el resto,
+ * elegir cualquier otro saca "ninguno/a". Para usar en el `onChange` de un
+ * `ChipMulti` que incluya ese valor en su catálogo.
+ */
+export function toggleNone<T extends string>(prev: T[], next: T[], none: T): T[] {
+  const noneWasOn = prev.includes(none);
+  const noneIsOn = next.includes(none);
+  if (!noneWasOn && noneIsOn) return [none];
+  if (noneWasOn && next.length > 1) return next.filter((v) => v !== none);
+  return next;
+}
 const kgOpt = z.coerce.number().int().min(0).max(500).nullable().default(null).catch(null);
 const dateOpt = z
   .string()
@@ -159,6 +175,7 @@ export const foodSchema = z.object({
   eatingOut: optEnum(EATING_OUT),
   supplements: chips(SUPPLEMENTS),
   hungriestTime: optEnum(DAYTIME),
+  hasScale: optEnum(YES_NO),
   nonNegotiables: note(),
 });
 
@@ -269,6 +286,7 @@ export const COMPLETION_FIELDS: Record<SectionKey, string[]> = {
     'eatingOut',
     'supplements',
     'hungriestTime',
+    'hasScale',
   ],
   training: [
     'musclePriorities',

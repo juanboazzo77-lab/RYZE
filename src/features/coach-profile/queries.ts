@@ -189,6 +189,13 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
   if (f.eatingOut) fp.push(`come afuera ${lab(f.eatingOut)}`);
   if (f.supplements.length) fp.push(`suplementos: ${list(f.supplements)}`);
   if (f.hungriestTime) fp.push(`más hambre ${lab(f.hungriestTime)}`);
+  if (f.hasScale) {
+    fp.push(
+      f.hasScale === 'si'
+        ? 'tiene balanza de cocina (puede pesar la comida)'
+        : 'NO tiene balanza (dale medidas caseras, no gramos que tenga que pesar)',
+    );
+  }
   if (f.nonNegotiables) fp.push(`no negocia: ${f.nonNegotiables}`);
   if (fp.length) out.push(`  Comida: ${fp.join('; ')}.`);
 

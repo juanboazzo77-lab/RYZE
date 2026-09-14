@@ -8,6 +8,7 @@ import {
   exerciseGuideSystemPrompt,
   goalAdviceSystemPrompt,
   mealPhotoSystemPrompt,
+  mealTextSystemPrompt,
   mealPlanSystemPrompt,
   planSystemPrompt,
 } from './prompts/fitai';
@@ -176,6 +177,39 @@ export async function estimateMealFromPhoto(args: {
     return res.data;
   } catch (e) {
     console.error('[ai] estimateMealFromPhoto falló', e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+/**
+ * Estima alimentos + macros a partir de sólo una descripción de texto (sin
+ * foto). Menos preciso; el prompt lo deja claro en "note"/"confidence".
+ */
+export async function estimateMealFromText(args: {
+  userId: string;
+  timezone: string;
+  locale: Profile['locale'];
+  description: string;
+}): Promise<MealPhotoEstimate | null> {
+  const { userId, timezone, locale, description } = args;
+  const model = modelFor('parse');
+
+  try {
+    const res = await activeProvider().generateStructured({
+      model,
+      system: mealTextSystemPrompt(locale),
+      messages: [{ role: 'user', content: description.trim() }],
+      schema: mealPhotoEstimateSchema,
+      schemaName: 'MealPhotoEstimate',
+      maxOutputTokens: 1000,
+      timeoutMs: 25_000,
+      temperature: 0.3,
+      thinking: false,
+    });
+    await recordUsage(userId, 'parse', model, res.usage, timezone, false);
+    return res.data;
+  } catch (e) {
+    console.error('[ai] estimateMealFromText falló', e instanceof Error ? e.message : e);
     return null;
   }
 }

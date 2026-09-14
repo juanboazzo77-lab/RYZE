@@ -397,6 +397,37 @@ export async function estimateMealPhotoAction(raw: {
   }
 }
 
+/**
+ * Estima una comida a partir de sólo una descripción de texto (sin foto).
+ * Mismo formato de salida que la estimación por foto, para reusar la misma UI
+ * de ajuste de cantidades antes de guardar.
+ */
+export async function estimateMealTextAction(raw: {
+  description: string;
+}): Promise<Result<import('./meal-photo-schema').MealPhotoEstimate>> {
+  const { estimateMealTextSchema } = await import('./meal-photo-schema');
+  const parsed = estimateMealTextSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId, profile } = await requireUser();
+  const { aiConfigured } = await import('@/server/ai/config');
+  if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
+
+  try {
+    const { estimateMealFromText } = await import('@/server/ai/gateway');
+    const est = await estimateMealFromText({
+      userId,
+      timezone: profile.timezone,
+      locale: profile.locale,
+      description: parsed.data.description,
+    });
+    if (!est) return { error: 'INVALID_OUTPUT' };
+    return { ok: true, data: est };
+  } catch (e) {
+    console.error('[meal-text] falló', e instanceof Error ? e.message : e);
+    return { error: 'PROVIDER_ERROR' };
+  }
+}
+
 /** Agrega al día los items estimados de una foto (ya ajustados por el usuario). */
 export async function addPhotoMealEntries(
   raw: import('./meal-photo-schema').AddPhotoMealInput,

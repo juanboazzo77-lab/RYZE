@@ -4,6 +4,7 @@ import {
   emptyCoachProfile,
   parseSection,
   saveCoachProfileSchema,
+  toggleNone,
 } from './schema';
 
 describe('coach-profile schema', () => {
@@ -52,5 +53,20 @@ describe('coach-profile schema', () => {
     const r = saveCoachProfileSchema.safeParse({ goal: { aggressiveness: 'imposible' } });
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.goal?.aggressiveness).toBeNull();
+  });
+
+  it('toggleNone: elegir "ninguna" saca el resto', () => {
+    expect(toggleNone(['rodillas'], ['rodillas', 'ninguna'], 'ninguna')).toEqual(['ninguna']);
+  });
+
+  it('toggleNone: elegir otra cosa saca "ninguna"', () => {
+    expect(toggleNone(['ninguna'], ['ninguna', 'rodillas'], 'ninguna')).toEqual(['rodillas']);
+  });
+
+  it('toggleNone: sin "ninguna" de por medio, no cambia nada', () => {
+    expect(toggleNone(['rodillas'], ['rodillas', 'hombros'], 'ninguna')).toEqual([
+      'rodillas',
+      'hombros',
+    ]);
   });
 });

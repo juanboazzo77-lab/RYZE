@@ -148,7 +148,13 @@ export default async function ProgressPage({
           <CardTitle className="text-base">{t.progress.entries}</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <EntryList entries={data.entries} todayISO={data.todayISO} unitSystem={us} />
+          <EntryList
+            entries={data.entries}
+            todayISO={data.todayISO}
+            unitSystem={us}
+            weekStart={ctx.profile.weekStart}
+            timezone={ctx.profile.timezone}
+          />
         </CardContent>
       </Card>
 

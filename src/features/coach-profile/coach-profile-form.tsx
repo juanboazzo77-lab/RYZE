@@ -88,14 +88,14 @@ export function CoachProfileForm({
             <ChipMulti
               options={optList(S.HEALTH_CONDITIONS, c.opts.healthConditions)}
               value={h.conditions}
-              onChange={(v) => set('health', { conditions: v })}
+              onChange={(v) => set('health', { conditions: S.toggleNone(h.conditions, v, 'ninguna') })}
             />
           </Field>
           <Field label={c.fields.painAreas}>
             <ChipMulti
               options={optList(S.PAIN_AREAS, c.opts.painAreas)}
               value={h.painAreas}
-              onChange={(v) => set('health', { painAreas: v })}
+              onChange={(v) => set('health', { painAreas: S.toggleNone(h.painAreas, v, 'ninguna') })}
             />
           </Field>
           {sex === 'FEMALE' ? (
@@ -199,7 +199,7 @@ export function CoachProfileForm({
             <ChipMulti
               options={optList(S.SUPPLEMENTS, c.opts.supplements)}
               value={f.supplements}
-              onChange={(v) => set('food', { supplements: v })}
+              onChange={(v) => set('food', { supplements: S.toggleNone(f.supplements, v, 'ninguno') })}
             />
           </Field>
           <Field label={c.fields.hungriestTime}>
@@ -207,6 +207,13 @@ export function CoachProfileForm({
               options={optList(S.DAYTIME, c.opts.daytime)}
               value={f.hungriestTime}
               onChange={(v) => set('food', { hungriestTime: v })}
+            />
+          </Field>
+          <Field label={c.fields.hasScale} hint={c.fields.hasScaleHint}>
+            <Segmented
+              options={optList(S.YES_NO, c.opts.yesNo)}
+              value={f.hasScale}
+              onChange={(v) => set('food', { hasScale: v })}
             />
           </Field>
           <Field label={c.fields.nonNegotiables}>

@@ -8,6 +8,8 @@ export const mealPlanItemSchema = z.object({
   proteinG: z.number().min(0).max(400),
   carbsG: z.number().min(0).max(600),
   fatG: z.number().min(0).max(300),
+  /** Medida casera equivalente ("1 taza", "2 puños") para quien no pesa la comida. */
+  householdMeasure: z.string().trim().max(60).optional(),
 });
 export type MealPlanItem = z.infer<typeof mealPlanItemSchema>;
 
