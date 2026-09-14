@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'GYMO',
-    short_name: 'GYMO',
+    name: 'RYZE',
+    short_name: 'RYZE',
     description: 'Alimentación, entrenamiento, progreso y un entrenador con IA.',
     start_url: '/dashboard',
     display: 'standalone',

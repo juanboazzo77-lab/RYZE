@@ -219,7 +219,7 @@ export async function lookupBarcode(userId: string, barcode: string): Promise<Ba
   try {
     const res = await fetch(`${OFF_ENDPOINT}/${code}.json?fields=${OFF_FIELDS}`, {
       headers: {
-        'User-Agent': 'GYMO/0.1 (barcode nutrition lookup)',
+        'User-Agent': 'RYZE/0.1 (barcode nutrition lookup)',
         Accept: 'application/json',
       },
       signal: AbortSignal.timeout(6000),

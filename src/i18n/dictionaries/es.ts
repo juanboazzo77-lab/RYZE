@@ -1,7 +1,7 @@
 /** Diccionario base (español). El tipo `Dictionary` se deriva de este objeto. */
 export const es = {
   common: {
-    appName: 'GYMO',
+    appName: 'RYZE',
     save: 'Guardar',
     saving: 'Guardando…',
     cancel: 'Cancelar',
@@ -62,7 +62,7 @@ export const es = {
     nudgeBody:
       'Respondiste el {n}%. Sumá lo que quieras: cuanto más sabe el coach, más a tu medida el plan.',
     upsellNudgeTitle: 'Perfil de coaching — plan COACH',
-    upsellNudgeBody: 'Desbloqueá la individualización 100% a medida con el plan más top de GYMO.',
+    upsellNudgeBody: 'Desbloqueá la individualización 100% a medida con el plan más top de RYZE.',
     physiqueHint: 'Subí 1 a 3 fotos. Se analizan y se descartan, nunca se guardan.',
     physiqueBodyFat: 'Grasa corporal aprox.',
     physiqueAnalyze: 'Analizar físico',
@@ -291,15 +291,15 @@ export const es = {
   },
   pro: {
     title: 'Función PRO',
-    badge: 'GYMO PRO',
+    badge: 'RYZE PRO',
     checkinDesc:
-      'El check-in semanal con seguimiento de adherencia y recomendaciones es parte de GYMO PRO. Todavía no hay cobros habilitados; esta pantalla queda lista para cuando se active la suscripción.',
+      'El check-in semanal con seguimiento de adherencia y recomendaciones es parte de RYZE PRO. Todavía no hay cobros habilitados; esta pantalla queda lista para cuando se active la suscripción.',
     statsDesc:
-      'Las estadísticas avanzadas (volumen semanal, promedios y adherencia detallada) son parte de GYMO PRO.',
+      'Las estadísticas avanzadas (volumen semanal, promedios y adherencia detallada) son parte de RYZE PRO.',
     coachTierTitle: 'Función del plan COACH',
-    coachTierBadge: 'GYMO COACH',
+    coachTierBadge: 'RYZE COACH',
     coachProfileDesc:
-      'El perfil de coaching (salud, comida, entrenamiento, objetivo y tu día a día) y la individualización 100% a medida que arma la IA con esos datos son exclusivos del plan COACH, el más top de GYMO.',
+      'El perfil de coaching (salud, comida, entrenamiento, objetivo y tu día a día) y la individualización 100% a medida que arma la IA con esos datos son exclusivos del plan COACH, el más top de RYZE.',
     viewPlans: 'Ver planes',
   },
   plans: {

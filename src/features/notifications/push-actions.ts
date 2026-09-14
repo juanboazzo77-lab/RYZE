@@ -47,7 +47,7 @@ export async function sendTestPush(): Promise<Result & { sent?: number }> {
   if (!pushConfigured()) return { error: 'NOT_CONFIGURED' };
   const { userId } = await requireUser();
   const { sent } = await sendPushToUser(userId, {
-    title: 'GYMO',
+    title: 'RYZE',
     body: 'Las notificaciones están activadas. ¡Listo!',
     url: '/dashboard',
     tag: 'fitai-test',

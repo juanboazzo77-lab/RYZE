@@ -14,7 +14,7 @@ export function SideNav() {
     <aside className="hidden w-56 shrink-0 flex-col border-r bg-card md:flex">
       <div className="flex h-16 items-center gap-2 px-5 text-lg font-bold tracking-tight">
         <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-          G
+          R
         </span>
         {t.common.appName}
       </div>
