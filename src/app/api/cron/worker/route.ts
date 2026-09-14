@@ -7,7 +7,8 @@ import { sendPushToUser } from '@/server/push';
 import { computeNudges } from '@/server/nudges';
 
 /**
- * Worker de notificaciones. Pensado para Vercel Cron (corre cada hora):
+ * Worker de notificaciones. Pensado para Vercel Cron (corre 1 vez por día —
+ * límite del plan Hobby de Vercel):
  *  1. Recordatorio del check-in semanal (PRO) en el día elegido.
  *  2. Coach proactivo: avisos condicionales (entreno de hoy, registrar comidas,
  *     proteína, peso, racha) — máx. 2/día por usuario, respetando sus toggles.
