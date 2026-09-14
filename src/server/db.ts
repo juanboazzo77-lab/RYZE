@@ -7,9 +7,12 @@ export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-    // DATABASE_URL usa el pooler con connection_limit=1 y latencia de red: las
-    // escrituras anidadas (p. ej. crear un plan con sus días y ejercicios)
-    // pasan el timeout de transacción por defecto de Prisma (5s → P2028).
+    // DATABASE_URL usa el pooler (pgbouncer, transaction mode) con
+    // connection_limit=5 y latencia de red: las escrituras anidadas (p. ej.
+    // crear un plan con sus días y ejercicios) pasan el timeout de transacción
+    // por defecto de Prisma (5s → P2028). El código sigue agrupando queries en
+    // $transaction/secuencial donde tenía sentido — con un pool chico (sea 1 o
+    // 5) menos conexiones simultáneas siguen siendo más rápidas y confiables.
     transactionOptions: { timeout: 20_000, maxWait: 15_000 },
   });
 

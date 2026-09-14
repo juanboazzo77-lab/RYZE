@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useT } from '@/i18n/provider';
-import { interpolate } from '@/i18n';
+import { interpolate } from '@/i18n/interpolate';
 import type { PlanDraft, NutritionDraft } from './plan-schema';
 import { acceptGeneratedPlan, discardGeneratedPlan, generatePlan } from './actions';
 

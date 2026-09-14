@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from '@/components/providers';
-import { getLocale } from '@/i18n/server';
+import { getT } from '@/i18n/server';
 
 export const metadata: Metadata = {
   title: {
@@ -25,12 +25,14 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+  const { locale, t } = await getT();
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="min-h-screen antialiased">
-        <Providers locale={locale}>{children}</Providers>
+        <Providers locale={locale} t={t}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

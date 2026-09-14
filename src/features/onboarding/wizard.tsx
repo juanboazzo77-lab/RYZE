@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useT } from '@/i18n/provider';
-import { interpolate } from '@/i18n';
+import { interpolate } from '@/i18n/interpolate';
 import { ageFromBirthdate } from '@/lib/nutrition/targets';
 import { submitOnboarding } from './actions';
 import { onboardingSchema } from './schema';

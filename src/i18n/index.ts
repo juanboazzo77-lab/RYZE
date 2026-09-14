@@ -22,14 +22,16 @@ const DICTIONARIES: Record<Locale, Dictionary> = {
   it,
 };
 
-/** Devuelve el diccionario del locale. Todos van en el bundle (son chicos). */
+/**
+ * Devuelve el diccionario del locale. SOLO para uso server-side (`getT()`,
+ * `layout.tsx`): importa los 6 idiomas completos. Un componente cliente NUNCA
+ * debe importar esta función — el bundle del navegador terminaría con los 6
+ * diccionarios en vez de sólo el que hace falta. El cliente recibe el
+ * diccionario ya resuelto como prop vía `<I18nProvider t={...}>`.
+ */
 export function getDictionary(locale: Locale): Dictionary {
   return DICTIONARIES[locale];
 }
 
-/** Reemplaza `{clave}` en `template` por `vars.clave`. */
-export function interpolate(template: string, vars: Record<string, string | number>): string {
-  return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
-}
-
+export { interpolate } from './interpolate';
 export type { Locale } from './config';

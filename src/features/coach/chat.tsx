@@ -7,7 +7,7 @@ import { Loader2, RotateCcw, Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useT } from '@/i18n/provider';
-import { interpolate } from '@/i18n';
+import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import type { CoachMessage } from './queries';
 import { resetCoachConversation, sendCoachMessage } from './actions';

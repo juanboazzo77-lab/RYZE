@@ -6,7 +6,7 @@ import { Check, Sparkles, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
-import { interpolate } from '@/i18n';
+import { interpolate } from '@/i18n/interpolate';
 import type { CheckinProposal } from './schema';
 import { applyCheckinAdjustment, dismissCheckinAdjustment } from './actions';
 

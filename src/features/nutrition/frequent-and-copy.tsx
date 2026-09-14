@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
-import { interpolate } from '@/i18n';
+import { interpolate } from '@/i18n/interpolate';
 import type { FrequentMeal } from './queries';
 import { addMealToDay, copyDay, saveMealFromDay } from './actions';
 
