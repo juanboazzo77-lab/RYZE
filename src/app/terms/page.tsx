@@ -5,7 +5,7 @@ import { ChevronLeft } from 'lucide-react';
 export const metadata: Metadata = { title: 'Términos de Servicio · FitAI' };
 
 const LAST_UPDATED = '14 de septiembre de 2026';
-const CONTACT_EMAIL = 'juanboazzo7777@gmail.com';
+const CONTACT_EMAIL = 'gymoia3@gmail.com';
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 text-lg font-semibold tracking-tight">{children}</h2>;
