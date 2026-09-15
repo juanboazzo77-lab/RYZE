@@ -4,14 +4,15 @@ import { can, limitsFor, showAds, isInTrial, trialDaysLeft } from './entitlement
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
 describe('entitlements', () => {
-  it('FREE dentro de la prueba gratis tiene mensajes/plan limitados y sin features PRO', () => {
+  it('FREE dentro de la prueba gratis tiene acceso completo (igual que COACH) para probar todo', () => {
     const trial = { tier: 'FREE' as const, createdAt: daysAgo(1) };
     expect(isInTrial(trial)).toBe(true);
-    expect(limitsFor(trial).aiCoachMessagesPerDay).toBe(5);
-    expect(limitsFor(trial).aiPlansPerMonth).toBe(1);
+    expect(limitsFor(trial).aiCoachMessagesPerDay).toBe(200);
+    expect(limitsFor(trial).aiPlansPerMonth).toBe(30);
     expect(can(trial, 'ai_coach_message')).toBe(true);
-    expect(can(trial, 'weekly_checkin')).toBe(false);
-    expect(can(trial, 'advanced_stats')).toBe(false);
+    expect(can(trial, 'weekly_checkin')).toBe(true);
+    expect(can(trial, 'advanced_stats')).toBe(true);
+    expect(can(trial, 'coach_profile')).toBe(true);
     expect(trialDaysLeft(trial)).toBeGreaterThan(0);
   });
 

@@ -329,11 +329,11 @@ export const es = {
     },
     savingsBadge: 'Ahorrás {pct}%',
     billedEvery: 'Se cobran {price} cada {months} meses',
-    trialDaysLeft: 'Te quedan {n} días de prueba gratis.',
+    trialDaysLeft: 'Te quedan {n} días de prueba con todo desbloqueado.',
     trialExpired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando la IA.',
     basicPrice: '${price}/mes',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Gratis los primeros 7 días para probar la app.' },
+      FREE: { name: 'FREE', tagline: 'Todo desbloqueado y gratis los primeros 7 días.' },
       BASIC: { name: 'BASIC', tagline: 'El plan de entrada para seguir sin anuncios.' },
       PRO: { name: 'PRO', tagline: 'Para entrenar en serio, con seguimiento real.' },
       COACH: { name: 'COACH', tagline: 'Un entrenador que te conoce de verdad.' },

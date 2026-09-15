@@ -331,11 +331,11 @@ export const de: Dictionary = {
     },
     savingsBadge: 'Spare {pct}%',
     billedEvery: '{price} alle {months} Monate abgerechnet',
-    trialDaysLeft: 'Noch {n} Tage deiner kostenlosen Testphase.',
+    trialDaysLeft: 'Noch {n} Tage deiner kostenlosen Testphase mit allem freigeschaltet.',
     trialExpired: 'Deine kostenlose Testphase ist abgelaufen. Wähle einen Plan, um die KI weiter zu nutzen.',
     basicPrice: '{price} $/Monat',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Die ersten 7 Tage kostenlos, um die App auszuprobieren.' },
+      FREE: { name: 'FREE', tagline: 'Alles freigeschaltet und kostenlos die ersten 7 Tage.' },
       BASIC: { name: 'BASIC', tagline: 'Der Einstiegsplan, um werbefrei weiterzumachen.' },
       PRO: { name: 'PRO', tagline: 'Für ernsthaftes Training mit echtem Tracking.' },
       COACH: { name: 'COACH', tagline: 'Ein Coach, der dich wirklich kennt.' },

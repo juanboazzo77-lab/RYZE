@@ -331,11 +331,11 @@ export const pt: Dictionary = {
     },
     savingsBadge: 'Economize {pct}%',
     billedEvery: '{price} cobrados a cada {months} meses',
-    trialDaysLeft: 'Faltam {n} dias do seu teste grátis.',
+    trialDaysLeft: 'Faltam {n} dias do seu teste grátis com tudo liberado.',
     trialExpired: 'Seu teste grátis acabou. Escolha um plano para continuar usando a IA.',
     basicPrice: 'US$ {price}/mês',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Grátis nos primeiros 7 dias para experimentar o app.' },
+      FREE: { name: 'FREE', tagline: 'Tudo liberado e grátis nos primeiros 7 dias.' },
       BASIC: { name: 'BASIC', tagline: 'O plano de entrada para continuar sem anúncios.' },
       PRO: { name: 'PRO', tagline: 'Para treinar a sério, com acompanhamento de verdade.' },
       COACH: { name: 'COACH', tagline: 'Um treinador que realmente te conhece.' },

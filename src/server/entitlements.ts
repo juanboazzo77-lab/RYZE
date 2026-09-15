@@ -4,9 +4,11 @@ import type { Entitlement, EntitlementTier } from '@prisma/client';
 /**
  * Modelo freemium de 4 planes. La fuente de verdad de qué puede hacer cada
  * tier vive acá. FREE es una prueba gratis por `TRIAL_DAYS` a partir del alta
- * de la cuenta (`entitlement.createdAt`); pasado ese plazo, si el usuario no
- * pasó a BASIC/PRO/COACH, queda bloqueado para IA (ver `TIER_LIMITS.FREE` vs.
- * `TRIAL_LIMITS` y `isInTrial`).
+ * de la cuenta (`entitlement.createdAt`): durante esos días tiene acceso
+ * completo (todo lo de COACH, ver `TRIAL_LIMITS`) para que pueda probar todo
+ * a fondo. Pasado ese plazo, si el usuario no pasó a BASIC/PRO/COACH, queda
+ * bloqueado del todo para IA (ver `TIER_LIMITS.FREE` y `isInTrial`) — y si sí
+ * pagó, se le respeta exactamente lo que le corresponde a ese tier.
  *
  * COACH es el plan más top: todo lo de PRO + el perfil de coaching
  * (`src/features/coach-profile`) y la individualización 100% a medida que la
@@ -32,21 +34,6 @@ export interface TierLimits {
 
 /** Días de prueba gratis para una cuenta FREE nueva, antes de tener que pagar. */
 export const TRIAL_DAYS = 7;
-
-/** Límites durante la prueba gratis (primeros `TRIAL_DAYS` días de una cuenta FREE). */
-export const TRIAL_LIMITS: TierLimits = {
-  aiCoachMessagesPerDay: 5,
-  aiPlansPerMonth: 1,
-  features: {
-    ai_coach_message: true,
-    ai_generate_plan: true,
-    ai_meal_plan: false,
-    weekly_checkin: false,
-    advanced_stats: false,
-    progression_analysis: false,
-    coach_profile: false,
-  },
-};
 
 export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
   // Terminada la prueba gratis (`TRIAL_LIMITS`), FREE queda bloqueada del todo
@@ -104,6 +91,13 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
 };
+
+/**
+ * Límites durante la prueba gratis (primeros `TRIAL_DAYS` días de una cuenta
+ * FREE): acceso completo, igual que COACH, para que pueda probar todo antes
+ * de decidir qué plan pagar.
+ */
+export const TRIAL_LIMITS: TierLimits = TIER_LIMITS.COACH;
 
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */
 export function isInTrial(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): boolean {
