@@ -1,0 +1,53 @@
+workflows:
+  ios-release:
+    name: iOS — build y subida a TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Nombre del grupo de integración "App Store Connect" que se crea en
+      # Codemagic → Team settings → Integrations → App Store Connect,
+      # usando una API Key de App Store Connect con rol "App Manager"
+      # (la misma clase de clave que ya generamos para RevenueCat:
+      # Users and Access → Integrations → App Store Connect API).
+      app_store_connect: forzaai_asc
+    environment:
+      xcode: latest
+      node: 20.18.0
+      vars:
+        BUNDLE_ID: "app.forzaai.mobile"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Instalar pnpm y dependencias
+        script: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile
+      - name: Sincronizar Capacitor (iOS)
+        script: |
+          npx cap sync ios
+      - name: Configurar firma automática (App Store Connect API)
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Compilar y exportar el .ipa
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Poné en true cuando ya quieras que cada build suba directo a
+        # revisión de App Store (además de TestFlight). Mientras se arma
+        # la ficha, dejalo en false y subí a revisión manualmente desde
+        # App Store Connect cuando esté todo listo.
+        submit_to_app_store: false
