@@ -321,6 +321,14 @@ export const es = {
     topPlan: 'El más top',
     billingNote:
       'Los pagos se procesan de forma segura a través de Apple/Google desde la app instalada. Esta pantalla web es solo de referencia.',
+    durations: {
+      monthly: 'Mensual',
+      threeMonth: '3 meses',
+      sixMonth: '6 meses',
+      twelveMonth: '12 meses',
+    },
+    savingsBadge: 'Ahorrás {pct}%',
+    billedEvery: 'Se cobran {price} cada {months} meses',
     tiers: {
       FREE: { name: 'FREE', tagline: 'Para arrancar y probar la app.' },
       PRO: { name: 'PRO', tagline: 'Para entrenar en serio, con seguimiento real.' },

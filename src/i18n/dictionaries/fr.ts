@@ -323,6 +323,14 @@ export const fr: Dictionary = {
     topPlan: 'Le plus complet',
     billingNote:
       'Les paiements sont traités en toute sécurité par Apple/Google depuis l’application installée. Cet écran web est seulement indicatif.',
+    durations: {
+      monthly: 'Mensuel',
+      threeMonth: '3 mois',
+      sixMonth: '6 mois',
+      twelveMonth: '12 mois',
+    },
+    savingsBadge: 'Économisez {pct}%',
+    billedEvery: '{price} facturés tous les {months} mois',
     tiers: {
       FREE: { name: 'FREE', tagline: 'Pour commencer et essayer l’appli.' },
       PRO: { name: 'PRO', tagline: 'Pour s’entraîner sérieusement, avec un vrai suivi.' },

@@ -5,7 +5,7 @@ import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { TIER_LIMITS, showAds } from '@/server/entitlements';
 import { PLAN_ORDER, PLAN_PRICE_USD, FEATURE_ROWS } from '@/features/billing/plans';
-import { PlanSelectButton } from '@/features/billing/plan-select-button';
+import { PlanPriceSelector } from '@/features/billing/plan-price-selector';
 import { RestorePurchasesButton } from '@/features/billing/restore-purchases-button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +35,7 @@ export default async function PlansPage() {
       <div className="grid gap-4 md:grid-cols-3">
         {PLAN_ORDER.map((tier) => {
           const limits = TIER_LIMITS[tier];
-          const price = PLAN_PRICE_USD[tier];
+          const prices = PLAN_PRICE_USD[tier];
           const isCurrent = tier === currentTier;
           const isTop = tier === 'COACH';
 
@@ -59,12 +59,9 @@ export default async function PlansPage() {
                 <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   {p.tiers[tier].name}
                 </p>
-                <p className="text-3xl font-bold tabular-nums">
-                  {price === 0 ? p.free : `$${price.toFixed(2)}`}
-                  {price > 0 ? (
-                    <span className="text-sm font-normal text-muted-foreground">{p.perMonth}</span>
-                  ) : null}
-                </p>
+                {tier === 'FREE' ? (
+                  <p className="text-3xl font-bold tabular-nums">{p.free}</p>
+                ) : null}
                 <p className="text-xs text-muted-foreground">{p.tiers[tier].tagline}</p>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col gap-4">
@@ -108,14 +105,28 @@ export default async function PlansPage() {
                   })}
                 </ul>
 
-                {isCurrent ? (
-                  <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
-                    {p.currentPlan}
-                  </Badge>
-                ) : tier === 'FREE' ? null : (
-                  <PlanSelectButton
+                {tier === 'FREE' ? (
+                  isCurrent ? (
+                    <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
+                      {p.currentPlan}
+                    </Badge>
+                  ) : null
+                ) : (
+                  <PlanPriceSelector
                     tier={tier}
-                    label={p.choose}
+                    prices={prices}
+                    isCurrent={isCurrent}
+                    durationLabels={{
+                      monthly: p.durations.monthly,
+                      '3month': p.durations.threeMonth,
+                      '6month': p.durations.sixMonth,
+                      '12month': p.durations.twelveMonth,
+                    }}
+                    perMonthLabel={p.perMonth}
+                    savingsBadge={p.savingsBadge}
+                    billedEvery={p.billedEvery}
+                    currentPlanLabel={p.currentPlan}
+                    chooseLabel={p.choose}
                     comingSoonMessage={p.comingSoon}
                     purchasingLabel={p.purchasing}
                     successMessage={p.purchaseSuccess}

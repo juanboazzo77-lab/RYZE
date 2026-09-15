@@ -323,6 +323,14 @@ export const it: Dictionary = {
     topPlan: 'Il più completo',
     billingNote:
       'I pagamenti vengono elaborati in modo sicuro tramite Apple/Google dall’app installata. Questa schermata web è solo indicativa.',
+    durations: {
+      monthly: 'Mensile',
+      threeMonth: '3 mesi',
+      sixMonth: '6 mesi',
+      twelveMonth: '12 mesi',
+    },
+    savingsBadge: 'Risparmi {pct}%',
+    billedEvery: '{price} addebitati ogni {months} mesi',
     tiers: {
       FREE: { name: 'FREE', tagline: 'Per iniziare e provare l’app.' },
       PRO: { name: 'PRO', tagline: 'Per allenarti sul serio, con un monitoraggio vero.' },
