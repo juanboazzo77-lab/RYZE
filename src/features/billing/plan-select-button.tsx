@@ -1,31 +1,66 @@
 'use client';
 
+import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { getCurrentOfferingPackages, purchasePackage } from './purchases-client';
+import { syncMyEntitlementAction } from './actions';
 
 /**
- * Botón "Elegir plan" para PRO/COACH mientras no haya cobros conectados
- * (Stripe web / Google Play Billing / Apple StoreKit según la plataforma).
- * No otorga el plan: sólo avisa. Evita auto-upgrades gratis y no promete un
- * cobro que todavía no existe.
+ * Botón "Elegir plan" para PRO/COACH. Nativo (Capacitor): compra real vía
+ * RevenueCat (StoreKit/Play Billing) contra el paquete `{tier}_monthly` del
+ * offering `default`. Web: no hay tienda con la que hablar — solo avisa que
+ * hay que abrir la app instalada.
  */
 export function PlanSelectButton({
+  tier,
   label,
   comingSoonMessage,
+  purchasingLabel,
+  successMessage,
+  errorMessage,
   variant = 'outline',
 }: {
+  tier: 'PRO' | 'COACH';
   label: string;
   comingSoonMessage: string;
+  purchasingLabel: string;
+  successMessage: string;
+  errorMessage: string;
   variant?: 'default' | 'outline';
 }) {
+  const [loading, setLoading] = useState(false);
+  const packageId = `${tier.toLowerCase()}_monthly`;
+
+  async function handleClick() {
+    if (!Capacitor.isNativePlatform()) {
+      toast.message(comingSoonMessage);
+      return;
+    }
+    setLoading(true);
+    try {
+      const packages = await getCurrentOfferingPackages();
+      const pkg = packages.find((p) => p.identifier === packageId);
+      if (!pkg) {
+        toast.error(errorMessage);
+        return;
+      }
+      await purchasePackage(pkg);
+      await syncMyEntitlementAction();
+      toast.success(successMessage);
+    } catch (e) {
+      if (!(e as { userCancelled?: boolean }).userCancelled) {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <Button
-      type="button"
-      variant={variant}
-      className="w-full"
-      onClick={() => toast.message(comingSoonMessage)}
-    >
-      {label}
+    <Button type="button" variant={variant} className="w-full" disabled={loading} onClick={handleClick}>
+      {loading ? purchasingLabel : label}
     </Button>
   );
 }

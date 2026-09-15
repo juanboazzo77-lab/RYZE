@@ -56,6 +56,9 @@ importers:
       '@radix-ui/react-tabs':
         specifier: ^1.1.2
         version: 1.1.21(@types/react-dom@19.2.5(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@revenuecat/purchases-capacitor':
+        specifier: ^13.5.1
+        version: 13.5.1(@capacitor/core@8.5.2)
       '@supabase/ssr':
         specifier: ^0.5.2
         version: 0.5.2(@supabase/supabase-js@2.112.4)
@@ -1252,6 +1255,14 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  '@revenuecat/purchases-capacitor@13.5.1':
+    resolution: {integrity: sha512-df3T+l2bgM//qCWai/reEz/ZitKnuClaUD0E/5Fy63NrH4EOBhRKCmcqsKjR8LgnDUSp2WqV99qin13ytXhAIA==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@revenuecat/purchases-typescript-internal-esm@18.36.1':
+    resolution: {integrity: sha512-EYpNfQenkZLrChjHpPDWXiV9OHY3Pc5ZYfjeN+BCxZheMJk3llyDLQWJuP6uxLd2ZWo0gshvZ5hIZfhBqHaTqA==}
 
   '@rollup/rollup-android-arm-eabi@4.63.1':
     resolution: {integrity: sha512-UZ8sUxPTiHWYX9QNdJedb1kDZSpS1t/VPWBWGSgqHNi9w3Cu6IXvu2mzbhiTiPvtrqgTQJ+zqiAq2iPIPilpaQ==}
@@ -5294,6 +5305,13 @@ snapshots:
       react: 19.2.8
     optionalDependencies:
       '@types/react': 19.2.18
+
+  '@revenuecat/purchases-capacitor@13.5.1(@capacitor/core@8.5.2)':
+    dependencies:
+      '@capacitor/core': 8.5.2
+      '@revenuecat/purchases-typescript-internal-esm': 18.36.1
+
+  '@revenuecat/purchases-typescript-internal-esm@18.36.1': {}
 
   '@rollup/rollup-android-arm-eabi@4.63.1':
     optional: true

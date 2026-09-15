@@ -5,6 +5,7 @@ import { getT } from '@/i18n/server';
 import { AppShell } from '@/components/app-shell/app-shell';
 import { RegisterSW } from '@/components/pwa/register-sw';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
+import { RevenueCatInit } from '@/features/billing/revenuecat-init';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, { t }] = await Promise.all([getUserContext(), getT()]);
@@ -15,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell email={ctx.email} showAds={showAds(ctx.entitlement)} adCopy={t.ads}>
       <RegisterSW />
       <OfflineIndicator />
+      <RevenueCatInit userId={ctx.userId} />
       {children}
     </AppShell>
   );

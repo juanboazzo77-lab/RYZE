@@ -6,6 +6,7 @@ import { requireUser } from '@/server/context';
 import { TIER_LIMITS, showAds } from '@/server/entitlements';
 import { PLAN_ORDER, PLAN_PRICE_USD, FEATURE_ROWS } from '@/features/billing/plans';
 import { PlanSelectButton } from '@/features/billing/plan-select-button';
+import { RestorePurchasesButton } from '@/features/billing/restore-purchases-button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -111,10 +112,14 @@ export default async function PlansPage() {
                   <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
                     {p.currentPlan}
                   </Badge>
-                ) : (
+                ) : tier === 'FREE' ? null : (
                   <PlanSelectButton
+                    tier={tier}
                     label={p.choose}
                     comingSoonMessage={p.comingSoon}
+                    purchasingLabel={p.purchasing}
+                    successMessage={p.purchaseSuccess}
+                    errorMessage={p.purchaseError}
                     variant={isTop ? 'default' : 'outline'}
                   />
                 )}
@@ -125,6 +130,12 @@ export default async function PlansPage() {
       </div>
 
       <p className="text-center text-xs text-muted-foreground">{p.billingNote}</p>
+      <RestorePurchasesButton
+        label={p.restorePurchases}
+        restoringLabel={p.restoring}
+        successMessage={p.restoreSuccess}
+        nothingFoundMessage={p.restoreNothingFound}
+      />
     </div>
   );
 }
