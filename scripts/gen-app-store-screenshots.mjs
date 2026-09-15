@@ -2,9 +2,16 @@ import { chromium } from 'playwright';
 import { mkdirSync } from 'fs';
 
 const BASE_URL = process.env.SCREENSHOT_BASE_URL ?? 'https://forzaai.app';
-const EMAIL = process.env.SCREENSHOT_EMAIL ?? 'demo@fitai.app';
-const PASSWORD = process.env.SCREENSHOT_PASSWORD ?? 'FitaiDemo2026';
+const EMAIL = process.env.SCREENSHOT_EMAIL;
+const PASSWORD = process.env.SCREENSHOT_PASSWORD;
 const OUT_DIR = 'store-assets/app-store-screenshots';
+
+if (!EMAIL || !PASSWORD) {
+  console.error(
+    'Faltan credenciales: definí SCREENSHOT_EMAIL y SCREENSHOT_PASSWORD (cuenta demo) como variables de entorno.',
+  );
+  process.exit(1);
+}
 
 // iPhone 6.7" class (iPhone 14/15 Pro Max): 1290x2796 @ 3x — one of Apple's
 // currently accepted App Store screenshot sizes for apps without iPad support.
