@@ -36,7 +36,7 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
   // de requireUser) para no sumar latencia al guardado.
   const entitlement = await prisma.entitlement.findUnique({
     where: { userId: user.id },
-    select: { tier: true },
+    select: { tier: true, createdAt: true },
   });
   if (!entitlement || !can(entitlement, 'coach_profile')) return { error: 'FORBIDDEN' };
 

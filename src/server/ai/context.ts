@@ -25,7 +25,7 @@ function asList(v: unknown): string {
  */
 export async function buildUserContextBlock(
   profile: Profile,
-  entitlement: Pick<Entitlement, 'tier'>,
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>,
 ): Promise<string> {
   const db = forUser(profile.id);
   const tz = profile.timezone;

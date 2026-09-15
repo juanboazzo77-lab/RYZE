@@ -307,7 +307,7 @@ export const en: Dictionary = {
   plans: {
     title: 'Plans',
     subtitle: 'Pick the plan that fits you best.',
-    settingsDesc: 'Compare FREE, PRO and COACH.',
+    settingsDesc: 'Compare FREE, BASIC, PRO and COACH.',
     perMonth: '/mo',
     free: 'Free',
     currentPlan: 'Your current plan',
@@ -331,8 +331,12 @@ export const en: Dictionary = {
     },
     savingsBadge: 'Save {pct}%',
     billedEvery: '{price} billed every {months} months',
+    trialDaysLeft: '{n} days left in your free trial.',
+    trialExpired: 'Your free trial ended. Pick a plan to keep using the AI.',
+    basicPrice: '${price}/mo',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'To get started and try the app.' },
+      FREE: { name: 'FREE', tagline: 'Free for the first 7 days to try the app.' },
+      BASIC: { name: 'BASIC', tagline: 'The entry plan to keep going, ad-free.' },
       PRO: { name: 'PRO', tagline: 'For serious training, with real tracking.' },
       COACH: { name: 'COACH', tagline: 'A coach that actually knows you.' },
     },

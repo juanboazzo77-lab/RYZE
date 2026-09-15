@@ -19,7 +19,7 @@ const PLAN_TASKS: AiTask[] = ['generate_plan'];
 /** Lanza `AiRateLimitedError` si el usuario ya gastó su cuota. */
 export async function assertWithinLimits(
   userId: string,
-  entitlement: Pick<Entitlement, 'tier'>,
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>,
   task: AiTask,
   timezone: string,
 ): Promise<void> {
@@ -96,7 +96,7 @@ export async function recordUsage(
 /** Cuánto le queda al usuario hoy/este mes (para mostrar en la UI). */
 export async function usageSnapshot(
   userId: string,
-  entitlement: Pick<Entitlement, 'tier'>,
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>,
   timezone: string,
 ): Promise<{ coachUsed: number; coachLimit: number; plansUsed: number; plansLimit: number }> {
   const limits = limitsFor(entitlement);

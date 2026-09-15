@@ -3,13 +3,15 @@ import Link from 'next/link';
 import { ChevronLeft, Check, X, Crown } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
-import { TIER_LIMITS, showAds } from '@/server/entitlements';
-import { PLAN_ORDER, PLAN_PRICE_USD, FEATURE_ROWS } from '@/features/billing/plans';
+import { TIER_LIMITS, TRIAL_LIMITS, showAds, isInTrial, trialDaysLeft } from '@/server/entitlements';
+import { PLAN_ORDER, PLAN_PRICE_USD, BASIC_PRICE_USD, FEATURE_ROWS } from '@/features/billing/plans';
 import { PlanPriceSelector } from '@/features/billing/plan-price-selector';
+import { PlanSelectButton } from '@/features/billing/plan-select-button';
 import { RestorePurchasesButton } from '@/features/billing/restore-purchases-button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { interpolate } from '@/i18n/interpolate';
 
 export const metadata: Metadata = { title: 'Planes' };
 
@@ -32,10 +34,9 @@ export default async function PlansPage() {
         <p className="text-sm text-muted-foreground">{p.subtitle}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_ORDER.map((tier) => {
-          const limits = TIER_LIMITS[tier];
-          const prices = PLAN_PRICE_USD[tier];
+          const limits = tier === 'FREE' ? TRIAL_LIMITS : TIER_LIMITS[tier];
           const isCurrent = tier === currentTier;
           const isTop = tier === 'COACH';
 
@@ -107,14 +108,45 @@ export default async function PlansPage() {
 
                 {tier === 'FREE' ? (
                   isCurrent ? (
-                    <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
-                      {p.currentPlan}
-                    </Badge>
+                    isInTrial(ctx.entitlement) ? (
+                      <div className="space-y-2">
+                        <p className="text-center text-xs font-medium text-success">
+                          {interpolate(p.trialDaysLeft, { n: trialDaysLeft(ctx.entitlement) })}
+                        </p>
+                        <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
+                          {p.currentPlan}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <p className="text-center text-xs font-medium text-warning">{p.trialExpired}</p>
+                    )
                   ) : null
+                ) : tier === 'BASIC' ? (
+                  <div className="space-y-3">
+                    <p className="text-center text-3xl font-bold tabular-nums">
+                      {interpolate(p.basicPrice, { price: BASIC_PRICE_USD.toFixed(2) })}
+                    </p>
+                    {isCurrent ? (
+                      <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
+                        {p.currentPlan}
+                      </Badge>
+                    ) : (
+                      <PlanSelectButton
+                        tier="BASIC"
+                        duration="monthly"
+                        label={p.choose}
+                        comingSoonMessage={p.comingSoon}
+                        purchasingLabel={p.purchasing}
+                        successMessage={p.purchaseSuccess}
+                        errorMessage={p.purchaseError}
+                        variant="outline"
+                      />
+                    )}
+                  </div>
                 ) : (
                   <PlanPriceSelector
                     tier={tier}
-                    prices={prices}
+                    prices={PLAN_PRICE_USD[tier]}
                     isCurrent={isCurrent}
                     durationLabels={{
                       monthly: p.durations.monthly,

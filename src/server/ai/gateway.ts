@@ -49,7 +49,7 @@ const MAX_HISTORY = 16;
 /** Un turno del AI Coach. Devuelve el texto de respuesta del asistente. */
 export async function runCoachTurn(args: {
   profile: Profile;
-  entitlement: Pick<Entitlement, 'tier'>;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   history: CoachHistoryMsg[];
   userMessage: string;
 }): Promise<{ text: string }> {
@@ -89,7 +89,7 @@ export async function runCoachTurn(args: {
 /** Genera un borrador de rutina. No persiste nada. */
 export async function generateWorkoutPlanDraft(args: {
   profile: Profile;
-  entitlement: Pick<Entitlement, 'tier'>;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   brief: string;
 }): Promise<{ draft: PlanDraft; raw: string }> {
   const { profile, entitlement, brief } = args;
@@ -272,7 +272,7 @@ export async function describeExercise(args: {
  */
 export async function generateMealPlan(args: {
   profile: Profile;
-  entitlement: Pick<Entitlement, 'tier'>;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   target: { kcal: number; proteinG: number; carbsG: number; fatG: number };
   brief: string;
 }): Promise<{ plan: MealPlan | null; raw: string }> {
@@ -363,7 +363,7 @@ export async function recommendGoalFromPhotos(args: {
  */
 export async function analyzePhysique(args: {
   profile: Profile;
-  entitlement: Pick<Entitlement, 'tier'>;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   photos: string[];
 }): Promise<PhysiqueAnalysis | null> {
   const { profile, entitlement, photos } = args;
@@ -449,7 +449,7 @@ function scale(n: number | null): string {
  */
 export async function reviewWeeklyCheckin(args: {
   profile: Profile;
-  entitlement: Pick<Entitlement, 'tier'>;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   week: CheckinWeekReport;
   subjective: CheckinSubjective;
   currentTarget: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;

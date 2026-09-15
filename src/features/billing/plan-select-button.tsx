@@ -9,10 +9,10 @@ import { syncMyEntitlementAction } from './actions';
 import type { PlanDuration } from './plan-durations';
 
 /**
- * Botón "Elegir plan" para PRO/COACH. Nativo (Capacitor): compra real vía
- * RevenueCat (StoreKit/Play Billing) contra el paquete `{tier}_{duration}` del
- * offering `default`. Web: no hay tienda con la que hablar — solo avisa que
- * hay que abrir la app instalada.
+ * Botón "Elegir plan" para BASIC/PRO/COACH. Nativo (Capacitor): compra real
+ * vía RevenueCat (StoreKit/Play Billing) contra el paquete `{tier}_{duration}`
+ * del offering `default`. Web: no hay tienda con la que hablar — solo avisa
+ * que hay que abrir la app instalada.
  */
 export function PlanSelectButton({
   tier,
@@ -24,7 +24,7 @@ export function PlanSelectButton({
   errorMessage,
   variant = 'outline',
 }: {
-  tier: 'PRO' | 'COACH';
+  tier: 'BASIC' | 'PRO' | 'COACH';
   duration: PlanDuration;
   label: string;
   comingSoonMessage: string;

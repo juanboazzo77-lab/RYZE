@@ -307,7 +307,7 @@ export const it: Dictionary = {
   plans: {
     title: 'Piani',
     subtitle: 'Scegli il piano più adatto a te.',
-    settingsDesc: 'Confronta FREE, PRO e COACH.',
+    settingsDesc: 'Confronta FREE, BASIC, PRO e COACH.',
     perMonth: '/mese',
     free: 'Gratis',
     currentPlan: 'Il tuo piano attuale',
@@ -331,8 +331,12 @@ export const it: Dictionary = {
     },
     savingsBadge: 'Risparmi {pct}%',
     billedEvery: '{price} addebitati ogni {months} mesi',
+    trialDaysLeft: 'Ti restano {n} giorni di prova gratuita.',
+    trialExpired: 'La tua prova gratuita è finita. Scegli un piano per continuare a usare l’IA.',
+    basicPrice: '{price} $/mese',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Per iniziare e provare l’app.' },
+      FREE: { name: 'FREE', tagline: 'Gratis i primi 7 giorni per provare l’app.' },
+      BASIC: { name: 'BASIC', tagline: 'Il piano d’ingresso per continuare senza pubblicità.' },
       PRO: { name: 'PRO', tagline: 'Per allenarti sul serio, con un monitoraggio vero.' },
       COACH: { name: 'COACH', tagline: 'Un coach che ti conosce davvero.' },
     },

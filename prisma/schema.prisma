@@ -142,7 +142,11 @@ enum PrType {
 }
 
 enum EntitlementTier {
+  /// Cuenta nueva: prueba gratis por `TRIAL_DAYS` (ver src/server/entitlements.ts).
+  /// Pasado ese plazo, FREE queda bloqueada para IA hasta pasar a BASIC o más.
   FREE
+  /// Plan de entrada pago ($2.99/mes): mensajes/planes limitados, sin anuncios.
+  BASIC
   PRO
   /// Plan más top: entrenador de verdad — desbloquea el perfil de coaching y
   /// la individualización 100% a medida en todos los planes que arma la IA.

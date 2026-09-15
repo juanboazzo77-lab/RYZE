@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       id: true,
       timezone: true,
       weekStart: true,
-      entitlement: { select: { tier: true } },
+      entitlement: { select: { tier: true, createdAt: true } },
       notificationPreferences: { select: { kind: true, enabled: true, dayOfWeek: true } },
     },
   });

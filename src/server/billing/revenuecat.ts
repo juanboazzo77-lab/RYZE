@@ -6,11 +6,13 @@ import { prisma } from '@/server/db';
  * Entitlements de RevenueCat, de mayor a menor — deben coincidir con los
  * identificadores creados en el dashboard (Product catalog → Entitlements).
  * COACH ya incluye todo lo de PRO en `TIER_LIMITS`, así que no hace falta que
- * el producto coach_monthly otorgue también el entitlement "pro" en RC.
+ * el producto coach_monthly otorgue también el entitlement "pro" en RC (y lo
+ * mismo para "basic" — PRO y COACH ya cubren de sobra lo que da BASIC).
  */
 const TIER_BY_RC_ENTITLEMENT: Array<{ rcId: string; tier: EntitlementTier }> = [
   { rcId: 'coach', tier: 'COACH' },
   { rcId: 'pro', tier: 'PRO' },
+  { rcId: 'basic', tier: 'BASIC' },
 ];
 
 interface RevenueCatSubscriberEntitlement {
