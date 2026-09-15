@@ -16,22 +16,7 @@ export async function POST(req: NextRequest) {
   if (!expected) {
     return NextResponse.json({ error: 'REVENUECAT_WEBHOOK_AUTH no configurado' }, { status: 503 });
   }
-  const received = req.headers.get('authorization');
-  if (received !== expected) {
-    if (req.nextUrl.searchParams.get('debug') === '1') {
-      return NextResponse.json(
-        {
-          error: 'no autorizado',
-          expectedLen: expected.length,
-          receivedLen: received?.length ?? 0,
-          expectedPrefix: expected.slice(0, 10),
-          receivedPrefix: received?.slice(0, 10) ?? null,
-          expectedSuffix: expected.slice(-6),
-          receivedSuffix: received?.slice(-6) ?? null,
-        },
-        { status: 401 },
-      );
-    }
+  if (req.headers.get('authorization') !== expected) {
     return NextResponse.json({ error: 'no autorizado' }, { status: 401 });
   }
 
