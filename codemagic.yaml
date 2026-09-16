@@ -23,7 +23,7 @@ workflows:
           # corepack prepare falla en las imágenes de Codemagic por un bug
           # de verificación de firmas contra el registro de npm; instalamos
           # pnpm directo con npm en vez de pasar por corepack.
-          npm install -g pnpm
+          command -v pnpm || npm install -g pnpm --force
           pnpm install --frozen-lockfile
       - name: Sincronizar Capacitor (iOS)
         script: |
