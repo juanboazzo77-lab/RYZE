@@ -54,11 +54,12 @@ workflows:
         script: |
           # Apple rechaza subir un .ipa con la misma versión + número de
           # build que uno ya subido antes ("attribute already used").
-          # Tomamos el último número usado en App Store Connect y sumamos 1,
-          # pasándolo directo a xcodebuild (más confiable que agvtool, que
-          # necesita el "Versioning System" habilitado en el proyecto).
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$BUNDLE_ID")
-          BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          # app-store-connect get-latest-build-number devolvió 0/1 de nuevo
+          # (probablemente porque el build anterior no había terminado de
+          # "publicarse" del lado de Apple todavía). Usamos en cambio el
+          # propio contador de builds de Codemagic ($BUILD_NUMBER, único y
+          # siempre creciente para este workflow) para no depender de eso.
+          echo "Usando BUILD_NUMBER=$BUILD_NUMBER como CFBundleVersion"
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
