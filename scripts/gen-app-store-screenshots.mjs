@@ -47,6 +47,7 @@ const context = await browser.newContext({
   isMobile: true,
   hasTouch: true,
   locale: 'es-MX',
+  colorScheme: 'dark',
 });
 const page = await context.newPage();
 
