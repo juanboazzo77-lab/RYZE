@@ -13,6 +13,12 @@ workflows:
     environment:
       xcode: latest
       node: 22.13.0
+      groups:
+        # Contiene CERTIFICATE_PRIVATE_KEY: la clave RSA que
+        # app-store-connect fetch-signing-files usa para generar un
+        # certificado de distribución nuevo (Apple nunca devuelve la clave
+        # privada de un certificado ya creado, así que la aportamos nosotros).
+        - ios_signing
       vars:
         BUNDLE_ID: "app.forzaai.mobile"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
@@ -36,7 +42,7 @@ workflows:
             --type IOS_APP_STORE \
             --create
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --project "$XCODE_PROJECT"
       - name: Compilar y exportar el .ipa
         script: |
           xcode-project build-ipa \
