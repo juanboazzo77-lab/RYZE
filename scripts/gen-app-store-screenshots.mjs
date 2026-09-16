@@ -13,9 +13,10 @@ if (!EMAIL || !PASSWORD) {
   process.exit(1);
 }
 
-// iPhone 6.7" class (iPhone 14/15 Pro Max): 1290x2796 @ 3x — one of Apple's
-// currently accepted App Store screenshot sizes for apps without iPad support.
-const VIEWPORT = { width: 430, height: 932 };
+// iPhone 6.5" class (iPhone 12/13/14 Pro Max): 1284x2778 @ 3x — the exact
+// size App Store Connect's single iPhone screenshot slot accepts for this
+// app (it only offers "Pantalla de 6,5"", 1242x2688 or 1284x2778).
+const VIEWPORT = { width: 428, height: 926 };
 const DEVICE_SCALE_FACTOR = 3;
 
 const SCREENS = [
