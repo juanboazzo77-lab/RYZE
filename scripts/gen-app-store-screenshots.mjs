@@ -4,7 +4,7 @@ import { mkdirSync } from 'fs';
 const BASE_URL = process.env.SCREENSHOT_BASE_URL ?? 'https://forzaai.app';
 const EMAIL = process.env.SCREENSHOT_EMAIL;
 const PASSWORD = process.env.SCREENSHOT_PASSWORD;
-const OUT_DIR = 'store-assets/app-store-screenshots';
+const OUT_DIR = process.env.SCREENSHOT_OUT_DIR ?? 'store-assets/app-store-screenshots';
 
 if (!EMAIL || !PASSWORD) {
   console.error(
@@ -13,11 +13,16 @@ if (!EMAIL || !PASSWORD) {
   process.exit(1);
 }
 
-// iPhone 6.5" class (iPhone 12/13/14 Pro Max): 1284x2778 @ 3x — the exact
-// size App Store Connect's single iPhone screenshot slot accepts for this
-// app (it only offers "Pantalla de 6,5"", 1242x2688 or 1284x2778).
-const VIEWPORT = { width: 428, height: 926 };
-const DEVICE_SCALE_FACTOR = 3;
+// Por default: iPhone 6.5" class (iPhone 12/13/14 Pro Max) — 1284x2778 @ 3x,
+// el tamaño exacto que acepta el slot de iPhone de App Store Connect para
+// esta app. Se puede sobreescribir por env var para otros dispositivos
+// (p. ej. iPad 13": 1024x1366 @ 2x = 2048x2732).
+const VIEWPORT = {
+  width: Number(process.env.SCREENSHOT_WIDTH ?? 428),
+  height: Number(process.env.SCREENSHOT_HEIGHT ?? 926),
+};
+const DEVICE_SCALE_FACTOR = Number(process.env.SCREENSHOT_SCALE ?? 3);
+const IS_MOBILE = process.env.SCREENSHOT_IS_MOBILE !== 'false';
 
 const SCREENS = [
   { path: '/dashboard', name: '01-dashboard' },
@@ -44,7 +49,7 @@ const browser = await chromium.launch();
 const context = await browser.newContext({
   viewport: VIEWPORT,
   deviceScaleFactor: DEVICE_SCALE_FACTOR,
-  isMobile: true,
+  isMobile: IS_MOBILE,
   hasTouch: true,
   locale: 'es-MX',
   colorScheme: 'dark',
