@@ -52,9 +52,17 @@ workflows:
           xcode-project use-profiles --project "$XCODE_PROJECT"
       - name: Compilar y exportar el .ipa
         script: |
+          # Apple rechaza subir un .ipa con la misma versión + número de
+          # build que uno ya subido antes ("attribute already used").
+          # Tomamos el último número usado en App Store Connect y sumamos 1,
+          # pasándolo directo a xcodebuild (más confiable que agvtool, que
+          # necesita el "Versioning System" habilitado en el proyecto).
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number "$BUNDLE_ID")
+          BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
