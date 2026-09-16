@@ -17,15 +17,14 @@ workflows:
         BUNDLE_ID: "app.forzaai.mobile"
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
-        # pnpm en esta imagen es un shim de corepack; corepack tiene un bug
-        # verificando firmas al resolver una versión "latest" contra el
-        # registro de npm. Esta es la variable oficial para saltarse esa
-        # verificación (no afecta la integridad de los paquetes instalados,
-        # solo la firma del propio metadata de versión de pnpm).
-        COREPACK_INTEGRITY_KEYS: "0"
     scripts:
       - name: Instalar dependencias
         script: |
+          # El "pnpm" de esta imagen es un shim de corepack, que tiene dos
+          # bugs distintos (verificación de firmas y un ERR_VM_DYNAMIC_
+          # IMPORT_CALLBACK_MISSING al ejecutar la versión descargada).
+          # Instalamos el pnpm real vía npm, forzando para pisar el shim.
+          npm install -g pnpm@11.25.0 --force
           pnpm install --frozen-lockfile
       - name: Sincronizar Capacitor (iOS)
         script: |
