@@ -38,9 +38,16 @@ workflows:
       - name: Configurar firma automática (App Store Connect API)
         script: |
           keychain initialize
+          # CERTIFICATE_PRIVATE_KEY_B64 está en base64 (una sola línea) porque
+          # el campo de variables de Codemagic no preserva bien los saltos de
+          # línea de una clave PEM pegada directamente. La decodificamos a un
+          # archivo temporal y la pasamos por @file: en vez de por variable.
+          echo "$CERTIFICATE_PRIVATE_KEY_B64" | base64 --decode > /tmp/ios_distribution_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key "@file:/tmp/ios_distribution_key.pem" \
             --create
+          rm -f /tmp/ios_distribution_key.pem
           keychain add-certificates
           xcode-project use-profiles --project "$XCODE_PROJECT"
       - name: Compilar y exportar el .ipa
