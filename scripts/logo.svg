@@ -1,0 +1,21 @@
+<svg width="300" height="300" viewBox="20 20 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="rr"><rect x="20" y="20" width="300" height="300" rx="64"/></clipPath>
+  </defs>
+  <g clip-path="url(#rr)">
+    <rect x="20" y="20" width="300" height="300" fill="#0f1115"/>
+    <g transform="translate(-14,-12)">
+      <g transform="translate(7,9)" fill="#123a20">
+        <rect x="128" y="95" width="40" height="165"/>
+        <rect x="128" y="95" width="105" height="34"/>
+        <rect x="128" y="167" width="80" height="30"/>
+      </g>
+      <g fill="#22c55e">
+        <rect x="128" y="95" width="40" height="165"/>
+        <rect x="128" y="95" width="105" height="34"/>
+        <rect x="128" y="167" width="80" height="30"/>
+      </g>
+    </g>
+    <text x="222" y="252" font-family="Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="1" fill="#22c55e" text-anchor="middle">AI</text>
+  </g>
+</svg>
