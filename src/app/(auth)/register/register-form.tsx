@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { signUpAction, type AuthActionState } from '../actions';
 import { AuthFormShell, FormMessage, LegalNotice, SubmitButton } from '../_ui';
+import { SocialAuthButtons } from '../_social';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/i18n/provider';
@@ -17,6 +18,8 @@ export function RegisterForm() {
   return (
     <form action={action}>
       <AuthFormShell>
+        <SocialAuthButtons />
+
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">{t.auth.name}</Label>
           <Input id="name" name="name" type="text" autoComplete="name" />
