@@ -110,6 +110,7 @@ export function NewPlanFlow({
           setDraft(null);
           setBrief('');
           setRefining(true);
+          setUsed((n) => Math.max(0, n - 1));
         })
       }
       onAccept={(name, applyNutrition) =>
@@ -179,15 +180,25 @@ function DraftReview({
                       {e.note ? (
                         <span className="block text-xs text-muted-foreground">{e.note}</span>
                       ) : null}
+                      {e.rationale ? (
+                        <span className="block text-xs text-primary/80">{e.rationale}</span>
+                      ) : null}
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                      {interpolate(tp.setsReps, {
-                        sets: e.sets,
-                        min: e.repsMin,
-                        max: e.repsMax,
-                        rir: e.rir,
-                        rest: e.restSeconds,
-                      })}
+                      {e.type === 'CARDIO'
+                        ? [
+                            e.durationMinutes ? `${e.durationMinutes} min` : null,
+                            e.distanceKm ? `${e.distanceKm} km` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')
+                        : interpolate(tp.setsReps, {
+                            sets: e.sets,
+                            min: e.repsMin,
+                            max: e.repsMax,
+                            rir: e.rir,
+                            rest: e.restSeconds,
+                          })}
                     </span>
                   </li>
                 ))}
@@ -215,6 +226,9 @@ function DraftReview({
               <span>C {draft.nutrition.carbsG} g</span>
               <span>G {draft.nutrition.fatG} g</span>
             </div>
+            {draft.nutrition.rationale ? (
+              <p className="text-xs text-muted-foreground">{draft.nutrition.rationale}</p>
+            ) : null}
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={applyNutrition} onCheckedChange={setApplyNutrition} />
               {tp.applyNutrition}

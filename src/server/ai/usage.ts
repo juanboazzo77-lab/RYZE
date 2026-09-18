@@ -93,6 +93,27 @@ export async function recordUsage(
   }
 }
 
+/**
+ * Devuelve un crédito de generación de plan del mes actual. Se usa cuando el
+ * usuario borra una rutina hecha con IA: en vez de dejarlo trabado hasta el
+ * mes que viene, le da de nuevo el lugar que esa rutina ocupaba en su cupo
+ * mensual para que pueda generar otra en su lugar.
+ */
+export async function refundPlanGeneration(userId: string, timezone: string): Promise<void> {
+  const now = DateTime.now().setZone(timezone);
+  const monthStart = new Date(`${now.startOf('month').toISODate()}T00:00:00.000Z`);
+  const row = await prisma.aiUsageDaily.findFirst({
+    where: { userId, day: { gte: monthStart }, task: 'generate_plan', messageCount: { gt: 0 } },
+    orderBy: { day: 'desc' },
+    select: { id: true },
+  });
+  if (!row) return;
+  await prisma.aiUsageDaily.update({
+    where: { id: row.id },
+    data: { messageCount: { decrement: 1 } },
+  });
+}
+
 /** Cuánto le queda al usuario hoy/este mes (para mostrar en la UI). */
 export async function usageSnapshot(
   userId: string,

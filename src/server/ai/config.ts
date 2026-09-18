@@ -40,9 +40,15 @@ export function maxOutputTokensFor(task: AiTask): number {
     case 'coach_chat':
       return 1200;
     case 'generate_plan':
-      return 4000;
+      // Un plan de 4-7 días con 4-7 ejercicios/día, cada uno con nombre, tipo,
+      // sets/reps/RIR/descanso, note y rationale, ocupa bastante JSON — con
+      // 4000 el modelo cortaba a mitad de respuesta (stopReason max_tokens)
+      // en planes normales, no sólo en los más largos.
+      return 8000;
     case 'weekly_checkin':
-      return 1400;
+      // Con fotos + progresión de entrenamiento + el informe largo del plan
+      // COACH, 1400 se quedaba corto y cortaba el JSON a mitad de respuesta.
+      return 3000;
     case 'parse':
       return 700;
   }

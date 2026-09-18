@@ -8,7 +8,12 @@ import { prisma } from '@/server/db';
 import { AiError } from '@/server/ai/errors';
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
-import { computeTargets, ageFromBirthdate, defaultWeeklyRateKg } from '@/lib/nutrition/targets';
+import {
+  computeTargets,
+  ageFromBirthdate,
+  defaultWeeklyRateKg,
+  nutritionTargetRationale,
+} from '@/lib/nutrition/targets';
 import { planDraftSchema, type PlanDraft, type NutritionDraft } from './plan-schema';
 import {
   acceptPlanSchema,
@@ -149,6 +154,12 @@ function nutritionDraftFor(profile: {
     carbsG: r.carbsG,
     fatG: r.fatG,
     adjustmentPct: r.adjustmentPct,
+    rationale: nutritionTargetRationale(
+      profile.primaryGoal,
+      r.adjustmentPct,
+      weeklyRateKg ?? defaultWeeklyRateKg(profile.primaryGoal),
+      r.proteinG,
+    ),
   };
 }
 
@@ -218,7 +229,11 @@ function guessMuscle(name: string): MuscleGroup {
 }
 
 /** Encuentra el ejercicio en la biblioteca o crea uno custom del usuario. */
-async function resolveExerciseId(name: string, userId: string): Promise<string> {
+async function resolveExerciseId(
+  name: string,
+  userId: string,
+  type: 'STRENGTH' | 'CARDIO',
+): Promise<string> {
   const clean = name.trim().slice(0, 80);
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id
@@ -233,6 +248,7 @@ async function resolveExerciseId(name: string, userId: string): Promise<string> 
   const created = await prisma.exercise.create({
     data: {
       name: clean,
+      type,
       primaryMuscle: guessMuscle(clean),
       isCustom: true,
       createdById: userId,
@@ -271,14 +287,17 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
       targetRepsMax: number;
       targetRir: number;
       restSeconds: number;
+      targetDurationSec: number | null;
+      targetDistanceMeters: number | null;
       notes: string | null;
+      rationale: string | null;
     }>;
   }> = [];
   for (const d of draft.days) {
     const exercises = [];
     for (let i = 0; i < d.exercises.length; i++) {
       const e = d.exercises[i]!;
-      const exerciseId = await resolveExerciseId(e.name, userId);
+      const exerciseId = await resolveExerciseId(e.name, userId, e.type ?? 'STRENGTH');
       exercises.push({
         exerciseId,
         orderIndex: i,
@@ -287,7 +306,10 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
         targetRepsMax: Math.max(e.repsMin, e.repsMax),
         targetRir: e.rir,
         restSeconds: e.restSeconds,
+        targetDurationSec: e.durationMinutes ? Math.round(e.durationMinutes * 60) : null,
+        targetDistanceMeters: e.distanceKm ? Math.round(e.distanceKm * 1000) : null,
         notes: e.note?.trim() || null,
+        rationale: e.rationale?.trim() || null,
       });
     }
     dayResolved.push({ name: d.name, weekday: d.weekday, exercises });
@@ -336,6 +358,7 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
           proteinG: n.proteinG,
           carbsG: n.carbsG,
           fatG: n.fatG,
+          rationale: n.rationale,
           source: 'AI',
           active: true,
         },
@@ -352,11 +375,17 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
 export async function discardGeneratedPlan(raw: { generationId: string }): Promise<Result> {
   const id = acceptPlanSchema.shape.generationId.safeParse(raw.generationId);
   if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
-  await forUser(userId).aiGeneration.updateMany({
+  const { userId, profile } = await requireUser();
+  const { count } = await forUser(userId).aiGeneration.updateMany({
     where: { id: id.data, kind: 'WORKOUT_PLAN', status: 'DRAFT' },
     data: { status: 'REJECTED' },
   });
+  if (count > 0) {
+    // No se quedó con este borrador: le devolvemos el lugar en el cupo
+    // mensual para que pueda pedir otro en el momento, sin esperar al mes que viene.
+    const { refundPlanGeneration } = await import('@/server/ai/usage');
+    await refundPlanGeneration(userId, profile.timezone).catch(() => {});
+  }
   revalidatePath('/coach/new-plan');
   return { ok: true };
 }

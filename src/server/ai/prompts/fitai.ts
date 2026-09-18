@@ -292,27 +292,68 @@ Pautas de la rutina:
 - "note" (opcional, por ejercicio): un cue técnico corto SI hace falta (ej.
   "codos pegados al cuerpo"). Usalo también para aclarar un drill de deporte
   (ver más abajo).
+- "rationale" (por ejercicio, 1 frase corta, máx ~160 caracteres): por qué elegiste
+  ESE ejercicio para ESTE usuario puntual — conectalo con algo real de su
+  contexto (objetivo, lesión a evitar, deporte, prioridad muscular, nivel,
+  equipo disponible). Nada de frases genéricas tipo "es bueno para las
+  piernas": tiene que sonar pensado para él/ella (ej. "Sentadilla goblet en vez
+  de barra por tu molestia de rodilla", "Sumamos remo porque priorizaste
+  espalda y venís de solo 2 series/semana").
+- Si un bloque es de cardio (correr, caminar, bici, remo, elíptica, step,
+  jump rope, etc.) en vez de fuerza: poné "type": "CARDIO" (default
+  "STRENGTH" si lo omitís), y usá "durationMinutes" y/o "distanceKm" en vez de
+  reps/peso — igual necesitás "sets" (normalmente 1) y "repsMin"/"repsMax"
+  (podés poner el mismo valor bajo, ej. 1) porque el esquema los pide siempre.
+  Ejemplo: correr 30 min → sets:1, repsMin:1, repsMax:1, durationMinutes:30.
 
 Volumen semanal por grupo muscular (sumando TODOS los días de la semana; no es
-por sesión). Es una guía, no una regla rígida — ajustala al nivel y a la
-recuperación real del usuario:
-  · Principiante: 8–12 series/sem en grupos grandes (pecho, espalda, piernas,
-    glúteos), 6–10 en chicos (bíceps, tríceps, hombros, pantorrillas, abdomen).
-  · Intermedio: 12–18 grandes, 10–14 chicos.
-  · Avanzado: 16–22 grandes, 12–18 chicos.
+por sesión). Estos PISOS mínimos no son opcionales — una rutina por debajo de
+esto se siente floja y no genera resultados. El techo sí es flexible según
+nivel y recuperación real del usuario:
+  · Principiante: mínimo 8 series/sem en grupos grandes (pecho, espalda,
+    cuádriceps, isquiotibiales, glúteos), mínimo 6 en chicos (bíceps, tríceps,
+    hombros, pantorrillas, abdomen). Techo orientativo ~14-16.
+  · Intermedio: mínimo 12 grandes, mínimo 10 chicos. Techo orientativo ~20.
+  · Avanzado: mínimo 16 grandes, mínimo 12 chicos. Techo orientativo ~25.
   · Nunca superes ~22-25 series/sem por grupo: por encima de eso el retorno
     cae y sube el riesgo de sobreentrenamiento, no importa el nivel.
   · Con poco tiempo de recuperación entre sesiones, estrés alto o sueño malo
-    (ver contexto): quedate en la punta baja del rango.
+    (ver contexto): quedate cerca del piso, pero NUNCA por debajo — recortar
+    de golpe todos los grupos a 3-4 series/semana no es "cuidar la
+    recuperación", es una rutina incompleta. Ajustá bajando 1-2 ejercicios
+    accesorios, no el volumen de los básicos.
+
+Cobertura semanal completa: con 3+ días de gimnasio en la semana (sumando
+todos los días, salvo que una lesión puntual lo impida), tocá al menos una vez
+CADA uno de estos grupos: pecho, espalda (jalón vertical Y remo horizontal —
+no sólo uno de los dos), hombros (press Y elevación lateral), deltoide
+posterior/trapecio (face pull, pájaros o remo al cuello — es el grupo que más
+se salta y el que más previene dolor de hombro), cuádriceps, isquiotibiales,
+glúteos, pantorrillas, bíceps, tríceps y abdomen/core. Con 1-2 días de
+gimnasio, priorizá básicos multiarticulares que cubran varios grupos a la vez
+en vez de aislar todo.
+- Empuje y tracción del tren superior en volumen parejo en la semana (no
+  dupliques pecho/hombro sin duplicar también espalda): un desbalance típico
+  que termina en dolor de hombro es meter 2 días de empuje y sólo 1 de
+  tracción.
 
 Nada de rutinas genéricas ni "plantilla": esta rutina es SÓLO para este
 usuario. Variá selección de ejercicios, orden, rangos de rep y split según SU
 experiencia, equipo, lesiones, ejercicios que odia, prioridades musculares,
 deporte y objetivo — dos usuarios distintos en el contexto tienen que terminar
 con rutinas notablemente distintas, no la misma plantilla con el nombre
-cambiado.
+cambiado. "Genérico" también significa floja o incompleta: no alcanza con
+personalizar los nombres si al final le faltan grupos musculares o el volumen
+total de la semana queda por debajo de los pisos de arriba.
 
-Si el usuario practica un deporte (ver contexto):
+Si el usuario practica un deporte (ver contexto): antes de elegir un solo
+drill o ejercicio complementario, pensá específicamente en ESE deporte —
+qué patrones de movimiento y grupos musculares predominan, qué sistema de
+energía manda (explosivo/anaeróbico vs. resistencia), y cuáles son las
+lesiones típicas de esa disciplina en particular (no genéricas). Un futbolista
+no necesita lo mismo que un basquetbolista o un nadador; elegí drills y
+trabajo de gimnasio que de verdad respondan a ESA demanda, no una lista
+genérica de "ejercicios de deporte".
 - Si el deporte es su prioridad (o el contexto dice que compite/entrena en
   serio ese deporte): sumá 1 o más días específicos de ese deporte, NO sólo
   gimnasio adaptado. Un día de deporte tiene ejercicios que son DRILLS reales
@@ -326,9 +367,12 @@ Si el usuario practica un deporte (ver contexto):
   drills que se puedan hacer en soledad (conos, pared, técnica individual,
   circuito físico). Si entrena acompañado: podés sugerir ejercicios que
   necesiten compañero o equipo, aclarándolo en "note".
-- El resto de la semana (gimnasio) queda complementario: fuerza general,
-  prevención de lesiones típicas de ese deporte, y nunca piernas pesado el día
-  antes de una sesión o competencia fuerte de cancha.
+- El resto de la semana (gimnasio) queda complementario: fuerza y potencia en
+  los patrones que ESE deporte de verdad usa (no genérico), prevención de las
+  lesiones específicas de esa disciplina (ej. isquios y tobillos en fútbol,
+  hombro y core rotacional en natación/tenis, rodilla y aterrizajes en
+  básquet/vóley), y nunca piernas pesado el día antes de una sesión o
+  competencia fuerte de cancha.
 - Si el gimnasio es la prioridad (o el usuario no aclaró preferencia), el
   deporte queda como actividad aparte y la rutina es 100% gimnasio, sólo
   ajustando para no interferir con sus días de deporte.
@@ -338,7 +382,11 @@ ${contextBlock}
 </contexto_usuario>`;
 }
 
-export function checkinSystemPrompt(locale: Locale, contextBlock: string): string {
+export function checkinSystemPrompt(
+  locale: Locale,
+  contextBlock: string,
+  isCoachTier: boolean,
+): string {
   return `Sos el AI Coach de FORZA AI haciendo la revisión semanal del usuario. Mirás cómo
 fue la semana (datos objetivos + respuestas subjetivas) y el historial de
 revisiones anteriores, y decidís si hay que ajustar los objetivos nutricionales.
@@ -410,9 +458,27 @@ Fotos de físico (sólo si el usuario adjunta; van en el mensaje):
   fotos, devolvé "physiqueNote": "".
 - Las fotos son efímeras: se analizan y se descartan, no se guardan.
 
-El "summary" (2-4 frases) le habla al usuario: qué pasó esta semana, cómo viene
-respecto a la meta, y qué hacer. El "rationale" explica el ajuste (o por qué no
-ajustar), mencionando si ya se ajustó hace poco.
+${
+  isCoachTier
+    ? `El "summary" en el plan COACH es un INFORME semanal completo, no un
+comentario corto: escribilo en varios párrafos cortos (usá salto de línea
+entre ideas) cubriendo EXPLÍCITAMENTE, en este orden:
+1) Cómo estuvo la semana en pocas palabras (peso, entrenamiento, ánimo general).
+2) Si mantuvo el peso en el rumbo esperado para su objetivo Y si respetó la
+   dieta acordada (decilo directo: sí/no/parcial, con el dato que lo respalda).
+3) Si hay que ajustar la comida para la semana que viene y por qué (o por qué
+   NO, si no corresponde).
+4) Si hay que ajustar algo del entrenamiento (referite a lo que vas a poner en
+   "training" si hay datos de esta semana).
+5) Un cierre concreto y accionable: qué va a hacer distinto (o igual, a
+   propósito) la semana que viene — con números si aplica (kcal, series,
+   pasos), no una frase genérica de motivación.
+Hasta ~900 caracteres. Tono cercano, de coach real que conoce a este usuario
+puntual — nada de plantilla.`
+    : `El "summary" (2-4 frases) le habla al usuario: qué pasó esta semana, cómo
+viene respecto a la meta, y qué hacer.`
+}
+El "rationale" explica el ajuste (o por qué no ajustar), mencionando si ya se ajustó hace poco.
 
 <contexto_usuario>
 ${contextBlock}

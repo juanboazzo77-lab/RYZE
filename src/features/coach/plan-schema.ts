@@ -8,14 +8,22 @@ import { z } from 'zod';
 
 export const planDraftExercise = z.object({
   name: z.string().min(2).max(80),
+  type: z.enum(['STRENGTH', 'CARDIO']).optional(),
   sets: z.number().int().min(1).max(10),
   repsMin: z.number().int().min(1).max(50),
   repsMax: z.number().int().min(1).max(50),
   rir: z.number().int().min(0).max(5),
   restSeconds: z.number().int().min(15).max(600),
+  /** Solo para type=CARDIO: duración objetivo del bloque (minutos). */
+  durationMinutes: z.number().int().min(1).max(180).optional(),
+  /** Solo para type=CARDIO: distancia objetivo del bloque (km). */
+  distanceKm: z.number().min(0.1).max(100).optional(),
   /** Aclaración corta: cue técnico, o qué significan sets/reps en un drill
    * de cancha (ej. "series = rondas, reps = sprints de 20m"). */
   note: z.string().max(140).optional(),
+  /** Por qué se eligió este ejercicio para este cliente puntual (breve,
+   * concreto, referenciando su objetivo/condición/deporte). */
+  rationale: z.string().max(160).optional(),
 });
 
 export const planDraftDay = z.object({
@@ -42,4 +50,6 @@ export interface NutritionDraft {
   carbsG: number;
   fatG: number;
   adjustmentPct: number;
+  /** Por qué estos números para este cliente (objetivo, ritmo, actividad). */
+  rationale: string;
 }

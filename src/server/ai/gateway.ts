@@ -43,7 +43,7 @@ export interface CoachHistoryMsg {
 
 const COACH_TIMEOUT_MS = 70_000;
 const PLAN_TIMEOUT_MS = 110_000;
-const CHECKIN_TIMEOUT_MS = 80_000;
+const CHECKIN_TIMEOUT_MS = 100_000;
 const MAX_HISTORY = 16;
 
 /** Un turno del AI Coach. Devuelve el texto de respuesta del asistente. */
@@ -115,7 +115,10 @@ export async function generateWorkoutPlanDraft(args: {
     timeoutMs: PLAN_TIMEOUT_MS,
     temperature: 0.6,
     thinking: true,
-    effort: 'medium',
+    // 'high': un plan (sobre todo con foco en un deporte específico o
+    // hipertrofia por grupo muscular) necesita más "pensar antes de
+    // responder" que un mensaje de chat — menos plantilla, más razonado.
+    effort: 'high',
   });
 
   if (!res.data) {
@@ -520,7 +523,11 @@ export async function reviewWeeklyCheckin(args: {
     .filter((l) => l !== null)
     .join('\n');
 
-  const system = checkinSystemPrompt(profile.locale, `${baseContext}\n\n${reportBlock}`);
+  const system = checkinSystemPrompt(
+    profile.locale,
+    `${baseContext}\n\n${reportBlock}`,
+    entitlement.tier === 'COACH',
+  );
 
   const userContent: AiContentBlock[] = [
     { type: 'text', text: 'Revisá la semana y devolvé el JSON.' },
@@ -542,7 +549,9 @@ export async function reviewWeeklyCheckin(args: {
     timeoutMs: CHECKIN_TIMEOUT_MS,
     temperature: 0.4,
     thinking: true,
-    effort: 'low',
+    // El plan COACH pide un informe semanal completo (no un comentario
+    // corto): necesita más "pensar antes de responder" que la revisión breve.
+    effort: entitlement.tier === 'COACH' ? 'medium' : 'low',
   });
 
   await recordUsage(profile.id, 'weekly_checkin', model, res.usage, profile.timezone, false);

@@ -127,6 +127,11 @@ enum PlanSource {
   AI
 }
 
+enum ExerciseType {
+  STRENGTH
+  CARDIO
+}
+
 enum WorkoutStatus {
   PENDING
   ACTIVE
@@ -310,6 +315,8 @@ model NutritionTarget {
   fatG          Int                   @map("fat_g")
   source        NutritionTargetSource @default(CALCULATED)
   active        Boolean               @default(true)
+  /** Explicación breve de por qué se calcularon estos números para este usuario. */
+  rationale     String?
   createdAt     DateTime              @default(now()) @map("created_at")
   updatedAt     DateTime              @updatedAt @map("updated_at")
 
@@ -431,8 +438,9 @@ model MealItem {
 
 /// Biblioteca de ejercicios (globales + personalizados del usuario).
 model Exercise {
-  id               String      @id @default(uuid()) @db.Uuid
+  id               String       @id @default(uuid()) @db.Uuid
   name             String
+  type             ExerciseType @default(STRENGTH)
   primaryMuscle    MuscleGroup @map("primary_muscle")
   secondaryMuscles Json        @default("[]") @map("secondary_muscles")
   equipment        String?
@@ -503,7 +511,13 @@ model PlanExercise {
   targetRepsMax Int?     @map("target_reps_max")
   targetRir     Float?   @map("target_rir")
   restSeconds   Int?     @map("rest_seconds")
+  /** Duración objetivo para ejercicios de cardio (segundos). */
+  targetDurationSec    Int?   @map("target_duration_sec")
+  /** Distancia objetivo para ejercicios de cardio (metros). */
+  targetDistanceMeters Float? @map("target_distance_meters")
   notes         String?
+  /** Explicación breve de por qué la IA eligió este ejercicio para este usuario. */
+  rationale     String?
 
   @@index([planDayId])
   @@index([exerciseId])
@@ -553,6 +567,8 @@ model WorkoutExercise {
   targetRepsMax Int?     @map("target_reps_max")
   targetRir     Float?   @map("target_rir")
   restSeconds   Int?     @map("rest_seconds")
+  targetDurationSec    Int?   @map("target_duration_sec")
+  targetDistanceMeters Float? @map("target_distance_meters")
   notes         String?
 
   sets WorkoutSet[]
@@ -569,6 +585,10 @@ model WorkoutSet {
   setNumber         Int             @map("set_number")
   weightKg          Float?          @map("weight_kg")
   reps              Int?
+  /** Duración del bloque de cardio (segundos). */
+  durationSeconds   Int?            @map("duration_seconds")
+  /** Distancia recorrida en el bloque de cardio (metros). */
+  distanceMeters    Float?          @map("distance_meters")
   rir               Float?
   rpe               Float?
   isWarmup          Boolean         @default(false) @map("is_warmup")

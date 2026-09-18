@@ -125,6 +125,35 @@ export function computeTargets(input: TargetInput): TargetResult {
   };
 }
 
+const GOAL_LABEL: Record<PrimaryGoal, string> = {
+  LOSE_FAT: 'bajar grasa',
+  GAIN_MUSCLE: 'ganar músculo',
+  RECOMP: 'recomposición corporal',
+  MAINTAIN: 'mantener tu peso',
+  STRENGTH: 'ganar fuerza',
+  PERFORMANCE: 'mejorar tu rendimiento',
+  UNDECIDED: 'mantener tu peso mientras definís un objetivo',
+};
+
+/** Explicación breve y personalizada de por qué estos números, para mostrar al usuario. */
+export function nutritionTargetRationale(
+  goal: PrimaryGoal,
+  adjustmentPct: number,
+  weeklyRateKg: number | null | undefined,
+  proteinG: number,
+): string {
+  const goalLabel = GOAL_LABEL[goal];
+  const rate = weeklyRateKg ? ` a un ritmo de ~${weeklyRateKg} kg/semana` : '';
+  if (adjustmentPct === 0) {
+    return `Calorías en tu gasto estimado para ${goalLabel}, con ${proteinG} g de proteína para conservar masa muscular.`;
+  }
+  const direction = adjustmentPct < 0 ? 'por debajo de' : 'por encima de';
+  return (
+    `Calorías ${Math.abs(Math.round(adjustmentPct))}% ${direction} tu gasto estimado, pensadas para ${goalLabel}${rate}, ` +
+    `con ${proteinG} g de proteína para sostener tu masa muscular en el proceso.`
+  );
+}
+
 /** Ritmo semanal sugerido por defecto (kg/semana) según objetivo. */
 export function defaultWeeklyRateKg(goal: PrimaryGoal): number | null {
   switch (goal) {
