@@ -4,6 +4,7 @@ import { BarChart3, ClipboardCheck, TrendingDown, TrendingUp, Trophy } from 'luc
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
+import { localTodayISO, weekStartISO } from '@/lib/date';
 import { displayWeight, weightUnitLabel } from '@/lib/units';
 import { getWeightPage } from '@/features/progress/queries';
 import { getActivity } from '@/features/activity/queries';
@@ -21,10 +22,13 @@ const RANGES = ['7', '30', '90', '180', '365', 'all'] as const;
 export default async function ProgressPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; week?: string }>;
 }) {
   const [{ t }, ctx, sp] = await Promise.all([getT(), requireUser(), searchParams]);
-  const range = RANGES.includes((sp.range ?? '30') as (typeof RANGES)[number]) ? sp.range! : '30';
+  const rangeParam = sp.range ?? '30';
+  const range = RANGES.includes(rangeParam as (typeof RANGES)[number]) ? rangeParam : '30';
+  const currentWeekKey = weekStartISO(localTodayISO(ctx.profile.timezone), ctx.profile.weekStart);
+  const week = sp.week && /^\d{4}-\d{2}-\d{2}$/.test(sp.week) ? sp.week : currentWeekKey;
   // Secuencial: connection_limit=1.
   const data = await getWeightPage(ctx.profile, rangeToDays(range));
   const activity = await getActivity(ctx.profile);
@@ -154,6 +158,8 @@ export default async function ProgressPage({
             unitSystem={us}
             weekStart={ctx.profile.weekStart}
             timezone={ctx.profile.timezone}
+            week={week}
+            range={range}
           />
         </CardContent>
       </Card>

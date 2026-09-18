@@ -75,8 +75,11 @@ export async function getWeightPage(profile: Profile, rangeDays: number): Promis
     avg: maByDate.get(p.date) ?? p.weightKg,
   }));
 
+  // A diferencia del gráfico (acotado a `rangeDays`), la lista de "Registros"
+  // se navega semana por semana en el cliente (ver EntryList) y necesita el
+  // historial completo para poder ir hacia atrás sin depender del rango del
+  // gráfico.
   const entries: WeightEntryDTO[] = all
-    .slice(cutoffIdx)
     .map((e) => ({
       id: e.id,
       date: e.date.toISOString().slice(0, 10),

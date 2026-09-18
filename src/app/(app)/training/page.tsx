@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
-import { ChevronRight, Dumbbell } from 'lucide-react';
+import { Dumbbell } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { interpolate } from '@/i18n';
 import { getTrainingOverview } from '@/features/training/queries';
 import { StartWorkoutButton } from '@/features/training/start-button';
 import { NewPlanButton } from '@/features/training/new-plan-button';
+import { PlanRow } from '@/features/training/plan-row';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -116,20 +116,7 @@ export default async function TrainingPage() {
         ) : (
           <Card className="divide-y">
             {data.plans.map((p) => (
-              <Link
-                key={p.id}
-                href={`/training/plans/${p.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-secondary/50"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{p.name}</span>
-                  {p.isActive ? <Badge variant="success">{t.training.active}</Badge> : null}
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {p.dayCount} {t.training.days}
-                  <ChevronRight className="size-4" />
-                </div>
-              </Link>
+              <PlanRow key={p.id} plan={p} />
             ))}
           </Card>
         )}
