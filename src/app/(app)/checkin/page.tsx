@@ -77,16 +77,14 @@ export default async function CheckinPage() {
 
       {data.existing?.aiSummary ? (
         <CheckinReview
-          weekStart={data.currentWeekStart}
           summary={data.existing.aiSummary}
           proposal={(data.existing.aiProposal as CheckinProposal | null) ?? null}
-          status={data.existing.status}
+          isCoachTier={ctx.entitlement.tier === 'COACH'}
         />
       ) : null}
 
       {data.existing?.aiTrainingProposal ? (
         <CheckinTraining
-          weekStart={data.currentWeekStart}
           proposal={data.existing.aiTrainingProposal as unknown as TrainingProposal}
         />
       ) : null}

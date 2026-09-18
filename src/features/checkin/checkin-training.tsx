@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { toast } from 'sonner';
-import { ArrowUp, Check, Dumbbell, Minus, Plus, X } from 'lucide-react';
+import { ArrowUp, Dumbbell, Minus, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useT } from '@/i18n/provider';
 import type { TrainingProposal } from './schema';
-import { applyCheckinTraining, dismissCheckinTraining } from './actions';
 
 const ACTION_ICON = {
   increase_load: ArrowUp,
@@ -18,39 +14,15 @@ const ACTION_ICON = {
   reduce: Minus,
 } as const;
 
-export function CheckinTraining({
-  weekStart,
-  proposal,
-}: {
-  weekStart: string;
-  proposal: TrainingProposal;
-}) {
+export function CheckinTraining({ proposal }: { proposal: TrainingProposal }) {
   const t = useT();
   const tt = t.checkin.training;
-  const [pending, start] = useTransition();
-  const [done, setDone] = useState(proposal.applied);
 
-  const canApply = proposal.adjustments.some(
-    (a) => a.action === 'add_reps' || a.action === 'add_set',
-  );
-
-  function apply() {
-    start(async () => {
-      const res = await applyCheckinTraining({ weekStart });
-      if (res.ok) {
-        setDone(true);
-        toast.success(res.changed ? tt.appliedN.replace('{n}', String(res.changed)) : tt.appliedNone);
-      } else toast.error(t.checkin.genericError);
-    });
-  }
-
-  function dismiss() {
-    start(async () => {
-      const res = await dismissCheckinTraining({ weekStart });
-      if (res.ok) setDone(true);
-      else toast.error(t.checkin.genericError);
-    });
-  }
+  const hadRealChange =
+    proposal.call === 'deload' ||
+    proposal.adjustments.some(
+      (a) => a.action === 'add_reps' || a.action === 'add_set' || a.action === 'reduce',
+    );
 
   return (
     <Card>
@@ -83,22 +55,7 @@ export function CheckinTraining({
           </ul>
         ) : null}
 
-        {done ? (
-          <p className="text-xs text-success">{tt.doneNote}</p>
-        ) : (
-          <div className="flex gap-2 pt-1">
-            {canApply ? (
-              <Button size="sm" onClick={apply} disabled={pending}>
-                <Check className="size-4" />
-                {tt.apply}
-              </Button>
-            ) : null}
-            <Button size="sm" variant="ghost" onClick={dismiss} disabled={pending}>
-              <X className="size-4" />
-              {canApply ? tt.dismiss : tt.gotIt}
-            </Button>
-          </div>
-        )}
+        <p className="text-xs text-success">{hadRealChange ? tt.doneNote : tt.appliedNone}</p>
       </CardContent>
     </Card>
   );

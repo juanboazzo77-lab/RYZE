@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import type { Profile } from '@prisma/client';
 import { requireUser } from '@/server/context';
-import { forUser } from '@/server/user-db';
+import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { can } from '@/server/entitlements';
 import { isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
@@ -16,12 +16,7 @@ import {
   type CheckinHistoryEntry,
 } from '@/server/ai/gateway';
 import { computeTrainingWeek, computeWeekStats } from './queries';
-import {
-  weekActionSchema,
-  type CheckinProposal,
-  type TrainingProposal,
-  type WeekActionInput,
-} from './schema';
+import { type CheckinProposal, type TrainingProposal, type TrainingReview } from './schema';
 
 export interface Result {
   ok?: boolean;
@@ -79,6 +74,112 @@ function describeDecision(proposal: unknown): string {
   if (!p || p.kind === 'none') return 'mantener';
   if (p.to) return `ajustar a ${p.to.kcal} kcal`;
   return 'ajustar';
+}
+
+/**
+ * Aplica el ajuste de objetivos nutricionales que decidió el Coach. Se llama
+ * automáticamente al terminar la revisión del check-in — el usuario no tiene
+ * que confirmar nada, el cambio ya queda activo en toda la app (nutrición,
+ * dashboard, etc.).
+ */
+async function applyNutritionProposal(
+  db: UserDb,
+  userId: string,
+  proposal: CheckinProposal,
+): Promise<boolean> {
+  if (proposal.kind !== 'nutrition_targets' || !proposal.to) return false;
+  const to = proposal.to;
+  await db.nutritionTarget.updateMany({ where: { active: true }, data: { active: false } });
+  await db.nutritionTarget.create({
+    data: {
+      userId,
+      effectiveFrom: new Date(),
+      kcal: to.kcal,
+      proteinG: to.proteinG,
+      carbsG: to.carbsG,
+      fatG: to.fatG,
+      source: 'AI',
+      active: true,
+    },
+  });
+  return true;
+}
+
+/**
+ * Aplica la progresión de entrenamiento que decidió el Coach (sube o baja
+ * objetivos de reps/series en el plan activo, ver detalle en el comentario
+ * histórico más abajo). Se llama automáticamente al terminar la revisión —
+ * no requiere confirmación del usuario. Best-effort: no falla si algún
+ * ejercicio no matchea con el plan.
+ */
+async function applyTrainingProposal(proposal: TrainingReview): Promise<number> {
+  const plan = await prisma.workoutPlan.findFirst({
+    where: { isActive: true },
+    select: {
+      days: {
+        select: {
+          exercises: {
+            select: {
+              id: true,
+              targetSets: true,
+              targetRepsMin: true,
+              targetRepsMax: true,
+              exercise: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const byName = new Map<string, { id: string; sets: number; rMin: number | null; rMax: number | null }>();
+  for (const day of plan?.days ?? []) {
+    for (const pe of day.exercises) {
+      byName.set(pe.exercise.name.trim().toLowerCase(), {
+        id: pe.id,
+        sets: pe.targetSets,
+        rMin: pe.targetRepsMin,
+        rMax: pe.targetRepsMax,
+      });
+    }
+  }
+
+  let changed = 0;
+  const adjustedIds = new Set<string>();
+  for (const adj of proposal.adjustments) {
+    const pe = byName.get(adj.exercise.trim().toLowerCase());
+    if (!pe) continue;
+    const data =
+      adj.action === 'add_set'
+        ? { targetSets: Math.min(8, pe.sets + 1) }
+        : adj.action === 'reduce'
+          ? { targetSets: Math.max(1, pe.sets - 1) }
+          : adj.action === 'add_reps'
+            ? {
+                targetRepsMax: Math.min(40, (pe.rMax ?? pe.rMin ?? 8) + 1),
+                ...(pe.rMin != null ? { targetRepsMin: Math.min(38, pe.rMin + 1) } : {}),
+              }
+            : null;
+    if (!data) continue;
+    await prisma.planExercise.update({ where: { id: pe.id }, data });
+    adjustedIds.add(pe.id);
+    changed++;
+  }
+
+  // Semana de descarga: bajamos un escalón el volumen del resto del plan
+  // (los ejercicios ya ajustados arriba no se tocan de nuevo).
+  if (proposal.call === 'deload') {
+    for (const pe of byName.values()) {
+      if (adjustedIds.has(pe.id) || pe.sets <= 2) continue;
+      await prisma.planExercise.update({
+        where: { id: pe.id },
+        data: { targetSets: Math.max(2, pe.sets - 1) },
+      });
+      changed++;
+    }
+  }
+
+  return changed;
 }
 
 export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
@@ -207,8 +308,17 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         const photoNote =
           photos.length > 0 ? { aiPhotoNote: review.physiqueNote?.trim() || null } : {};
 
-        const trainingProposal: TrainingProposal | null =
-          trainingWeek.hasData && review.training ? { ...review.training, applied: false } : null;
+        // Aplicar ya, sin que el usuario tenga que confirmar nada: si el
+        // Coach decide un ajuste, se refleja directo en toda la app
+        // (objetivos nutricionales, plan de entrenamiento).
+        const nutritionApplied = await applyNutritionProposal(db, userId, proposal);
+
+        let trainingProposal: TrainingProposal | null = null;
+        let trainingChanged = 0;
+        if (trainingWeek.hasData && review.training) {
+          trainingChanged = await applyTrainingProposal(review.training);
+          trainingProposal = { ...review.training, applied: true };
+        }
 
         await db.weeklyCheckin.updateMany({
           where: { weekStart: weekStartDate },
@@ -219,7 +329,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
             ...(trainingProposal
               ? { aiTrainingProposal: trainingProposal as unknown as object }
               : {}),
-            status: 'REVIEWED',
+            status: nutritionApplied || trainingChanged > 0 ? 'APPLIED' : 'REVIEWED',
           },
         });
       }
@@ -232,181 +342,10 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
 
   revalidatePath('/checkin');
   revalidatePath('/calendar');
-  return { ok: true };
-}
-
-/** Aplica el ajuste de objetivos nutricionales propuesto por la IA en el check-in. */
-export async function applyCheckinAdjustment(raw: WeekActionInput): Promise<Result> {
-  const parsed = weekActionSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'INVALID' };
-  const { userId, entitlement } = await requireUser();
-  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
-
-  const db = forUser(userId);
-  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
-
-  const checkin = await db.weeklyCheckin.findFirst({
-    where: { weekStart: weekStartDate },
-    select: { aiProposal: true, status: true },
-  });
-  if (!checkin) return { error: 'NOT_FOUND' };
-  if (checkin.status === 'APPLIED') return { ok: true };
-
-  const proposal = checkin.aiProposal as CheckinProposal | null;
-  if (!proposal || proposal.kind !== 'nutrition_targets' || !proposal.to) {
-    return { error: 'NO_ADJUSTMENT' };
-  }
-  const to = proposal.to;
-
-  await db.nutritionTarget.updateMany({ where: { active: true }, data: { active: false } });
-  await db.nutritionTarget.create({
-    data: {
-      userId,
-      effectiveFrom: new Date(),
-      kcal: to.kcal,
-      proteinG: to.proteinG,
-      carbsG: to.carbsG,
-      fatG: to.fatG,
-      source: 'AI',
-      active: true,
-    },
-  });
-  await db.weeklyCheckin.updateMany({ where: { weekStart: weekStartDate }, data: { status: 'APPLIED' } });
-
-  revalidatePath('/checkin');
   revalidatePath('/nutrition');
   revalidatePath('/dashboard');
   revalidatePath('/settings/goals');
-  return { ok: true };
-}
-
-/** Descarta el ajuste propuesto (queda el check-in sin cambios de objetivos). */
-export async function dismissCheckinAdjustment(raw: WeekActionInput): Promise<Result> {
-  const parsed = weekActionSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'INVALID' };
-  const { userId, entitlement } = await requireUser();
-  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
-
-  const db = forUser(userId);
-  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
-  const checkin = await db.weeklyCheckin.findFirst({
-    where: { weekStart: weekStartDate },
-    select: { aiProposal: true },
-  });
-  const proposal = (checkin?.aiProposal as CheckinProposal | null) ?? null;
-
-  await db.weeklyCheckin.updateMany({
-    where: { weekStart: weekStartDate },
-    data: {
-      status: 'SUBMITTED',
-      aiProposal: (proposal
-        ? { ...proposal, kind: 'none', to: null }
-        : { kind: 'none', rationale: '', from: null, to: null }) as unknown as object,
-    },
-  });
-  revalidatePath('/checkin');
-  return { ok: true };
-}
-
-/**
- * Aplica la progresión de entrenamiento propuesta: sube objetivos de reps/series
- * en el plan activo para los ejercicios marcados `add_reps`/`add_set`. El resto
- * (subir/bajar carga) es sólo guía. Best-effort: no falla si algún ejercicio no
- * matchea con el plan.
- */
-export async function applyCheckinTraining(raw: WeekActionInput): Promise<Result & { changed?: number }> {
-  const parsed = weekActionSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'INVALID' };
-  const { userId, entitlement } = await requireUser();
-  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
-
-  const db = forUser(userId);
-  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
-
-  const checkin = await db.weeklyCheckin.findFirst({
-    where: { weekStart: weekStartDate },
-    select: { aiTrainingProposal: true },
-  });
-  const proposal = checkin?.aiTrainingProposal as TrainingProposal | null;
-  if (!proposal || proposal.applied) return { error: 'NO_ADJUSTMENT' };
-
-  const plan = await db.workoutPlan.findFirst({
-    where: { isActive: true },
-    select: {
-      days: {
-        select: {
-          exercises: {
-            select: {
-              id: true,
-              targetSets: true,
-              targetRepsMin: true,
-              targetRepsMax: true,
-              exercise: { select: { name: true } },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  const byName = new Map<string, { id: string; sets: number; rMin: number | null; rMax: number | null }>();
-  for (const day of plan?.days ?? []) {
-    for (const pe of day.exercises) {
-      byName.set(pe.exercise.name.trim().toLowerCase(), {
-        id: pe.id,
-        sets: pe.targetSets,
-        rMin: pe.targetRepsMin,
-        rMax: pe.targetRepsMax,
-      });
-    }
-  }
-
-  let changed = 0;
-  for (const adj of proposal.adjustments) {
-    if (adj.action !== 'add_reps' && adj.action !== 'add_set') continue;
-    const pe = byName.get(adj.exercise.trim().toLowerCase());
-    if (!pe) continue;
-    const data =
-      adj.action === 'add_set'
-        ? { targetSets: Math.min(8, pe.sets + 1) }
-        : {
-            targetRepsMax: Math.min(40, (pe.rMax ?? pe.rMin ?? 8) + 1),
-            ...(pe.rMin != null ? { targetRepsMin: Math.min(38, pe.rMin + 1) } : {}),
-          };
-    await prisma.planExercise.update({ where: { id: pe.id }, data });
-    changed++;
-  }
-
-  await db.weeklyCheckin.updateMany({
-    where: { weekStart: weekStartDate },
-    data: { aiTrainingProposal: { ...proposal, applied: true } as unknown as object },
-  });
-
-  revalidatePath('/checkin');
   revalidatePath('/training');
-  return { ok: true, changed };
-}
-
-/** Marca la propuesta de entrenamiento como vista, sin tocar el plan. */
-export async function dismissCheckinTraining(raw: WeekActionInput): Promise<Result> {
-  const parsed = weekActionSchema.safeParse(raw);
-  if (!parsed.success) return { error: 'INVALID' };
-  const { userId, entitlement } = await requireUser();
-  if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
-
-  const db = forUser(userId);
-  const weekStartDate = isoToUtcDate(parsed.data.weekStart);
-  const checkin = await db.weeklyCheckin.findFirst({
-    where: { weekStart: weekStartDate },
-    select: { aiTrainingProposal: true },
-  });
-  const proposal = checkin?.aiTrainingProposal as TrainingProposal | null;
-  if (!proposal) return { ok: true };
-
-  await db.weeklyCheckin.updateMany({
-    where: { weekStart: weekStartDate },
-    data: { aiTrainingProposal: { ...proposal, applied: true } as unknown as object },
-  });
-  revalidatePath('/checkin');
   return { ok: true };
 }
+

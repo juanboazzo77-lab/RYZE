@@ -47,6 +47,3 @@ export interface CheckinProposal {
   from: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
   to: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
 }
-
-export const weekActionSchema = z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) });
-export type WeekActionInput = z.infer<typeof weekActionSchema>;
