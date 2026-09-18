@@ -10,6 +10,8 @@ export interface StoreSet {
   setNumber: number;
   weightKg: number | null;
   reps: number | null;
+  durationSeconds: number | null;
+  distanceMeters: number | null;
   rir: number | null;
   isWarmup: boolean;
   isCompleted: boolean;
@@ -18,10 +20,13 @@ export interface StoreExercise {
   id: string; // workoutExerciseId
   exerciseId: string;
   name: string;
+  type: 'STRENGTH' | 'CARDIO';
   primaryMuscle: string;
   restSeconds: number | null;
   targetRepsMin: number | null;
   targetRepsMax: number | null;
+  targetDurationSec: number | null;
+  targetDistanceMeters: number | null;
   lastTime: Array<{ weightKg: number | null; reps: number | null }> | null;
   sets: StoreSet[];
 }
@@ -57,16 +62,21 @@ const fromServer = (s: WorkoutSession): StoreExercise[] =>
     id: e.id,
     exerciseId: e.exerciseId,
     name: e.name,
+    type: e.type,
     primaryMuscle: e.primaryMuscle,
     restSeconds: e.restSeconds,
     targetRepsMin: e.targetRepsMin,
     targetRepsMax: e.targetRepsMax,
+    targetDurationSec: e.targetDurationSec,
+    targetDistanceMeters: e.targetDistanceMeters,
     lastTime: e.lastTime,
     sets: e.sets.map((st) => ({
       id: st.id,
       setNumber: st.setNumber,
       weightKg: st.weightKg,
       reps: st.reps,
+      durationSeconds: st.durationSeconds,
+      distanceMeters: st.distanceMeters,
       rir: st.rir,
       isWarmup: st.isWarmup,
       isCompleted: st.isCompleted,
@@ -145,6 +155,8 @@ export const useSession = create<SessionState>()(
                   setNumber: e.sets.length + 1,
                   weightKg: prev?.weightKg ?? null,
                   reps: prev?.reps ?? null,
+                  durationSeconds: prev?.durationSeconds ?? null,
+                  distanceMeters: prev?.distanceMeters ?? null,
                   rir: prev?.rir ?? null,
                   isWarmup: false,
                   isCompleted: false,
@@ -190,6 +202,8 @@ export const useSession = create<SessionState>()(
               setNumber: x.setNumber,
               weightKg: x.weightKg,
               reps: x.reps,
+              durationSeconds: x.durationSeconds,
+              distanceMeters: x.distanceMeters,
               rir: x.rir,
               isWarmup: x.isWarmup,
               isCompleted: x.isCompleted,

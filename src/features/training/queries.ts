@@ -1,5 +1,5 @@
 import 'server-only';
-import type { MuscleGroup, Profile, WorkoutStatus } from '@prisma/client';
+import type { ExerciseType, MuscleGroup, Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 
 export interface OverviewDay {
@@ -73,6 +73,7 @@ export interface EditorExercise {
   id: string;
   exerciseId: string;
   name: string;
+  type: ExerciseType;
   primaryMuscle: MuscleGroup;
   orderIndex: number;
   targetSets: number;
@@ -80,7 +81,10 @@ export interface EditorExercise {
   targetRepsMax: number | null;
   targetRir: number | null;
   restSeconds: number | null;
+  targetDurationSec: number | null;
+  targetDistanceMeters: number | null;
   notes: string | null;
+  rationale: string | null;
 }
 export interface EditorDay {
   id: string;
@@ -124,8 +128,11 @@ export async function getPlanEditor(profile: Profile, planId: string): Promise<P
               targetRepsMax: true,
               targetRir: true,
               restSeconds: true,
+              targetDurationSec: true,
+              targetDistanceMeters: true,
               notes: true,
-              exercise: { select: { name: true, primaryMuscle: true } },
+              rationale: true,
+              exercise: { select: { name: true, primaryMuscle: true, type: true } },
             },
           },
         },
@@ -148,6 +155,7 @@ export async function getPlanEditor(profile: Profile, planId: string): Promise<P
         id: e.id,
         exerciseId: e.exerciseId,
         name: e.exercise.name,
+        type: e.exercise.type,
         primaryMuscle: e.exercise.primaryMuscle,
         orderIndex: e.orderIndex,
         targetSets: e.targetSets,
@@ -155,7 +163,10 @@ export async function getPlanEditor(profile: Profile, planId: string): Promise<P
         targetRepsMax: e.targetRepsMax,
         targetRir: e.targetRir,
         restSeconds: e.restSeconds,
+        targetDurationSec: e.targetDurationSec,
+        targetDistanceMeters: e.targetDistanceMeters,
         notes: e.notes,
+        rationale: e.rationale,
       })),
     })),
   };
@@ -166,6 +177,8 @@ export interface SessionSet {
   setNumber: number;
   weightKg: number | null;
   reps: number | null;
+  durationSeconds: number | null;
+  distanceMeters: number | null;
   rir: number | null;
   isWarmup: boolean;
   isCompleted: boolean;
@@ -174,12 +187,15 @@ export interface SessionExercise {
   id: string;
   exerciseId: string;
   name: string;
+  type: ExerciseType;
   primaryMuscle: MuscleGroup;
   orderIndex: number;
   targetRepsMin: number | null;
   targetRepsMax: number | null;
   targetRir: number | null;
   restSeconds: number | null;
+  targetDurationSec: number | null;
+  targetDistanceMeters: number | null;
   notes: string | null;
   sets: SessionSet[];
   lastTime: Array<{ weightKg: number | null; reps: number | null }> | null;
@@ -214,8 +230,10 @@ export async function getWorkoutSession(
           targetRepsMax: true,
           targetRir: true,
           restSeconds: true,
+          targetDurationSec: true,
+          targetDistanceMeters: true,
           notes: true,
-          exercise: { select: { name: true, primaryMuscle: true } },
+          exercise: { select: { name: true, primaryMuscle: true, type: true } },
           sets: {
             orderBy: { setNumber: 'asc' },
             select: {
@@ -223,6 +241,8 @@ export async function getWorkoutSession(
               setNumber: true,
               weightKg: true,
               reps: true,
+              durationSeconds: true,
+              distanceMeters: true,
               rir: true,
               isWarmup: true,
               isCompleted: true,
@@ -280,12 +300,15 @@ export async function getWorkoutSession(
       id: e.id,
       exerciseId: e.exerciseId,
       name: e.exercise.name,
+      type: e.exercise.type,
       primaryMuscle: e.exercise.primaryMuscle,
       orderIndex: e.orderIndex,
       targetRepsMin: e.targetRepsMin,
       targetRepsMax: e.targetRepsMax,
       targetRir: e.targetRir,
       restSeconds: e.restSeconds,
+      targetDurationSec: e.targetDurationSec,
+      targetDistanceMeters: e.targetDistanceMeters,
       notes: e.notes,
       sets: e.sets,
       lastTime: lastByExercise.get(e.exerciseId) ?? null,

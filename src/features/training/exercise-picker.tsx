@@ -130,13 +130,18 @@ function CreateForm({
 }) {
   const tp = t.training.picker;
   const [name, setName] = useState(defaultName);
+  const [type, setType] = useState<'STRENGTH' | 'CARDIO'>('STRENGTH');
   const [muscle, setMuscle] = useState<(typeof MUSCLE_GROUPS)[number]>('CHEST');
   const [pending, start] = useTransition();
 
   function submit() {
     if (name.trim().length < 2) return;
     start(async () => {
-      const res = await createExercise({ name: name.trim(), primaryMuscle: muscle });
+      const res = await createExercise({
+        name: name.trim(),
+        type,
+        primaryMuscle: type === 'CARDIO' ? 'OTHER' : muscle,
+      });
       if (res.ok && res.data) {
         toast.success(t.training.toast.exerciseAdded);
         await onDone(res.data.id, name.trim());
@@ -156,18 +161,30 @@ function CreateForm({
         <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       </div>
       <div className="space-y-1.5">
-        <Label>{t.training.fields.muscle}</Label>
+        <Label>{t.training.fields.type}</Label>
         <NativeSelect
-          value={muscle}
-          onChange={(e) => setMuscle(e.target.value as (typeof MUSCLE_GROUPS)[number])}
+          value={type}
+          onChange={(e) => setType(e.target.value as 'STRENGTH' | 'CARDIO')}
         >
-          {MUSCLE_GROUPS.map((m) => (
-            <option key={m} value={m}>
-              {t.training.muscles[m]}
-            </option>
-          ))}
+          <option value="STRENGTH">{t.training.fields.strength}</option>
+          <option value="CARDIO">{t.training.fields.cardio}</option>
         </NativeSelect>
       </div>
+      {type === 'STRENGTH' ? (
+        <div className="space-y-1.5">
+          <Label>{t.training.fields.muscle}</Label>
+          <NativeSelect
+            value={muscle}
+            onChange={(e) => setMuscle(e.target.value as (typeof MUSCLE_GROUPS)[number])}
+          >
+            {MUSCLE_GROUPS.map((m) => (
+              <option key={m} value={m}>
+                {t.training.muscles[m]}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      ) : null}
       <div className="flex gap-3">
         <Button variant="outline" onClick={onCancel} className="flex-1" disabled={pending}>
           {t.common.cancel}

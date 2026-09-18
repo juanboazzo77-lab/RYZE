@@ -121,9 +121,11 @@ export default async function CompletedWorkoutPage({
                   <ImprovementBadges t={t} imp={e.improvements} />
                 </div>
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                {Math.round(e.metrics.volume).toLocaleString(locale)} kg · vol
-              </span>
+              {e.type === 'CARDIO' ? null : (
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {Math.round(e.metrics.volume).toLocaleString(locale)} kg · vol
+                </span>
+              )}
             </CardHeader>
             <CardContent className="pt-0">
               <div className="divide-y text-sm">
@@ -133,7 +135,14 @@ export default async function CompletedWorkoutPage({
                       {t.training.workoutDone.set} {s.setNumber}
                     </span>
                     <span className="font-medium">
-                      {s.weightKg ?? '–'} kg × {s.reps ?? '–'}
+                      {e.type === 'CARDIO'
+                        ? [
+                            s.durationSeconds ? `${Math.round(s.durationSeconds / 60)} min` : null,
+                            s.distanceMeters ? `${(s.distanceMeters / 1000).toFixed(1)} km` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ') || '–'
+                        : `${s.weightKg ?? '–'} kg × ${s.reps ?? '–'}`}
                     </span>
                   </div>
                 ))}

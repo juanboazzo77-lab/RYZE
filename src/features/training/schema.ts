@@ -46,11 +46,16 @@ export const updatePlanExerciseSchema = z.object({
   targetRepsMax: z.number().int().min(1).max(100).nullable().optional(),
   targetRir: z.number().min(0).max(10).nullable().optional(),
   restSeconds: z.number().int().min(0).max(1200).nullable().optional(),
+  targetDurationSec: z.number().int().min(0).max(36000).nullable().optional(),
+  targetDistanceMeters: z.number().min(0).max(200000).nullable().optional(),
   notes: z.string().trim().max(300).nullable().optional(),
 });
 
+export const exerciseType = z.enum(['STRENGTH', 'CARDIO']);
+
 export const createExerciseSchema = z.object({
   name: z.string().trim().min(2).max(80),
+  type: exerciseType.default('STRENGTH'),
   primaryMuscle: muscle,
   equipment: z.string().trim().max(40).optional(),
 });
@@ -71,6 +76,8 @@ const setInput = z.object({
   setNumber: z.number().int().min(1).max(50),
   weightKg: z.number().min(0).max(2000).nullable(),
   reps: z.number().int().min(0).max(1000).nullable(),
+  durationSeconds: z.number().int().min(0).max(36000).nullable(),
+  distanceMeters: z.number().min(0).max(200000).nullable(),
   rir: z.number().min(0).max(10).nullable(),
   isWarmup: z.boolean(),
   isCompleted: z.boolean(),

@@ -49,6 +49,7 @@ export interface Result<T = void> {
 }
 
 const DEFAULT_SETS = 3;
+const DEFAULT_CARDIO_DURATION_SEC = 1800;
 
 async function ownsPlan(db: UserDb, planId: string) {
   return Boolean(await db.workoutPlan.findFirst({ where: { id: planId }, select: { id: true } }));
@@ -123,9 +124,19 @@ export async function updatePlan(raw: UpdatePlanInput): Promise<Result> {
 export async function deletePlan(raw: { id: string }): Promise<never | Result> {
   const parsed = idSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
+  const plan = await db.workoutPlan.findFirst({
+    where: { id: parsed.data.id },
+    select: { source: true },
+  });
   await db.workoutPlan.deleteMany({ where: { id: parsed.data.id } });
+  if (plan?.source === 'AI') {
+    // Le devolvemos el lugar en el cupo mensual: si borra una rutina de IA
+    // que no le sirvió, puede generar otra en su lugar sin esperar al mes que viene.
+    const { refundPlanGeneration } = await import('@/server/ai/usage');
+    await refundPlanGeneration(userId, profile.timezone).catch(() => {});
+  }
   revalidatePath('/training');
   redirect('/training');
 }
@@ -189,15 +200,24 @@ export async function addPlanExercise(raw: AddPlanExerciseInput): Promise<Result
   }
   const count = await db.planExercise.count({ where: { planDayId: parsed.data.planDayId } });
   await db.planExercise.create({
-    data: {
-      planDayId: parsed.data.planDayId,
-      exerciseId: parsed.data.exerciseId,
-      orderIndex: count,
-      targetSets: DEFAULT_SETS,
-      targetRepsMin: 8,
-      targetRepsMax: 12,
-      restSeconds: 90,
-    },
+    data:
+      exercise.type === 'CARDIO'
+        ? {
+            planDayId: parsed.data.planDayId,
+            exerciseId: parsed.data.exerciseId,
+            orderIndex: count,
+            targetSets: 1,
+            targetDurationSec: DEFAULT_CARDIO_DURATION_SEC,
+          }
+        : {
+            planDayId: parsed.data.planDayId,
+            exerciseId: parsed.data.exerciseId,
+            orderIndex: count,
+            targetSets: DEFAULT_SETS,
+            targetRepsMin: 8,
+            targetRepsMax: 12,
+            restSeconds: 90,
+          },
   });
   revalidatePath(`/training/plans/${planId}`);
   return { ok: true };
@@ -256,6 +276,7 @@ export async function createExercise(raw: CreateExerciseInput): Promise<Result<{
   const ex = await prisma.exercise.create({
     data: {
       name: parsed.data.name,
+      type: parsed.data.type,
       primaryMuscle: parsed.data.primaryMuscle,
       equipment: parsed.data.equipment || null,
       isCustom: true,
@@ -305,6 +326,8 @@ export async function startWorkout(raw: StartWorkoutInput): Promise<never | Resu
                 targetRepsMax: true,
                 targetRir: true,
                 restSeconds: true,
+                targetDurationSec: true,
+                targetDistanceMeters: true,
                 notes: true,
               },
             },
@@ -331,6 +354,8 @@ export async function startWorkout(raw: StartWorkoutInput): Promise<never | Resu
             targetRepsMax: pe.targetRepsMax,
             targetRir: pe.targetRir,
             restSeconds: pe.restSeconds,
+            targetDurationSec: pe.targetDurationSec,
+            targetDistanceMeters: pe.targetDistanceMeters,
             notes: pe.notes,
             sets: {
               create: Array.from({ length: Math.max(1, pe.targetSets) }, (_, i) => ({
@@ -381,21 +406,30 @@ export async function addWorkoutExercise(
   }
 
   const we = await db.workoutExercise.create({
-    data: {
-      workoutId: parsed.data.workoutId,
-      exerciseId: parsed.data.exerciseId,
-      orderIndex: workout._count.exercises,
-      restSeconds: 90,
-      targetRepsMin: 8,
-      targetRepsMax: 12,
-      sets: {
-        create: Array.from({ length: DEFAULT_SETS }, (_, i) => ({
-          setNumber: i + 1,
-          isWarmup: false,
-          isCompleted: false,
-        })),
-      },
-    },
+    data:
+      exercise.type === 'CARDIO'
+        ? {
+            workoutId: parsed.data.workoutId,
+            exerciseId: parsed.data.exerciseId,
+            orderIndex: workout._count.exercises,
+            targetDurationSec: DEFAULT_CARDIO_DURATION_SEC,
+            sets: { create: [{ setNumber: 1, isWarmup: false, isCompleted: false }] },
+          }
+        : {
+            workoutId: parsed.data.workoutId,
+            exerciseId: parsed.data.exerciseId,
+            orderIndex: workout._count.exercises,
+            restSeconds: 90,
+            targetRepsMin: 8,
+            targetRepsMax: 12,
+            sets: {
+              create: Array.from({ length: DEFAULT_SETS }, (_, i) => ({
+                setNumber: i + 1,
+                isWarmup: false,
+                isCompleted: false,
+              })),
+            },
+          },
     select: { id: true, exerciseId: true, sets: { orderBy: { setNumber: 'asc' }, select: { id: true } } },
   });
 
@@ -445,6 +479,8 @@ export async function saveWorkout(raw: SaveWorkoutInput): Promise<Result> {
       setNumber: s.setNumber,
       weightKg: s.weightKg,
       reps: s.reps,
+      durationSeconds: s.durationSeconds,
+      distanceMeters: s.distanceMeters,
       rir: s.rir,
       isWarmup: s.isWarmup,
       isCompleted: s.isCompleted,

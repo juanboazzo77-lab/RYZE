@@ -1,5 +1,5 @@
 import 'server-only';
-import type { MuscleGroup, Profile, PrType } from '@prisma/client';
+import type { ExerciseType, MuscleGroup, Profile, PrType } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { addDaysISO, isoToUtcDate } from '@/lib/date';
@@ -61,8 +61,16 @@ export interface CompletedExercise {
   workoutExerciseId: string;
   exerciseId: string;
   name: string;
+  type: ExerciseType;
   primaryMuscle: MuscleGroup;
-  sets: Array<{ setNumber: number; weightKg: number | null; reps: number | null; isWarmup: boolean }>;
+  sets: Array<{
+    setNumber: number;
+    weightKg: number | null;
+    reps: number | null;
+    durationSeconds: number | null;
+    distanceMeters: number | null;
+    isWarmup: boolean;
+  }>;
   metrics: SessionMetrics;
   improvements: Improvements;
   prTypes: PrType[];
@@ -97,10 +105,18 @@ export async function getCompletedWorkout(
         select: {
           id: true,
           exerciseId: true,
-          exercise: { select: { name: true, primaryMuscle: true } },
+          exercise: { select: { name: true, primaryMuscle: true, type: true } },
           sets: {
             orderBy: { setNumber: 'asc' },
-            select: { setNumber: true, weightKg: true, reps: true, isWarmup: true, isCompleted: true },
+            select: {
+              setNumber: true,
+              weightKg: true,
+              reps: true,
+              durationSeconds: true,
+              distanceMeters: true,
+              isWarmup: true,
+              isCompleted: true,
+            },
           },
         },
       },
@@ -155,11 +171,14 @@ export async function getCompletedWorkout(
       workoutExerciseId: e.id,
       exerciseId: e.exerciseId,
       name: e.exercise.name,
+      type: e.exercise.type,
       primaryMuscle: e.exercise.primaryMuscle,
       sets: e.sets.map((s) => ({
         setNumber: s.setNumber,
         weightKg: s.weightKg,
         reps: s.reps,
+        durationSeconds: s.durationSeconds,
+        distanceMeters: s.distanceMeters,
         isWarmup: s.isWarmup,
       })),
       metrics,

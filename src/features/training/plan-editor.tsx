@@ -32,6 +32,8 @@ interface LocalTarget {
   repsMax: number;
   rir: number | null;
   rest: number;
+  durationMin: number;
+  distanceKm: number;
 }
 
 function toLocal(e: EditorExercise): LocalTarget {
@@ -41,6 +43,8 @@ function toLocal(e: EditorExercise): LocalTarget {
     repsMax: e.targetRepsMax ?? 12,
     rir: e.targetRir,
     rest: e.restSeconds ?? 90,
+    durationMin: e.targetDurationSec ? Math.round(e.targetDurationSec / 60) : 30,
+    distanceKm: e.targetDistanceMeters ? e.targetDistanceMeters / 1000 : 0,
   };
 }
 
@@ -259,14 +263,23 @@ function ExerciseRow({
     setV(next);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      void updatePlanExercise({
-        id: ex.id,
-        targetSets: next.targetSets,
-        targetRepsMin: next.repsMin,
-        targetRepsMax: next.repsMax,
-        targetRir: next.rir,
-        restSeconds: next.rest,
-      });
+      if (ex.type === 'CARDIO') {
+        void updatePlanExercise({
+          id: ex.id,
+          targetSets: next.targetSets,
+          targetDurationSec: next.durationMin > 0 ? Math.round(next.durationMin * 60) : null,
+          targetDistanceMeters: next.distanceKm > 0 ? Math.round(next.distanceKm * 1000) : null,
+        });
+      } else {
+        void updatePlanExercise({
+          id: ex.id,
+          targetSets: next.targetSets,
+          targetRepsMin: next.repsMin,
+          targetRepsMax: next.repsMax,
+          targetRir: next.rir,
+          restSeconds: next.rest,
+        });
+      }
     }, 700);
   }
 
@@ -276,8 +289,11 @@ function ExerciseRow({
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{ex.name}</p>
           <Badge variant="secondary" className="mt-0.5">
-            {t.training.muscles[ex.primaryMuscle]}
+            {ex.type === 'CARDIO' ? t.training.fields.cardio : t.training.muscles[ex.primaryMuscle]}
           </Badge>
+          {ex.rationale ? (
+            <p className="mt-1 text-xs text-primary/80">{ex.rationale}</p>
+          ) : null}
         </div>
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="size-8" disabled={first} onClick={() => onMove(-1)}>
@@ -297,29 +313,55 @@ function ExerciseRow({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
-        <Metric label={t.training.fields.sets}>
-          <NumberStepper value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
-        </Metric>
-        <Metric label={t.training.fields.reps}>
-          <div className="flex items-center gap-1">
-            <NumberStepper value={v.repsMin} min={1} max={100} onChange={(x) => push({ ...v, repsMin: x })} />
-            <span className="text-muted-foreground">–</span>
-            <NumberStepper value={v.repsMax} min={1} max={100} onChange={(x) => push({ ...v, repsMax: x })} />
-          </div>
-        </Metric>
-        <Metric label={t.training.fields.rir}>
-          <NumberStepper
-            value={v.rir ?? 0}
-            min={0}
-            max={10}
-            onChange={(x) => push({ ...v, rir: x })}
-          />
-        </Metric>
-        <Metric label={t.training.fields.rest}>
-          <NumberStepper value={v.rest} min={0} max={600} step={15} onChange={(x) => push({ ...v, rest: x })} />
-        </Metric>
-      </div>
+      {ex.type === 'CARDIO' ? (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+          <Metric label={t.training.fields.sets}>
+            <NumberStepper value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
+          </Metric>
+          <Metric label={t.training.fields.durationMin}>
+            <NumberStepper
+              value={v.durationMin}
+              min={0}
+              max={180}
+              step={5}
+              onChange={(x) => push({ ...v, durationMin: x })}
+            />
+          </Metric>
+          <Metric label={t.training.fields.distanceKm}>
+            <NumberStepper
+              value={v.distanceKm}
+              min={0}
+              max={100}
+              step={0.5}
+              onChange={(x) => push({ ...v, distanceKm: x })}
+            />
+          </Metric>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
+          <Metric label={t.training.fields.sets}>
+            <NumberStepper value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
+          </Metric>
+          <Metric label={t.training.fields.reps}>
+            <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
+              <NumberStepper value={v.repsMin} min={1} max={100} onChange={(x) => push({ ...v, repsMin: x })} />
+              <span className="text-muted-foreground">–</span>
+              <NumberStepper value={v.repsMax} min={1} max={100} onChange={(x) => push({ ...v, repsMax: x })} />
+            </div>
+          </Metric>
+          <Metric label={t.training.fields.rir}>
+            <NumberStepper
+              value={v.rir ?? 0}
+              min={0}
+              max={10}
+              onChange={(x) => push({ ...v, rir: x })}
+            />
+          </Metric>
+          <Metric label={t.training.fields.rest}>
+            <NumberStepper value={v.rest} min={0} max={600} step={15} onChange={(x) => push({ ...v, rest: x })} />
+          </Metric>
+        </div>
+      )}
     </div>
   );
 }

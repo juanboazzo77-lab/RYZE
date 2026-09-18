@@ -44,6 +44,7 @@ function elapsedStr(fromMs: number | null, now: number): string {
 
 function estMinutes(exs: WorkoutSession['exercises']): number {
   const secs = exs.reduce((acc, e) => {
+    if (e.type === 'CARDIO') return acc + (e.targetDurationSec ?? 1800);
     const sets = e.sets.length || 3;
     return acc + sets * ((e.restSeconds ?? 90) + 45);
   }, 0);
@@ -338,9 +339,16 @@ function ReadyScreen({
             <ol className="mt-6 space-y-1.5">
               {session.exercises.map((e, i) => {
                 const target =
-                  e.targetRepsMin && e.targetRepsMax
-                    ? `${e.sets.length || 3}×${e.targetRepsMin}-${e.targetRepsMax}`
-                    : `${e.sets.length || 3} ${tr.sets}`;
+                  e.type === 'CARDIO'
+                    ? [
+                        e.targetDurationSec ? `${Math.round(e.targetDurationSec / 60)} min` : null,
+                        e.targetDistanceMeters ? `${(e.targetDistanceMeters / 1000).toFixed(1)} km` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || `${e.sets.length || 1} ${tr.sets}`
+                    : e.targetRepsMin && e.targetRepsMax
+                      ? `${e.sets.length || 3}×${e.targetRepsMin}-${e.targetRepsMax}`
+                      : `${e.sets.length || 3} ${tr.sets}`;
                 return (
                   <li
                     key={e.id}
@@ -448,10 +456,16 @@ function ExerciseBlock({
             {ex.name}
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <Badge variant="secondary">{t.training.muscles[ex.primaryMuscle as 'CHEST']}</Badge>
-            <span>
-              {t.training.session.lastTime}: {last ?? t.training.session.noLastTime}
-            </span>
+            {ex.type === 'CARDIO' ? (
+              <Badge variant="secondary">{t.training.fields.cardio}</Badge>
+            ) : (
+              <>
+                <Badge variant="secondary">{t.training.muscles[ex.primaryMuscle as 'CHEST']}</Badge>
+                <span>
+                  {t.training.session.lastTime}: {last ?? t.training.session.noLastTime}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onRemove} aria-label={t.training.remove}>
@@ -464,8 +478,11 @@ function ExerciseBlock({
             key={st.id}
             t={t}
             set={st}
+            cardio={ex.type === 'CARDIO'}
             onWeight={(v) => patchSet(ex.id, st.id, { weightKg: v })}
             onReps={(v) => patchSet(ex.id, st.id, { reps: v })}
+            onDuration={(v) => patchSet(ex.id, st.id, { durationSeconds: v })}
+            onDistance={(v) => patchSet(ex.id, st.id, { distanceMeters: v })}
             onWarmup={() => patchSet(ex.id, st.id, { isWarmup: !st.isWarmup })}
             onToggle={() => {
               const nowDone = toggleComplete(ex.id, st.id);
@@ -486,16 +503,22 @@ function ExerciseBlock({
 function SetRow({
   t,
   set,
+  cardio,
   onWeight,
   onReps,
+  onDuration,
+  onDistance,
   onWarmup,
   onToggle,
   onRemove,
 }: {
   t: Dictionary;
   set: StoreSet;
+  cardio: boolean;
   onWeight: (v: number | null) => void;
   onReps: (v: number | null) => void;
+  onDuration: (v: number | null) => void;
+  onDistance: (v: number | null) => void;
   onWarmup: () => void;
   onToggle: () => void;
   onRemove: () => void;
@@ -526,28 +549,64 @@ function SetRow({
         {set.isWarmup ? t.training.session.warmup : set.setNumber}
       </button>
 
-      <Input
-        type="number"
-        inputMode="decimal"
-        step="any"
-        min={0}
-        placeholder="kg"
-        value={set.weightKg ?? ''}
-        onChange={(e) => onWeight(parseNum(e.target.value))}
-        className="h-11 flex-1 text-center text-base font-semibold"
-      />
-      <span className="text-xs text-muted-foreground">{t.training.session.kg}</span>
-      <span className="text-muted-foreground">×</span>
-      <Input
-        type="number"
-        inputMode="numeric"
-        min={0}
-        placeholder="reps"
-        value={set.reps ?? ''}
-        onChange={(e) => onReps(parseNum(e.target.value))}
-        className="h-11 flex-1 text-center text-base font-semibold"
-      />
-      <span className="text-xs text-muted-foreground">{t.training.session.reps}</span>
+      {cardio ? (
+        <>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min={0}
+            placeholder="min"
+            value={set.durationSeconds != null ? set.durationSeconds / 60 : ''}
+            onChange={(e) => {
+              const v = parseNum(e.target.value);
+              onDuration(v != null ? Math.round(v * 60) : null);
+            }}
+            className="h-11 flex-1 text-center text-base font-semibold"
+          />
+          <span className="text-xs text-muted-foreground">{t.training.session.min}</span>
+          <span className="text-muted-foreground">·</span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min={0}
+            placeholder="km"
+            value={set.distanceMeters != null ? set.distanceMeters / 1000 : ''}
+            onChange={(e) => {
+              const v = parseNum(e.target.value);
+              onDistance(v != null ? Math.round(v * 1000) : null);
+            }}
+            className="h-11 flex-1 text-center text-base font-semibold"
+          />
+          <span className="text-xs text-muted-foreground">{t.training.session.km}</span>
+        </>
+      ) : (
+        <>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="any"
+            min={0}
+            placeholder="kg"
+            value={set.weightKg ?? ''}
+            onChange={(e) => onWeight(parseNum(e.target.value))}
+            className="h-11 flex-1 text-center text-base font-semibold"
+          />
+          <span className="text-xs text-muted-foreground">{t.training.session.kg}</span>
+          <span className="text-muted-foreground">×</span>
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="reps"
+            value={set.reps ?? ''}
+            onChange={(e) => onReps(parseNum(e.target.value))}
+            className="h-11 flex-1 text-center text-base font-semibold"
+          />
+          <span className="text-xs text-muted-foreground">{t.training.session.reps}</span>
+        </>
+      )}
 
       <button
         type="button"
