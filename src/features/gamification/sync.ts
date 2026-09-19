@@ -5,8 +5,7 @@ import { workoutStreak } from '@/features/dashboard/compute';
 import { addDaysISO, localTodayISO } from '@/lib/date';
 
 /**
- * Progreso por logro. `first_ai_plan` no tiene evaluador todavía (Fase 9):
- * queda tal cual esté en la DB.
+ * Progreso por logro.
  */
 type Evaluator = (stats: Stats) => number;
 
@@ -17,18 +16,39 @@ interface Stats {
   foodCount: number;
   streakDays: number;
   proteinDays: number;
+  cardioCount: number;
+  checkinCount: number;
+  aiPlanCount: number;
+  goalReached: number;
 }
 
 const EVALUATORS: Record<string, Evaluator> = {
   first_workout: (s) => Math.min(s.workoutsCompleted, 1),
   workouts_10: (s) => Math.min(s.workoutsCompleted, 10),
   workouts_30: (s) => Math.min(s.workoutsCompleted, 30),
+  workouts_50: (s) => Math.min(s.workoutsCompleted, 50),
+  workouts_100: (s) => Math.min(s.workoutsCompleted, 100),
   first_pr: (s) => Math.min(s.prCount, 1),
+  prs_5: (s) => Math.min(s.prCount, 5),
+  prs_10: (s) => Math.min(s.prCount, 10),
   streak_7: (s) => Math.min(s.streakDays, 7),
   streak_30: (s) => Math.min(s.streakDays, 30),
+  streak_60: (s) => Math.min(s.streakDays, 60),
+  streak_100: (s) => Math.min(s.streakDays, 100),
   weight_log_30: (s) => Math.min(s.weightCount, 30),
+  weight_log_90: (s) => Math.min(s.weightCount, 90),
+  goal_reached: (s) => Math.min(s.goalReached, 1),
   first_meal_logged: (s) => Math.min(s.foodCount, 1),
+  meals_100: (s) => Math.min(s.foodCount, 100),
   protein_goal_7: (s) => Math.min(s.proteinDays, 7),
+  protein_goal_30: (s) => Math.min(s.proteinDays, 30),
+  first_cardio: (s) => Math.min(s.cardioCount, 1),
+  cardio_10: (s) => Math.min(s.cardioCount, 10),
+  cardio_30: (s) => Math.min(s.cardioCount, 30),
+  first_ai_plan: (s) => Math.min(s.aiPlanCount, 1),
+  ai_plans_3: (s) => Math.min(s.aiPlanCount, 3),
+  checkins_4: (s) => Math.min(s.checkinCount, 4),
+  checkins_12: (s) => Math.min(s.checkinCount, 12),
 };
 
 /**
@@ -42,25 +62,44 @@ export async function syncAchievements(db: UserDb, userId: string, timezone: str
     const since120 = addDaysISO(todayISO, -120);
     const sinceDate = new Date(`${since120}T00:00:00Z`);
 
-    const [workoutsCompleted, prCount, weightCount, foodCount, completedDates, target, proteinByDay] =
-      await db.$transaction([
-        db.workout.count({ where: { status: 'COMPLETED' } }),
-        db.personalRecord.count(),
-        db.weightEntry.count(),
-        db.foodEntry.count(),
-        db.workout.findMany({
-          where: { status: 'COMPLETED', finishedAt: { not: null } },
-          orderBy: { finishedAt: 'desc' },
-          take: 120,
-          select: { finishedAt: true },
-        }),
-        db.nutritionTarget.findFirst({ where: { active: true }, select: { proteinG: true } }),
-        db.foodEntry.groupBy({
-          by: ['date'],
-          where: { date: { gte: sinceDate } },
-          _sum: { proteinG: true },
-        }),
-      ]);
+    const [
+      workoutsCompleted,
+      prCount,
+      weightCount,
+      foodCount,
+      completedDates,
+      target,
+      proteinByDay,
+      cardioCount,
+      checkinCount,
+      aiPlanCount,
+      activeGoal,
+      latestWeight,
+    ] = await db.$transaction([
+      db.workout.count({ where: { status: 'COMPLETED' } }),
+      db.personalRecord.count(),
+      db.weightEntry.count(),
+      db.foodEntry.count(),
+      db.workout.findMany({
+        where: { status: 'COMPLETED', finishedAt: { not: null } },
+        orderBy: { finishedAt: 'desc' },
+        take: 120,
+        select: { finishedAt: true },
+      }),
+      db.nutritionTarget.findFirst({ where: { active: true }, select: { proteinG: true } }),
+      db.foodEntry.groupBy({
+        by: ['date'],
+        where: { date: { gte: sinceDate } },
+        _sum: { proteinG: true },
+      }),
+      db.workoutSet.count({
+        where: { isCompleted: true, workoutExercise: { exercise: { type: 'CARDIO' } } },
+      }),
+      db.weeklyCheckin.count({ where: { status: { not: 'DRAFT' } } }),
+      db.workoutPlan.count({ where: { source: 'AI' } }),
+      db.goal.findFirst({ where: { status: 'ACTIVE' }, select: { targetWeightKg: true } }),
+      db.weightEntry.findFirst({ orderBy: { date: 'desc' }, select: { weightKg: true } }),
+    ]);
 
     const completedDays = new Set(
       completedDates
@@ -72,7 +111,25 @@ export async function syncAchievements(db: UserDb, userId: string, timezone: str
       ? proteinByDay.filter((d) => (d._sum.proteinG ?? 0) >= target.proteinG * 0.9).length
       : 0;
 
-    const stats: Stats = { workoutsCompleted, prCount, weightCount, foodCount, streakDays, proteinDays };
+    const goalReached =
+      activeGoal?.targetWeightKg != null && latestWeight?.weightKg != null
+        ? Math.abs(latestWeight.weightKg - activeGoal.targetWeightKg) <= 0.5
+          ? 1
+          : 0
+        : 0;
+
+    const stats: Stats = {
+      workoutsCompleted,
+      prCount,
+      weightCount,
+      foodCount,
+      streakDays,
+      proteinDays,
+      cardioCount,
+      checkinCount,
+      aiPlanCount,
+      goalReached,
+    };
     const keys = Object.keys(EVALUATORS);
 
     const existing = await db.userAchievement.findMany({

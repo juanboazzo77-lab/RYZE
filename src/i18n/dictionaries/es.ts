@@ -1119,6 +1119,7 @@ export const es = {
     locked: 'Bloqueado',
     categories: {
       training: 'Entrenamiento',
+      cardio: 'Cardio',
       consistency: 'Constancia',
       progress: 'Progreso',
       nutrition: 'Nutrición',

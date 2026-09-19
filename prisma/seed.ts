@@ -31,6 +31,22 @@ const ACHIEVEMENTS: Array<{
   { key: 'first_meal_logged', category: 'nutrition', title: 'Primera comida', description: 'Registraste tu primera comida.', icon: '🍽️', threshold: 1 },
   { key: 'protein_goal_7', category: 'nutrition', title: 'Semana proteica', description: '7 días cumpliendo tu objetivo de proteína.', icon: '🥩', threshold: 7 },
   { key: 'first_ai_plan', category: 'coach', title: 'Plan con IA', description: 'Generaste tu primer plan con el AI Coach.', icon: '🤖', threshold: 1 },
+  { key: 'workouts_50', category: 'training', title: '50 entrenamientos', description: 'Llegaste a 50 entrenamientos completados.', icon: '🎖️', threshold: 50 },
+  { key: 'workouts_100', category: 'training', title: '100 entrenamientos', description: 'Llegaste a 100 entrenamientos completados.', icon: '👑', threshold: 100 },
+  { key: 'prs_5', category: 'training', title: '5 récords personales', description: 'Registraste 5 récords personales.', icon: '🏅', threshold: 5 },
+  { key: 'prs_10', category: 'training', title: '10 récords personales', description: 'Registraste 10 récords personales.', icon: '🥇', threshold: 10 },
+  { key: 'first_cardio', category: 'cardio', title: 'Primer cardio', description: 'Registraste tu primer bloque de cardio.', icon: '🏃', threshold: 1 },
+  { key: 'cardio_10', category: 'cardio', title: '10 sesiones de cardio', description: 'Completaste 10 bloques de cardio.', icon: '🚴', threshold: 10 },
+  { key: 'cardio_30', category: 'cardio', title: '30 sesiones de cardio', description: 'Completaste 30 bloques de cardio.', icon: '🏃‍♂️', threshold: 30 },
+  { key: 'streak_60', category: 'consistency', title: 'Racha de 60 días', description: '60 días seguidos registrando actividad.', icon: '🔥', threshold: 60 },
+  { key: 'streak_100', category: 'consistency', title: 'Racha de 100 días', description: '100 días seguidos registrando actividad.', icon: '💯', threshold: 100 },
+  { key: 'weight_log_90', category: 'progress', title: '90 días de peso', description: 'Registraste tu peso durante 90 días.', icon: '📈', threshold: 90 },
+  { key: 'goal_reached', category: 'progress', title: 'Objetivo alcanzado', description: 'Llegaste a tu peso objetivo.', icon: '🎯', threshold: 1 },
+  { key: 'meals_100', category: 'nutrition', title: '100 comidas registradas', description: 'Registraste 100 comidas en total.', icon: '🍎', threshold: 100 },
+  { key: 'protein_goal_30', category: 'nutrition', title: 'Mes proteico', description: '30 días cumpliendo tu objetivo de proteína.', icon: '🥗', threshold: 30 },
+  { key: 'ai_plans_3', category: 'coach', title: '3 planes con IA', description: 'Generaste 3 planes con el AI Coach.', icon: '🧠', threshold: 3 },
+  { key: 'checkins_4', category: 'coach', title: 'Primer mes de check-ins', description: 'Completaste 4 revisiones semanales.', icon: '📋', threshold: 4 },
+  { key: 'checkins_12', category: 'coach', title: 'Check-in constante', description: 'Completaste 12 revisiones semanales.', icon: '🗓️', threshold: 12 },
 ];
 
 const EXERCISES: Array<{ name: string; primaryMuscle: MuscleGroup; equipment: string }> = [

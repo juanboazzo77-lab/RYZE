@@ -1121,6 +1121,7 @@ export const de: Dictionary = {
     locked: 'Gesperrt',
     categories: {
       training: 'Training',
+      cardio: 'Cardio',
       consistency: 'Beständigkeit',
       progress: 'Fortschritt',
       nutrition: 'Ernährung',

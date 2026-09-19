@@ -1121,6 +1121,7 @@ export const it: Dictionary = {
     locked: 'Bloccato',
     categories: {
       training: 'Allenamento',
+      cardio: 'Cardio',
       consistency: 'Costanza',
       progress: 'Progressi',
       nutrition: 'Nutrizione',
