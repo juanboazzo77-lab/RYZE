@@ -128,6 +128,17 @@ export async function buildUserContextBlock(
       `${profile.sessionMinutes ?? '—'} min/sesión, lugar ${profile.trainingPlace ?? '—'}, ` +
       `equipo: ${asList(profile.equipment)}.`,
   );
+  if (
+    (Array.isArray(profile.musclePriorities) && profile.musclePriorities.length > 0) ||
+    (Array.isArray(profile.dislikedExercises) && profile.dislikedExercises.length > 0) ||
+    profile.routineStyle
+  ) {
+    lines.push(
+      `Preferencias de entrenamiento: prioriza ${asList(profile.musclePriorities)}, ` +
+        `evita estos ejercicios: ${asList(profile.dislikedExercises)}, ` +
+        `split preferido: ${profile.routineStyle ?? 'que decida el coach'}.`,
+    );
+  }
   lines.push(
     `Dieta: ${profile.mealsPerDay ?? '—'} comidas/día, preferencias: ${asList(profile.dietaryPrefs)}, ` +
       `excluye: ${asList(profile.excludedFoods)}, alergias: ${asList(profile.allergies)}.`,

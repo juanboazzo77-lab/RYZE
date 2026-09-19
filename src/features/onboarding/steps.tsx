@@ -25,6 +25,7 @@ import {
   TRAINING_PLACE_OPTIONS,
   defaultEquipmentFor,
 } from '@/lib/domain-options';
+import { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
 import { cmToFtIn, ftInToCm, kgToLb, lbToKg } from '@/lib/units';
 import { ageFromBirthdate, computeTargets, defaultWeeklyRateKg } from '@/lib/nutrition/targets';
 import type { OnboardingData } from './types';
@@ -240,6 +241,30 @@ export function StepTraining({ data, patch, t, errors }: StepProps) {
           }))}
           value={data.activityLevel}
           onChange={(activityLevel) => patch({ activityLevel })}
+        />
+      </Field>
+
+      <Field label={t.coachProfile.fields.musclePriorities}>
+        <ChipMulti
+          options={MUSCLE_PRIORITIES.map((v) => ({ value: v, label: t.coachProfile.opts.musclePriorities[v] }))}
+          value={data.musclePriorities as (typeof MUSCLE_PRIORITIES)[number][]}
+          onChange={(musclePriorities) => patch({ musclePriorities })}
+        />
+      </Field>
+
+      <Field label={t.coachProfile.fields.routineStyle}>
+        <Segmented
+          options={ROUTINE_STYLE.map((v) => ({ value: v, label: t.coachProfile.opts.routineStyle[v] }))}
+          value={data.routineStyle as (typeof ROUTINE_STYLE)[number] | null}
+          onChange={(routineStyle) => patch({ routineStyle })}
+        />
+      </Field>
+
+      <Field label={t.coachProfile.fields.dislikedExercises}>
+        <TagInput
+          value={data.dislikedExercises}
+          placeholder={t.coachProfile.fields.dislikedExercisesPh}
+          onChange={(dislikedExercises) => patch({ dislikedExercises })}
         />
       </Field>
 

@@ -12,6 +12,7 @@ import { ChipMulti } from '@/components/form/chip-multi';
 import { TagInput } from '@/components/form/tag-input';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { useT } from '@/i18n/provider';
+import { Segmented } from '@/components/form/segmented';
 import {
   ACTIVITY_OPTIONS,
   DIETARY_PREF_OPTIONS,
@@ -20,6 +21,7 @@ import {
   SEX_OPTIONS,
   TRAINING_PLACE_OPTIONS,
 } from '@/lib/domain-options';
+import { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
 import { cmToFtIn, ftInToCm } from '@/lib/units';
 import { profileUpdateSchema, type ProfileUpdatePayload } from './schema';
 import { updateProfile } from './actions';
@@ -133,6 +135,27 @@ export function ProfileForm({
               options={ACTIVITY_OPTIONS.map((v) => ({ value: v, label: t.enums.activityLevel[v], hint: t.enums.activityLevelHint[v] }))}
               value={d.activityLevel}
               onChange={(activityLevel) => patch({ activityLevel })}
+            />
+          </Field>
+          <Field label={t.coachProfile.fields.musclePriorities}>
+            <ChipMulti
+              options={MUSCLE_PRIORITIES.map((v) => ({ value: v, label: t.coachProfile.opts.musclePriorities[v] }))}
+              value={d.musclePriorities as (typeof MUSCLE_PRIORITIES)[number][]}
+              onChange={(musclePriorities) => patch({ musclePriorities })}
+            />
+          </Field>
+          <Field label={t.coachProfile.fields.routineStyle}>
+            <Segmented
+              options={ROUTINE_STYLE.map((v) => ({ value: v, label: t.coachProfile.opts.routineStyle[v] }))}
+              value={d.routineStyle as (typeof ROUTINE_STYLE)[number] | null}
+              onChange={(routineStyle) => patch({ routineStyle })}
+            />
+          </Field>
+          <Field label={t.coachProfile.fields.dislikedExercises}>
+            <TagInput
+              value={d.dislikedExercises}
+              placeholder={t.coachProfile.fields.dislikedExercisesPh}
+              onChange={(dislikedExercises) => patch({ dislikedExercises })}
             />
           </Field>
         </CardContent>

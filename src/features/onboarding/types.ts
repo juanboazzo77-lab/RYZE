@@ -23,6 +23,12 @@ export interface OnboardingData {
   trainingPlace: TrainingPlace | null;
   equipment: string[];
   activityLevel: ActivityLevel | null;
+  /** Grupos musculares a priorizar (slugs, ver coach-profile/schema.ts). */
+  musclePriorities: string[];
+  /** Ejercicios que prefiere evitar (tags libres). */
+  dislikedExercises: string[];
+  /** Estilo de split preferido (slug, ver coach-profile/schema.ts ROUTINE_STYLE). */
+  routineStyle: string | null;
   mealsPerDay: number;
   dietaryPrefs: string[];
   excludedFoods: string[];
