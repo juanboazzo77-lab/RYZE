@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { signInAction, type AuthActionState } from '../actions';
 import { AuthFormShell, FormMessage, SubmitButton } from '../_ui';
-import { SocialAuthButtons } from '../_social';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useT } from '@/i18n/provider';
@@ -25,8 +24,6 @@ export function LoginForm() {
     <form action={action}>
       <AuthFormShell>
         <input type="hidden" name="next" value={next} />
-
-        <SocialAuthButtons next={next} />
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">{t.auth.email}</Label>

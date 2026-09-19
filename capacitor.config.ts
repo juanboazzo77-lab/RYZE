@@ -9,13 +9,6 @@ const config: CapacitorConfig = {
     // archivos estáticos locales, sino que carga la web ya publicada.
     url: 'https://forzaai.app',
     cleartext: false,
-    // Sin esto, el WebView bloquea la navegación al iniciar sesión con Google
-    // o Apple (van a un dominio distinto al de `url` y vuelven vía Supabase).
-    allowNavigation: [
-      'accounts.google.com',
-      'appleid.apple.com',
-      '*.supabase.co',
-    ],
   },
 };
 
