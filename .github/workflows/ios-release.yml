@@ -96,11 +96,11 @@ jobs:
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          ASC_PRIVATE_KEY_BASE64: ${{ secrets.ASC_PRIVATE_KEY_BASE64 }}
         run: |
           set -e
           mkdir -p ~/private_keys
-          echo "$ASC_PRIVATE_KEY" | tr -d '\r' > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          echo -n "$ASC_PRIVATE_KEY_BASE64" | base64 --decode -o ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
           IPA_PATH=$(find "$RUNNER_TEMP/export" -name "*.ipa" | head -1)
           xcrun altool --upload-app \
             --type ios \
