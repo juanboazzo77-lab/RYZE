@@ -7,7 +7,7 @@ import { requireUser } from '@/server/context';
 import { toStringArray } from '@/lib/json';
 import { ProfileForm } from '@/features/settings/profile-form';
 import type { ProfileUpdatePayload } from '@/features/settings/schema';
-import type { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
+import type { MUSCLE_PRIORITIES, ROUTINE_STYLE, SPORT_PRIORITY } from '@/features/coach-profile/schema';
 
 export const metadata: Metadata = { title: 'Perfil' };
 
@@ -32,6 +32,7 @@ export default async function ProfileSettingsPage() {
     musclePriorities: toStringArray(profile.musclePriorities) as (typeof MUSCLE_PRIORITIES)[number][],
     dislikedExercises: toStringArray(profile.dislikedExercises),
     routineStyle: profile.routineStyle as (typeof ROUTINE_STYLE)[number] | null,
+    sportPriority: profile.sportPriority as (typeof SPORT_PRIORITY)[number] | null,
     mealsPerDay: profile.mealsPerDay ?? 3,
     dietaryPrefs: toStringArray(profile.dietaryPrefs),
     excludedFoods: toStringArray(profile.excludedFoods),

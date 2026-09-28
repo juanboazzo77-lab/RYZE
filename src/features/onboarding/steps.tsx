@@ -25,7 +25,7 @@ import {
   TRAINING_PLACE_OPTIONS,
   defaultEquipmentFor,
 } from '@/lib/domain-options';
-import { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
+import { MUSCLE_PRIORITIES, ROUTINE_STYLE, SPORT_PRIORITY } from '@/features/coach-profile/schema';
 import { cmToFtIn, ftInToCm, kgToLb, lbToKg } from '@/lib/units';
 import { ageFromBirthdate, computeTargets, defaultWeeklyRateKg } from '@/lib/nutrition/targets';
 import type { OnboardingData } from './types';
@@ -298,6 +298,14 @@ function SportSection({ data, patch, t }: Pick<StepProps, 'data' | 'patch' | 't'
 
       {data.doesSport ? (
         <div className="space-y-4 border-t pt-4">
+          <Field label={t.coachProfile.fields.sportPriority} hint={t.coachProfile.fields.sportPriorityHint}>
+            <Segmented
+              options={SPORT_PRIORITY.map((v) => ({ value: v, label: t.coachProfile.opts.sportPriority[v] }))}
+              value={data.sportPriority as (typeof SPORT_PRIORITY)[number] | null}
+              onChange={(sportPriority) => patch({ sportPriority })}
+            />
+          </Field>
+
           <Field label={f.name}>
             <Input
               list="common-sports"

@@ -60,6 +60,7 @@ export function OnboardingWizard({
     musclePriorities: [],
     dislikedExercises: [],
     routineStyle: null,
+    sportPriority: null,
     mealsPerDay: 3,
     dietaryPrefs: [],
     excludedFoods: [],

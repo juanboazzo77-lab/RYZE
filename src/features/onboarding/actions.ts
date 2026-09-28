@@ -54,6 +54,7 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
         musclePriorities: data.musclePriorities,
         dislikedExercises: data.dislikedExercises,
         routineStyle: data.routineStyle,
+        sportPriority: data.sportPriority,
         dietaryPrefs: data.dietaryPrefs,
         excludedFoods: data.excludedFoods,
         allergies: data.allergies,

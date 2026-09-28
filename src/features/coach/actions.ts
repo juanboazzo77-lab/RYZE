@@ -295,12 +295,17 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
   }> = [];
   for (const d of draft.days) {
     const exercises = [];
-    for (let i = 0; i < d.exercises.length; i++) {
-      const e = d.exercises[i]!;
+    const seenExerciseIds = new Set<string>();
+    for (const e of d.exercises) {
       const exerciseId = await resolveExerciseId(e.name, userId, e.type ?? 'STRENGTH');
+      // Dos nombres distintos de la IA pueden resolver al mismo ejercicio de
+      // la biblioteca (match difuso); sin este chequeo el mismo ejercicio
+      // termina duplicado dentro del mismo día.
+      if (seenExerciseIds.has(exerciseId)) continue;
+      seenExerciseIds.add(exerciseId);
       exercises.push({
         exerciseId,
-        orderIndex: i,
+        orderIndex: exercises.length,
         targetSets: e.sets,
         targetRepsMin: Math.min(e.repsMin, e.repsMax),
         targetRepsMax: Math.max(e.repsMin, e.repsMax),

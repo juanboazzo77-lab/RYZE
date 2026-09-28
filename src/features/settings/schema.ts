@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
+import { MUSCLE_PRIORITIES, ROUTINE_STYLE, SPORT_PRIORITY } from '@/features/coach-profile/schema';
 
 export const profileUpdateSchema = z.object({
   name: z.string().trim().min(1).max(80),
@@ -15,6 +15,7 @@ export const profileUpdateSchema = z.object({
   musclePriorities: z.array(z.enum(MUSCLE_PRIORITIES)).max(8),
   dislikedExercises: z.array(z.string().trim().min(1).max(40)).max(20),
   routineStyle: z.enum(ROUTINE_STYLE).nullable(),
+  sportPriority: z.enum(SPORT_PRIORITY).nullable(),
   mealsPerDay: z.number().int().min(1).max(10),
   dietaryPrefs: z.array(z.string().max(40)).max(20),
   excludedFoods: z.array(z.string().max(60)).max(50),

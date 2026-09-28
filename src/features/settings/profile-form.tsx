@@ -21,7 +21,7 @@ import {
   SEX_OPTIONS,
   TRAINING_PLACE_OPTIONS,
 } from '@/lib/domain-options';
-import { MUSCLE_PRIORITIES, ROUTINE_STYLE } from '@/features/coach-profile/schema';
+import { MUSCLE_PRIORITIES, ROUTINE_STYLE, SPORT_PRIORITY } from '@/features/coach-profile/schema';
 import { cmToFtIn, ftInToCm } from '@/lib/units';
 import { profileUpdateSchema, type ProfileUpdatePayload } from './schema';
 import { updateProfile } from './actions';
@@ -149,6 +149,13 @@ export function ProfileForm({
               options={ROUTINE_STYLE.map((v) => ({ value: v, label: t.coachProfile.opts.routineStyle[v] }))}
               value={d.routineStyle as (typeof ROUTINE_STYLE)[number] | null}
               onChange={(routineStyle) => patch({ routineStyle })}
+            />
+          </Field>
+          <Field label={t.coachProfile.fields.sportPriority} hint={t.coachProfile.fields.sportPriorityHint}>
+            <Segmented
+              options={SPORT_PRIORITY.map((v) => ({ value: v, label: t.coachProfile.opts.sportPriority[v] }))}
+              value={d.sportPriority as (typeof SPORT_PRIORITY)[number] | null}
+              onChange={(sportPriority) => patch({ sportPriority })}
             />
           </Field>
           <Field label={t.coachProfile.fields.dislikedExercises}>

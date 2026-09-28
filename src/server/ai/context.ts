@@ -116,33 +116,45 @@ export async function buildUserContextBlock(
   const weeklyChange = weeklyWeightChangeKg(dated, todayISO, addDaysISO);
   const age = ageFrom(profile.birthdate);
 
+  const SPORT_PRIORITY_LABEL: Record<string, string> = {
+    equilibrado: 'híbrido, gimnasio y deporte por igual',
+    deporte: 'foco en el deporte, el gimnasio es complementario',
+    gimnasio: 'foco en el gimnasio',
+  };
+
   const lines: string[] = [];
   lines.push(`Fecha: ${todayISO} (${tz})`);
-  lines.push(
-    `Perfil: ${profile.name ?? 'sin nombre'}, ${profile.sex ?? '—'}, ${age ?? '—'} años, ` +
-      `${profile.heightCm ?? '—'} cm, nivel ${profile.experienceLevel ?? '—'}, ` +
-      `actividad ${profile.activityLevel ?? '—'}.`,
-  );
-  lines.push(
-    `Entrenamiento: objetivo ${profile.primaryGoal ?? '—'}, ${profile.daysAvailable ?? '—'} días/sem, ` +
-      `${profile.sessionMinutes ?? '—'} min/sesión, lugar ${profile.trainingPlace ?? '—'}, ` +
-      `equipo: ${asList(profile.equipment)}.`,
-  );
-  if (
-    (Array.isArray(profile.musclePriorities) && profile.musclePriorities.length > 0) ||
-    (Array.isArray(profile.dislikedExercises) && profile.dislikedExercises.length > 0) ||
-    profile.routineStyle
-  ) {
-    lines.push(
-      `Preferencias de entrenamiento: prioriza ${asList(profile.musclePriorities)}, ` +
-        `evita estos ejercicios: ${asList(profile.dislikedExercises)}, ` +
-        `split preferido: ${profile.routineStyle ?? 'que decida el coach'}.`,
-    );
+  lines.push(`Nombre: ${profile.name ?? 'sin nombre'}`);
+  lines.push(`Sexo: ${profile.sex ?? '—'}`);
+  lines.push(`Edad: ${age ?? '—'} años`);
+  lines.push(`Altura: ${profile.heightCm ?? '—'} cm`);
+  lines.push(`Nivel de experiencia: ${profile.experienceLevel ?? '—'}`);
+  lines.push(`Nivel de actividad diaria (fuera del gimnasio): ${profile.activityLevel ?? '—'}`);
+  lines.push(`Objetivo principal: ${profile.primaryGoal ?? '—'}`);
+  lines.push(`Días de entrenamiento por semana: ${profile.daysAvailable ?? '—'}`);
+  lines.push(`Minutos disponibles por sesión: ${profile.sessionMinutes ?? '—'}`);
+  lines.push(`Lugar de entrenamiento: ${profile.trainingPlace ?? '—'}`);
+  lines.push(`Equipo disponible: ${asList(profile.equipment)}`);
+  if (Array.isArray(profile.musclePriorities) && profile.musclePriorities.length > 0) {
+    lines.push(`Grupos musculares prioritarios: ${asList(profile.musclePriorities)}`);
   }
-  lines.push(
-    `Dieta: ${profile.mealsPerDay ?? '—'} comidas/día, preferencias: ${asList(profile.dietaryPrefs)}, ` +
-      `excluye: ${asList(profile.excludedFoods)}, alergias: ${asList(profile.allergies)}.`,
-  );
+  if (Array.isArray(profile.dislikedExercises) && profile.dislikedExercises.length > 0) {
+    lines.push(`Ejercicios que prefiere evitar: ${asList(profile.dislikedExercises)}`);
+  }
+  if (profile.routineStyle) lines.push(`Estilo de rutina (split) preferido: ${profile.routineStyle}`);
+  if (profile.sportPriority) {
+    lines.push(`Estilo de entrenamiento: ${SPORT_PRIORITY_LABEL[profile.sportPriority] ?? profile.sportPriority}`);
+  }
+  lines.push(`Comidas por día: ${profile.mealsPerDay ?? '—'}`);
+  if (Array.isArray(profile.dietaryPrefs) && profile.dietaryPrefs.length > 0) {
+    lines.push(`Preferencias alimentarias: ${asList(profile.dietaryPrefs)}`);
+  }
+  if (Array.isArray(profile.excludedFoods) && profile.excludedFoods.length > 0) {
+    lines.push(`Alimentos que excluye: ${asList(profile.excludedFoods)}`);
+  }
+  if (Array.isArray(profile.allergies) && profile.allergies.length > 0) {
+    lines.push(`Alergias: ${asList(profile.allergies)}`);
+  }
   if (profile.injuries) lines.push(`Lesiones/limitaciones: ${profile.injuries}`);
 
   const sportLines = await buildSportContextLines(profile);

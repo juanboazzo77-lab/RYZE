@@ -40,6 +40,7 @@ export async function updateProfile(raw: ProfileUpdatePayload): Promise<ActionRe
       musclePriorities: d.musclePriorities,
       dislikedExercises: d.dislikedExercises,
       routineStyle: d.routineStyle,
+      sportPriority: d.sportPriority,
       dietaryPrefs: d.dietaryPrefs,
       excludedFoods: d.excludedFoods,
       allergies: d.allergies,

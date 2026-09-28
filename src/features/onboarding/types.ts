@@ -29,6 +29,8 @@ export interface OnboardingData {
   dislikedExercises: string[];
   /** Estilo de split preferido (slug, ver coach-profile/schema.ts ROUTINE_STYLE). */
   routineStyle: string | null;
+  /** Si hace deporte: qué es prioridad (slug, ver coach-profile/schema.ts SPORT_PRIORITY). */
+  sportPriority: string | null;
   mealsPerDay: number;
   dietaryPrefs: string[];
   excludedFoods: string[];

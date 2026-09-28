@@ -292,6 +292,10 @@ Pautas de la rutina:
 - Cada día: 4–7 ejercicios, series y rango de reps acorde al objetivo
   (fuerza 3–6, hipertrofia 6–12, resistencia 12–20). Incluí RIR objetivo (1–3).
 - Preferí ejercicios básicos y nombres comunes en ${LANG[locale]}.
+- Nunca repitas el mismo ejercicio dos veces dentro del mismo día (ni con el
+  mismo nombre ni con una variante casi idéntica, ej. "Press banca" y "Press de
+  banca plano" son el mismo ejercicio). Si querés más volumen de un movimiento,
+  subí sus series en vez de listarlo dos veces.
 - Distribuí grupos musculares con sentido (evitá machacar el mismo grupo días
   seguidos). Incluí descanso entre series en segundos.
 - "note" (opcional, por ejercicio): un cue técnico corto SI hace falta (ej.

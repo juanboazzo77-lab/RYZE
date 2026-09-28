@@ -168,88 +168,74 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
 
   // --- salud ---
   const h = cp.health;
-  const hp: string[] = [];
-  if (h.conditions.length) hp.push(`condiciones: ${list(h.conditions)}`);
-  if (h.painAreas.length) hp.push(`molestias bajo carga: ${list(h.painAreas)}`);
-  if (h.pregnancy && h.pregnancy !== 'no') hp.push(lab(h.pregnancy));
-  if (h.sleepQuality) hp.push(`sueño ${lab(h.sleepQuality)}`);
-  if (h.stressLevel) hp.push(`estrés ${lab(h.stressLevel)}`);
-  if (h.note) hp.push(`nota: ${h.note}`);
-  if (hp.length) out.push(`  Salud: ${hp.join('; ')}.`);
+  if (h.conditions.length) out.push(`  Condiciones de salud: ${list(h.conditions)}`);
+  if (h.painAreas.length) out.push(`  Molestias bajo carga: ${list(h.painAreas)}`);
+  if (h.pregnancy && h.pregnancy !== 'no') out.push(`  Situación: ${lab(h.pregnancy)}`);
+  if (h.sleepQuality) out.push(`  Calidad de sueño: ${lab(h.sleepQuality)}`);
+  if (h.stressLevel) out.push(`  Nivel de estrés: ${lab(h.stressLevel)}`);
+  if (h.note) out.push(`  Nota de salud: ${h.note}`);
 
   // --- comida ---
   const f = cp.food;
-  const fp: string[] = [];
-  if (f.dietStyle) fp.push(`estilo ${lab(f.dietStyle)}`);
-  if (f.favoriteFoods.length) fp.push(`le gusta: ${f.favoriteFoods.join(', ')}`);
-  if (f.dislikedFoods.length) fp.push(`NO come: ${f.dislikedFoods.join(', ')}`);
-  if (f.cookingSkill) fp.push(`cocina: ${lab(f.cookingSkill)}`);
-  if (f.cookingTime) fp.push(`tiempo para cocinar: ${lab(f.cookingTime)}`);
-  if (f.budget) fp.push(`presupuesto ${lab(f.budget)}`);
-  if (f.eatingOut) fp.push(`come afuera ${lab(f.eatingOut)}`);
-  if (f.supplements.length) fp.push(`suplementos: ${list(f.supplements)}`);
-  if (f.hungriestTime) fp.push(`más hambre ${lab(f.hungriestTime)}`);
+  if (f.dietStyle) out.push(`  Estilo de dieta: ${lab(f.dietStyle)}`);
+  if (f.favoriteFoods.length) out.push(`  Comidas que le gustan: ${f.favoriteFoods.join(', ')}`);
+  if (f.dislikedFoods.length) out.push(`  Comidas que NO come: ${f.dislikedFoods.join(', ')}`);
+  if (f.cookingSkill) out.push(`  Nivel de cocina: ${lab(f.cookingSkill)}`);
+  if (f.cookingTime) out.push(`  Tiempo disponible para cocinar: ${lab(f.cookingTime)}`);
+  if (f.budget) out.push(`  Presupuesto para comida: ${lab(f.budget)}`);
+  if (f.eatingOut) out.push(`  Frecuencia de comer afuera: ${lab(f.eatingOut)}`);
+  if (f.supplements.length) out.push(`  Suplementos que toma: ${list(f.supplements)}`);
+  if (f.hungriestTime) out.push(`  Momento de más hambre: ${lab(f.hungriestTime)}`);
   if (f.hasScale) {
-    fp.push(
+    out.push(
       f.hasScale === 'si'
-        ? 'tiene balanza de cocina (puede pesar la comida)'
-        : 'NO tiene balanza (dale medidas caseras, no gramos que tenga que pesar)',
+        ? '  Tiene balanza de cocina (puede pesar la comida).'
+        : '  NO tiene balanza (dale medidas caseras, no gramos que tenga que pesar).',
     );
   }
-  if (f.nonNegotiables) fp.push(`no negocia: ${f.nonNegotiables}`);
-  if (fp.length) out.push(`  Comida: ${fp.join('; ')}.`);
+  if (f.nonNegotiables) out.push(`  No negocia en la dieta: ${f.nonNegotiables}`);
 
   // --- entrenamiento ---
   const tr = cp.training;
-  const tp: string[] = [];
-  if (tr.musclePriorities.length) tp.push(`priorizar: ${list(tr.musclePriorities)}`);
-  if (tr.dislikedExercises.length) tp.push(`NO hacer: ${tr.dislikedExercises.join(', ')}`);
-  if (tr.techniqueLevel) tp.push(`técnica en básicos: ${lab(tr.techniqueLevel)}`);
-  {
-    const marks: string[] = [];
-    if (tr.squatKg) marks.push(`sentadilla ${tr.squatKg}`);
-    if (tr.deadliftKg) marks.push(`peso muerto ${tr.deadliftKg}`);
-    if (tr.benchKg) marks.push(`banca ${tr.benchKg}`);
-    if (marks.length) tp.push(`marcas aprox: ${marks.join(', ')} kg`);
-  }
-  if (tr.homeEquipment.length) tp.push(`equipo: ${list(tr.homeEquipment)}`);
-  if (tr.cardioAttitude) tp.push(`cardio: ${lab(tr.cardioAttitude)}`);
-  if (tr.cardioTypes.length) tp.push(`cardio preferido: ${list(tr.cardioTypes)}`);
-  if (tr.jobActivity) tp.push(`trabajo: ${lab(tr.jobActivity)}`);
-  if (tr.routineStyle) tp.push(`prefiere: ${lab(tr.routineStyle)}`);
-  if (tr.sportPriority) tp.push(`prioridad deporte vs. gimnasio: ${lab(tr.sportPriority)}`);
+  if (tr.musclePriorities.length) out.push(`  Grupos a priorizar (coach): ${list(tr.musclePriorities)}`);
+  if (tr.dislikedExercises.length) out.push(`  Ejercicios que NO quiere hacer (coach): ${tr.dislikedExercises.join(', ')}`);
+  if (tr.techniqueLevel) out.push(`  Nivel de técnica en básicos: ${lab(tr.techniqueLevel)}`);
+  if (tr.squatKg) out.push(`  Marca aprox. sentadilla: ${tr.squatKg} kg`);
+  if (tr.deadliftKg) out.push(`  Marca aprox. peso muerto: ${tr.deadliftKg} kg`);
+  if (tr.benchKg) out.push(`  Marca aprox. banca: ${tr.benchKg} kg`);
+  if (tr.homeEquipment.length) out.push(`  Equipo disponible (coach): ${list(tr.homeEquipment)}`);
+  if (tr.cardioAttitude) out.push(`  Actitud frente al cardio: ${lab(tr.cardioAttitude)}`);
+  if (tr.cardioTypes.length) out.push(`  Cardio preferido: ${list(tr.cardioTypes)}`);
+  if (tr.jobActivity) out.push(`  Actividad en el trabajo: ${lab(tr.jobActivity)}`);
+  if (tr.routineStyle) out.push(`  Estilo de rutina preferido (coach): ${lab(tr.routineStyle)}`);
+  if (tr.sportPriority) out.push(`  Prioridad deporte vs. gimnasio (coach): ${lab(tr.sportPriority)}`);
   if (tr.trainsSportAlone) {
-    tp.push(`entrena su deporte ${tr.trainsSportAlone === 'solo' ? 'solo' : 'acompañado'}`);
+    out.push(`  Entrena su deporte: ${tr.trainsSportAlone === 'solo' ? 'solo' : 'acompañado'}`);
   }
-  if (tp.length) out.push(`  Entrenamiento: ${tp.join('; ')}.`);
 
   // --- objetivo ---
   const g = cp.goal;
-  const gp: string[] = [];
-  if (g.goalInWords) gp.push(`en sus palabras: "${g.goalInWords}"`);
+  if (g.goalInWords) out.push(`  En sus palabras, qué quiere lograr: "${g.goalInWords}"`);
   if (g.targetEvent || g.targetEventDate) {
-    gp.push(
-      `evento objetivo: ${[g.targetEvent, g.targetEventDate].filter(Boolean).join(' ')}`.trim(),
+    out.push(
+      `  Evento objetivo: ${[g.targetEvent, g.targetEventDate].filter(Boolean).join(' ')}`.trim(),
     );
   }
-  if (g.aggressiveness) gp.push(`ritmo: ${lab(g.aggressiveness)}`);
-  if (g.mainPriority) gp.push(`prioridad: ${lab(g.mainPriority)}`);
-  if (g.triedBefore) gp.push(`antes probó (no funcionó): ${g.triedBefore}`);
-  if (g.physiqueNote) gp.push(`físico (análisis previo): ${g.physiqueNote}`);
-  if (gp.length) out.push(`  Objetivo: ${gp.join('; ')}.`);
+  if (g.aggressiveness) out.push(`  Ritmo que quiere llevar: ${lab(g.aggressiveness)}`);
+  if (g.mainPriority) out.push(`  Prioridad principal: ${lab(g.mainPriority)}`);
+  if (g.triedBefore) out.push(`  Qué probó antes y no funcionó: ${g.triedBefore}`);
+  if (g.physiqueNote) out.push(`  Análisis físico previo: ${g.physiqueNote}`);
 
   // --- día a día ---
   const ls = cp.lifestyle;
-  const lp: string[] = [];
-  if (ls.scheduleType) lp.push(`horario ${lab(ls.scheduleType)}`);
+  if (ls.scheduleType) out.push(`  Tipo de horario laboral: ${lab(ls.scheduleType)}`);
   if (ls.travelFrequency && ls.travelFrequency !== 'no')
-    lp.push(`viaja por trabajo ${lab(ls.travelFrequency)}`);
-  if (ls.caregiver === 'si') lp.push('tiene gente a cargo');
-  if (ls.weekendDifferent === 'si') lp.push('el finde es muy distinto a la semana');
-  if (ls.consistency) lp.push(`constancia histórica ${lab(ls.consistency)}`);
-  if (ls.planFreedom) lp.push(`prefiere el plan ${lab(ls.planFreedom)}`);
-  if (ls.adjustCadence) lp.push(`ajustar el plan ${lab(ls.adjustCadence)}`);
-  if (lp.length) out.push(`  Día a día: ${lp.join('; ')}.`);
+    out.push(`  Frecuencia de viajes por trabajo: ${lab(ls.travelFrequency)}`);
+  if (ls.caregiver === 'si') out.push('  Tiene gente a cargo.');
+  if (ls.weekendDifferent === 'si') out.push('  El fin de semana es muy distinto a la semana.');
+  if (ls.consistency) out.push(`  Constancia histórica: ${lab(ls.consistency)}`);
+  if (ls.planFreedom) out.push(`  Prefiere el plan: ${lab(ls.planFreedom)}`);
+  if (ls.adjustCadence) out.push(`  Cada cuánto ajustar el plan: ${lab(ls.adjustCadence)}`);
 
   if (out.length === 0) return [];
   return ['Preferencias del cliente (respetalas, nada genérico):', ...out];
