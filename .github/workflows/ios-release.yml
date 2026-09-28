@@ -62,10 +62,6 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination "generic/platform=iOS" \
             -allowProvisioningUpdates \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=5J58VJ635N \
-            PROVISIONING_PROFILE_SPECIFIER="Forza AI App Store" \
             CURRENT_PROJECT_VERSION=$BUILD_NUMBER \
             OTHER_CODE_SIGN_FLAGS="--keychain $SIGNING_KEYCHAIN_PATH"
 
