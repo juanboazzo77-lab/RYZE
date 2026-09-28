@@ -16,10 +16,12 @@ export interface UserContext {
 /** Usuario autenticado en Supabase (o null). Memoizado por request. */
 export const getSession = cache(async () => {
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  // Mismo motivo que en el middleware: nunca dejar la request colgada si
+  // Supabase Auth no responde.
+  return Promise.race([
+    supabase.auth.getUser().then((r) => r.data.user),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+  ]);
 });
 
 /**

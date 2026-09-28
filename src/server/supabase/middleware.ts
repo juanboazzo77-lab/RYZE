@@ -46,9 +46,13 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Si Supabase Auth no responde a tiempo (red lenta/caída), no dejamos la
+  // request colgada indefinidamente: se trata como "sin sesión" y se redirige
+  // a login, que siempre puede renderizar.
+  const user = await Promise.race([
+    supabase.auth.getUser().then((r) => r.data.user),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
+  ]);
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
