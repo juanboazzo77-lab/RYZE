@@ -100,7 +100,7 @@ jobs:
         run: |
           set -e
           mkdir -p ~/private_keys
-          echo "$ASC_PRIVATE_KEY" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          echo "$ASC_PRIVATE_KEY" | tr -d '\r' > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
           IPA_PATH=$(find "$RUNNER_TEMP/export" -name "*.ipa" | head -1)
           xcrun altool --upload-app \
             --type ios \
