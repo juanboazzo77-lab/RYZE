@@ -319,8 +319,10 @@ export const es = {
     restoreSuccess: 'Compras restauradas.',
     restoreNothingFound: 'No encontramos compras para restaurar.',
     topPlan: 'El más top',
-    billingNote:
-      'Los pagos se procesan de forma segura a través de Apple/Google desde la app instalada. Esta pantalla web es solo de referencia.',
+    billingNote: 'Los pagos se procesan de forma segura a través de Lemon Squeezy (web) o Apple/Google (app instalada).',
+    manageBilling: 'Gestionar suscripción',
+    openingPortal: 'Abriendo...',
+    manageBillingError: 'No pudimos abrir la gestión de facturación. Intentá de nuevo.',
     durations: {
       monthly: 'Mensual',
       threeMonth: '3 meses',

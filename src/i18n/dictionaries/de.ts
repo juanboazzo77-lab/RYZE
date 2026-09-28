@@ -321,8 +321,10 @@ export const de: Dictionary = {
     restoreSuccess: 'Käufe wiederhergestellt.',
     restoreNothingFound: 'Keine Käufe zum Wiederherstellen gefunden.',
     topPlan: 'Der Top-Plan',
-    billingNote:
-      'Zahlungen werden sicher über Apple/Google aus der installierten App verarbeitet. Diese Web-Ansicht ist nur zur Referenz.',
+    billingNote: 'Zahlungen werden sicher über Lemon Squeezy (Web) oder Apple/Google (installierte App) verarbeitet.',
+    manageBilling: 'Abo verwalten',
+    openingPortal: 'Wird geöffnet...',
+    manageBillingError: 'Die Abrechnungsverwaltung konnte nicht geöffnet werden. Bitte erneut versuchen.',
     durations: {
       monthly: 'Monatlich',
       threeMonth: '3 Monate',

@@ -246,6 +246,7 @@ model Profile {
   musclePriorities       Json             @default("[]") @map("muscle_priorities")
   dislikedExercises      Json             @default("[]") @map("disliked_exercises")
   routineStyle           String?          @map("routine_style")
+  sportPriority          String?          @map("sport_priority")
   dietaryPrefs           Json             @default("[]") @map("dietary_prefs")
   excludedFoods          Json             @default("[]") @map("excluded_foods")
   allergies              Json             @default("[]")
@@ -334,8 +335,8 @@ model Entitlement {
   tier                 EntitlementTier   @default(FREE)
   status               EntitlementStatus @default(ACTIVE)
   currentPeriodEnd     DateTime?         @map("current_period_end")
-  stripeCustomerId     String?           @map("stripe_customer_id")
-  stripeSubscriptionId String?           @map("stripe_subscription_id")
+  lemonSqueezyCustomerId     String?     @map("lemon_squeezy_customer_id")
+  lemonSqueezySubscriptionId String?     @map("lemon_squeezy_subscription_id")
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 

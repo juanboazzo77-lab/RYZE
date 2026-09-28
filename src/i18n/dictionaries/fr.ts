@@ -321,8 +321,10 @@ export const fr: Dictionary = {
     restoreSuccess: 'Achats restaurés.',
     restoreNothingFound: 'Aucun achat trouvé à restaurer.',
     topPlan: 'Le plus complet',
-    billingNote:
-      'Les paiements sont traités en toute sécurité par Apple/Google depuis l’application installée. Cet écran web est seulement indicatif.',
+    billingNote: 'Les paiements sont traités en toute sécurité via Lemon Squeezy (web) ou Apple/Google (application installée).',
+    manageBilling: 'Gérer l’abonnement',
+    openingPortal: 'Ouverture...',
+    manageBillingError: "Impossible d'ouvrir la gestion de facturation. Réessayez.",
     durations: {
       monthly: 'Mensuel',
       threeMonth: '3 mois',

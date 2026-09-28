@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Check, X, Crown } from 'lucide-react';
 import { getT } from '@/i18n/server';
@@ -8,6 +9,8 @@ import { PLAN_ORDER, PLAN_PRICE_USD, BASIC_PRICE_USD, FEATURE_ROWS } from '@/fea
 import { PlanPriceSelector } from '@/features/billing/plan-price-selector';
 import { PlanSelectButton } from '@/features/billing/plan-select-button';
 import { RestorePurchasesButton } from '@/features/billing/restore-purchases-button';
+import { ManageBillingButton } from '@/features/billing/manage-billing-button';
+import { CheckoutReturnHandler } from '@/features/billing/checkout-return-handler';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -22,6 +25,9 @@ export default async function PlansPage() {
 
   return (
     <div className="space-y-4">
+      <Suspense fallback={null}>
+        <CheckoutReturnHandler successMessage={p.purchaseSuccess} />
+      </Suspense>
       <Link
         href="/settings"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -178,6 +184,12 @@ export default async function PlansPage() {
         restoringLabel={p.restoring}
         successMessage={p.restoreSuccess}
         nothingFoundMessage={p.restoreNothingFound}
+      />
+      <ManageBillingButton
+        hasSubscription={!!ctx.entitlement.lemonSqueezySubscriptionId}
+        label={p.manageBilling}
+        openingLabel={p.openingPortal}
+        errorMessage={p.manageBillingError}
       />
     </div>
   );

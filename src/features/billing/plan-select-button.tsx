@@ -5,14 +5,14 @@ import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getCurrentOfferingPackages, purchasePackage } from './purchases-client';
-import { syncMyEntitlementAction } from './actions';
+import { createCheckoutAction, syncMyEntitlementAction } from './actions';
 import type { PlanDuration } from './plan-durations';
 
 /**
  * Botón "Elegir plan" para BASIC/PRO/COACH. Nativo (Capacitor): compra real
  * vía RevenueCat (StoreKit/Play Billing) contra el paquete `{tier}_{duration}`
- * del offering `default`. Web: no hay tienda con la que hablar — solo avisa
- * que hay que abrir la app instalada.
+ * del offering `default`. Web: Lemon Squeezy Checkout (si está configurado) —
+ * si no, avisa que hay que abrir la app instalada.
  */
 export function PlanSelectButton({
   tier,
@@ -38,7 +38,17 @@ export function PlanSelectButton({
 
   async function handleClick() {
     if (!Capacitor.isNativePlatform()) {
-      toast.message(comingSoonMessage);
+      setLoading(true);
+      try {
+        const res = await createCheckoutAction(tier, duration);
+        if (res.url) {
+          window.location.href = res.url;
+          return;
+        }
+        toast.message(comingSoonMessage);
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     setLoading(true);

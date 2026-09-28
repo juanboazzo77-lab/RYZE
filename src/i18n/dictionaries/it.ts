@@ -321,8 +321,10 @@ export const it: Dictionary = {
     restoreSuccess: 'Acquisti ripristinati.',
     restoreNothingFound: 'Nessun acquisto trovato da ripristinare.',
     topPlan: 'Il più completo',
-    billingNote:
-      'I pagamenti vengono elaborati in modo sicuro tramite Apple/Google dall’app installata. Questa schermata web è solo indicativa.',
+    billingNote: 'I pagamenti vengono elaborati in modo sicuro tramite Lemon Squeezy (web) o Apple/Google (app installata).',
+    manageBilling: 'Gestisci abbonamento',
+    openingPortal: 'Apertura...',
+    manageBillingError: 'Impossibile aprire la gestione fatturazione. Riprova.',
     durations: {
       monthly: 'Mensile',
       threeMonth: '3 mesi',

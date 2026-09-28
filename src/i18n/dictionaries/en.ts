@@ -321,8 +321,10 @@ export const en: Dictionary = {
     restoreSuccess: 'Purchases restored.',
     restoreNothingFound: 'No purchases found to restore.',
     topPlan: 'Top plan',
-    billingNote:
-      'Payments are processed securely through Apple/Google from the installed app. This web screen is for reference only.',
+    billingNote: 'Payments are processed securely through Lemon Squeezy (web) or Apple/Google (installed app).',
+    manageBilling: 'Manage subscription',
+    openingPortal: 'Opening...',
+    manageBillingError: "We couldn't open billing management. Please try again.",
     durations: {
       monthly: 'Monthly',
       threeMonth: '3 months',
