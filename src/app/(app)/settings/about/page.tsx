@@ -7,6 +7,7 @@ import { can } from '@/server/entitlements';
 import { aiConfigured } from '@/server/ai/config';
 import { getCoachProfile } from '@/features/coach-profile/queries';
 import { CoachProfileForm } from '@/features/coach-profile/coach-profile-form';
+import { getSports } from '@/features/sports/queries';
 import { UpsellCard } from '@/components/upsell-card';
 
 export const metadata: Metadata = { title: 'Perfil para el coach' };
@@ -47,12 +48,17 @@ export default async function CoachProfileSettingsPage() {
     );
   }
 
-  const initial = await getCoachProfile(ctx.profile);
+  const [initial, sports] = await Promise.all([getCoachProfile(ctx.profile), getSports(ctx.profile)]);
 
   return (
     <div className="space-y-4">
       {header}
-      <CoachProfileForm initial={initial} sex={ctx.profile.sex} aiReady={aiConfigured()} />
+      <CoachProfileForm
+        initial={initial}
+        sex={ctx.profile.sex}
+        aiReady={aiConfigured()}
+        hasSport={sports.length > 0}
+      />
     </div>
   );
 }

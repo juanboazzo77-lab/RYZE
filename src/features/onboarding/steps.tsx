@@ -268,6 +268,16 @@ export function StepTraining({ data, patch, t, errors }: StepProps) {
         />
       </Field>
 
+      <Field label={t.coachProfile.fields.sportPriority} hint={t.coachProfile.fields.sportPriorityHint}>
+        <Segmented
+          options={SPORT_PRIORITY.map((v) => ({ value: v, label: t.coachProfile.opts.sportPriority[v] }))}
+          value={data.sportPriority as (typeof SPORT_PRIORITY)[number] | null}
+          onChange={(sportPriority) =>
+            patch({ sportPriority, doesSport: sportPriority === 'gimnasio' ? data.doesSport : true })
+          }
+        />
+      </Field>
+
       <SportSection data={data} patch={patch} t={t} />
     </div>
   );
@@ -298,14 +308,6 @@ function SportSection({ data, patch, t }: Pick<StepProps, 'data' | 'patch' | 't'
 
       {data.doesSport ? (
         <div className="space-y-4 border-t pt-4">
-          <Field label={t.coachProfile.fields.sportPriority} hint={t.coachProfile.fields.sportPriorityHint}>
-            <Segmented
-              options={SPORT_PRIORITY.map((v) => ({ value: v, label: t.coachProfile.opts.sportPriority[v] }))}
-              value={data.sportPriority as (typeof SPORT_PRIORITY)[number] | null}
-              onChange={(sportPriority) => patch({ sportPriority })}
-            />
-          </Field>
-
           <Field label={f.name}>
             <Input
               list="common-sports"

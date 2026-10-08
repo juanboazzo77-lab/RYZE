@@ -31,10 +31,12 @@ export function CoachProfileForm({
   initial,
   sex,
   aiReady,
+  hasSport,
 }: {
   initial: CoachProfileData;
   sex: Sex | null;
   aiReady: boolean;
+  hasSport: boolean;
 }) {
   const t = useT();
   const c = t.coachProfile;
@@ -80,6 +82,8 @@ export function CoachProfileForm({
   const tr = d.training;
   const g = d.goal;
   const ls = d.lifestyle;
+  const hypertrophy = tr.sportPriority === 'gimnasio';
+  const showSport = hasSport || tr.sportPriority === 'equilibrado' || tr.sportPriority === 'deporte';
 
   return (
     <div className="space-y-4">
@@ -252,7 +256,10 @@ export function CoachProfileForm({
         <CardContent className="space-y-5">
           <Field label={c.fields.musclePriorities}>
             <ChipMulti
-              options={optList(S.MUSCLE_PRIORITIES, c.opts.musclePriorities)}
+              options={optList(
+                S.MUSCLE_PRIORITIES.filter((v) => !hypertrophy || v !== 'fuerza_general'),
+                c.opts.musclePriorities,
+              )}
               value={tr.musclePriorities}
               onChange={(v) => set('training', { musclePriorities: v })}
             />
@@ -271,43 +278,45 @@ export function CoachProfileForm({
               onChange={(v) => set('training', { techniqueLevel: v })}
             />
           </Field>
-          <Field label={c.fields.marks} hint={c.fields.marksHint}>
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-xs text-muted-foreground">{c.fields.squat}</span>
-                <NumberStepper
-                  value={tr.squatKg ?? 0}
-                  min={0}
-                  max={400}
-                  step={5}
-                  suffix="kg"
-                  onChange={(v) => set('training', { squatKg: v || null })}
-                />
+          {!hypertrophy ? (
+            <Field label={c.fields.marks} hint={c.fields.marksHint}>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-muted-foreground">{c.fields.squat}</span>
+                  <NumberStepper
+                    value={tr.squatKg ?? 0}
+                    min={0}
+                    max={400}
+                    step={5}
+                    suffix="kg"
+                    onChange={(v) => set('training', { squatKg: v || null })}
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-muted-foreground">{c.fields.deadlift}</span>
+                  <NumberStepper
+                    value={tr.deadliftKg ?? 0}
+                    min={0}
+                    max={400}
+                    step={5}
+                    suffix="kg"
+                    onChange={(v) => set('training', { deadliftKg: v || null })}
+                  />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-xs text-muted-foreground">{c.fields.bench}</span>
+                  <NumberStepper
+                    value={tr.benchKg ?? 0}
+                    min={0}
+                    max={400}
+                    step={5}
+                    suffix="kg"
+                    onChange={(v) => set('training', { benchKg: v || null })}
+                  />
+                </div>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-xs text-muted-foreground">{c.fields.deadlift}</span>
-                <NumberStepper
-                  value={tr.deadliftKg ?? 0}
-                  min={0}
-                  max={400}
-                  step={5}
-                  suffix="kg"
-                  onChange={(v) => set('training', { deadliftKg: v || null })}
-                />
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-xs text-muted-foreground">{c.fields.bench}</span>
-                <NumberStepper
-                  value={tr.benchKg ?? 0}
-                  min={0}
-                  max={400}
-                  step={5}
-                  suffix="kg"
-                  onChange={(v) => set('training', { benchKg: v || null })}
-                />
-              </div>
-            </div>
-          </Field>
+            </Field>
+          ) : null}
           <Field label={c.fields.homeEquipment}>
             <ChipMulti
               options={optList(S.HOME_EQUIPMENT, c.opts.homeEquipment)}
@@ -345,6 +354,80 @@ export function CoachProfileForm({
               onChange={(v) => set('training', { routineStyle: v })}
             />
           </Field>
+          <Field label={c.fields.trainDays} hint={c.fields.trainDaysHint}>
+            <ChipMulti
+              options={Object.entries(t.training.weekdays).map(([n, label]) => ({ value: n, label }))}
+              value={tr.trainDays.map(String)}
+              onChange={(vals) =>
+                set('training', { trainDays: vals.map(Number).sort((a, b) => a - b) })
+              }
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={c.fields.trainingYears}>
+              <Segmented
+                wrap
+                options={optList(S.TRAINING_YEARS, c.opts.trainingYears)}
+                value={tr.trainingYears}
+                onChange={(v) => set('training', { trainingYears: v })}
+              />
+            </Field>
+            <Field label={c.fields.currentSplit}>
+              <Segmented
+                wrap
+                options={optList(S.CURRENT_SPLIT, c.opts.currentSplit)}
+                value={tr.currentSplit}
+                onChange={(v) => set('training', { currentSplit: v })}
+              />
+            </Field>
+          </div>
+          <Field label={c.fields.gymMachines} hint={c.fields.gymMachinesHint}>
+            <ChipMulti
+              options={optList(S.GYM_MACHINES, c.opts.gymMachines)}
+              value={tr.gymMachines}
+              onChange={(v) => set('training', { gymMachines: v })}
+            />
+          </Field>
+          <Field label={c.fields.repPreference}>
+            <Segmented
+              wrap
+              options={optList(S.REP_PREFERENCE, c.opts.repPreference)}
+              value={tr.repPreference}
+              onChange={(v) => set('training', { repPreference: v })}
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={c.fields.restPreference}>
+              <Segmented
+                options={optList(S.REST_PREFERENCE, c.opts.restPreference)}
+                value={tr.restPreference}
+                onChange={(v) => set('training', { restPreference: v })}
+              />
+            </Field>
+            <Field label={c.fields.supersets}>
+              <Segmented
+                options={optList(S.YES_NO, c.opts.yesNo)}
+                value={tr.supersets}
+                onChange={(v) => set('training', { supersets: v })}
+              />
+            </Field>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={c.fields.warmup}>
+              <Segmented
+                options={optList(S.WARMUP_PREF, c.opts.warmup)}
+                value={tr.warmup}
+                onChange={(v) => set('training', { warmup: v })}
+              />
+            </Field>
+            <Field label={c.fields.mobility}>
+              <Segmented
+                options={optList(S.MOBILITY_PREF, c.opts.mobility)}
+                value={tr.mobility}
+                onChange={(v) => set('training', { mobility: v })}
+              />
+            </Field>
+          </div>
           <Field label={c.fields.sportPriority} hint={c.fields.sportPriorityHint}>
             <Segmented
               options={optList(S.SPORT_PRIORITY, c.opts.sportPriority)}
@@ -352,13 +435,32 @@ export function CoachProfileForm({
               onChange={(v) => set('training', { sportPriority: v })}
             />
           </Field>
-          <Field label={c.fields.trainsSportAlone} hint={c.fields.trainsSportAloneHint}>
-            <Segmented
-              options={optList(S.SPORT_ALONE, c.opts.trainsSportAlone)}
-              value={tr.trainsSportAlone}
-              onChange={(v) => set('training', { trainsSportAlone: v })}
-            />
-          </Field>
+          {showSport ? (
+            <>
+              <Field label={c.fields.trainsSportAlone} hint={c.fields.trainsSportAloneHint}>
+                <Segmented
+                  options={optList(S.SPORT_ALONE, c.opts.trainsSportAlone)}
+                  value={tr.trainsSportAlone}
+                  onChange={(v) => set('training', { trainsSportAlone: v })}
+                />
+              </Field>
+              <Field label={c.fields.sportSeason}>
+                <Segmented
+                  wrap
+                  options={optList(S.SPORT_SEASON, c.opts.sportSeason)}
+                  value={tr.sportSeason}
+                  onChange={(v) => set('training', { sportSeason: v })}
+                />
+              </Field>
+              <Field label={c.fields.sportPrep}>
+                <Segmented
+                  options={optList(S.YES_NO, c.opts.yesNo)}
+                  value={tr.sportPrep}
+                  onChange={(v) => set('training', { sportPrep: v })}
+                />
+              </Field>
+            </>
+          ) : null}
         </CardContent>
       </Card>
 

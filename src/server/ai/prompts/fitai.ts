@@ -382,9 +382,42 @@ genérica de "ejercicios de deporte".
   hombro y core rotacional en natación/tenis, rodilla y aterrizajes en
   básquet/vóley), y nunca piernas pesado el día antes de una sesión o
   competencia fuerte de cancha.
-- Si el gimnasio es la prioridad (o el usuario no aclaró preferencia), el
-  deporte queda como actividad aparte y la rutina es 100% gimnasio, sólo
-  ajustando para no interferir con sus días de deporte.
+- Si el estilo de entrenamiento es hipertrofia (o el usuario no aclaró
+  preferencia), el deporte queda como actividad aparte y la rutina es 100%
+  gimnasio orientada a ganar músculo: volumen semanal alto por grupo, rangos de
+  6-12 repeticiones en la mayoría de los ejercicios (15-20 en aislados
+  finales), cercanía al fallo y sobrecarga progresiva; sólo se ajusta para no
+  interferir con sus días de deporte.
+- Si el estilo es híbrido, repartí la semana en partes parecidas entre días de
+  gimnasio y días/sesiones de su deporte, sin que uno canibalice al otro.
+- Si es hipertrofia, no le armes trabajo de fuerza máxima (series de 1-5
+  repeticiones ni marcas de 1RM): el trabajo es de volumen y cercanía al fallo.
+
+Preferencias de la sesión (si figuran en el contexto, respetalas):
+- "Días en que PUEDE entrenar": asigná "weekday" sólo entre esos días y no
+  armes más días de gimnasio que los que figuran.
+- "Equipamiento de su gimnasio": elegí ejercicios que se hagan con ese
+  equipamiento; si no aparece prensa, hack, Smith o poleas, no los uses.
+- Repeticiones, descanso y superseries: ajustá "repsMin"/"repsMax" y
+  "restSeconds" a lo que prefiere. Si NO quiere superseries, ningún ejercicio
+  va en bloque ni circuito; si le gustan, podés agrupar pares antagonistas y
+  decirlo en "note".
+- Experiencia: con menos de 6 meses o sin rutina previa, arrancá con menos
+  volumen y ejercicios guiados; con más de 3 años entrenando, variá estímulos
+  y evitá repetir lo que ya hacía si dijo que se estancó.
+- Calentamiento y movilidad: si pidió calentamiento (completo ~10 min, corto
+  ~5 min), poné al principio de cada día de gimnasio 1 ejercicio "Calentamiento
+  general" (type CARDIO con "durationMinutes") y, si pidió movilidad, 1 o 2 de
+  estos nombres exactos: "Movilidad de cadera", "Movilidad de hombros",
+  "Movilidad de columna torácica", "Movilidad de tobillos", "Activación de
+  glúteos con banda", "Rotación externa de hombro con banda" (type CARDIO,
+  "durationMinutes" 3-5). Si dijo que no los quiere, no los incluyas.
+- Si quiere calentamiento y movilidad específicos de su deporte, agregá en los
+  días de deporte un "Calentamiento específico del deporte" con "note" que
+  detalle la secuencia (ej. movilidad de tobillo y cadera, activación de
+  isquios y saltos suaves para fútbol).
+- Momento de la temporada: en competencia, bajá el volumen de piernas y evitá
+  fallo; en pretemporada, más base y volumen; fuera de temporada, más gimnasio.
 
 <contexto_usuario>
 ${contextBlock}

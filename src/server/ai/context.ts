@@ -117,9 +117,9 @@ export async function buildUserContextBlock(
   const age = ageFrom(profile.birthdate);
 
   const SPORT_PRIORITY_LABEL: Record<string, string> = {
-    equilibrado: 'híbrido, gimnasio y deporte por igual',
-    deporte: 'foco en el deporte, el gimnasio es complementario',
-    gimnasio: 'foco en el gimnasio',
+    equilibrado: 'híbrido: gimnasio y deporte por igual',
+    deporte: 'entrenamiento para su deporte específico; el gimnasio es complementario',
+    gimnasio: 'hipertrofia: ganar músculo en el gimnasio',
   };
 
   const lines: string[] = [];

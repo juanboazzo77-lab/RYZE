@@ -155,6 +155,53 @@ const L: Record<string, string> = {
   cuando_haga_falta: 'cuando haga falta',
 };
 
+const WEEKDAY_NAME = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+const TRAINING_YEARS_LABEL = {
+  menos_6m: 'menos de 6 meses',
+  de_6m_a_1a: '6 meses a 1 año',
+  de_1_a_3a: '1 a 3 años',
+  mas_de_3a: 'más de 3 años',
+} as const;
+const CURRENT_SPLIT_LABEL = {
+  ninguno: 'no tiene rutina (recién empieza)',
+  full_body: 'full body',
+  ppl: 'empuje / tirón / pierna',
+  torso_pierna: 'torso / pierna',
+  por_grupo: 'un grupo muscular por día',
+} as const;
+const GYM_MACHINES_LABEL = {
+  prensa: 'prensa de piernas',
+  hack: 'hack squat',
+  smith: 'máquina Smith',
+  poleas: 'poleas',
+  barra_libre: 'barra libre y rack',
+  mancuernas_pesadas: 'mancuernas pesadas',
+  maquinas_guiadas: 'máquinas guiadas',
+  dominadas: 'barra de dominadas',
+} as const;
+const REP_PREFERENCE_LABEL = {
+  pesadas: 'pesadas (4-8)',
+  medias: 'medias (8-12)',
+  altas: 'altas (12-20)',
+  mixto: 'un poco de todo',
+} as const;
+const WARMUP_LABEL = {
+  completo: 'completo (~10 min)',
+  corto: 'corto (~5 min)',
+  ninguno: 'no lo quiere (no lo incluyas)',
+} as const;
+const MOBILITY_LABEL = {
+  si: 'sí, incluilo',
+  a_veces: 'a veces (poco volumen)',
+  no: 'no lo quiere',
+} as const;
+const SPORT_SEASON_LABEL = {
+  pretemporada: 'pretemporada (más base y volumen)',
+  en_competencia: 'en competencia (bajá el volumen de piernas, priorizá frescura)',
+  descanso: 'descanso / fuera de temporada (más gimnasio)',
+  sin_temporada: 'su deporte no tiene temporada',
+} as const;
+
 const lab = (v: string | null): string => (v ? (L[v] ?? v.replace(/_/g, ' ')) : '');
 const list = (xs: string[]): string => xs.map((x) => L[x] ?? x.replace(/_/g, ' ')).join(', ');
 
@@ -212,6 +259,26 @@ export async function buildCoachProfileLines(profile: Profile): Promise<string[]
   if (tr.trainsSportAlone) {
     out.push(`  Entrena su deporte: ${tr.trainsSportAlone === 'solo' ? 'solo' : 'acompañado'}`);
   }
+  if (tr.trainDays.length) {
+    out.push(
+      `  Días de la semana en que PUEDE entrenar: ${tr.trainDays.map((n) => WEEKDAY_NAME[n - 1] ?? n).join(', ')} (armá los días de gimnasio sólo entre estos)`,
+    );
+  }
+  if (tr.trainingYears) out.push(`  Tiempo entrenando de forma constante: ${TRAINING_YEARS_LABEL[tr.trainingYears]}`);
+  if (tr.currentSplit) out.push(`  Cómo entrena hoy: ${CURRENT_SPLIT_LABEL[tr.currentSplit]}`);
+  if (tr.gymMachines.length) {
+    out.push(
+      `  Equipamiento de su gimnasio: ${tr.gymMachines.map((m) => GYM_MACHINES_LABEL[m]).join(', ')} (usá sólo esto; no prescribas equipos que no figuren)`,
+    );
+  }
+  if (tr.repPreference) out.push(`  Repeticiones que prefiere: ${REP_PREFERENCE_LABEL[tr.repPreference]}`);
+  if (tr.restPreference) out.push(`  Descanso preferido entre series: ${tr.restPreference}`);
+  if (tr.supersets === 'si') out.push('  Le gustan las superseries/circuitos para ahorrar tiempo.');
+  if (tr.supersets === 'no') out.push('  NO quiere superseries ni circuitos.');
+  if (tr.warmup) out.push(`  Calentamiento en la rutina: ${WARMUP_LABEL[tr.warmup]}`);
+  if (tr.mobility) out.push(`  Trabajo de movilidad y prevención: ${MOBILITY_LABEL[tr.mobility]}`);
+  if (tr.sportSeason) out.push(`  Momento de la temporada de su deporte: ${SPORT_SEASON_LABEL[tr.sportSeason]}`);
+  if (tr.sportPrep === 'si') out.push('  Quiere calentamiento y movilidad específicos de su deporte.');
 
   // --- objetivo ---
   const g = cp.goal;

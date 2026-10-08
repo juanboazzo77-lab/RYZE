@@ -101,8 +101,25 @@ export const CARDIO_TYPES = [
 ] as const;
 export const JOB_ACTIVITY = ['sentado', 'mixto', 'de_pie', 'fisico'] as const;
 export const ROUTINE_STYLE = ['full_body', 'ppl', 'torso_pierna', 'que_decida_coach'] as const;
-export const SPORT_PRIORITY = ['deporte', 'gimnasio', 'equilibrado'] as const;
+export const SPORT_PRIORITY = ['gimnasio', 'equilibrado', 'deporte'] as const;
 export const SPORT_ALONE = ['solo', 'acompanado'] as const;
+export const TRAINING_YEARS = ['menos_6m', 'de_6m_a_1a', 'de_1_a_3a', 'mas_de_3a'] as const;
+export const CURRENT_SPLIT = ['ninguno', 'full_body', 'ppl', 'torso_pierna', 'por_grupo'] as const;
+export const GYM_MACHINES = [
+  'prensa',
+  'hack',
+  'smith',
+  'poleas',
+  'barra_libre',
+  'mancuernas_pesadas',
+  'maquinas_guiadas',
+  'dominadas',
+] as const;
+export const REP_PREFERENCE = ['pesadas', 'medias', 'altas', 'mixto'] as const;
+export const REST_PREFERENCE = ['corto', 'normal', 'largo'] as const;
+export const WARMUP_PREF = ['completo', 'corto', 'ninguno'] as const;
+export const MOBILITY_PREF = ['si', 'a_veces', 'no'] as const;
+export const SPORT_SEASON = ['pretemporada', 'en_competencia', 'descanso', 'sin_temporada'] as const;
 
 export const AGGRESSIVENESS = ['tranquilo', 'equilibrado', 'a_full'] as const;
 export const MAIN_PRIORITY = ['estetica', 'salud', 'rendimiento', 'fuerza'] as const;
@@ -146,6 +163,12 @@ export function toggleNone<T extends string>(prev: T[], next: T[], none: T): T[]
   if (noneWasOn && next.length > 1) return next.filter((v) => v !== none);
   return next;
 }
+/** Días de la semana 1 (lunes) a 7 (domingo), sin repetidos y ordenados. */
+const weekdays = z
+  .array(z.number().int().min(1).max(7))
+  .transform((xs) => [...new Set(xs)].sort((a, b) => a - b))
+  .default([])
+  .catch([]);
 const kgOpt = z.coerce.number().int().min(0).max(500).nullable().default(null).catch(null);
 const dateOpt = z
   .string()
@@ -195,6 +218,17 @@ export const trainingSchema = z.object({
   routineStyle: optEnum(ROUTINE_STYLE),
   sportPriority: optEnum(SPORT_PRIORITY),
   trainsSportAlone: optEnum(SPORT_ALONE),
+  trainDays: weekdays,
+  trainingYears: optEnum(TRAINING_YEARS),
+  currentSplit: optEnum(CURRENT_SPLIT),
+  gymMachines: chips(GYM_MACHINES),
+  repPreference: optEnum(REP_PREFERENCE),
+  supersets: optEnum(YES_NO),
+  restPreference: optEnum(REST_PREFERENCE),
+  warmup: optEnum(WARMUP_PREF),
+  mobility: optEnum(MOBILITY_PREF),
+  sportSeason: optEnum(SPORT_SEASON),
+  sportPrep: optEnum(YES_NO),
 });
 
 export const goalSchema = z.object({
@@ -302,6 +336,8 @@ export const COMPLETION_FIELDS: Record<SectionKey, string[]> = {
     'cardioAttitude',
     'jobActivity',
     'routineStyle',
+    'trainDays',
+    'trainingYears',
   ],
   goal: ['goalInWords', 'aggressiveness', 'mainPriority', 'physiqueNote'],
   lifestyle: ['scheduleType', 'travelFrequency', 'consistency', 'planFreedom', 'adjustCadence'],
