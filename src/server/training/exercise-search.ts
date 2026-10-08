@@ -16,6 +16,7 @@ export async function searchExercises(
   userId: string,
   query: string,
   limit = 30,
+  muscle?: MuscleGroup,
 ): Promise<ExerciseResult[]> {
   const q = query.trim();
   const hasQ = q.length >= 2;
@@ -32,6 +33,7 @@ export async function searchExercises(
     SELECT id, name, primary_muscle, equipment, is_custom
     FROM "exercise"
     WHERE (is_custom = false OR created_by = ${userId}::uuid)
+      ${muscle ? Prisma.sql`AND primary_muscle = ${muscle}::"MuscleGroup"` : Prisma.empty}
       ${hasQ ? Prisma.sql`AND name ILIKE ${'%' + q + '%'}` : Prisma.empty}
     ORDER BY
       ${hasQ ? Prisma.sql`(name ILIKE ${q + '%'}) DESC, similarity(name, ${q}) DESC,` : Prisma.empty}

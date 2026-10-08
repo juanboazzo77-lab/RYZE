@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { Locale } from '@prisma/client';
+import type { Locale, MuscleGroup } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
@@ -287,10 +287,10 @@ export async function createExercise(raw: CreateExerciseInput): Promise<Result<{
   return { ok: true, data: { id: ex.id } };
 }
 
-export async function searchExercisesAction(query: string) {
+export async function searchExercisesAction(query: string, muscle?: MuscleGroup) {
   const { userId } = await requireUser();
   const { searchExercises } = await import('@/server/training/exercise-search');
-  return searchExercises(userId, query, 30);
+  return searchExercises(userId, query, 400, muscle);
 }
 
 /* ============================ SESIÓN ============================ */

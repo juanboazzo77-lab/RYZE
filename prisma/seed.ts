@@ -4,12 +4,13 @@
  *   - Biblioteca inicial de ejercicios
  *   - Biblioteca inicial de alimentos (valores por 100 g/ml)
  *
- * Idempotente. Las bibliotecas sólo se cargan si la tabla está vacía; los
- * logros se hacen upsert por `key`.
+ * Idempotente. Ejercicios y alimentos se agregan por nombre (sólo los que
+ * faltan); los logros se hacen upsert por `key`.
  *
  *   pnpm db:seed
  */
-import { PrismaClient, type MuscleGroup } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { EXERCISE_LIBRARY } from './exercise-library';
 
 const prisma = new PrismaClient();
 
@@ -49,31 +50,6 @@ const ACHIEVEMENTS: Array<{
   { key: 'checkins_12', category: 'coach', title: 'Check-in constante', description: 'Completaste 12 revisiones semanales.', icon: '🗓️', threshold: 12 },
 ];
 
-const EXERCISES: Array<{ name: string; primaryMuscle: MuscleGroup; equipment: string }> = [
-  { name: 'Press de banca', primaryMuscle: 'CHEST', equipment: 'Barra' },
-  { name: 'Press inclinado con mancuernas', primaryMuscle: 'CHEST', equipment: 'Mancuernas' },
-  { name: 'Aperturas en polea', primaryMuscle: 'CHEST', equipment: 'Polea' },
-  { name: 'Dominadas', primaryMuscle: 'BACK', equipment: 'Peso corporal' },
-  { name: 'Remo con barra', primaryMuscle: 'BACK', equipment: 'Barra' },
-  { name: 'Jalón al pecho', primaryMuscle: 'BACK', equipment: 'Polea' },
-  { name: 'Remo en polea baja', primaryMuscle: 'BACK', equipment: 'Polea' },
-  { name: 'Press militar', primaryMuscle: 'SHOULDERS', equipment: 'Barra' },
-  { name: 'Elevaciones laterales', primaryMuscle: 'SHOULDERS', equipment: 'Mancuernas' },
-  { name: 'Curl de bíceps con barra', primaryMuscle: 'BICEPS', equipment: 'Barra' },
-  { name: 'Curl martillo', primaryMuscle: 'BICEPS', equipment: 'Mancuernas' },
-  { name: 'Extensión de tríceps en polea', primaryMuscle: 'TRICEPS', equipment: 'Polea' },
-  { name: 'Fondos en paralelas', primaryMuscle: 'TRICEPS', equipment: 'Peso corporal' },
-  { name: 'Sentadilla', primaryMuscle: 'QUADS', equipment: 'Barra' },
-  { name: 'Prensa de piernas', primaryMuscle: 'QUADS', equipment: 'Máquina' },
-  { name: 'Extensión de cuádriceps', primaryMuscle: 'QUADS', equipment: 'Máquina' },
-  { name: 'Peso muerto rumano', primaryMuscle: 'HAMSTRINGS', equipment: 'Barra' },
-  { name: 'Curl femoral', primaryMuscle: 'HAMSTRINGS', equipment: 'Máquina' },
-  { name: 'Hip thrust', primaryMuscle: 'GLUTES', equipment: 'Barra' },
-  { name: 'Elevación de talones', primaryMuscle: 'CALVES', equipment: 'Máquina' },
-  { name: 'Plancha', primaryMuscle: 'ABS', equipment: 'Peso corporal' },
-  { name: 'Crunch en polea', primaryMuscle: 'ABS', equipment: 'Polea' },
-  { name: 'Peso muerto convencional', primaryMuscle: 'BACK', equipment: 'Barra' },
-];
 
 // Valores aproximados por 100 g (crudo salvo aclaración). Fuente: tablas
 // nutricionales de referencia. Marcados como no verificados.
@@ -326,14 +302,24 @@ async function main() {
   }
   console.log(`✓ ${ACHIEVEMENTS.length} logros`);
 
-  if ((await prisma.exercise.count()) === 0) {
+  // Ejercicios: aditivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que faltan.
+  const existingNames = new Set(
+    (await prisma.exercise.findMany({ where: { isCustom: false }, select: { name: true } })).map((e) =>
+      e.name.toLowerCase(),
+    ),
+  );
+  const missing = EXERCISE_LIBRARY.filter((e) => !existingNames.has(e.name.toLowerCase()));
+  if (missing.length > 0) {
     await prisma.exercise.createMany({
-      data: EXERCISES.map((e) => ({ name: e.name, primaryMuscle: e.primaryMuscle, equipment: e.equipment })),
+      data: missing.map((e) => ({
+        name: e.name,
+        primaryMuscle: e.primaryMuscle,
+        equipment: e.equipment,
+        type: e.type ?? 'STRENGTH',
+      })),
     });
-    console.log(`✓ ${EXERCISES.length} ejercicios`);
-  } else {
-    console.log('· ejercicios: ya había datos, se omite');
   }
+  console.log(`✓ ejercicios: +${missing.length} nuevos (${EXERCISE_LIBRARY.length} en la lista)`);
 
   // Alimentos: additivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que
   // faltan. Secuencial por el connection_limit=15 del pooler.

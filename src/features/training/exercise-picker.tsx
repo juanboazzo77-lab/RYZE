@@ -17,6 +17,8 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useT } from '@/i18n/provider';
 import type { Dictionary } from '@/i18n';
 import { MUSCLE_GROUPS } from './muscles';
+import type { MuscleGroup } from '@prisma/client';
+import { cn } from '@/lib/utils';
 import type { ExerciseResult } from '@/server/training/exercise-search';
 import { createExercise, searchExercisesAction } from './actions';
 
@@ -50,19 +52,24 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
   const [results, setResults] = useState<ExerciseResult[]>([]);
   const [searching, startSearch] = useTransition();
   const [creating, setCreating] = useState(false);
+  const [muscle, setMuscle] = useState<MuscleGroup | null>(null);
 
   useEffect(() => {
     const h = setTimeout(() => {
       startSearch(async () => {
         try {
-          setResults(await searchExercisesAction(q.trim()));
+          setResults(await searchExercisesAction(q.trim(), muscle ?? undefined));
         } catch {
           setResults([]);
         }
       });
     }, 250);
     return () => clearTimeout(h);
-  }, [q]);
+  }, [q, muscle]);
+
+  const groups = MUSCLE_GROUPS.map(
+    (g) => [g, results.filter((r) => r.primaryMuscle === g)] as const,
+  ).filter(([, items]) => items.length > 0);
 
   if (creating) {
     return <CreateForm t={t} defaultName={q.trim()} onDone={onPick} onCancel={() => setCreating(false)} />;
@@ -83,30 +90,58 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
           className="pl-9"
         />
       </div>
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {[null, ...MUSCLE_GROUPS].map((m) => (
+          <button
+            key={m ?? 'all'}
+            type="button"
+            onClick={() => setMuscle(m)}
+            aria-pressed={muscle === m}
+            className={cn(
+              'shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              muscle === m
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50',
+            )}
+          >
+            {m ? t.training.muscles[m] : tp.all}
+          </button>
+        ))}
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
-        {searching ? (
+        {searching && results.length === 0 ? (
           <div className="flex justify-center py-6 text-muted-foreground">
             <Loader2 className="size-5 animate-spin" />
           </div>
         ) : results.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">{tp.createHint}</p>
         ) : (
-          <ul className="divide-y">
-            {results.map((ex) => (
-              <li key={ex.id}>
-                <button
-                  onClick={() => onPick(ex.id, ex.name)}
-                  className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-secondary/50"
-                >
-                  <span className="text-sm font-medium">{ex.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {t.training.muscles[ex.primaryMuscle]}
-                    {ex.equipment ? ` · ${ex.equipment}` : ''}
-                  </span>
-                </button>
-              </li>
+          <div className={cn(searching && 'opacity-60')}>
+            {groups.map(([group, items]) => (
+              <section key={group}>
+                {!muscle ? (
+                  <h3 className="sticky top-0 z-10 bg-background/95 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+                    {t.training.muscles[group]}
+                  </h3>
+                ) : null}
+                <ul className="divide-y">
+                  {items.map((ex) => (
+                    <li key={ex.id}>
+                      <button
+                        onClick={() => onPick(ex.id, ex.name)}
+                        className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-secondary/50"
+                      >
+                        <span className="text-sm font-medium">{ex.name}</span>
+                        {ex.equipment ? (
+                          <span className="text-xs text-muted-foreground">{ex.equipment}</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         )}
       </div>
       <Button variant="outline" onClick={() => setCreating(true)}>
