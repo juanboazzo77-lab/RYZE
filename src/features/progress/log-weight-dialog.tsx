@@ -74,66 +74,61 @@ export function LogWeightDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5">
         <DialogHeader>
           <DialogTitle>{t.progress.logWeight}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col items-center gap-2 py-2">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-            {t.progress.weight} ({unit})
-          </Label>
-          <div className="flex w-full items-center justify-center gap-3">
-            <button
-              type="button"
-              aria-label="-0,1"
-              onClick={() => nudge(-0.1)}
-              className="grid size-12 shrink-0 place-items-center rounded-full border text-muted-foreground active:bg-secondary"
-            >
-              <Minus className="size-5" />
-            </button>
-            <div className="flex min-w-0 flex-1 items-baseline justify-center gap-1.5">
-              <DecimalInput
-                autoFocus
-                maxDecimals={1}
-                placeholder="0,0"
-                value={weight}
-                onValueChange={setWeight}
-                aria-label={`${t.progress.weight} (${unit})`}
-                className="h-16 max-w-44 border-0 bg-transparent px-0 text-center text-5xl font-bold tabular-nums shadow-none focus-visible:ring-0"
-              />
-              <span className="text-lg font-medium text-muted-foreground">{unit}</span>
-            </div>
-            <button
-              type="button"
-              aria-label="+0,1"
-              onClick={() => nudge(0.1)}
-              className="grid size-12 shrink-0 place-items-center rounded-full border text-muted-foreground active:bg-secondary"
-            >
-              <Plus className="size-5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label>{t.progress.date}</Label>
-            <Input
-              type="date"
-              value={date}
-              max={todayISO}
-              onChange={(e) => setDate(e.target.value)}
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            aria-label="-0,1"
+            onClick={() => nudge(-0.1)}
+            className="grid size-10 shrink-0 place-items-center rounded-full border text-muted-foreground active:bg-secondary"
+          >
+            <Minus className="size-4" />
+          </button>
+          <div className="flex min-w-0 items-baseline justify-center gap-1">
+            <DecimalInput
+              autoFocus
+              maxDecimals={1}
+              placeholder="0,0"
+              value={weight}
+              onValueChange={setWeight}
+              aria-label={`${t.progress.weight} (${unit})`}
+              className="h-12 w-28 border-0 bg-transparent px-0 text-center text-4xl font-bold tabular-nums shadow-none focus-visible:ring-0"
             />
+            <span className="text-base font-medium text-muted-foreground">{unit}</span>
           </div>
-          <div className="space-y-1.5">
-            <Label>
-              {t.progress.note} ({t.common.optional})
-            </Label>
-            <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} />
-          </div>
+          <button
+            type="button"
+            aria-label="+0,1"
+            onClick={() => nudge(0.1)}
+            className="grid size-10 shrink-0 place-items-center rounded-full border text-muted-foreground active:bg-secondary"
+          >
+            <Plus className="size-4" />
+          </button>
         </div>
 
-        <Button size="lg" onClick={submit} disabled={pending}>
+        <div className="flex items-center gap-2">
+          <Label className="shrink-0 text-xs text-muted-foreground">{t.progress.date}</Label>
+          <Input
+            type="date"
+            value={date}
+            max={todayISO}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-9 min-w-0 flex-1 py-0 text-sm"
+          />
+        </div>
+        <Input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={200}
+          placeholder={`${t.progress.note} (${t.common.optional})`}
+          className="h-9 text-sm"
+        />
+
+        <Button onClick={submit} disabled={pending}>
           {pending ? t.common.saving : t.common.save}
         </Button>
       </DialogContent>
