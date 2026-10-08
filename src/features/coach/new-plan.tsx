@@ -46,11 +46,13 @@ export function NewPlanFlow({
   const [used, setUsed] = useState(usage.used);
   const [refining, setRefining] = useState(false);
   const [genDays, setGenDays] = useState<number | null>(null);
+  const [genFailed, setGenFailed] = useState(false);
   const atLimit = used >= usage.limit;
 
   function generate(opts?: { brief?: string; days?: number; style?: PlanStyle }) {
     if (pending || atLimit) return;
     setGenDays(opts?.days ?? null);
+    setGenFailed(false);
     start(async () => {
       const res = await generatePlan({
         brief: (opts?.brief ?? brief).trim(),
@@ -61,6 +63,7 @@ export function NewPlanFlow({
         setDraft(res.data);
         setUsed((n) => n + 1);
       } else {
+        setGenFailed(true);
         toast.error(res.error || t.coach.error);
       }
     });
@@ -101,6 +104,7 @@ export function NewPlanFlow({
         used={used}
         limit={usage.limit}
         generatingDays={genDays}
+        failed={genFailed}
         onGenerate={generate}
       />
     );
@@ -147,6 +151,7 @@ function PlanWizard({
   used,
   limit,
   generatingDays,
+  failed,
   onGenerate,
 }: {
   defaultDays: number | null;
@@ -156,6 +161,7 @@ function PlanWizard({
   used: number;
   limit: number;
   generatingDays: number | null;
+  failed: boolean;
   onGenerate: (opts: { brief?: string; days?: number; style?: PlanStyle }) => void;
 }) {
   const t = useT();
@@ -179,6 +185,19 @@ function PlanWizard({
       {interpolate(tp.usage, { used, limit })}
     </p>
   );
+  const notice = (
+    <>
+      {failed ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          {tp.failed}
+        </p>
+      ) : null}
+      {atLimit ? <p className="text-sm text-warning">{tp.limitReached}</p> : null}
+    </>
+  );
 
   if (days === null) {
     return (
@@ -187,6 +206,7 @@ function PlanWizard({
           <h2 className="text-lg font-semibold">{tp.daysTitle}</h2>
           <p className="text-sm text-muted-foreground">{refining ? tp.refineIntro : tp.daysHint}</p>
         </div>
+        {notice}
         <ul className="space-y-2">
           {DAY_OPTIONS.map((n) => (
             <li key={n}>
@@ -230,6 +250,7 @@ function PlanWizard({
         </h2>
         <p className="text-sm text-muted-foreground">{interpolate(tp.styleHint, { n: days })}</p>
       </div>
+      {notice}
       <ul className="space-y-2">
         {options.map((style) => (
           <li key={style}>

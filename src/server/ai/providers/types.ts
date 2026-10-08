@@ -65,7 +65,7 @@ export interface AiGenerateResult {
 }
 
 export interface AiStructuredRequest<T> extends Omit<AiGenerateRequest, 'tools' | 'operatorNote'> {
-  schema: z.ZodType<T>;
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>;
   schemaName: string;
 }
 

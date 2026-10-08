@@ -316,6 +316,14 @@ export const geminiProvider: AiProvider = {
       try {
         const check = req.schema.safeParse(JSON.parse(jsonText));
         data = check.success ? check.data : null;
+        if (!check.success) {
+          console.error(
+            `[ai] ${req.schemaName}: no cumple el esquema`,
+            check.error.issues
+              .slice(0, 6)
+              .map((i) => `${i.path.join('.')}: ${i.message}`),
+          );
+        }
       } catch {
         data = null;
       }

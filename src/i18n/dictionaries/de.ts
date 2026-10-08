@@ -1210,6 +1210,8 @@ export const de: Dictionary = {
         strength: { name: 'Kraft', desc: 'Schwere Grundübungen mit wenigen Wiederholungen plus Zusatzübungen.' },
       },
       options: 'Optionen:',
+      failed: 'Wir konnten den Plan diesmal nicht erstellen (die KI hat eine unvollständige Antwort geliefert). Tippe erneut, um es nochmal zu versuchen.',
+      limitReached: 'Du hast das Plan-Limit dieses Monats erreicht.',
       cantDoHint: 'Markiere die Übungen, die du nicht machen kannst, z. B. wenn dir das Gerät fehlt.',
       cantDo: 'Geht nicht',
       canDo: 'Geht doch',

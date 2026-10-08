@@ -1210,6 +1210,8 @@ export const pt: Dictionary = {
         strength: { name: 'Força', desc: 'Básicos pesados com poucas repetições e acessórios.' },
       },
       options: 'Opções:',
+      failed: 'Não conseguimos montar a rotina desta vez (a IA devolveu uma resposta incompleta). Toque de novo para tentar outra vez.',
+      limitReached: 'Você atingiu o limite de planos deste mês.',
       cantDoHint: 'Marque os exercícios que você não consegue fazer, por exemplo se não tem a máquina.',
       cantDo: 'Não consigo',
       canDo: 'Consigo',
