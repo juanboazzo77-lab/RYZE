@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
 import { Check, Loader2, Search, Trash2 } from 'lucide-react';
 import type { MealType } from '@prisma/client';
@@ -717,13 +718,9 @@ function QuantityStep({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label>{td.quantity}</Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="any"
-            value={Number.isFinite(quantity) ? quantity : ''}
-            onChange={(e) => setQuantity(parseFloat(e.target.value))}
+          <DecimalInput
+            value={Number.isFinite(quantity) ? quantity : null}
+            onValueChange={(v) => setQuantity(v ?? NaN)}
           />
         </div>
         <div className="space-y-1.5">
@@ -784,7 +781,6 @@ function ManualTab({
   const [v, setV] = useState({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
   const [quantity, setQuantity] = useState(100);
   const [pending, start] = useTransition();
-  const num = (x: string) => Math.max(0, parseFloat(x) || 0);
 
   function submit() {
     if (name.trim().length < 2) {
@@ -865,14 +861,7 @@ function ManualTab({
       {mode === 'per100' ? (
         <div className="space-y-1.5">
           <Label>{td.quantity} (g)</Label>
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="any"
-            value={quantity}
-            onChange={(e) => setQuantity(num(e.target.value))}
-          />
+          <DecimalInput value={quantity} onValueChange={(v) => setQuantity(v ?? 0)} />
         </div>
       ) : null}
 
@@ -895,14 +884,7 @@ function FieldNum({
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
-      <Input
-        type="number"
-        inputMode="decimal"
-        min={0}
-        step="any"
-        value={value}
-        onChange={(e) => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
-      />
+      <DecimalInput value={value} onValueChange={(v) => onChange(Math.max(0, v ?? 0))} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { DecimalInput } from '@/components/form/decimal-input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -551,46 +552,28 @@ function SetRow({
 
       {cardio ? (
         <>
-          <Input
-            type="number"
-            inputMode="decimal"
-            step="any"
-            min={0}
+          <DecimalInput
             placeholder="min"
-            value={set.durationSeconds != null ? set.durationSeconds / 60 : ''}
-            onChange={(e) => {
-              const v = parseNum(e.target.value);
-              onDuration(v != null ? Math.round(v * 60) : null);
-            }}
+            value={set.durationSeconds != null ? set.durationSeconds / 60 : null}
+            onValueChange={(v) => onDuration(v != null ? Math.round(v * 60) : null)}
             className="h-11 flex-1 text-center text-base font-semibold"
           />
           <span className="text-xs text-muted-foreground">{t.training.session.min}</span>
           <span className="text-muted-foreground">·</span>
-          <Input
-            type="number"
-            inputMode="decimal"
-            step="any"
-            min={0}
+          <DecimalInput
             placeholder="km"
-            value={set.distanceMeters != null ? set.distanceMeters / 1000 : ''}
-            onChange={(e) => {
-              const v = parseNum(e.target.value);
-              onDistance(v != null ? Math.round(v * 1000) : null);
-            }}
+            value={set.distanceMeters != null ? set.distanceMeters / 1000 : null}
+            onValueChange={(v) => onDistance(v != null ? Math.round(v * 1000) : null)}
             className="h-11 flex-1 text-center text-base font-semibold"
           />
           <span className="text-xs text-muted-foreground">{t.training.session.km}</span>
         </>
       ) : (
         <>
-          <Input
-            type="number"
-            inputMode="decimal"
-            step="any"
-            min={0}
+          <DecimalInput
             placeholder="kg"
-            value={set.weightKg ?? ''}
-            onChange={(e) => onWeight(parseNum(e.target.value))}
+            value={set.weightKg ?? null}
+            onValueChange={onWeight}
             className="h-11 flex-1 text-center text-base font-semibold"
           />
           <span className="text-xs text-muted-foreground">{t.training.session.kg}</span>

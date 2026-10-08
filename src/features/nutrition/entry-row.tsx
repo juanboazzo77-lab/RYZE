@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
 import { Check, Copy, Pencil, Trash2, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
@@ -15,6 +15,7 @@ import { deleteFoodEntry, duplicateFoodEntry, updateFoodEntry } from './actions'
 export function EntryRow({ entry }: { entry: DayEntry }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [pending, start] = useTransition();
   const [quantity, setQuantity] = useState(entry.quantity);
   const [unit, setUnit] = useState(entry.unit);
@@ -29,10 +30,15 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
     });
   }
   function remove() {
+    // Se oculta al instante; si el servidor falla, vuelve a aparecer.
+    setRemoved(true);
     start(async () => {
       const res = await deleteFoodEntry({ id: entry.id });
       if (res.ok) toast.success(t.nutrition.toast.deleted);
-      else toast.error(t.nutrition.toast.genericError);
+      else {
+        setRemoved(false);
+        toast.error(t.nutrition.toast.genericError);
+      }
     });
   }
   function duplicate() {
@@ -43,17 +49,15 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
     });
   }
 
+  if (removed) return null;
+
   if (editing) {
     return (
       <div className="flex items-center gap-2 py-2">
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{entry.name}</span>
-        <Input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step="any"
+        <DecimalInput
           value={quantity}
-          onChange={(e) => setQuantity(Math.max(0, parseFloat(e.target.value) || 0))}
+          onValueChange={(v) => setQuantity(Math.max(0, v ?? 0))}
           className="h-8 w-20"
         />
         <NativeSelect
