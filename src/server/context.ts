@@ -33,21 +33,33 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
   const user = await getSession();
   if (!user) return null;
 
-  const profile = await prisma.profile.upsert({
-    where: { id: user.id },
-    update: { email: user.email ?? undefined },
-    create: {
-      id: user.id,
-      email: user.email ?? `${user.id}@sin-email.local`,
-      name: (user.user_metadata?.full_name as string | undefined) ?? null,
-    },
-  });
+  // Lectura en paralelo; sólo se escribe si la fila falta o el email cambió
+  // (antes eran 2 upserts secuenciales en CADA request).
+  const [existingProfile, existingEntitlement] = await Promise.all([
+    prisma.profile.findUnique({ where: { id: user.id } }),
+    prisma.entitlement.findUnique({ where: { userId: user.id } }),
+  ]);
 
-  const entitlement = await prisma.entitlement.upsert({
-    where: { userId: user.id },
-    update: {},
-    create: { userId: user.id },
-  });
+  const profile =
+    existingProfile && (!user.email || existingProfile.email === user.email)
+      ? existingProfile
+      : await prisma.profile.upsert({
+          where: { id: user.id },
+          update: { email: user.email ?? undefined },
+          create: {
+            id: user.id,
+            email: user.email ?? `${user.id}@sin-email.local`,
+            name: (user.user_metadata?.full_name as string | undefined) ?? null,
+          },
+        });
+
+  const entitlement =
+    existingEntitlement ??
+    (await prisma.entitlement.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
+    }));
 
   return {
     userId: profile.id,

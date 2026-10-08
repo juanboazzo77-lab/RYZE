@@ -46,17 +46,27 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // Si Supabase Auth no responde a tiempo (red lenta/caída), no dejamos la
-  // request colgada indefinidamente: se trata como "sin sesión" y se redirige
-  // a login, que siempre puede renderizar.
-  const user = await Promise.race([
-    supabase.auth.getUser().then((r) => r.data.user),
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000)),
-  ]);
-
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isAuthRoute = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+  // Si Supabase Auth no responde a tiempo (red lenta/caída), no dejamos la
+  // request colgada indefinidamente: se trata como "sin sesión" y se redirige
+  // a login, que siempre puede renderizar.
+  const withTimeout = <T,>(p: Promise<T>): Promise<T | null> =>
+    Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), 8_000))]);
+
+  // Rutas privadas: alcanza con ver que hay sesión en la cookie (sin ir a la red
+  // de Supabase en Oregón en cada navegación). La validación real del usuario
+  // se hace igual en el servidor (requireUser → getUser) antes de leer datos.
+  // Rutas de login/registro: sí se valida contra Supabase, para que una cookie
+  // vencida no genere un bucle login ↔ dashboard.
+  let user: object | null = null;
+  if (isAuthRoute) {
+    user = await withTimeout(supabase.auth.getUser().then((r) => r.data.user));
+  } else if (!isPublic) {
+    user = await withTimeout(supabase.auth.getSession().then((r) => r.data.session));
+  }
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
