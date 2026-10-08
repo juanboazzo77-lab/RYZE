@@ -705,6 +705,14 @@ export const es = {
       FULL_BODY: 'Cuerpo completo',
       OTHER: 'Otro',
     },
+      volume: {
+        title: 'Series por semana',
+        hint: 'Por grupo muscular. Principal: lo trabaja directo. Secundario: participa de apoyo en otros ejercicios.',
+        primary: 'principal',
+        secondary: 'secundario',
+        exShort: 'ej.',
+        empty: 'Todavía no hay ejercicios de fuerza para contar.',
+      },
     picker: {
       title: 'Elegí un ejercicio',
       all: 'Todos',

@@ -16,6 +16,7 @@ import {
 } from '@/lib/nutrition/targets';
 import { planDraftSchema, type PlanDraft, type NutritionDraft } from './plan-schema';
 import { STYLE_PROMPT } from './plan-styles';
+import { normalizeName } from '@/lib/training/volume';
 import {
   acceptPlanSchema,
   generatePlanSchema,
@@ -413,6 +414,38 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
   revalidatePath('/dashboard');
   revalidatePath('/coach/new-plan');
   return { ok: true, data: { planId: plan.id } };
+}
+
+/**
+ * Grupo muscular principal de cada nombre de ejercicio del borrador (y de sus
+ * alternativas), para el resumen de series semanales. Usa la biblioteca; si el
+ * nombre no está, el cliente cae a una heurística por palabras clave.
+ */
+export async function resolveExerciseMuscles(raw: {
+  names: string[];
+}): Promise<Result<Record<string, MuscleGroup>>> {
+  const names = [...new Set((raw.names ?? []).map((n) => String(n).slice(0, 80)))].slice(0, 150);
+  if (names.length === 0) return { ok: true, data: {} };
+  const { userId } = await requireUser();
+
+  const rows = await prisma.$queryRaw<Array<{ name: string; primary_muscle: MuscleGroup }>>`
+    SELECT name, primary_muscle
+    FROM "exercise"
+    WHERE is_custom = false OR created_by = ${userId}::uuid
+  `;
+  const catalog = rows.map((r) => ({ key: normalizeName(r.name), muscle: r.primary_muscle }));
+  const exact = new Map(catalog.map((c) => [c.key, c.muscle]));
+
+  const out: Record<string, MuscleGroup> = {};
+  for (const name of names) {
+    const key = normalizeName(name);
+    const hit =
+      exact.get(key) ??
+      // Variantes del mismo ejercicio ("Press inclinado con mancuernas sentado").
+      catalog.find((c) => c.key.length >= 8 && (key.includes(c.key) || c.key.includes(key)))?.muscle;
+    if (hit) out[name] = hit;
+  }
+  return { ok: true, data: out };
 }
 
 export async function discardGeneratedPlan(raw: { generationId: string }): Promise<Result> {

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
+import type { MuscleGroup } from '@prisma/client';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Ban, Check, ChevronLeft, ChevronRight, Loader2, Shuffle, Sparkles } from 'lucide-react';
@@ -13,9 +14,16 @@ import { Switch } from '@/components/ui/switch';
 import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
+import { guessPrimary, inferSecondary, summarizeVolume } from '@/lib/training/volume';
+import { WeeklyVolume } from '@/features/training/weekly-volume';
 import type { PlanDraft, NutritionDraft } from './plan-schema';
 import { DAY_OPTIONS, stylesForDays, type PlanStyle } from './plan-styles';
-import { acceptGeneratedPlan, discardGeneratedPlan, generatePlan } from './actions';
+import {
+  acceptGeneratedPlan,
+  discardGeneratedPlan,
+  generatePlan,
+  resolveExerciseMuscles,
+} from './actions';
 
 interface Draft {
   generationId: string;
@@ -320,6 +328,50 @@ function DraftReview({
   const [swaps, setSwaps] = useState<Record<string, string>>({});
   // Ejercicio con la lista de variantes abierta (clave día:ejercicio).
   const [openKey, setOpenKey] = useState<string | null>(null);
+
+  // Grupo muscular principal de cada ejercicio (y de sus variantes) según la biblioteca.
+  const [muscles, setMuscles] = useState<Record<string, MuscleGroup>>({});
+  useEffect(() => {
+    const names = draft.plan.days.flatMap((d) =>
+      d.exercises
+        .filter((e) => e.type !== 'CARDIO')
+        .flatMap((e) => [e.name, ...(e.alternatives ?? [])]),
+    );
+    let cancelled = false;
+    resolveExerciseMuscles({ names })
+      .then((r) => {
+        if (!cancelled && r.ok && r.data) setMuscles(r.data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // sólo cuando cambia el borrador
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft.generationId]);
+
+  const volumeRows = useMemo(
+    () =>
+      summarizeVolume(
+        draft.plan.days.flatMap((d, i) =>
+          d.exercises.flatMap((e, j) => {
+            const key = `${i}:${j}`;
+            if (skipped.has(key)) return [];
+            const name = swaps[key] ?? e.name;
+            const primary = muscles[name] ?? guessPrimary(name);
+            return [
+              {
+                primary,
+                secondary: inferSecondary(name, primary),
+                sets: e.sets,
+                countable: e.type !== 'CARDIO',
+              },
+            ];
+          }),
+        ),
+      ),
+    [draft, skipped, swaps, muscles],
+  );
   const skippedNames = draft.plan.days.flatMap((d, i) =>
     d.exercises.filter((_, j) => skipped.has(`${i}:${j}`)).map((e) => e.name),
   );
@@ -354,6 +406,8 @@ function DraftReview({
       {draft.plan.description ? (
         <p className="text-sm text-muted-foreground">{draft.plan.description}</p>
       ) : null}
+
+      <WeeklyVolume rows={volumeRows} />
 
       <p className="text-xs text-muted-foreground">{tp.cantDoHint}</p>
 

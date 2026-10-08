@@ -707,6 +707,14 @@ export const it: Dictionary = {
       FULL_BODY: 'Corpo intero',
       OTHER: 'Altro',
     },
+      volume: {
+        title: 'Serie a settimana',
+        hint: 'Per gruppo muscolare. Principale: lavorato direttamente. Secondario: aiuta in altri esercizi.',
+        primary: 'principale',
+        secondary: 'secondario',
+        exShort: 'es.',
+        empty: 'Ancora nessun esercizio di forza da contare.',
+      },
     picker: {
       title: 'Scegli un esercizio',
       all: 'Tutti',

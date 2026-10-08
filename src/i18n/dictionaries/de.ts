@@ -707,6 +707,14 @@ export const de: Dictionary = {
       FULL_BODY: 'Ganzkörper',
       OTHER: 'Andere',
     },
+      volume: {
+        title: 'Sätze pro Woche',
+        hint: 'Pro Muskelgruppe. Primär: direkt trainiert. Sekundär: hilft bei anderen Übungen mit.',
+        primary: 'primär',
+        secondary: 'sekundär',
+        exShort: 'Üb.',
+        empty: 'Noch keine Kraftübungen zum Zählen.',
+      },
     picker: {
       title: 'Übung auswählen',
       all: 'Alle',

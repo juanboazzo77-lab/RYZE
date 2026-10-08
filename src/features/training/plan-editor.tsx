@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Check, Plus, Trash2 } from 'lucide-react';
@@ -11,7 +11,9 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
+import { inferSecondary, summarizeVolume } from '@/lib/training/volume';
 import { InlineText } from './inline-text';
+import { WeeklyVolume } from './weekly-volume';
 import { ExercisePicker } from './exercise-picker';
 import type { EditorDay, EditorExercise, PlanEditor } from './queries';
 import {
@@ -52,6 +54,21 @@ export function PlanEditorView({ plan }: { plan: PlanEditor }) {
   const t = useT();
   const router = useRouter();
   const [, startStruct] = useTransition();
+
+  const volumeRows = useMemo(
+    () =>
+      summarizeVolume(
+        plan.days.flatMap((d) =>
+          d.exercises.map((e) => ({
+            primary: e.primaryMuscle,
+            secondary: inferSecondary(e.name, e.primaryMuscle),
+            sets: e.targetSets,
+            countable: e.type !== 'CARDIO',
+          })),
+        ),
+      ),
+    [plan],
+  );
 
   return (
     <div className="space-y-4">
@@ -95,6 +112,8 @@ export function PlanEditorView({ plan }: { plan: PlanEditor }) {
           </Button>
         </div>
       </div>
+
+      <WeeklyVolume rows={volumeRows} />
 
       {plan.days.map((day) => (
         <DayCard key={day.id} day={day} onChanged={() => router.refresh()} />
