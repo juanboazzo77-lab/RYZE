@@ -1211,6 +1211,7 @@ export const en: Dictionary = {
       options: 'Options:',
       failed: 'We couldn’t build the routine this time (the AI returned an incomplete answer). Tap again to retry.',
       limitReached: 'You reached this month’s plan limit.',
+      variant: 'Pick a variant',
       cantDoHint: 'Mark the exercises you can’t do, for example if you don’t have the machine.',
       cantDo: 'Can’t do it',
       canDo: 'I can do it',

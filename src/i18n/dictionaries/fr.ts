@@ -1212,6 +1212,7 @@ export const fr: Dictionary = {
       options: 'Options :',
       failed: 'Nous n’avons pas pu créer la routine cette fois (l’IA a renvoyé une réponse incomplète). Touchez à nouveau pour réessayer.',
       limitReached: 'Vous avez atteint la limite de plans de ce mois.',
+      variant: 'Choisir une variante',
       cantDoHint: 'Marquez les exercices que vous ne pouvez pas faire, par exemple si vous n’avez pas la machine.',
       cantDo: 'Je ne peux pas',
       canDo: 'Je peux',

@@ -1212,6 +1212,7 @@ export const pt: Dictionary = {
       options: 'Opções:',
       failed: 'Não conseguimos montar a rotina desta vez (a IA devolveu uma resposta incompleta). Toque de novo para tentar outra vez.',
       limitReached: 'Você atingiu o limite de planos deste mês.',
+      variant: 'Escolher variante',
       cantDoHint: 'Marque os exercícios que você não consegue fazer, por exemplo se não tem a máquina.',
       cantDo: 'Não consigo',
       canDo: 'Consigo',

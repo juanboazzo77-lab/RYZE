@@ -1212,6 +1212,7 @@ export const it: Dictionary = {
       options: 'Opzioni:',
       failed: 'Non siamo riusciti a creare la scheda questa volta (l’IA ha restituito una risposta incompleta). Tocca di nuovo per riprovare.',
       limitReached: 'Hai raggiunto il limite di schede di questo mese.',
+      variant: 'Scegli variante',
       cantDoHint: 'Segna gli esercizi che non puoi fare, per esempio se non hai la macchina.',
       cantDo: 'Non posso',
       canDo: 'Posso',

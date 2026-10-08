@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Ban, ChevronLeft, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { Ban, Check, ChevronLeft, ChevronRight, Loader2, Shuffle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -318,6 +318,8 @@ function DraftReview({
   const allSkipped = skipped.size >= totalExercises;
   // Alternativa elegida por ejercicio (clave día:ejercicio → nombre).
   const [swaps, setSwaps] = useState<Record<string, string>>({});
+  // Ejercicio con la lista de variantes abierta (clave día:ejercicio).
+  const [openKey, setOpenKey] = useState<string | null>(null);
   const skippedNames = draft.plan.days.flatMap((d, i) =>
     d.exercises.filter((_, j) => skipped.has(`${i}:${j}`)).map((e) => e.name),
   );
@@ -373,76 +375,97 @@ function DraftReview({
                   const off = skipped.has(key);
                   const chosen = swaps[key] ?? e.name;
                   const options = e.alternatives?.length ? [e.name, ...e.alternatives] : null;
+                  const open = openKey === key && !off;
                   return (
-                  <li
-                    key={j}
-                    className={cn('flex items-center justify-between gap-3 py-2', off && 'opacity-50')}
-                  >
-                    <span className="min-w-0">
-                      <span className={cn('block truncate', off && 'line-through')}>{chosen}</span>
-                      {e.note ? (
-                        <span className="block text-xs text-muted-foreground">{e.note}</span>
-                      ) : null}
-                      {e.rationale && chosen === e.name ? (
-                        <span className="block text-xs text-primary/80">{e.rationale}</span>
-                      ) : null}
-                      {options && !off ? (
-                        <span className="mt-1.5 flex flex-wrap items-center gap-1">
-                          <span className="text-[11px] text-muted-foreground">{tp.options}</span>
-                          {options.map((opt) => (
-                            <button
-                              key={opt}
-                              type="button"
-                              disabled={pending}
-                              aria-pressed={opt === chosen}
-                              onClick={() => pickOption(key, e.name, opt)}
-                              className={cn(
-                                'rounded-full border px-2 py-0.5 text-[11px] transition-colors',
-                                opt === chosen
-                                  ? 'border-primary bg-primary text-primary-foreground'
-                                  : 'text-muted-foreground hover:border-primary/60',
-                              )}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+                    <li key={j} className="py-2.5">
+                      <div className={cn('flex items-start justify-between gap-3', off && 'opacity-50')}>
+                        <span className="min-w-0">
+                          <span className={cn('block', off && 'line-through')}>{chosen}</span>
+                          {e.note ? (
+                            <span className="block text-xs text-muted-foreground">{e.note}</span>
+                          ) : null}
+                          {e.rationale && chosen === e.name ? (
+                            <span className="block text-xs text-primary/80">{e.rationale}</span>
+                          ) : null}
                         </span>
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                          {e.type === 'CARDIO'
+                            ? [
+                                e.durationMinutes ? `${e.durationMinutes} min` : null,
+                                e.distanceKm ? `${e.distanceKm} km` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')
+                            : interpolate(tp.setsReps, {
+                                sets: e.sets,
+                                min: e.repsMin,
+                                max: e.repsMax,
+                                rir: e.rir,
+                                rest: e.restSeconds,
+                              })}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {options && !off ? (
+                          <button
+                            type="button"
+                            aria-expanded={open}
+                            disabled={pending}
+                            onClick={() => setOpenKey(open ? null : key)}
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                              open || chosen !== e.name
+                                ? 'border-primary/60 bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:border-primary/60 hover:text-primary',
+                            )}
+                          >
+                            <Shuffle className="size-3" />
+                            {tp.variant}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          aria-pressed={off}
+                          disabled={pending}
+                          onClick={() => toggleSkip(key)}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors',
+                            off
+                              ? 'border-destructive/60 bg-destructive/10 text-destructive'
+                              : 'text-muted-foreground hover:border-destructive/60 hover:text-destructive',
+                          )}
+                        >
+                          <Ban className="size-3" />
+                          {off ? tp.canDo : tp.cantDo}
+                        </button>
+                      </div>
+                      {open && options ? (
+                        <ul className="mt-2 space-y-0.5 rounded-lg border bg-secondary/40 p-1.5">
+                          <li className="px-2 pb-0.5 text-[11px] text-muted-foreground">{tp.options}</li>
+                          {options.map((opt) => (
+                            <li key={opt}>
+                              <button
+                                type="button"
+                                aria-pressed={opt === chosen}
+                                onClick={() => {
+                                  pickOption(key, e.name, opt);
+                                  setOpenKey(null);
+                                }}
+                                className={cn(
+                                  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm',
+                                  opt === chosen
+                                    ? 'bg-primary/15 font-medium text-primary'
+                                    : 'hover:bg-secondary',
+                                )}
+                              >
+                                <span>{opt}</span>
+                                {opt === chosen ? <Check className="size-4 shrink-0" /> : null}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       ) : null}
-                    </span>
-                    <span className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {e.type === 'CARDIO'
-                        ? [
-                            e.durationMinutes ? `${e.durationMinutes} min` : null,
-                            e.distanceKm ? `${e.distanceKm} km` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')
-                        : interpolate(tp.setsReps, {
-                            sets: e.sets,
-                            min: e.repsMin,
-                            max: e.repsMax,
-                            rir: e.rir,
-                            rest: e.restSeconds,
-                          })}
-                    </span>
-                    <button
-                      type="button"
-                      aria-pressed={off}
-                      disabled={pending}
-                      onClick={() => toggleSkip(key)}
-                      className={cn(
-                        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors',
-                        off
-                          ? 'border-destructive/60 bg-destructive/10 text-destructive'
-                          : 'text-muted-foreground hover:border-destructive/60 hover:text-destructive',
-                      )}
-                    >
-                      <Ban className="size-3" />
-                      {off ? tp.canDo : tp.cantDo}
-                    </button>
-                    </span>
-                  </li>
+                    </li>
                   );
                 })}
               </ul>

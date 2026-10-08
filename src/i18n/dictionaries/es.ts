@@ -1210,6 +1210,7 @@ export const es = {
       options: 'Opciones:',
       failed: 'No pudimos armar la rutina esta vez (la IA devolvió una respuesta incompleta). Tocá otra vez para volver a intentarlo.',
       limitReached: 'Llegaste al límite de planes de este mes.',
+      variant: 'Elegir variante',
       cantDoHint: 'Marcá los ejercicios que no podés hacer, por ejemplo si no tenés la máquina.',
       cantDo: 'No puedo',
       canDo: 'Sí puedo',
