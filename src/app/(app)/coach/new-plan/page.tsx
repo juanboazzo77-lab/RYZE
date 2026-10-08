@@ -65,6 +65,7 @@ export default async function NewPlanPage({
         initialDraft={initialDraft}
         usage={{ used: usage.plansUsed, limit: usage.plansLimit }}
         autoGenerate={sp.auto === '1'}
+        defaultDays={ctx.profile.daysAvailable}
       />
     </div>
   );

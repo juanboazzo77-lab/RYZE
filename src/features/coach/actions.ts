@@ -15,6 +15,7 @@ import {
   nutritionTargetRationale,
 } from '@/lib/nutrition/targets';
 import { planDraftSchema, type PlanDraft, type NutritionDraft } from './plan-schema';
+import { STYLE_PROMPT } from './plan-styles';
 import {
   acceptPlanSchema,
   generatePlanSchema,
@@ -179,9 +180,39 @@ export async function generatePlan(
   const { userId, profile, entitlement } = await requireUser();
   const db = forUser(userId);
 
+  const excluded = [...new Set((parsed.data.excluded ?? []).map((n) => n.slice(0, 40)))];
+  let brief = parsed.data.brief;
+  const { days: chosenDays, style: chosenStyle } = parsed.data;
+  if (chosenDays || chosenStyle) {
+    const parts = [
+      chosenDays
+        ? `entrenar EXACTAMENTE ${chosenDays} días por semana (el plan tiene que tener exactamente ${chosenDays} días de entrenamiento)`
+        : null,
+      chosenStyle ? `tipo de rutina: ${STYLE_PROMPT[chosenStyle]}` : null,
+    ].filter(Boolean);
+    brief = `${brief}
+El usuario ELIGIÓ para este plan (tiene prioridad sobre lo que diga su perfil): ${parts.join('; ')}.`;
+  }
+  if (excluded.length > 0) {
+    brief =
+      `${brief}
+NO puede hacer estos ejercicios (no tiene la máquina o no puede): ${excluded.join(', ')}. ` +
+      'Reemplazalos por alternativas que sí pueda hacer (otro equipo, mancuernas o peso corporal) ' +
+      'para el mismo grupo muscular, sin repetir esos ejercicios ni variantes que usen el mismo equipo. ' +
+      'Mantené el resto de la rutina.';
+    // Se guardan en el perfil para que los próximos planes tampoco los incluyan.
+    const current = Array.isArray(profile.dislikedExercises)
+      ? (profile.dislikedExercises as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [];
+    const merged = [...new Set([...current, ...excluded])].slice(0, 30);
+    await prisma.profile
+      .update({ where: { id: userId }, data: { dislikedExercises: merged } })
+      .catch((e) => console.error('[coach] no se pudo guardar ejercicios excluidos', e));
+  }
+
   let draft: PlanDraft;
   try {
-    const res = await generateWorkoutPlanDraft({ profile, entitlement, brief: parsed.data.brief });
+    const res = await generateWorkoutPlanDraft({ profile, entitlement, brief });
     draft = res.draft;
   } catch (e) {
     return { error: aiErrorMessage(e) };
@@ -293,11 +324,17 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
       rationale: string | null;
     }>;
   }> = [];
-  for (const d of draft.days) {
+  const skip = new Set(parsed.data.overrides?.skip ?? []);
+  const swaps = parsed.data.overrides?.swap;
+  for (const [di, d] of draft.days.entries()) {
     const exercises = [];
     const seenExerciseIds = new Set<string>();
-    for (const e of d.exercises) {
-      const exerciseId = await resolveExerciseId(e.name, userId, e.type ?? 'STRENGTH');
+    for (const [ei, e] of d.exercises.entries()) {
+      if (skip.has(`${di}:${ei}`)) continue;
+      // Sólo se acepta una alternativa que la propia IA propuso para este ejercicio.
+      const picked = swaps?.[`${di}:${ei}`];
+      const exerciseName = picked && e.alternatives?.includes(picked) ? picked : e.name;
+      const exerciseId = await resolveExerciseId(exerciseName, userId, e.type ?? 'STRENGTH');
       // Dos nombres distintos de la IA pueden resolver al mismo ejercicio de
       // la biblioteca (match difuso); sin este chequeo el mismo ejercicio
       // termina duplicado dentro del mismo día.
@@ -317,8 +354,9 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
         rationale: e.rationale?.trim() || null,
       });
     }
-    dayResolved.push({ name: d.name, weekday: d.weekday, exercises });
+    if (exercises.length > 0) dayResolved.push({ name: d.name, weekday: d.weekday, exercises });
   }
+  if (dayResolved.length === 0) return { error: 'EMPTY_PLAN' };
 
   const planName = parsed.data.overrides?.name?.trim() || draft.name;
 

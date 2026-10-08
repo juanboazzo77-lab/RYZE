@@ -24,6 +24,9 @@ export const planDraftExercise = z.object({
   /** Por qué se eligió este ejercicio para este cliente puntual (breve,
    * concreto, referenciando su objetivo/condición/deporte). */
   rationale: z.string().max(160).optional(),
+  /** Hasta 3 alternativas equivalentes (mismo grupo muscular) que el usuario
+   * puede elegir en lugar de este ejercicio, p. ej. si no tiene la máquina. */
+  alternatives: z.array(z.string().min(2).max(80)).max(3).optional(),
 });
 
 export const planDraftDay = z.object({

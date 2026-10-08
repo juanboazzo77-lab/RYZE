@@ -292,6 +292,27 @@ Pautas de la rutina:
 - Cada día: 4–7 ejercicios, series y rango de reps acorde al objetivo
   (fuerza 3–6, hipertrofia 6–12, resistencia 12–20). Incluí RIR objetivo (1–3).
 - Preferí ejercicios básicos y nombres comunes en ${LANG[locale]}.
+- Diseñá cada día como un entrenador de verdad, NO como una plantilla: las
+  series, repeticiones, RIR y descanso dependen del ROL de cada ejercicio, y
+  "4 series de cada ejercicio" está prohibido (si más de la mitad de los
+  ejercicios de un día tienen las mismas series y reps, rehacelo):
+  · Ejercicio principal del día (1, a veces 2; multiarticular pesado, va
+    primero): 3-5 series, reps bajas a medias (4-8 en fuerza / 6-10 en
+    hipertrofia), RIR 1-2, descanso 120-180 s.
+  · Secundarios multiarticulares: 3 series, 6-10 reps, RIR 1-2, descanso 90-120 s.
+  · Accesorios / aislados: 2-3 series, 10-15 reps, RIR 0-2, descanso 60-90 s.
+  · Cierre (core, pantorrillas, deltoide posterior, brazos): 2-3 series, 12-20
+    reps, descanso 45-60 s.
+  Ordená de mayor a menor demanda (lo más pesado y técnico primero, el
+  aislado al final), variá el rango de reps entre ejercicios y repartí las
+  series para llegar a los pisos de volumen semanal sin inflar todo igual.
+- "alternatives" (2 por ejercicio de fuerza; no hace falta en cardio ni
+  calentamiento): nombres de ejercicios equivalentes (mismo grupo muscular y
+  patrón de movimiento) para que el usuario elija si no tiene la máquina o no
+  le gusta el ejercicio. Una de las dos tiene que poder hacerse con mancuernas,
+  peso corporal o poleas/bandas si el principal usa una máquina o barra. Nada
+  de variantes casi idénticas del mismo ejercicio, ni repetir un ejercicio que
+  ya está en ese día, y respetá el equipo disponible y las lesiones.
 - Nunca repitas el mismo ejercicio dos veces dentro del mismo día (ni con el
   mismo nombre ni con una variante casi idéntica, ej. "Press banca" y "Press de
   banca plano" son el mismo ejercicio). Si querés más volumen de un movimiento,
