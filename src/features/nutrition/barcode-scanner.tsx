@@ -7,6 +7,24 @@ import { useT } from '@/i18n/provider';
 type ScanError = 'denied' | 'nocam' | 'other';
 
 /**
+ * Código de producto (GTIN) a partir de lo leído. Los códigos de barras traen
+ * sólo dígitos; un QR puede traer un enlace (GS1 Digital Link `/01/<gtin>`,
+ * `/product/<gtin>`) o texto con el número.
+ */
+export function extractProductCode(text: string, isQr: boolean): string | null {
+  const raw = text.trim();
+  if (!isQr) {
+    const digits = raw.replace(/\D/g, '');
+    return digits.length >= 8 && digits.length <= 14 ? digits : null;
+  }
+  const link = /\/(?:01|product)\/(\d{8,14})(?:[/?#]|$)/.exec(raw);
+  if (link?.[1]) return link[1];
+  if (/^\d{8,14}$/.test(raw)) return raw;
+  const run = /(?<!\d)(\d{12,14})(?!\d)/.exec(raw);
+  return run?.[1] ?? null;
+}
+
+/**
  * Lector de códigos de barras por cámara (ZXing). `@zxing/*` se carga de forma
  * perezosa para no pesar en el bundle inicial. Llama a `onDetected` una sola
  * vez con el código normalizado (sólo dígitos).
@@ -51,6 +69,7 @@ export function BarcodeScanner({
           BarcodeFormat.UPC_E,
           BarcodeFormat.ITF,
           BarcodeFormat.CODE_128,
+          BarcodeFormat.QR_CODE,
         ]);
 
         const reader = new BrowserMultiFormatReader(hints, {
@@ -61,12 +80,21 @@ export function BarcodeScanner({
         if (stopped || !videoRef.current) return;
 
         controls = await reader.decodeFromConstraints(
-          { video: { facingMode: { ideal: 'environment' } } },
+          {
+            video: {
+              facingMode: { ideal: 'environment' },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+          },
           videoRef.current,
           (result) => {
             if (done || !result) return;
-            const code = result.getText().replace(/\D/g, '');
-            if (code.length < 8 || code.length > 14) return;
+            const code = extractProductCode(
+              result.getText(),
+              result.getBarcodeFormat() === BarcodeFormat.QR_CODE,
+            );
+            if (!code) return;
             done = true;
             controls?.stop();
             onDetectedRef.current(code);
