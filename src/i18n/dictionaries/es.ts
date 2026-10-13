@@ -71,6 +71,7 @@ export const es = {
     physiquePhotoMax: 'Hasta 3 fotos.',
     physiquePhotoError: 'No se pudo procesar la imagen.',
     physiqueNotConfigured: 'El análisis por foto no está disponible en esta instalación.',
+    physiqueBlocked: 'La IA no pudo analizar esa foto. Probá con otra: de frente, con buena luz y ropa deportiva ajustada.',
     physiqueError: 'No se pudo analizar. Probá de nuevo.',
     sections: {
       health: { title: 'Tu cuerpo', desc: 'Salud, molestias, sueño y estrés.' },
@@ -733,6 +734,8 @@ export const es = {
       addSet: 'Agregar serie',
       set: 'Serie',
       warmup: 'W',
+      target: 'Objetivo',
+      targetShort: 'obj',
       lastTime: 'Última vez',
       noLastTime: 'Primera vez con este ejercicio',
       kg: 'kg',
@@ -1017,6 +1020,12 @@ export const es = {
     title: 'Notificaciones',
     subtitle: 'Activá las notificaciones push y elegí qué recordatorios querés recibir.',
     reminderDay: 'Día del recordatorio',
+    prompt: {
+      title: 'Activá las notificaciones',
+      desc: 'Te avisamos cuando toca entrenar, registrar tus comidas o pesarte, y para que no pierdas tu racha. Podés cambiarlo cuando quieras en Ajustes.',
+      enable: 'Activar notificaciones',
+      later: 'Ahora no',
+    },
     push: {
       title: 'Notificaciones push',
       desc: 'Recibí los avisos en este dispositivo aunque tengas la app cerrada.',

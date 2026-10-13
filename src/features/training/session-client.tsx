@@ -443,6 +443,14 @@ function ExerciseBlock({
   const addSet = useSession((s) => s.addSet);
   const removeSet = useSession((s) => s.removeSet);
 
+  const repRange =
+    ex.type !== 'CARDIO' && ex.targetRepsMin && ex.targetRepsMax
+      ? ex.targetRepsMin === ex.targetRepsMax
+        ? String(ex.targetRepsMin)
+        : `${ex.targetRepsMin}–${ex.targetRepsMax}`
+      : null;
+  const plannedSets = ex.sets.filter((x) => !x.isWarmup).length;
+
   const last = ex.lastTime && ex.lastTime.length > 0
     ? ex.lastTime
         .map((s) => `${s.weightKg ?? '–'}×${s.reps ?? '–'}`)
@@ -462,6 +470,11 @@ function ExerciseBlock({
             ) : (
               <>
                 <Badge variant="secondary">{t.training.muscles[ex.primaryMuscle as 'CHEST']}</Badge>
+                {repRange ? (
+                  <Badge variant="outline" className="tabular-nums">
+                    {t.training.session.target}: {plannedSets} × {repRange}
+                  </Badge>
+                ) : null}
                 <span>
                   {t.training.session.lastTime}: {last ?? t.training.session.noLastTime}
                 </span>
@@ -480,6 +493,8 @@ function ExerciseBlock({
             t={t}
             set={st}
             cardio={ex.type === 'CARDIO'}
+            repsMin={ex.targetRepsMin}
+            repsMax={ex.targetRepsMax}
             onWeight={(v) => patchSet(ex.id, st.id, { weightKg: v })}
             onReps={(v) => patchSet(ex.id, st.id, { reps: v })}
             onDuration={(v) => patchSet(ex.id, st.id, { durationSeconds: v })}
@@ -505,6 +520,8 @@ function SetRow({
   t,
   set,
   cardio,
+  repsMin,
+  repsMax,
   onWeight,
   onReps,
   onDuration,
@@ -516,6 +533,8 @@ function SetRow({
   t: Dictionary;
   set: StoreSet;
   cardio: boolean;
+  repsMin: number | null;
+  repsMax: number | null;
   onWeight: (v: number | null) => void;
   onReps: (v: number | null) => void;
   onDuration: (v: number | null) => void;
@@ -529,6 +548,22 @@ function SetRow({
     const n = parseFloat(s);
     return Number.isFinite(n) ? n : null;
   };
+
+  // Objetivo de repeticiones del ejercicio vs lo que cargaste (no aplica al calentamiento).
+  const range =
+    repsMin && repsMax && !set.isWarmup
+      ? repsMin === repsMax
+        ? String(repsMin)
+        : `${repsMin}–${repsMax}`
+      : null;
+  const repsStatus: 'below' | 'in' | 'above' | null =
+    range && set.reps != null
+      ? set.reps < (repsMin ?? 0)
+        ? 'below'
+        : set.reps > (repsMax ?? Infinity)
+          ? 'above'
+          : 'in'
+      : null;
 
   return (
     <div
@@ -582,12 +617,23 @@ function SetRow({
             type="number"
             inputMode="numeric"
             min={0}
-            placeholder="reps"
+            placeholder={range ?? 'reps'}
             value={set.reps ?? ''}
             onChange={(e) => onReps(parseNum(e.target.value))}
-            className="h-11 flex-1 text-center text-base font-semibold"
+            className={cn(
+              'h-11 flex-1 text-center text-base font-semibold',
+              repsStatus === 'below' && 'border-warning text-warning',
+              repsStatus === 'in' && 'border-success/70',
+            )}
           />
-          <span className="text-xs text-muted-foreground">{t.training.session.reps}</span>
+          <span className="flex flex-col items-start text-xs leading-tight text-muted-foreground">
+            {t.training.session.reps}
+            {range && !set.isWarmup ? (
+              <span className="text-[10px] tabular-nums">
+                {t.training.session.targetShort} {range}
+              </span>
+            ) : null}
+          </span>
         </>
       )}
 

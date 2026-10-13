@@ -73,6 +73,7 @@ export const de: Dictionary = {
     physiquePhotoMax: 'Bis zu 3 Fotos.',
     physiquePhotoError: 'Das Bild konnte nicht verarbeitet werden.',
     physiqueNotConfigured: 'Die Fotoanalyse ist in dieser Installation nicht verfügbar.',
+    physiqueBlocked: 'Die KI konnte dieses Foto nicht analysieren. Versuche ein anderes: frontal, gutes Licht, enge Sportkleidung.',
     physiqueError: 'Analyse fehlgeschlagen. Versuch es erneut.',
     sections: {
       health: { title: 'Dein Körper', desc: 'Gesundheit, Beschwerden, Schlaf und Stress.' },
@@ -735,6 +736,8 @@ export const de: Dictionary = {
       addSet: 'Satz hinzufügen',
       set: 'Satz',
       warmup: 'A',
+      target: 'Ziel',
+      targetShort: 'Ziel',
       lastTime: 'Letztes Mal',
       noLastTime: 'Erstes Mal mit dieser Übung',
       kg: 'kg',
@@ -1019,6 +1022,12 @@ export const de: Dictionary = {
     title: 'Benachrichtigungen',
     subtitle: 'Aktiviere Push-Benachrichtigungen und wähle, welche Erinnerungen du erhalten möchtest.',
     reminderDay: 'Tag der Erinnerung',
+    prompt: {
+      title: 'Benachrichtigungen aktivieren',
+      desc: 'Wir erinnern dich ans Training, ans Eintragen deiner Mahlzeiten oder Wiegen und damit deine Serie nicht abreißt. Du kannst das jederzeit in den Einstellungen ändern.',
+      enable: 'Benachrichtigungen aktivieren',
+      later: 'Nicht jetzt',
+    },
     push: {
       title: 'Push-Benachrichtigungen',
       desc: 'Erhalte Hinweise auf diesem Gerät, auch wenn die App geschlossen ist.',

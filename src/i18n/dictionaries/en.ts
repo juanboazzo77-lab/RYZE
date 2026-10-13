@@ -73,6 +73,7 @@ export const en: Dictionary = {
     physiquePhotoMax: 'Up to 3 photos.',
     physiquePhotoError: "Couldn't process the image.",
     physiqueNotConfigured: 'Photo analysis is not available in this install.',
+    physiqueBlocked: 'The AI couldn’t analyze that photo. Try another one: front-facing, good lighting, fitted sportswear.',
     physiqueError: "Couldn't analyze it. Try again.",
     sections: {
       health: { title: 'Your body', desc: 'Health, aches, sleep and stress.' },
@@ -735,6 +736,8 @@ export const en: Dictionary = {
       addSet: 'Add set',
       set: 'Set',
       warmup: 'W',
+      target: 'Target',
+      targetShort: 'tgt',
       lastTime: 'Last time',
       noLastTime: 'First time with this exercise',
       kg: 'kg',
@@ -1019,6 +1022,12 @@ export const en: Dictionary = {
     title: 'Notifications',
     subtitle: 'Turn on push notifications and pick which reminders you want.',
     reminderDay: 'Reminder day',
+    prompt: {
+      title: 'Turn on notifications',
+      desc: 'We’ll remind you when it’s time to train, log your meals or weigh in, and to keep your streak alive. You can change this anytime in Settings.',
+      enable: 'Turn on notifications',
+      later: 'Not now',
+    },
     push: {
       title: 'Push notifications',
       desc: 'Get alerts on this device even when the app is closed.',

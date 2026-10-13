@@ -73,6 +73,7 @@ export const pt: Dictionary = {
     physiquePhotoMax: 'Até 3 fotos.',
     physiquePhotoError: 'Não foi possível processar a imagem.',
     physiqueNotConfigured: 'A análise por foto não está disponível nesta instalação.',
+    physiqueBlocked: 'A IA não conseguiu analisar essa foto. Tente outra: de frente, com boa luz e roupa esportiva justa.',
     physiqueError: 'Não foi possível analisar. Tente de novo.',
     sections: {
       health: { title: 'Seu corpo', desc: 'Saúde, dores, sono e estresse.' },
@@ -735,6 +736,8 @@ export const pt: Dictionary = {
       addSet: 'Adicionar série',
       set: 'Série',
       warmup: 'A',
+      target: 'Meta',
+      targetShort: 'meta',
       lastTime: 'Última vez',
       noLastTime: 'Primeira vez com este exercício',
       kg: 'kg',
@@ -1019,6 +1022,12 @@ export const pt: Dictionary = {
     title: 'Notificações',
     subtitle: 'Ative as notificações push e escolha quais lembretes você quer receber.',
     reminderDay: 'Dia do lembrete',
+    prompt: {
+      title: 'Ative as notificações',
+      desc: 'Avisamos quando é hora de treinar, registrar suas refeições ou se pesar, e para você não perder sua sequência. Você pode mudar isso quando quiser em Ajustes.',
+      enable: 'Ativar notificações',
+      later: 'Agora não',
+    },
     push: {
       title: 'Notificações push',
       desc: 'Receba os avisos neste dispositivo mesmo com o app fechado.',

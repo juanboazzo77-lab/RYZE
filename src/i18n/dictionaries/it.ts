@@ -73,6 +73,7 @@ export const it: Dictionary = {
     physiquePhotoMax: 'Fino a 3 foto.',
     physiquePhotoError: 'Impossibile elaborare l’immagine.',
     physiqueNotConfigured: 'L’analisi tramite foto non è disponibile in questa installazione.',
+    physiqueBlocked: 'L’IA non è riuscita ad analizzare quella foto. Prova con un’altra: di fronte, con buona luce e abbigliamento sportivo aderente.',
     physiqueError: 'Analisi non riuscita. Riprova.',
     sections: {
       health: { title: 'Il tuo corpo', desc: 'Salute, fastidi, sonno e stress.' },
@@ -735,6 +736,8 @@ export const it: Dictionary = {
       addSet: 'Aggiungi serie',
       set: 'Serie',
       warmup: 'R',
+      target: 'Obiettivo',
+      targetShort: 'obiett.',
       lastTime: 'Ultima volta',
       noLastTime: 'Prima volta con questo esercizio',
       kg: 'kg',
@@ -1019,6 +1022,12 @@ export const it: Dictionary = {
     title: 'Notifiche',
     subtitle: 'Attiva le notifiche push e scegli quali promemoria vuoi ricevere.',
     reminderDay: 'Giorno del promemoria',
+    prompt: {
+      title: 'Attiva le notifiche',
+      desc: 'Ti avvisiamo quando è ora di allenarti, registrare i pasti o pesarti, e per non perdere la tua serie. Puoi cambiarlo quando vuoi nelle Impostazioni.',
+      enable: 'Attiva le notifiche',
+      later: 'Non ora',
+    },
     push: {
       title: 'Notifiche push',
       desc: 'Ricevi gli avvisi su questo dispositivo anche con l’app chiusa.',
