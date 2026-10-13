@@ -22,7 +22,8 @@ export type Feature =
   | 'weekly_checkin'
   | 'advanced_stats'
   | 'progression_analysis'
-  | 'coach_profile';
+  | 'coach_profile'
+  | 'physique_analysis';
 
 export interface TierLimits {
   /** Mensajes/día con el AI Coach. `Infinity` = sin límite. */
@@ -49,6 +50,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: false,
       progression_analysis: false,
       coach_profile: false,
+      physique_analysis: false,
     },
   },
   BASIC: {
@@ -62,6 +64,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: false,
       progression_analysis: false,
       coach_profile: false,
+      physique_analysis: false,
     },
   },
   PRO: {
@@ -75,6 +78,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: false,
       progression_analysis: true,
       coach_profile: false,
+      physique_analysis: true,
     },
   },
   COACH: {
@@ -88,6 +92,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: true,
       progression_analysis: true,
       coach_profile: true,
+      physique_analysis: true,
     },
   },
 };

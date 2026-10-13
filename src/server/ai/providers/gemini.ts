@@ -187,24 +187,36 @@ async function once<T>(fn: (signal: AbortSignal) => Promise<T>, budgetMs: number
   }
 }
 
+/** Modelo al que se cambia cuando el principal está saturado o no responde. */
+function fallbackModel(): string {
+  return process.env.AI_FALLBACK_MODEL?.trim() || 'gemini-3.5-flash';
+}
+
+const TRANSIENT = /(503|UNAVAILABLE|high demand|overloaded|500|timed out|AttemptTimeout)/i;
+
 /**
- * Un intento con casi todo el presupuesto; si falla por 503 ("high demand"),
- * un reintento corto con lo que quede. Gemini está teniendo picos de latencia y
- * de 503 en los modelos flash, así que los timeouts que llaman acá son amplios.
+ * Un intento con el modelo principal usando poco más de la mitad del tiempo; si
+ * falla por saturación (503) o no responde a tiempo, un segundo intento con el
+ * modelo de respaldo con lo que quede. Los modelos "lite" de Gemini tienen
+ * picos de 503 y de latencia, y sin respaldo el usuario veía sólo un error.
  */
 async function withRetry<T>(
-  fn: (signal: AbortSignal) => Promise<T>,
+  fn: (signal: AbortSignal, model: string) => Promise<T>,
   totalMs: number,
+  model: string,
 ): Promise<T> {
+  const fallback = fallbackModel();
+  const canFallback = fallback !== model;
   const deadline = Date.now() + totalMs;
   try {
-    return await once(fn, Math.floor(totalMs * 0.8));
+    return await once((signal) => fn(signal, model), Math.floor(totalMs * (canFallback ? 0.55 : 0.8)));
   } catch (e) {
     const msg = e instanceof Error ? `${e.name} ${e.message}` : String(e);
     const remaining = deadline - Date.now();
-    if (!/(503|UNAVAILABLE|high demand|overloaded|500)/i.test(msg) || remaining < 4_000) throw e;
-    await new Promise((r) => setTimeout(r, 800));
-    return once(fn, remaining - 800);
+    if (!TRANSIENT.test(msg) || remaining < 5_000) throw e;
+    await new Promise((r) => setTimeout(r, 500));
+    const next = canFallback ? fallback : model;
+    return once((signal) => fn(signal, next), remaining - 500);
   }
 }
 
@@ -240,9 +252,9 @@ export const geminiProvider: AiProvider = {
     try {
       const think = thinkingConfig(req);
       const res = await withRetry(
-        (signal) =>
+        (signal, model) =>
           ai.models.generateContent({
-            model: req.model,
+            model,
             contents: toGeminiContents(req.messages),
             config: {
               systemInstruction: system,
@@ -254,6 +266,7 @@ export const geminiProvider: AiProvider = {
             },
           }),
         req.timeoutMs,
+        req.model,
       );
 
       const toolUses = (res.functionCalls ?? []).map((fc, i) => ({
@@ -294,9 +307,9 @@ export const geminiProvider: AiProvider = {
     try {
       const think = thinkingConfig(req);
       const res = await withRetry(
-        (signal) =>
+        (signal, model) =>
           ai.models.generateContent({
-            model: req.model,
+            model,
             contents: toGeminiContents(req.messages),
             config: {
               systemInstruction: system,
@@ -321,6 +334,7 @@ export const geminiProvider: AiProvider = {
             },
           }),
         req.timeoutMs,
+        req.model,
       );
 
       const rawText = (res.text ?? '').trim();

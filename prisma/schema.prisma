@@ -283,6 +283,7 @@ model Profile {
   pushSubscriptions       PushSubscription[]
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
+  physiqueAnalyses        PhysiqueAnalysis[]
   competitions            Competition[]
   coachProfile            CoachProfile?
 
@@ -680,6 +681,23 @@ model SportProfile {
 
   @@index([userId])
   @@map("sport_profile")
+}
+
+/// Análisis de físico por foto (IA). Se guarda sólo el informe en texto; las fotos
+/// nunca se almacenan.
+model PhysiqueAnalysis {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid @map("user_id")
+  user       Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Informe estructurado (ver src/features/coach-profile/physique-schema.ts).
+  report     Json
+  photoCount Int      @default(1) @map("photo_count")
+  /// Lo que el usuario aclaró al pedir el análisis.
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("physique_analysis")
 }
 
 /// Una competencia / evento del usuario. `priority` A = objetivo principal,

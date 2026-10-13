@@ -616,7 +616,15 @@ function PhysiqueAnalyzer({
       try {
         const res = await analyzePhysiqueAction({ photos });
         if (res.ok && res.data) {
-          onChange(`${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}. ${res.data.weakPoints}`);
+          onChange(
+            [
+              res.data.bodyFatEstimate ? `${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}.` : '',
+              res.data.weakPoints || res.data.summary || res.data.photoTips,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .slice(0, 700),
+          );
           setPhotos([]);
           setPhotoKey((k) => k + 1);
         } else {
