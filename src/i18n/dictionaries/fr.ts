@@ -65,6 +65,7 @@ export const fr: Dictionary = {
     analyzing: 'Analyse en cours… jusqu’à 1 minute',
     privacy: 'Les photos sont envoyées à l’IA pour l’analyse puis supprimées : jamais conservées. Seul le rapport reste.',
     errGeneric: 'Analyse impossible. Réessayez.',
+    errBusy: 'L’IA est très sollicitée en ce moment. Réessayez dans une minute.',
     errBlocked: 'L’IA n’a pas pu analyser ces photos. Essayez-en d’autres : de face, bien éclairées, en tenue de sport ajustée.',
     errNotConfigured: 'L’analyse par photo n’est pas disponible dans cette installation.',
     errLimit: 'Vous avez atteint la limite d’analyses du jour. Réessayez demain.',
@@ -116,6 +117,7 @@ export const fr: Dictionary = {
     physiquePhotoMax: 'Jusqu’à 3 photos.',
     physiquePhotoError: 'Impossible de traiter l’image.',
     physiqueNotConfigured: 'L’analyse par photo n’est pas disponible sur cette installation.',
+    physiqueBusy: 'L’IA est très sollicitée en ce moment. Réessayez dans une minute.',
     physiqueBlocked: 'L’IA n’a pas pu analyser cette photo. Essayez-en une autre : de face, bien éclairée, en tenue de sport ajustée.',
     physiqueError: 'Analyse impossible. Réessayez.',
     sections: {

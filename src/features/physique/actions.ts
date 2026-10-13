@@ -54,7 +54,7 @@ export async function analyzePhysiqueReport(raw: {
   ]);
   if (todayCount >= PHYSIQUE_DAILY_LIMIT) return { error: 'LIMIT' };
 
-  let analysis: PhysiqueAnalysis | 'blocked' | null;
+  let analysis: Awaited<ReturnType<typeof import('@/server/ai/gateway').analyzePhysique>>;
   try {
     const { analyzePhysique } = await import('@/server/ai/gateway');
     const { physiqueAnalysisSchema } = await import('@/features/coach-profile/physique-schema');
@@ -71,8 +71,18 @@ export async function analyzePhysiqueReport(raw: {
     console.error('[physique] falló', e instanceof Error ? e.message : e);
     return { error: 'PROVIDER_ERROR' };
   }
-  if (analysis === 'blocked') return { error: 'BLOCKED' };
-  if (!analysis) return { error: 'INVALID_OUTPUT' };
+  if ('failure' in analysis) {
+    return {
+      error:
+        analysis.failure === 'blocked'
+          ? 'BLOCKED'
+          : analysis.failure === 'busy'
+            ? 'BUSY'
+            : analysis.failure === 'timeout'
+              ? 'TIMEOUT'
+              : 'INVALID_OUTPUT',
+    };
+  }
 
   const row = await db.physiqueAnalysis.create({
     data: {

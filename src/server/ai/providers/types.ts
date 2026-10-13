@@ -51,6 +51,8 @@ export interface AiGenerateRequest {
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   /** Habilita razonamiento adaptativo (sólo modelos que lo soportan). */
   thinking?: boolean;
+  /** Pensamiento mínimo (respuesta más rápida). Gemini 3.x no deja apagarlo del todo. */
+  minimalThinking?: boolean;
   tools?: AiToolSpec[];
   /** Instrucción de operador para este turno (canal system mid-conversación). */
   operatorNote?: string;

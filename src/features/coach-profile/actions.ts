@@ -98,8 +98,18 @@ export async function analyzePhysiqueAction(raw: {
   try {
     const { analyzePhysique } = await import('@/server/ai/gateway');
     const analysis = await analyzePhysique({ profile, entitlement, photos: parsed.data.photos });
-    if (analysis === 'blocked') return { error: 'BLOCKED' };
-    if (!analysis) return { error: 'INVALID_OUTPUT' };
+    if ('failure' in analysis) {
+      return {
+        error:
+          analysis.failure === 'blocked'
+            ? 'BLOCKED'
+            : analysis.failure === 'busy'
+              ? 'BUSY'
+              : analysis.failure === 'timeout'
+                ? 'TIMEOUT'
+                : 'INVALID_OUTPUT',
+      };
+    }
     return { ok: true, data: analysis };
   } catch (e) {
     console.error('[physique] falló', e instanceof Error ? e.message : e);

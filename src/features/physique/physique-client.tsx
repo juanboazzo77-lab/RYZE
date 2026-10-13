@@ -68,7 +68,9 @@ export function PhysiqueClient({
                 ? tp.errNotConfigured
                 : res.error === 'LIMIT'
                   ? tp.errLimit
-                  : tp.errGeneric,
+                  : res.error === 'BUSY' || res.error === 'TIMEOUT'
+                    ? tp.errBusy
+                    : `${tp.errGeneric} (${res.error ?? 'ERROR'})`,
           );
         }
       } catch {

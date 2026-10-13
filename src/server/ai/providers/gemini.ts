@@ -145,8 +145,10 @@ function mapError(e: unknown): AiError {
  */
 function thinkingConfig(req: {
   thinking?: boolean;
+  minimalThinking?: boolean;
   effort?: AiGenerateRequest['effort'];
-}): { thinkingBudget: number } | undefined {
+}): { thinkingBudget: number } | { thinkingLevel: never } | undefined {
+  if (req.minimalThinking) return { thinkingLevel: 'MINIMAL' as never };
   if (!req.thinking) return undefined;
   switch (req.effort) {
     case 'low':
@@ -187,37 +189,72 @@ async function once<T>(fn: (signal: AbortSignal) => Promise<T>, budgetMs: number
   }
 }
 
-/** Modelo al que se cambia cuando el principal está saturado o no responde. */
-function fallbackModel(): string {
-  return process.env.AI_FALLBACK_MODEL?.trim() || 'gemini-3.5-flash';
+/** Modelos de respaldo, en orden. Cada modelo tiene su propia cuota diaria. */
+function fallbackChain(model: string): string[] {
+  const second = process.env.AI_FALLBACK_MODEL?.trim() || 'gemini-3.5-flash';
+  const third = process.env.AI_FALLBACK_MODEL_2?.trim() || 'gemini-3.8-flash';
+  const lite = process.env.AI_MODEL?.trim() || 'gemini-3.5-flash-lite';
+  return [...new Set([model, second, third, lite])];
 }
 
 const TRANSIENT = /(503|UNAVAILABLE|high demand|overloaded|500|timed out|AttemptTimeout)/i;
+const QUOTA = /(RESOURCE_EXHAUSTED|exceeded your current quota|429)/i;
+
+/** Modelos con la cuota diaria agotada: se saltean hasta que se renueve. */
+const exhaustedUntil = new Map<string, number>();
+
+function markExhausted(model: string, message: string) {
+  const m = /"retryDelay":"(\d+)s"/.exec(message);
+  const seconds = m ? Number(m[1]) : 600;
+  exhaustedUntil.set(model, Date.now() + Math.min(Math.max(seconds, 60), 6 * 3600) * 1000);
+}
 
 /**
- * Un intento con el modelo principal usando poco más de la mitad del tiempo; si
- * falla por saturación (503) o no responde a tiempo, un segundo intento con el
- * modelo de respaldo con lo que quede. Los modelos "lite" de Gemini tienen
- * picos de 503 y de latencia, y sin respaldo el usuario veía sólo un error.
+ * Reintenta con el tiempo disponible, rotando entre el modelo principal y los de
+ * respaldo. Gemini tiene picos de saturación (los 503 vuelven en segundos: se
+ * reintenta enseguida), pedidos que se cuelgan (se cortan para probar con otro
+ * modelo) y, en el plan gratuito, una cuota diaria chica por modelo (un modelo
+ * agotado se saltea y se pasa al siguiente sin esperar).
  */
 async function withRetry<T>(
   fn: (signal: AbortSignal, model: string) => Promise<T>,
   totalMs: number,
   model: string,
 ): Promise<T> {
-  const fallback = fallbackModel();
-  const canFallback = fallback !== model;
+  const chain = fallbackChain(model);
   const deadline = Date.now() + totalMs;
-  try {
-    return await once((signal) => fn(signal, model), Math.floor(totalMs * (canFallback ? 0.55 : 0.8)));
-  } catch (e) {
-    const msg = e instanceof Error ? `${e.name} ${e.message}` : String(e);
+  const firstShare = totalMs <= 70_000 ? 0.4 : 0.55;
+  let lastError: unknown;
+  let turn = 0;
+
+  for (let attempt = 0; attempt < 6; attempt++) {
     const remaining = deadline - Date.now();
-    if (!TRANSIENT.test(msg) || remaining < 5_000) throw e;
-    await new Promise((r) => setTimeout(r, 500));
-    const next = canFallback ? fallback : model;
-    return once((signal) => fn(signal, next), remaining - 500);
+    if (remaining < 4_000) break;
+    const live = chain.filter((m) => (exhaustedUntil.get(m) ?? 0) < Date.now());
+    if (live.length === 0) break;
+    const next = live[turn % live.length] as string;
+    const budget =
+      turn === 0 && live.length > 1
+        ? Math.floor(totalMs * firstShare)
+        : turn === 1
+          ? Math.floor(remaining * 0.6)
+          : remaining;
+    try {
+      return await once((signal) => fn(signal, next), Math.min(budget, remaining));
+    } catch (e) {
+      lastError = e;
+      const msg = e instanceof Error ? `${e.name} ${e.message}` : String(e);
+      if (QUOTA.test(msg)) {
+        markExhausted(next, msg);
+        continue; // otro modelo, sin esperar
+      }
+      if (!TRANSIENT.test(msg)) throw e;
+      turn++;
+      await new Promise((r) => setTimeout(r, turn < 2 ? 400 : 1_200));
+    }
   }
+  if (lastError) throw lastError;
+  throw new Error('429 RESOURCE_EXHAUSTED: cuota diaria agotada en todos los modelos');
 }
 
 export const geminiProvider: AiProvider = {

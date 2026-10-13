@@ -63,6 +63,7 @@ export const es = {
     analyzing: 'Analizando… puede tardar hasta 1 minuto',
     privacy: 'Las fotos se mandan a la IA para el análisis y se descartan: nunca se guardan. Solo queda el informe.',
     errGeneric: 'No se pudo analizar. Probá de nuevo.',
+    errBusy: 'La IA está muy ocupada en este momento. Probá de nuevo en un minuto.',
     errBlocked: 'La IA no pudo analizar esas fotos. Probá con otras: de frente, con buena luz y ropa deportiva ajustada.',
     errNotConfigured: 'El análisis por foto no está disponible en esta instalación.',
     errLimit: 'Llegaste al máximo de análisis de hoy. Probá mañana.',
@@ -114,6 +115,7 @@ export const es = {
     physiquePhotoMax: 'Hasta 3 fotos.',
     physiquePhotoError: 'No se pudo procesar la imagen.',
     physiqueNotConfigured: 'El análisis por foto no está disponible en esta instalación.',
+    physiqueBusy: 'La IA está muy ocupada en este momento. Probá de nuevo en un minuto.',
     physiqueBlocked: 'La IA no pudo analizar esa foto. Probá con otra: de frente, con buena luz y ropa deportiva ajustada.',
     physiqueError: 'No se pudo analizar. Probá de nuevo.',
     sections: {

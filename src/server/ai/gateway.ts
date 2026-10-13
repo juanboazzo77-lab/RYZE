@@ -44,6 +44,9 @@ export interface CoachHistoryMsg {
 const COACH_TIMEOUT_MS = 70_000;
 const PLAN_TIMEOUT_MS = 110_000;
 const CHECKIN_TIMEOUT_MS = 100_000;
+const PHYSIQUE_TIMEOUT_MS = 58_000;
+
+export type PhysiqueFailure = 'blocked' | 'busy' | 'timeout' | 'invalid';
 const MAX_HISTORY = 16;
 
 /** Un turno del AI Coach. Devuelve el texto de respuesta del asistente. */
@@ -372,9 +375,10 @@ export async function analyzePhysique(args: {
   note?: string | null;
   /** Resumen del análisis anterior, para comparar la evolución. */
   previous?: string | null;
-}): Promise<PhysiqueAnalysis | 'blocked' | null> {
+}): Promise<PhysiqueAnalysis | { failure: PhysiqueFailure }> {
   const { profile, entitlement, photos, note, previous } = args;
-  const model = modelFor('weekly_checkin');
+  // Las fotos piden mejor visión que el modelo "lite" (que además se satura seguido).
+  const model = process.env.AI_VISION_MODEL?.trim() || 'gemini-3.5-flash';
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = physiqueAnalysisSystemPrompt(profile.locale, contextBlock, previous);
@@ -389,7 +393,7 @@ export async function analyzePhysique(args: {
     const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(p);
     if (m && m[1] && m[2]) userContent.push({ type: 'image', mediaType: m[1], dataBase64: m[2] });
   }
-  if (userContent.length < 2) return null;
+  if (userContent.length < 2) return { failure: 'invalid' };
 
   try {
     const res = await activeProvider().generateStructured({
@@ -399,20 +403,29 @@ export async function analyzePhysique(args: {
       schema: physiqueAnalysisSchema,
       schemaName: 'PhysiqueAnalysis',
       maxOutputTokens: 3000,
-      timeoutMs: CHECKIN_TIMEOUT_MS,
+      // Total por debajo del límite de una función de Vercel (60 s): ~30 s con el
+      // modelo principal y el resto con el de respaldo.
+      timeoutMs: PHYSIQUE_TIMEOUT_MS,
       temperature: 0.3,
       thinking: false,
+      minimalThinking: true,
     });
     await recordUsage(profile.id, 'weekly_checkin', model, res.usage, profile.timezone, false);
     // La IA se negó a analizar la foto (filtros de seguridad del modelo).
-    if (!res.data && res.stopReason === 'refusal') return 'blocked';
+    if (!res.data && res.stopReason === 'refusal') return { failure: 'blocked' };
     // El esquema tolerante deja vacío lo que el modelo no devolvió: hace falta algo útil.
-    if (!res.data || !hasUsefulContent(res.data)) return null;
+    if (!res.data || !hasUsefulContent(res.data)) return { failure: 'invalid' };
     return res.data;
   } catch (e) {
     if (e instanceof AiError) console.error('[ai] physique', e.code, '-', e.message);
     else console.error('[ai] physique falló', e instanceof Error ? e.message : e);
-    return null;
+    if (e instanceof AiError) {
+      if (e.code === 'TIMEOUT') return { failure: 'timeout' };
+      if (e.code === 'RATE_LIMITED' || /503|UNAVAILABLE|high demand|overloaded/i.test(e.message)) {
+        return { failure: 'busy' };
+      }
+    }
+    return { failure: 'invalid' };
   }
 }
 

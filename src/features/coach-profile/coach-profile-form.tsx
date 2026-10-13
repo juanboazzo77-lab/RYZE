@@ -633,7 +633,9 @@ function PhysiqueAnalyzer({
               ? c.physiqueNotConfigured
               : res.error === 'BLOCKED'
                 ? c.physiqueBlocked
-                : c.physiqueError,
+                : res.error === 'BUSY' || res.error === 'TIMEOUT'
+                  ? c.physiqueBusy
+                  : c.physiqueError,
           );
         }
       } catch {

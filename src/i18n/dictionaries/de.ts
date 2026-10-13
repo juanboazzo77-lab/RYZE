@@ -65,6 +65,7 @@ export const de: Dictionary = {
     analyzing: 'Analyse läuft… kann bis zu 1 Minute dauern',
     privacy: 'Die Fotos werden für die Analyse an die KI gesendet und danach verworfen: sie werden nie gespeichert. Nur der Bericht bleibt.',
     errGeneric: 'Analyse nicht möglich. Versuche es erneut.',
+    errBusy: 'Die KI ist gerade stark ausgelastet. Versuche es in einer Minute erneut.',
     errBlocked: 'Die KI konnte diese Fotos nicht analysieren. Versuche andere: frontal, gutes Licht, enge Sportkleidung.',
     errNotConfigured: 'Die Fotoanalyse ist in dieser Installation nicht verfügbar.',
     errLimit: 'Du hast das heutige Analyse-Limit erreicht. Versuche es morgen wieder.',
@@ -116,6 +117,7 @@ export const de: Dictionary = {
     physiquePhotoMax: 'Bis zu 3 Fotos.',
     physiquePhotoError: 'Das Bild konnte nicht verarbeitet werden.',
     physiqueNotConfigured: 'Die Fotoanalyse ist in dieser Installation nicht verfügbar.',
+    physiqueBusy: 'Die KI ist gerade stark ausgelastet. Versuche es in einer Minute erneut.',
     physiqueBlocked: 'Die KI konnte dieses Foto nicht analysieren. Versuche ein anderes: frontal, gutes Licht, enge Sportkleidung.',
     physiqueError: 'Analyse fehlgeschlagen. Versuch es erneut.',
     sections: {
