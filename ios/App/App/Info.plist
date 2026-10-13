@@ -66,6 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Forza AI usa la cámara para escanear el código de barras de los alimentos y para sacar fotos de tu físico o de tus comidas.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Forza AI accede a tus fotos para que puedas elegir una imagen de tu físico o de una comida y analizarla.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 </dict>
