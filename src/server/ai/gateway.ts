@@ -368,7 +368,7 @@ export async function analyzePhysique(args: {
   profile: Profile;
   entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   photos: string[];
-}): Promise<PhysiqueAnalysis | null> {
+}): Promise<PhysiqueAnalysis | 'blocked' | null> {
   const { profile, entitlement, photos } = args;
   const model = modelFor('weekly_checkin');
 
@@ -396,6 +396,10 @@ export async function analyzePhysique(args: {
       thinking: false,
     });
     await recordUsage(profile.id, 'weekly_checkin', model, res.usage, profile.timezone, false);
+    // La IA se negó a analizar la foto (filtros de seguridad del modelo).
+    if (!res.data && res.stopReason === 'refusal') return 'blocked';
+    // El esquema tolerante deja vacío lo que el modelo no devolvió: eso no sirve.
+    if (!res.data || !res.data.bodyFatEstimate || res.data.weakPoints.length < 5) return null;
     return res.data;
   } catch (e) {
     if (e instanceof AiError) console.error('[ai] physique', e.code, '-', e.message);

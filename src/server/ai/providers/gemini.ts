@@ -1,5 +1,5 @@
 import 'server-only';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, HarmBlockThreshold, HarmCategory } from '@google/genai';
 import type {
   Content,
   FunctionDeclaration,
@@ -287,6 +287,10 @@ export const geminiProvider: AiProvider = {
       `JSON Schema (sin markdown, sin comentarios, sin texto antes ni después):\n` +
       JSON.stringify(jsonSchema);
 
+    const hasImages = req.messages.some(
+      (m) => Array.isArray(m.content) && m.content.some((b) => b.type === 'image'),
+    );
+
     try {
       const think = thinkingConfig(req);
       const res = await withRetry(
@@ -301,6 +305,19 @@ export const geminiProvider: AiProvider = {
               responseMimeType: 'application/json',
               abortSignal: signal,
               ...(think ? { thinkingConfig: think } : {}),
+              // Fotos del propio físico (torso sin remera): con el filtro por defecto
+              // el modelo suele bloquearlas como "contenido explícito". Sólo se
+              // relaja ese filtro y sólo cuando el pedido trae imágenes.
+              ...(hasImages
+                ? {
+                    safetySettings: [
+                      {
+                        category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                      },
+                    ],
+                  }
+                : {}),
             },
           }),
         req.timeoutMs,

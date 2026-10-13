@@ -69,6 +69,7 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
 
   function submit() {
     start(async () => {
+      try {
       const res = await submitCheckin({
         hunger,
         energy,
@@ -85,6 +86,10 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
         toast.success(tc.submitted);
         setPhotos([]); // las fotos no se guardan: se descartan del cliente también
       } else toast.error(tc.genericError);
+      } catch {
+        // Corte de red o fotos demasiado pesadas: no romper la pantalla.
+        toast.error(tc.genericError);
+      }
     });
   }
 

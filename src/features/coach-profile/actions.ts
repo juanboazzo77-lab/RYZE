@@ -98,6 +98,7 @@ export async function analyzePhysiqueAction(raw: {
   try {
     const { analyzePhysique } = await import('@/server/ai/gateway');
     const analysis = await analyzePhysique({ profile, entitlement, photos: parsed.data.photos });
+    if (analysis === 'blocked') return { error: 'BLOCKED' };
     if (!analysis) return { error: 'INVALID_OUTPUT' };
     return { ok: true, data: analysis };
   } catch (e) {
