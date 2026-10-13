@@ -5,24 +5,8 @@ import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useT } from '@/i18n/provider';
-import { savePushSubscription, removePushSubscription, sendTestPush } from './push-actions';
-
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
-
-function urlBase64ToBytes(base64: string): ArrayBuffer {
-  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
-  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = atob(b64);
-  const buf = new ArrayBuffer(raw.length);
-  const view = new Uint8Array(buf);
-  for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i);
-  return buf;
-}
-
-async function getRegistration(): Promise<ServiceWorkerRegistration> {
-  const existing = await navigator.serviceWorker.getRegistration('/');
-  return existing ?? navigator.serviceWorker.register('/sw.js', { scope: '/' });
-}
+import { removePushSubscription } from './push-actions';
+import { enablePush, getRegistration, hasPushSubscription, isPushSupported } from './push-client';
 
 export function PushToggle() {
   const t = useT();
@@ -34,55 +18,26 @@ export function PushToggle() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const ok =
-      typeof window !== 'undefined' &&
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window &&
-      Boolean(VAPID_PUBLIC_KEY);
+    const ok = isPushSupported();
     setSupported(ok);
     if (!ok) return;
     setDenied(Notification.permission === 'denied');
-    getRegistration()
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setSubscribed(Boolean(sub)))
-      .catch(() => {});
+    hasPushSubscription().then(setSubscribed);
   }, []);
 
   async function enable() {
     setBusy(true);
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') {
-        setDenied(perm === 'denied');
-        toast.error(tp.denied);
-        return;
-      }
-      const reg = await getRegistration();
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToBytes(VAPID_PUBLIC_KEY),
-      });
-      const json = sub.toJSON();
-      const res = await savePushSubscription({
-        endpoint: sub.endpoint,
-        p256dh: json.keys?.p256dh ?? '',
-        auth: json.keys?.auth ?? '',
-        userAgent: navigator.userAgent.slice(0, 400),
-      });
-      if (!res.ok) {
-        await sub.unsubscribe().catch(() => {});
-        toast.error(t.common.error);
-        return;
-      }
+    const res = await enablePush();
+    if (res === 'ok') {
       setSubscribed(true);
       toast.success(t.common.saved);
-      void sendTestPush();
-    } catch {
+    } else if (res === 'denied') {
+      setDenied(Notification.permission === 'denied');
+      toast.error(tp.denied);
+    } else {
       toast.error(t.common.error);
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   async function disable() {
