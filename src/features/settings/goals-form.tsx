@@ -10,6 +10,7 @@ import { Field } from '@/components/form/field';
 import { OptionCards } from '@/components/form/option-cards';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { useT } from '@/i18n/provider';
+import { useReturn } from '@/lib/use-return';
 import { GOAL_OPTIONS } from '@/lib/domain-options';
 import { kgToLb, lbToKg } from '@/lib/units';
 import { ageFromBirthdate, computeTargets, defaultWeeklyRateKg } from '@/lib/nutrition/targets';
@@ -63,6 +64,8 @@ export function GoalsForm({
     toast.message(t.goals.recalcApplied);
   }
 
+  const goBack = useReturn('/settings');
+
   function save() {
     const parsed = goalUpdateSchema.safeParse(d);
     if (!parsed.success) {
@@ -71,8 +74,10 @@ export function GoalsForm({
     }
     start(async () => {
       const res = await updateGoalAndTargets(parsed.data);
-      if (res.ok) toast.success(t.goals.savedTargets);
-      else toast.error(t.onboarding.errors.generic);
+      if (res.ok) {
+        toast.success(t.goals.savedTargets);
+        goBack();
+      } else toast.error(t.onboarding.errors.generic);
     });
   }
 

@@ -12,6 +12,7 @@ import { ChipMulti } from '@/components/form/chip-multi';
 import { TagInput } from '@/components/form/tag-input';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { useT } from '@/i18n/provider';
+import { useReturn } from '@/lib/use-return';
 import { Segmented } from '@/components/form/segmented';
 import {
   ACTIVITY_OPTIONS,
@@ -43,6 +44,8 @@ export function ProfileForm({
   const imperial = unitSystem === 'IMPERIAL';
   const { ft, in: inch } = cmToFtIn(d.heightCm);
 
+  const goBack = useReturn('/settings');
+
   function save() {
     const parsed = profileUpdateSchema.safeParse(d);
     if (!parsed.success) {
@@ -51,8 +54,10 @@ export function ProfileForm({
     }
     start(async () => {
       const res = await updateProfile(parsed.data);
-      if (res.ok) toast.success(t.profile.saved);
-      else toast.error(t.onboarding.errors.generic);
+      if (res.ok) {
+        toast.success(t.profile.saved);
+        goBack();
+      } else toast.error(t.onboarding.errors.generic);
     });
   }
 

@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useT } from '@/i18n/provider';
+import { useReturn } from '@/lib/use-return';
 import { interpolate } from '@/i18n/interpolate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,17 +30,15 @@ const optList = <T extends string>(vals: readonly T[], map: OptMap) =>
 export function CoachProfileForm({
   initial,
   sex,
-  aiReady,
   hasSport,
 }: {
   initial: CoachProfileData;
   sex: Sex | null;
-  aiReady: boolean;
   hasSport: boolean;
 }) {
   const t = useT();
   const c = t.coachProfile;
-  const router = useRouter();
+  const goBack = useReturn('/settings');
   const [d, setD] = useState<CoachProfileData>(initial);
   const [pending, start] = useTransition();
 
@@ -62,14 +60,8 @@ export function CoachProfileForm({
           toast.error(t.onboarding.errors.generic);
           return;
         }
-        if (aiReady) {
-          // El borrador no reemplaza nada activo hasta que el usuario lo
-          // confirme en /coach/new-plan (ver NewPlanFlow con ?auto=1).
-          toast.success(c.savedGenerating);
-          router.push('/coach/new-plan?auto=1');
-        } else {
-          toast.success(c.savedToast);
-        }
+        toast.success(c.savedToast);
+        goBack();
       } catch {
         // fallo de red / timeout: no romper la pantalla, dejar reintentar
         toast.error(t.onboarding.errors.generic);
@@ -614,17 +606,31 @@ function PhysiqueAnalyzer({
   const t = useT();
   const c = t.coachProfile;
   const [photos, setPhotos] = useState<string[]>([]);
+  // Cambia al terminar un análisis para vaciar las miniaturas del selector.
+  const [photoKey, setPhotoKey] = useState(0);
   const [analyzing, start] = useTransition();
 
   function analyze() {
     if (photos.length === 0) return;
     start(async () => {
-      const res = await analyzePhysiqueAction({ photos });
-      if (res.ok && res.data) {
-        onChange(`${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}. ${res.data.weakPoints}`);
-        setPhotos([]);
-      } else {
-        toast.error(res.error === 'NOT_CONFIGURED' ? c.physiqueNotConfigured : c.physiqueError);
+      try {
+        const res = await analyzePhysiqueAction({ photos });
+        if (res.ok && res.data) {
+          onChange(`${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}. ${res.data.weakPoints}`);
+          setPhotos([]);
+          setPhotoKey((k) => k + 1);
+        } else {
+          toast.error(
+            res.error === 'NOT_CONFIGURED'
+              ? c.physiqueNotConfigured
+              : res.error === 'BLOCKED'
+                ? c.physiqueBlocked
+                : c.physiqueError,
+          );
+        }
+      } catch {
+        // Corte de red o foto demasiado pesada: no romper la pantalla.
+        toast.error(c.physiqueError);
       }
     });
   }
@@ -641,6 +647,7 @@ function PhysiqueAnalyzer({
       <div className="space-y-2 rounded-lg border border-dashed p-3">
         <p className="text-xs text-muted-foreground">{c.physiqueHint}</p>
         <PhotoPicker
+          key={photoKey}
           value={photos}
           onChange={setPhotos}
           max={3}
