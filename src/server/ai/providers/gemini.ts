@@ -198,7 +198,7 @@ function fallbackChain(model: string): string[] {
 }
 
 const TRANSIENT = /(503|UNAVAILABLE|high demand|overloaded|500|timed out|AttemptTimeout)/i;
-const QUOTA = /(RESOURCE_EXHAUSTED|exceeded your current quota|429)/i;
+const QUOTA = /(RESOURCE_EXHAUSTED|exceeded your current quota|429|NOT_FOUND|is not found|404)/i;
 
 /** Modelos con la cuota diaria agotada: se saltean hasta que se renueve. */
 const exhaustedUntil = new Map<string, number>();
