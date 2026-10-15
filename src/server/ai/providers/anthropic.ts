@@ -17,7 +17,54 @@ import type {
  * del repo que importa el SDK de Anthropic. Todo lo demás pasa por el Gateway.
  */
 
-const MODELS_WITH_ADAPTIVE_THINKING = new Set(['claude-opus-5', 'claude-sonnet-5']);
+const MODELS_WITH_ADAPTIVE_THINKING = new Set([
+  'claude-opus-5',
+  'claude-sonnet-5',
+  'claude-opus-5-5',
+  'claude-sonnet-5-5',
+  'claude-haiku-5-5',
+]);
+
+/** Generación 5.x: rechaza `temperature` distinta del default y razona (adaptive) por defecto. */
+const isModern = (model: string) => /^claude-(opus|sonnet|haiku|fable)-5/.test(model);
+
+/** Palabras clave de JSON Schema que la salida estructurada de Anthropic no admite. */
+const UNSUPPORTED_KEYS = new Set([
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+  'minLength',
+  'maxLength',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'format',
+  'default',
+  '$schema',
+]);
+
+/** Quita lo no soportado y exige `additionalProperties:false` en cada objeto (el esquema de zod igual valida después). */
+function cleanForAnthropic(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(cleanForAnthropic);
+  if (node && typeof node === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      if (UNSUPPORTED_KEYS.has(k)) continue;
+      // Los nombres de campo dentro de `properties` no se filtran, sólo sus esquemas.
+      out[k] =
+        k === 'properties' && v && typeof v === 'object'
+          ? Object.fromEntries(
+              Object.entries(v as Record<string, unknown>).map(([pk, pv]) => [pk, cleanForAnthropic(pv)]),
+            )
+          : cleanForAnthropic(v);
+    }
+    if (out.type === 'object' || out.properties) out.additionalProperties = false;
+    return out;
+  }
+  return node;
+}
 const MODELS_WITH_MID_CONVO_SYSTEM = new Set(['claude-opus-5']);
 
 let client: Anthropic | null = null;
@@ -118,7 +165,8 @@ function buildThinking(
   req: { thinking?: boolean; effort?: AiGenerateRequest['effort'] },
 ) {
   if (!req.thinking || !MODELS_WITH_ADAPTIVE_THINKING.has(model)) {
-    return { thinking: undefined, effort: undefined };
+    // 5.x razona por defecto: sin pedido de razonamiento, esfuerzo bajo para que sea rápido y barato.
+    return { thinking: undefined, effort: isModern(model) ? ('low' as const) : undefined };
   }
   return { thinking: { type: 'adaptive' as const }, effort: req.effort ?? 'medium' };
 }
@@ -152,7 +200,7 @@ export const anthropicProvider: AiProvider = {
         {
           model: req.model,
           max_tokens: req.maxOutputTokens,
-          temperature: req.temperature,
+          ...(isModern(req.model) ? {} : { temperature: req.temperature }),
           system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
           messages,
           ...(req.tools && req.tools.length > 0
@@ -193,17 +241,16 @@ export const anthropicProvider: AiProvider = {
 
   async generateStructured<T>(req: AiStructuredRequest<T>): Promise<AiStructuredResult<T>> {
     const c = getClient();
-    const jsonSchema = zodToJsonSchema(req.schema, {
-      target: 'jsonSchema7',
-      $refStrategy: 'none',
-    }) as Record<string, unknown>;
+    const jsonSchema = cleanForAnthropic(
+      zodToJsonSchema(req.schema, { target: 'jsonSchema7', $refStrategy: 'none' }),
+    ) as Record<string, unknown>;
     const { thinking, effort } = buildThinking(req.model, req);
     try {
       const res = await c.messages.create(
         {
           model: req.model,
           max_tokens: req.maxOutputTokens,
-          temperature: req.temperature,
+          ...(isModern(req.model) ? {} : { temperature: req.temperature }),
           system: [{ type: 'text', text: req.system, cache_control: { type: 'ephemeral' } }],
           messages: toAnthropicMessages(req.messages),
           output_config: {

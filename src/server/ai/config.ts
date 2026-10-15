@@ -14,6 +14,9 @@ const DEFAULT_PROVIDER = 'gemini';
 // trabados. Subí a `gemini-flash-latest` en AI_MODEL para más calidad.
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const DEFAULT_MODEL_FAST = 'gemini-3.5-flash-lite';
+// Con Anthropic: Sonnet 5.5 para planes/chat/fotos y Haiku 5.5 para tareas livianas.
+const ANTHROPIC_MODEL = 'claude-sonnet-5-5';
+const ANTHROPIC_MODEL_FAST = 'claude-haiku-5-5';
 
 export function providerName(): string {
   return process.env.AI_PROVIDER?.trim() || DEFAULT_PROVIDER;
@@ -29,9 +32,18 @@ export function aiConfigured(): boolean {
 
 /** Modelo para cada tarea. `AI_MODEL` cubre las tareas "grandes"; `AI_MODEL_FAST` las livianas. */
 export function modelFor(task: AiTask): string {
-  const big = process.env.AI_MODEL?.trim() || DEFAULT_MODEL;
-  const fast = process.env.AI_MODEL_FAST?.trim() || DEFAULT_MODEL_FAST;
+  const anthropic = providerName() === 'anthropic';
+  const big = process.env.AI_MODEL?.trim() || (anthropic ? ANTHROPIC_MODEL : DEFAULT_MODEL);
+  const fast =
+    process.env.AI_MODEL_FAST?.trim() || (anthropic ? ANTHROPIC_MODEL_FAST : DEFAULT_MODEL_FAST);
   return task === 'parse' ? fast : big;
+}
+
+/** Modelo para análisis de fotos: pide mejor visión que el modelo liviano. */
+export function visionModel(): string {
+  const set = process.env.AI_VISION_MODEL?.trim();
+  if (set) return set;
+  return providerName() === 'anthropic' ? ANTHROPIC_MODEL : 'gemini-3.5-flash';
 }
 
 /** Presupuesto de tokens de salida por tarea. */

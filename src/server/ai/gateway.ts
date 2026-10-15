@@ -1,6 +1,6 @@
 import 'server-only';
 import type { Entitlement, Locale, Profile } from '@prisma/client';
-import { activeProvider, maxOutputTokensFor, modelFor } from './config';
+import { activeProvider, maxOutputTokensFor, modelFor, visionModel } from './config';
 import { buildUserContextBlock } from './context';
 import {
   checkinSystemPrompt,
@@ -378,7 +378,7 @@ export async function analyzePhysique(args: {
 }): Promise<PhysiqueAnalysis | { failure: PhysiqueFailure }> {
   const { profile, entitlement, photos, note, previous } = args;
   // Las fotos piden mejor visión que el modelo "lite" (que además se satura seguido).
-  const model = process.env.AI_VISION_MODEL?.trim() || 'gemini-3.5-flash';
+  const model = visionModel();
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = physiqueAnalysisSystemPrompt(profile.locale, contextBlock, previous);
