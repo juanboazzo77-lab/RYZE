@@ -16,7 +16,7 @@ import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import { guessPrimary, inferSecondary, summarizeVolume } from '@/lib/training/volume';
 import { WeeklyVolume } from '@/features/training/weekly-volume';
-import type { PlanDraft, NutritionDraft } from './plan-schema';
+import { widenReps, type PlanDraft, type NutritionDraft } from './plan-schema';
 import { DAY_OPTIONS, stylesForDays, type PlanStyle } from './plan-styles';
 import {
   acceptGeneratedPlan,
@@ -452,8 +452,8 @@ function DraftReview({
                                 .join(' · ')
                             : interpolate(tp.setsReps, {
                                 sets: e.sets,
-                                min: e.repsMin,
-                                max: e.repsMax,
+                                min: widenReps(e.repsMin, e.repsMax, e.type).min,
+                                max: widenReps(e.repsMin, e.repsMax, e.type).max,
                                 rir: e.rir,
                                 rest: e.restSeconds,
                               })}

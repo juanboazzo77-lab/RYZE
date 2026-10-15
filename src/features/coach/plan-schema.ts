@@ -61,6 +61,22 @@ export const planDraftExercise = z.object({
     ),
 });
 
+/**
+ * Rango de reps con amplitud real: si el modelo devuelve 8-9 o 10-11, se abre el
+ * tope para que haya margen de progresión (mínimo 3 reps de diferencia).
+ * Cardio y series de 1-2 reps (singles/dobles pesados) quedan como están.
+ */
+export function widenReps(
+  repsMin: number,
+  repsMax: number,
+  type?: 'STRENGTH' | 'CARDIO',
+): { min: number; max: number } {
+  const min = Math.min(repsMin, repsMax);
+  let max = Math.max(repsMin, repsMax);
+  if (type !== 'CARDIO' && min >= 3 && max - min < 3) max = Math.min(50, min + 4);
+  return { min, max };
+}
+
 export const planDraftDay = z.object({
   name: str(40),
   weekday: int(1, 7),

@@ -14,7 +14,7 @@ import {
   defaultWeeklyRateKg,
   nutritionTargetRationale,
 } from '@/lib/nutrition/targets';
-import { planDraftSchema, type PlanDraft, type NutritionDraft } from './plan-schema';
+import { planDraftSchema, widenReps, type PlanDraft, type NutritionDraft } from './plan-schema';
 import { STYLE_PROMPT } from './plan-styles';
 import { normalizeName } from '@/lib/training/volume';
 import {
@@ -345,8 +345,8 @@ export async function acceptGeneratedPlan(raw: AcceptPlanInput): Promise<Result<
         exerciseId,
         orderIndex: exercises.length,
         targetSets: e.sets,
-        targetRepsMin: Math.min(e.repsMin, e.repsMax),
-        targetRepsMax: Math.max(e.repsMin, e.repsMax),
+        targetRepsMin: widenReps(e.repsMin, e.repsMax, e.type).min,
+        targetRepsMax: widenReps(e.repsMin, e.repsMax, e.type).max,
         targetRir: e.rir,
         restSeconds: e.restSeconds,
         targetDurationSec: e.durationMinutes ? Math.round(e.durationMinutes * 60) : null,

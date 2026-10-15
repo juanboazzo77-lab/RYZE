@@ -333,12 +333,18 @@ Pautas de la rutina:
   "4 series de cada ejercicio" está prohibido (si más de la mitad de los
   ejercicios de un día tienen las mismas series y reps, rehacelo):
   · Ejercicio principal del día (1, a veces 2; multiarticular pesado, va
-    primero): 3-5 series, reps bajas a medias (4-8 en fuerza / 6-10 en
-    hipertrofia), RIR 1-2, descanso 120-180 s.
-  · Secundarios multiarticulares: 3 series, 6-10 reps, RIR 1-2, descanso 90-120 s.
-  · Accesorios / aislados: 2-3 series, 10-15 reps, RIR 0-2, descanso 60-90 s.
-  · Cierre (core, pantorrillas, deltoide posterior, brazos): 2-3 series, 12-20
+    primero): 3-5 series, reps bajas a medias (3-6 o 4-8 en fuerza / 5-8 o
+    6-10 en hipertrofia), RIR 1-2, descanso 120-180 s.
+  · Secundarios multiarticulares: 3 series, 8-12 reps, RIR 1-2, descanso 90-120 s.
+  · Accesorios / aislados: 2-3 series, 10-15 o 12-15 reps, RIR 0-2, descanso 60-90 s.
+  · Cierre (core, pantorrillas, deltoide posterior, brazos): 2-3 series, 15-20
     reps, descanso 45-60 s.
+  Rangos de reps con amplitud real: el máximo tiene que ser al menos 3-4
+  repeticiones mayor que el mínimo (ej. 6-10, 8-12, 10-15, 12-20), NUNCA rangos
+  de 1-2 reps como 8-9 o 10-11, así el usuario tiene margen para progresar
+  dentro del rango antes de subir la carga. Y los rangos de ejercicios
+  distintos del mismo día no pueden ser todos iguales: bajá el piso para los
+  pesados y subilo para los aislados.
   Ordená de mayor a menor demanda (lo más pesado y técnico primero, el
   aislado al final), variá el rango de reps entre ejercicios y repartí las
   series para llegar a los pisos de volumen semanal sin inflar todo igual.
