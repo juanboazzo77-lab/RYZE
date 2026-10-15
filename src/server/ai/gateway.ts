@@ -61,32 +61,47 @@ export async function runCoachTurn(args: {
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = coachSystemPrompt(profile.locale, contextBlock);
-  const model = modelFor('coach_chat');
+  // Modelo liviano primero (barato); si falla o devuelve vacío, se reintenta con el grande.
+  const models = [...new Set([modelFor('coach_chat'), modelFor('generate_plan')])];
 
   const messages: AiChatMessage[] = [
     ...history.slice(-MAX_HISTORY).map((m) => ({ role: m.role, content: m.content })),
     { role: 'user' as const, content: userMessage },
   ];
 
-  const res = await activeProvider().generate({
-    model,
-    system,
-    messages,
-    maxOutputTokens: maxOutputTokensFor('coach_chat'),
-    timeoutMs: COACH_TIMEOUT_MS,
-    temperature: 0.7,
-    thinking: false,
-  });
+  let lastError: unknown = new AiError('INVALID_OUTPUT', 'sin respuesta del modelo');
+  for (const model of models) {
+    try {
+      const res = await activeProvider().generate({
+        model,
+        system,
+        messages,
+        maxOutputTokens: maxOutputTokensFor('coach_chat'),
+        timeoutMs: COACH_TIMEOUT_MS,
+        temperature: 0.7,
+        thinking: false,
+      });
 
-  const text = res.text.trim();
-  if (!text) {
-    console.error('[ai] coach: respuesta vacía', { model, stopReason: res.stopReason, usage: res.usage });
-    await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, false);
-    throw new AiError('INVALID_OUTPUT', 'respuesta vacía del modelo');
+      const text = res.text.trim();
+      if (!text) {
+        console.error('[ai] coach: respuesta vacía', { model, stopReason: res.stopReason, usage: res.usage });
+        await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, false);
+        lastError = new AiError('INVALID_OUTPUT', 'respuesta vacía del modelo');
+        continue;
+      }
+
+      await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
+      return { text };
+    } catch (e) {
+      console.error('[ai] coach falló', { model, error: e instanceof Error ? e.message : String(e) });
+      // Sin crédito, sin clave o sin permiso: otro modelo no lo arregla.
+      if (e instanceof AiError && (e.code === 'NOT_CONFIGURED' || e.code === 'PERMISSION_DENIED' || e.code === 'RATE_LIMITED')) {
+        throw e;
+      }
+      lastError = e;
+    }
   }
-
-  await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
-  return { text };
+  throw lastError;
 }
 
 /** Genera un borrador de rutina. No persiste nada. */

@@ -171,7 +171,7 @@ function buildThinking(
   return { thinking: { type: 'adaptive' as const }, effort: req.effort ?? 'medium' };
 }
 
-export const anthropicProvider: AiProvider = {
+const baseProvider: AiProvider = {
   name: 'anthropic',
 
   isConfigured() {
@@ -285,6 +285,40 @@ export const anthropicProvider: AiProvider = {
       };
     } catch (e) {
       throw mapError(e);
+    }
+  },
+};
+
+/**
+ * Si el modelo liviano (Haiku) rechaza el pedido o falla, se reintenta una vez con
+ * el modelo grande. Así una diferencia entre modelos nunca deja al usuario sin respuesta.
+ */
+const FALLBACK_MODEL = () => process.env.AI_MODEL?.trim() || 'claude-sonnet-5-5';
+const shouldFallback = (model: string, e: unknown) =>
+  /haiku/.test(model) &&
+  model !== FALLBACK_MODEL() &&
+  e instanceof AiError &&
+  (e.code === 'BAD_REQUEST' || e.code === 'PROVIDER_ERROR' || e.code === 'TIMEOUT');
+
+export const anthropicProvider: AiProvider = {
+  name: baseProvider.name,
+  isConfigured: () => baseProvider.isConfigured(),
+  async generate(req) {
+    try {
+      return await baseProvider.generate(req);
+    } catch (e) {
+      if (!shouldFallback(req.model, e)) throw e;
+      console.error('[ai] anthropic: el modelo liviano falló, reintento con el grande', (e as Error).message);
+      return baseProvider.generate({ ...req, model: FALLBACK_MODEL() });
+    }
+  },
+  async generateStructured(req) {
+    try {
+      return await baseProvider.generateStructured(req);
+    } catch (e) {
+      if (!shouldFallback(req.model, e)) throw e;
+      console.error('[ai] anthropic: el modelo liviano falló, reintento con el grande', (e as Error).message);
+      return baseProvider.generateStructured({ ...req, model: FALLBACK_MODEL() });
     }
   },
 };
