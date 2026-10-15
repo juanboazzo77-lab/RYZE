@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
-import { can } from '@/server/entitlements';
+import { can, limitsFor } from '@/server/entitlements';
+import { DateTime } from 'luxon';
 import { aiConfigured } from '@/server/ai/config';
 import {
   analyzePhysiqueSchema,
@@ -48,10 +49,13 @@ export async function analyzePhysiqueReport(raw: {
 
   const db = forUser(userId);
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const [todayCount, last] = await Promise.all([
+  const monthStart = DateTime.now().setZone(profile.timezone).startOf('month').toJSDate();
+  const [todayCount, monthCount, last] = await Promise.all([
     db.physiqueAnalysis.count({ where: { createdAt: { gte: since } } }),
+    db.physiqueAnalysis.count({ where: { createdAt: { gte: monthStart } } }),
     db.physiqueAnalysis.findFirst({ orderBy: { createdAt: 'desc' } }),
   ]);
+  if (monthCount >= limitsFor(entitlement).physiquePerMonth) return { error: 'LIMIT_MONTH' };
   if (todayCount >= PHYSIQUE_DAILY_LIMIT) return { error: 'LIMIT' };
 
   let analysis: Awaited<ReturnType<typeof import('@/server/ai/gateway').analyzePhysique>>;

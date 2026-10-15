@@ -66,8 +66,10 @@ export function PhysiqueClient({
               ? tp.errBlocked
               : res.error === 'NOT_CONFIGURED'
                 ? tp.errNotConfigured
-                : res.error === 'LIMIT'
-                  ? tp.errLimit
+                : res.error === 'LIMIT_MONTH'
+                  ? tp.errLimitMonth
+                  : res.error === 'LIMIT'
+                    ? tp.errLimit
                   : res.error === 'BUSY' || res.error === 'TIMEOUT'
                     ? tp.errBusy
                     : `${tp.errGeneric} (${res.error ?? 'ERROR'})`,

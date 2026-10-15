@@ -30,6 +30,8 @@ export interface TierLimits {
   aiCoachMessagesPerDay: number;
   /** Generaciones de plan con IA por mes. */
   aiPlansPerMonth: number;
+  /** Análisis de físico por foto por mes (cada uno cuesta ~4 centavos de IA). */
+  physiquePerMonth: number;
   features: Record<Feature, boolean>;
 }
 
@@ -42,6 +44,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
   FREE: {
     aiCoachMessagesPerDay: 0,
     aiPlansPerMonth: 0,
+    physiquePerMonth: 0,
     features: {
       ai_coach_message: false,
       ai_generate_plan: false,
@@ -54,8 +57,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   BASIC: {
-    aiCoachMessagesPerDay: 10,
+    aiCoachMessagesPerDay: 3,
     aiPlansPerMonth: 1,
+    physiquePerMonth: 0,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -68,8 +72,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   PRO: {
-    aiCoachMessagesPerDay: 50,
-    aiPlansPerMonth: 5,
+    aiCoachMessagesPerDay: 8,
+    aiPlansPerMonth: 4,
+    physiquePerMonth: 5,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -82,8 +87,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   COACH: {
-    aiCoachMessagesPerDay: 200,
-    aiPlansPerMonth: 30,
+    aiCoachMessagesPerDay: 15,
+    aiPlansPerMonth: 10,
+    physiquePerMonth: 15,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -97,12 +103,24 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
   },
 };
 
+/*
+ * Costos de referencia con Claude Sonnet 5.5 (estimados): mensaje ~1,5 c, plan ~7 c,
+ * análisis de físico ~4 c. Con los precios de plans.ts (BASIC 2,99 / PRO 9,99 /
+ * COACH 19,99 USD) el peor caso de cada plan queda en ~50-60 % del ingreso neto.
+ */
+
 /**
  * Límites durante la prueba gratis (primeros `TRIAL_DAYS` días de una cuenta
  * FREE): acceso completo, igual que COACH, para que pueda probar todo antes
  * de decidir qué plan pagar.
  */
-export const TRIAL_LIMITS: TierLimits = TIER_LIMITS.COACH;
+export const TRIAL_LIMITS: TierLimits = {
+  ...TIER_LIMITS.COACH,
+  // Todas las features, pero con cupos chicos: la prueba es gratis y cuesta IA real.
+  aiCoachMessagesPerDay: 8,
+  aiPlansPerMonth: 2,
+  physiquePerMonth: 3,
+};
 
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */
 export function isInTrial(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): boolean {

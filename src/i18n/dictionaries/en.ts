@@ -69,6 +69,7 @@ export const en: Dictionary = {
     errBlocked: 'The AI couldn’t analyze those photos. Try others: front-facing, good lighting, fitted sportswear.',
     errNotConfigured: 'Photo analysis isn’t available in this installation.',
     errLimit: 'You reached today’s analysis limit. Try again tomorrow.',
+    errLimitMonth: 'You reached your plan’s analysis limit for this month. It renews next month.',
     errNoPhotos: 'Add at least one photo.',
     upsellDesc: 'AI physique analysis is available on the PRO and COACH plans.',
     bodyFat: 'Estimated body fat',

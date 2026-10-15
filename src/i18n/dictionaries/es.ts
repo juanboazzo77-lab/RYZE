@@ -67,6 +67,7 @@ export const es = {
     errBlocked: 'La IA no pudo analizar esas fotos. Probá con otras: de frente, con buena luz y ropa deportiva ajustada.',
     errNotConfigured: 'El análisis por foto no está disponible en esta instalación.',
     errLimit: 'Llegaste al máximo de análisis de hoy. Probá mañana.',
+    errLimitMonth: 'Llegaste al máximo de análisis de tu plan este mes. Se renueva el mes que viene.',
     errNoPhotos: 'Agregá al menos una foto.',
     upsellDesc: 'El análisis de físico con IA está en los planes PRO y COACH.',
     bodyFat: 'Grasa corporal estimada',

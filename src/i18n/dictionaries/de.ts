@@ -69,6 +69,7 @@ export const de: Dictionary = {
     errBlocked: 'Die KI konnte diese Fotos nicht analysieren. Versuche andere: frontal, gutes Licht, enge Sportkleidung.',
     errNotConfigured: 'Die Fotoanalyse ist in dieser Installation nicht verfügbar.',
     errLimit: 'Du hast das heutige Analyse-Limit erreicht. Versuche es morgen wieder.',
+    errLimitMonth: 'Du hast das Analyse-Limit deines Tarifs für diesen Monat erreicht. Es erneuert sich nächsten Monat.',
     errNoPhotos: 'Füge mindestens ein Foto hinzu.',
     upsellDesc: 'Die KI-Körperanalyse ist in den Plänen PRO und COACH enthalten.',
     bodyFat: 'Geschätzter Körperfettanteil',

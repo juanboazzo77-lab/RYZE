@@ -69,6 +69,7 @@ export const it: Dictionary = {
     errBlocked: 'L’IA non è riuscita ad analizzare quelle foto. Prova con altre: di fronte, con buona luce e abbigliamento sportivo aderente.',
     errNotConfigured: 'L’analisi da foto non è disponibile in questa installazione.',
     errLimit: 'Hai raggiunto il limite di analisi di oggi. Riprova domani.',
+    errLimitMonth: 'Hai raggiunto il limite di analisi del tuo piano per questo mese. Si rinnova il mese prossimo.',
     errNoPhotos: 'Aggiungi almeno una foto.',
     upsellDesc: 'L’analisi del fisico con IA è inclusa nei piani PRO e COACH.',
     bodyFat: 'Massa grassa stimata',
