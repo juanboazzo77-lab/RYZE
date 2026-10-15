@@ -405,7 +405,7 @@ export const de: Dictionary = {
     trialExpired: 'Deine kostenlose Testphase ist abgelaufen. Wähle einen Plan, um die KI weiter zu nutzen.',
     basicPrice: '{price} $/Monat',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Alles freigeschaltet und kostenlos die ersten 7 Tage.' },
+      FREE: { name: 'FREE', tagline: 'Alles freigeschaltet und kostenlos die ersten 3 Tage.' },
       BASIC: { name: 'BASIC', tagline: 'Der Einstiegsplan, um werbefrei weiterzumachen.' },
       PRO: { name: 'PRO', tagline: 'Für ernsthaftes Training mit echtem Tracking.' },
       COACH: { name: 'COACH', tagline: 'Ein Coach, der dich wirklich kennt.' },
@@ -1176,6 +1176,8 @@ export const de: Dictionary = {
     history: 'Frühere Check-ins',
     noHistory: 'Du hast noch keinen Check-in gemacht.',
     recommendation: 'Der Coach prüft deine Woche und schlägt bei Bedarf eine Anpassung vor. Nichts ändert sich, bis du sie anwendest.',
+    cadenceNote: 'Dein Tarif enthält alle zwei Wochen einen Check-in. Den nächsten kannst du nächste Woche machen.',
+    alreadyDone: 'Du hast den Check-in dieser Woche schon gemacht. Der nächste ist nächste Woche verfügbar.',
     genericError: 'Der Check-in konnte nicht gespeichert werden',
     review: {
       title: 'Analyse des Coaches',

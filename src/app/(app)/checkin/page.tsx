@@ -3,8 +3,8 @@ import { DateTime } from 'luxon';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { interpolate } from '@/i18n';
-import { can } from '@/server/entitlements';
-import { getCheckinPage } from '@/features/checkin/queries';
+import { can, limitsFor } from '@/server/entitlements';
+import { checkinBlockedByCadence, getCheckinPage } from '@/features/checkin/queries';
 import { CheckinForm } from '@/features/checkin/checkin-form';
 import { CheckinReview } from '@/features/checkin/checkin-review';
 import { CheckinTraining } from '@/features/checkin/checkin-training';
@@ -32,6 +32,8 @@ export default async function CheckinPage() {
   }
 
   const data = await getCheckinPage(ctx.profile);
+  const blocked = await checkinBlockedByCadence(ctx.profile, limitsFor(ctx.entitlement).checkinEveryWeeks);
+  const doneThisWeek = data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED';
   const s = data.currentStats;
   const na = t.checkin.stats.noData;
 
@@ -101,7 +103,15 @@ export default async function CheckinPage() {
         </Card>
       ) : null}
 
-      <CheckinForm existing={data.existing} />
+      {blocked || doneThisWeek ? (
+        <Card>
+          <CardContent className="py-4 text-sm text-muted-foreground">
+            {blocked ? t.checkin.cadenceNote : t.checkin.alreadyDone}
+          </CardContent>
+        </Card>
+      ) : (
+        <CheckinForm existing={data.existing} />
+      )}
 
       <p className="text-center text-xs text-muted-foreground">{t.checkin.recommendation}</p>
 

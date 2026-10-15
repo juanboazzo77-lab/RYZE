@@ -405,7 +405,7 @@ export const fr: Dictionary = {
     trialExpired: 'Votre essai gratuit est terminé. Choisissez un forfait pour continuer à utiliser l’IA.',
     basicPrice: '{price} $/mois',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Tout débloqué et gratuit les 7 premiers jours.' },
+      FREE: { name: 'FREE', tagline: 'Tout débloqué et gratuit les 3 premiers jours.' },
       BASIC: { name: 'BASIC', tagline: 'Le forfait d’entrée pour continuer, sans publicité.' },
       PRO: { name: 'PRO', tagline: 'Pour s’entraîner sérieusement, avec un vrai suivi.' },
       COACH: { name: 'COACH', tagline: 'Un coach qui vous connaît vraiment.' },
@@ -1176,6 +1176,8 @@ export const fr: Dictionary = {
     history: 'Bilans précédents',
     noHistory: 'Vous n’avez pas encore fait de bilan.',
     recommendation: 'Le Coach revoit votre semaine et, si besoin, propose un ajustement. Rien ne change tant que vous ne l’appliquez pas.',
+    cadenceNote: 'Votre forfait inclut un bilan toutes les deux semaines. Vous pourrez faire le prochain la semaine prochaine.',
+    alreadyDone: 'Vous avez déjà fait le bilan de cette semaine. Le prochain sera disponible la semaine prochaine.',
     genericError: 'Impossible d’enregistrer le bilan',
     review: {
       title: 'Analyse du Coach',

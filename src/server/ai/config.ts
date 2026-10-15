@@ -36,7 +36,8 @@ export function modelFor(task: AiTask): string {
   const big = process.env.AI_MODEL?.trim() || (anthropic ? ANTHROPIC_MODEL : DEFAULT_MODEL);
   const fast =
     process.env.AI_MODEL_FAST?.trim() || (anthropic ? ANTHROPIC_MODEL_FAST : DEFAULT_MODEL_FAST);
-  return task === 'parse' ? fast : big;
+  // El chat del coach va con el modelo liviano (mucho más barato); planes y revisiones con el grande.
+  return task === 'parse' || task === 'coach_chat' ? fast : big;
 }
 
 /** Modelo para análisis de fotos: pide mejor visión que el modelo liviano. */

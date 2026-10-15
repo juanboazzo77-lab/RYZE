@@ -405,7 +405,7 @@ export const en: Dictionary = {
     trialExpired: 'Your free trial ended. Pick a plan to keep using the AI.',
     basicPrice: '${price}/mo',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Everything unlocked and free for the first 7 days.' },
+      FREE: { name: 'FREE', tagline: 'Everything unlocked and free for the first 3 days.' },
       BASIC: { name: 'BASIC', tagline: 'The entry plan to keep going, ad-free.' },
       PRO: { name: 'PRO', tagline: 'For serious training, with real tracking.' },
       COACH: { name: 'COACH', tagline: 'A coach that actually knows you.' },
@@ -1176,6 +1176,8 @@ export const en: Dictionary = {
     history: 'Past check-ins',
     noHistory: "You haven't done a check-in yet.",
     recommendation: 'The Coach reviews your week and proposes an adjustment if needed. Nothing changes until you apply it.',
+    cadenceNote: 'Your plan includes one review every two weeks. You can do the next one next week.',
+    alreadyDone: 'You already did this week’s review. The next one is available next week.',
     genericError: 'Could not save the check-in',
     review: {
       title: 'Coach review',

@@ -403,7 +403,7 @@ export const es = {
     trialExpired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando la IA.',
     basicPrice: '${price}/mes',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Todo desbloqueado y gratis los primeros 7 días.' },
+      FREE: { name: 'FREE', tagline: 'Todo desbloqueado y gratis los primeros 3 días.' },
       BASIC: { name: 'BASIC', tagline: 'El plan de entrada para seguir sin anuncios.' },
       PRO: { name: 'PRO', tagline: 'Para entrenar en serio, con seguimiento real.' },
       COACH: { name: 'COACH', tagline: 'Un entrenador que te conoce de verdad.' },
@@ -1174,6 +1174,8 @@ export const es = {
     history: 'Check-ins anteriores',
     noHistory: 'Todavía no hiciste ningún check-in.',
     recommendation: 'El Coach revisa tu semana y, si hace falta, te propone un ajuste. Nada cambia hasta que lo aplicás vos.',
+    cadenceNote: 'Tu plan incluye una revisión cada dos semanas. La próxima la podés hacer la semana que viene.',
+    alreadyDone: 'Ya hiciste la revisión de esta semana. La próxima está disponible la semana que viene.',
     genericError: 'No se pudo guardar el check-in',
     review: {
       title: 'Revisión del Coach',

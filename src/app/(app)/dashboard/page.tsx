@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { dayPart } from '@/lib/date';
-import { can } from '@/server/entitlements';
+import { can, limitsFor } from '@/server/entitlements';
 import { aiConfigured } from '@/server/ai/config';
 import { getDashboardData } from '@/features/dashboard/queries';
 import { isCheckinDue } from '@/features/checkin/queries';
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   // en paralelo se pisan en el pool (P2024).
   const data = await getDashboardData(ctx.profile);
   const checkinDue = can(ctx.entitlement, 'weekly_checkin')
-    ? await isCheckinDue(ctx.profile)
+    ? await isCheckinDue(ctx.profile, limitsFor(ctx.entitlement).checkinEveryWeeks)
     : false;
 
   const part = dayPart(ctx.profile.timezone);

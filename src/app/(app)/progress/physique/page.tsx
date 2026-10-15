@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { can } from '@/server/entitlements';
-import { UpsellCard } from '@/components/upsell-card';
 import { listPhysiqueAnalyses } from '@/features/physique/queries';
 import { PhysiqueClient } from '@/features/physique/physique-client';
 
@@ -29,21 +29,8 @@ export default async function PhysiquePage() {
     </>
   );
 
-  if (!can(ctx.entitlement, 'physique_analysis')) {
-    return (
-      <div className="space-y-4">
-        {header}
-        <UpsellCard
-          t={t}
-          title={t.physique.title}
-          badge="PRO"
-          description={t.physique.upsellDesc}
-          ctaHref="/settings/plans"
-          ctaLabel={t.pro.viewPlans}
-        />
-      </div>
-    );
-  }
+  // El análisis de físico suelto está desactivado: se analiza dentro de la revisión semanal.
+  if (!can(ctx.entitlement, 'physique_analysis')) redirect('/progress');
 
   const entries = await listPhysiqueAnalyses(ctx.profile);
   return (

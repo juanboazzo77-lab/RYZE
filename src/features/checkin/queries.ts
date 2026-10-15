@@ -231,11 +231,37 @@ export async function getCheckinPage(profile: Profile): Promise<CheckinPageData>
 }
 
 /**
+ * ¿La cadencia del plan bloquea la revisión de esta semana? Con `everyWeeks` = 2
+ * (PRO), si ya hizo una la semana anterior tiene que esperar a la siguiente.
+ */
+export async function checkinBlockedByCadence(
+  profile: Profile,
+  everyWeeks: number,
+): Promise<boolean> {
+  if (everyWeeks <= 1) return false;
+  const db = forUser(profile.id);
+  const todayISO = localTodayISO(profile.timezone);
+  const weekStart = weekStartISO(todayISO, profile.weekStart);
+  const recent = await db.weeklyCheckin.findFirst({
+    where: {
+      weekStart: {
+        gte: isoToUtcDate(addDaysISO(weekStart, -7 * (everyWeeks - 1))),
+        lt: isoToUtcDate(weekStart),
+      },
+      status: { in: ['SUBMITTED', 'REVIEWED', 'APPLIED'] },
+    },
+    select: { id: true },
+  });
+  return Boolean(recent);
+}
+
+/**
  * ¿Toca mostrar el recordatorio de la revisión semanal? True si el usuario
  * activó el recordatorio, ya pasó (o es) el día elegido de esta semana, y
  * todavía no hizo el check-in de la semana en curso.
  */
-export async function isCheckinDue(profile: Profile): Promise<boolean> {
+export async function isCheckinDue(profile: Profile, everyWeeks = 1): Promise<boolean> {
+  if (await checkinBlockedByCadence(profile, everyWeeks)) return false;
   const db = forUser(profile.id);
   const todayISO = localTodayISO(profile.timezone);
   const weekStartDate = isoToUtcDate(weekStartISO(todayISO, profile.weekStart));

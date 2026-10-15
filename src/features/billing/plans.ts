@@ -21,8 +21,8 @@ export const BASIC_PRICE_USD = 2.99;
 
 /** PRO y COACH sí tienen variantes de duración con descuento (ver plan-durations.ts). */
 export const PLAN_PRICE_USD: Record<'PRO' | 'COACH', Record<PlanDuration, number>> = {
-  PRO: { monthly: 9.99, '3month': 26.99, '6month': 47.99, '12month': 71.99 },
-  COACH: { monthly: 19.99, '3month': 53.99, '6month': 95.99, '12month': 143.99 },
+  PRO: { monthly: 9.99, '3month': 26.99, '6month': 47.99, '12month': 83.99 },
+  COACH: { monthly: 19.99, '3month': 53.99, '6month': 95.99, '12month': 167.99 },
 };
 
 /** Filas de la comparativa además de los límites numéricos de IA. */

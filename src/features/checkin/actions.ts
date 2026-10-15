@@ -6,7 +6,7 @@ import type { Profile } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
-import { can } from '@/server/entitlements';
+import { can, limitsFor } from '@/server/entitlements';
 import { isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { buildCheckinSummary } from '@/lib/checkin/summary';
 import { AiError } from '@/server/ai/errors';
@@ -15,7 +15,7 @@ import {
   reviewWeeklyCheckin,
   type CheckinHistoryEntry,
 } from '@/server/ai/gateway';
-import { computeTrainingWeek, computeWeekStats } from './queries';
+import { checkinBlockedByCadence, computeTrainingWeek, computeWeekStats } from './queries';
 import { type CheckinProposal, type TrainingProposal, type TrainingReview } from './schema';
 
 export interface Result {
@@ -192,6 +192,10 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   const { userId, profile, entitlement } = await requireUser();
 
   if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
+  // La cadencia depende del plan (COACH cada semana, PRO cada dos).
+  if (await checkinBlockedByCadence(profile, limitsFor(entitlement).checkinEveryWeeks)) {
+    return { error: 'CADENCE' };
+  }
 
   const db = forUser(userId);
   const todayISO = localTodayISO(profile.timezone);
@@ -220,6 +224,11 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
 
   // 1) Guardar el check-in ya, con el resumen determinístico. Si la IA falla o
   //    tarda, el check-in queda igual.
+  const already = await db.weeklyCheckin.findFirst({
+    where: { weekStart: weekStartDate, status: { in: ['REVIEWED', 'APPLIED'] } },
+    select: { id: true },
+  });
+  if (already) return { error: 'ALREADY_DONE' };
   const seeded = await db.weeklyCheckin.updateMany({
     where: { weekStart: weekStartDate },
     data: { ...baseData, aiSummary: fallbackSummary, aiProposal: undefined, status: 'SUBMITTED' },

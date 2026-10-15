@@ -405,7 +405,7 @@ export const it: Dictionary = {
     trialExpired: 'La tua prova gratuita è finita. Scegli un piano per continuare a usare l’IA.',
     basicPrice: '{price} $/mese',
     tiers: {
-      FREE: { name: 'FREE', tagline: 'Tutto sbloccato e gratis i primi 7 giorni.' },
+      FREE: { name: 'FREE', tagline: 'Tutto sbloccato e gratis i primi 3 giorni.' },
       BASIC: { name: 'BASIC', tagline: 'Il piano d’ingresso per continuare senza pubblicità.' },
       PRO: { name: 'PRO', tagline: 'Per allenarti sul serio, con un monitoraggio vero.' },
       COACH: { name: 'COACH', tagline: 'Un coach che ti conosce davvero.' },
@@ -1176,6 +1176,8 @@ export const it: Dictionary = {
     history: 'Check-in precedenti',
     noHistory: 'Non hai ancora fatto nessun check-in.',
     recommendation: 'Il Coach rivede la tua settimana e, se serve, propone un aggiustamento. Niente cambia finché non lo applichi.',
+    cadenceNote: 'Il tuo piano include una revisione ogni due settimane. La prossima potrai farla la settimana prossima.',
+    alreadyDone: 'Hai già fatto la revisione di questa settimana. La prossima sarà disponibile la settimana prossima.',
     genericError: 'Impossibile salvare il check-in',
     review: {
       title: 'Analisi del Coach',

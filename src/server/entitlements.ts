@@ -32,11 +32,13 @@ export interface TierLimits {
   aiPlansPerMonth: number;
   /** Análisis de físico por foto por mes (cada uno cuesta ~4 centavos de IA). */
   physiquePerMonth: number;
+  /** Cada cuántas semanas puede hacer la revisión semanal con IA (0 = no incluida). */
+  checkinEveryWeeks: number;
   features: Record<Feature, boolean>;
 }
 
 /** Días de prueba gratis para una cuenta FREE nueva, antes de tener que pagar. */
-export const TRIAL_DAYS = 7;
+export const TRIAL_DAYS = 3;
 
 export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
   // Terminada la prueba gratis (`TRIAL_LIMITS`), FREE queda bloqueada del todo
@@ -45,6 +47,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     aiCoachMessagesPerDay: 0,
     aiPlansPerMonth: 0,
     physiquePerMonth: 0,
+    checkinEveryWeeks: 0,
     features: {
       ai_coach_message: false,
       ai_generate_plan: false,
@@ -57,9 +60,10 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   BASIC: {
-    aiCoachMessagesPerDay: 2,
+    aiCoachMessagesPerDay: 10,
     aiPlansPerMonth: 1,
     physiquePerMonth: 0,
+    checkinEveryWeeks: 0,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -72,9 +76,10 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   PRO: {
-    aiCoachMessagesPerDay: 3,
-    aiPlansPerMonth: 3,
-    physiquePerMonth: 3,
+    aiCoachMessagesPerDay: 30,
+    aiPlansPerMonth: 4,
+    physiquePerMonth: 0,
+    checkinEveryWeeks: 2,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -83,13 +88,14 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: false,
       progression_analysis: true,
       coach_profile: false,
-      physique_analysis: true,
+      physique_analysis: false,
     },
   },
   COACH: {
-    aiCoachMessagesPerDay: 7,
-    aiPlansPerMonth: 6,
-    physiquePerMonth: 8,
+    aiCoachMessagesPerDay: 60,
+    aiPlansPerMonth: 8,
+    physiquePerMonth: 0,
+    checkinEveryWeeks: 1,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -98,19 +104,19 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       advanced_stats: true,
       progression_analysis: true,
       coach_profile: true,
-      physique_analysis: true,
+      physique_analysis: false,
     },
   },
 };
 
 /*
- * Costos de referencia con Claude Sonnet 5.5 (estimados): mensaje ~1,5 c, plan ~7 c,
- * análisis de físico ~4 c, ~30 c de reserva (revisión semanal, plan de comidas).
- * Los cupos están calculados para que, usándolos al 100 % todos los días, la IA
- * cueste como máximo ~50 % del ingreso neto del caso MÁS barato de cada plan:
- * duración de 12 meses (40 % de descuento, ver plan-durations.ts) y 30 % de
- * comisión de la tienda. BASIC 2,99 -> ~1,0 USD; PRO 6,00/mes -> ~2,1 USD;
- * COACH 12,00/mes -> ~4,2 USD. Si cambian los precios o el modelo, recalcular.
+ * Costos de referencia (estimados). Chat al coach con Claude Haiku 5.5: ~0,1 c por
+ * mensaje. Con Claude Sonnet 5.5: plan ~7 c, revisión semanal con fotos ~6 c, ~30 c de
+ * reserva (plan de comidas, etc.). Los cupos están calculados para que, usándolos al
+ * 100 % todos los días, la IA cueste como máximo ~50 % del ingreso neto del caso MÁS
+ * barato de cada plan: duración de 12 meses (30 % de descuento, ver plan-durations.ts)
+ * y 30 % de comisión de la tienda. BASIC 2,99 -> ~1,0 USD; PRO 7,00/mes -> ~2,4 USD;
+ * COACH 14,00/mes -> ~4,9 USD. Si cambian los precios o los modelos, recalcular.
  */
 
 /**
@@ -123,7 +129,8 @@ export const TRIAL_LIMITS: TierLimits = {
   // Todas las features, pero con cupos chicos: la prueba es gratis y cuesta IA real.
   aiCoachMessagesPerDay: 5,
   aiPlansPerMonth: 1,
-  physiquePerMonth: 2,
+  physiquePerMonth: 0,
+  checkinEveryWeeks: 1,
 };
 
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */

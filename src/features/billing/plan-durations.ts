@@ -19,5 +19,5 @@ export const PLAN_DURATION_DISCOUNT_PCT: Record<PlanDuration, number> = {
   monthly: 0,
   '3month': 10,
   '6month': 20,
-  '12month': 40,
+  '12month': 30,
 };
