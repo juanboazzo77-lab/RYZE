@@ -12,9 +12,12 @@ import { buildCheckinSummary } from '@/lib/checkin/summary';
 import { AiError } from '@/server/ai/errors';
 import { aiConfigured } from '@/server/ai/config';
 import {
+  analyzePhysique,
   reviewWeeklyCheckin,
   type CheckinHistoryEntry,
 } from '@/server/ai/gateway';
+import { physiqueAnalysisSchema } from '@/features/coach-profile/physique-schema';
+import { previousSummary } from '@/features/physique/summary';
 import { checkinBlockedByCadence, computeTrainingWeek, computeWeekStats } from './queries';
 import { type CheckinProposal, type TrainingProposal, type TrainingReview } from './schema';
 
@@ -271,7 +274,24 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
 
       const trainingWeek = await computeTrainingWeek(profile, weekStart);
 
-      const { review } = await reviewWeeklyCheckin({
+      // Informe completo del físico (sólo si mandó fotos), en paralelo con la revisión:
+      // el tiempo total es el del más lento, no la suma.
+      const lastReport = photos.length > 0 ? await db.physiqueAnalysis.findFirst({ orderBy: { createdAt: 'desc' } }) : null;
+      const physiquePromise =
+        photos.length > 0
+          ? analyzePhysique({
+              profile,
+              entitlement,
+              photos,
+              note: d.notes || null,
+              previous: lastReport
+                ? previousSummary(physiqueAnalysisSchema.parse(lastReport.report ?? {}), lastReport.createdAt)
+                : null,
+            }).catch(() => null)
+          : Promise.resolve(null);
+
+      const [{ review }, physique] = await Promise.all([
+        reviewWeeklyCheckin({
         profile,
         entitlement,
         week: stats,
@@ -290,7 +310,21 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         history,
         photos,
         trainingBlock: trainingWeek.hasData ? trainingWeek.block : null,
-      });
+        }),
+        physiquePromise,
+      ]);
+
+      // Las fotos no se guardan: sólo el informe de texto.
+      if (physique && !('failure' in physique)) {
+        await db.physiqueAnalysis.create({
+          data: {
+            userId,
+            report: physique as object,
+            photoCount: photos.length,
+            note: d.notes || null,
+          },
+        });
+      }
 
       if (review) {
         let proposal: CheckinProposal;

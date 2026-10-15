@@ -8,11 +8,9 @@ import { prisma } from '@/server/db';
 import { can, limitsFor } from '@/server/entitlements';
 import { DateTime } from 'luxon';
 import { aiConfigured } from '@/server/ai/config';
-import {
-  analyzePhysiqueSchema,
-  type PhysiqueAnalysis,
-} from '@/features/coach-profile/physique-schema';
+import { analyzePhysiqueSchema } from '@/features/coach-profile/physique-schema';
 import { PHYSIQUE_DAILY_LIMIT, type PhysiqueEntry } from './queries';
+import { previousSummary } from './summary';
 
 export interface Result<T = void> {
   ok?: boolean;
@@ -23,18 +21,6 @@ export interface Result<T = void> {
 const analyzeSchema = analyzePhysiqueSchema.extend({
   note: z.string().trim().max(400).optional(),
 });
-
-/** Resumen corto del análisis anterior para que la IA compare la evolución. */
-function previousSummary(report: PhysiqueAnalysis, createdAt: Date): string {
-  return [
-    `Fecha: ${createdAt.toISOString().slice(0, 10)}`,
-    report.bodyFatEstimate ? `Grasa estimada: ${report.bodyFatEstimate}` : null,
-    report.summary ? `Lectura: ${report.summary}` : null,
-    report.weakPoints ? `Puntos a mejorar: ${report.weakPoints}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
 
 export async function analyzePhysiqueReport(raw: {
   photos: string[];

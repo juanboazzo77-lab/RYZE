@@ -10,9 +10,14 @@ import { CheckinReview } from '@/features/checkin/checkin-review';
 import { CheckinTraining } from '@/features/checkin/checkin-training';
 import type { CheckinProposal, TrainingProposal } from '@/features/checkin/schema';
 import { UpsellCard } from '@/components/upsell-card';
+import { listPhysiqueAnalyses } from '@/features/physique/queries';
+import { PhysiqueReport } from '@/features/physique/physique-report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Revisión semanal' };
+
+// La revisión llama a la IA (revisión + informe del físico en paralelo).
+export const maxDuration = 60;
 
 export default async function CheckinPage() {
   const [{ t, locale }, ctx] = await Promise.all([getT(), requireUser()]);
@@ -32,6 +37,9 @@ export default async function CheckinPage() {
   }
 
   const data = await getCheckinPage(ctx.profile);
+  const [latestReport] = await listPhysiqueAnalyses(ctx.profile, 1);
+  const reportThisWeek =
+    latestReport && latestReport.createdAt.slice(0, 10) >= data.currentWeekStart ? latestReport : null;
   const blocked = await checkinBlockedByCadence(ctx.profile, limitsFor(ctx.entitlement).checkinEveryWeeks);
   const doneThisWeek = data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED';
   const s = data.currentStats;
@@ -91,7 +99,21 @@ export default async function CheckinPage() {
         />
       ) : null}
 
-      {data.existing?.aiPhotoNote ? (
+      {latestReport ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              {t.physique.title} · {DateTime.fromISO(latestReport.createdAt).setLocale(locale).toFormat('d LLL')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <PhysiqueReport report={latestReport.report} />
+            <p className="mt-2 text-[11px] text-muted-foreground/70">{t.checkin.photos.notStored}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {data.existing?.aiPhotoNote && !reportThisWeek ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t.checkin.photos.analysisTitle}</CardTitle>
