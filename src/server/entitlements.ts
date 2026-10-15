@@ -57,7 +57,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   BASIC: {
-    aiCoachMessagesPerDay: 3,
+    aiCoachMessagesPerDay: 2,
     aiPlansPerMonth: 1,
     physiquePerMonth: 0,
     features: {
@@ -72,9 +72,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   PRO: {
-    aiCoachMessagesPerDay: 8,
-    aiPlansPerMonth: 4,
-    physiquePerMonth: 5,
+    aiCoachMessagesPerDay: 3,
+    aiPlansPerMonth: 3,
+    physiquePerMonth: 3,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -87,9 +87,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     },
   },
   COACH: {
-    aiCoachMessagesPerDay: 15,
-    aiPlansPerMonth: 10,
-    physiquePerMonth: 15,
+    aiCoachMessagesPerDay: 7,
+    aiPlansPerMonth: 6,
+    physiquePerMonth: 8,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -105,8 +105,12 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
 
 /*
  * Costos de referencia con Claude Sonnet 5.5 (estimados): mensaje ~1,5 c, plan ~7 c,
- * análisis de físico ~4 c. Con los precios de plans.ts (BASIC 2,99 / PRO 9,99 /
- * COACH 19,99 USD) el peor caso de cada plan queda en ~50-60 % del ingreso neto.
+ * análisis de físico ~4 c, ~30 c de reserva (revisión semanal, plan de comidas).
+ * Los cupos están calculados para que, usándolos al 100 % todos los días, la IA
+ * cueste como máximo ~50 % del ingreso neto del caso MÁS barato de cada plan:
+ * duración de 12 meses (40 % de descuento, ver plan-durations.ts) y 30 % de
+ * comisión de la tienda. BASIC 2,99 -> ~1,0 USD; PRO 6,00/mes -> ~2,1 USD;
+ * COACH 12,00/mes -> ~4,2 USD. Si cambian los precios o el modelo, recalcular.
  */
 
 /**
@@ -117,9 +121,9 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
 export const TRIAL_LIMITS: TierLimits = {
   ...TIER_LIMITS.COACH,
   // Todas las features, pero con cupos chicos: la prueba es gratis y cuesta IA real.
-  aiCoachMessagesPerDay: 8,
-  aiPlansPerMonth: 2,
-  physiquePerMonth: 3,
+  aiCoachMessagesPerDay: 5,
+  aiPlansPerMonth: 1,
+  physiquePerMonth: 2,
 };
 
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */

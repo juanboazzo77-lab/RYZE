@@ -7,8 +7,8 @@ describe('entitlements', () => {
   it('FREE dentro de la prueba gratis tiene acceso completo (igual que COACH) para probar todo', () => {
     const trial = { tier: 'FREE' as const, createdAt: daysAgo(1) };
     expect(isInTrial(trial)).toBe(true);
-    expect(limitsFor(trial).aiCoachMessagesPerDay).toBe(8);
-    expect(limitsFor(trial).aiPlansPerMonth).toBe(2);
+    expect(limitsFor(trial).aiCoachMessagesPerDay).toBe(5);
+    expect(limitsFor(trial).aiPlansPerMonth).toBe(1);
     expect(can(trial, 'ai_coach_message')).toBe(true);
     expect(can(trial, 'weekly_checkin')).toBe(true);
     expect(can(trial, 'advanced_stats')).toBe(true);
@@ -28,7 +28,7 @@ describe('entitlements', () => {
 
   it('BASIC habilita mensajes/plan de entrada, sin features PRO', () => {
     const basic = { tier: 'BASIC' as const, createdAt: daysAgo(30) };
-    expect(limitsFor(basic).aiCoachMessagesPerDay).toBe(3);
+    expect(limitsFor(basic).aiCoachMessagesPerDay).toBe(2);
     expect(limitsFor(basic).aiPlansPerMonth).toBe(1);
     expect(can(basic, 'ai_coach_message')).toBe(true);
     expect(can(basic, 'weekly_checkin')).toBe(false);
@@ -37,8 +37,8 @@ describe('entitlements', () => {
 
   it('PRO habilita las features PRO pero no estadísticas avanzadas ni el perfil de coaching', () => {
     const pro = { tier: 'PRO' as const, createdAt: daysAgo(30) };
-    expect(limitsFor(pro).aiCoachMessagesPerDay).toBe(8);
-    expect(limitsFor(pro).aiPlansPerMonth).toBe(4);
+    expect(limitsFor(pro).aiCoachMessagesPerDay).toBe(3);
+    expect(limitsFor(pro).aiPlansPerMonth).toBe(3);
     expect(can(pro, 'weekly_checkin')).toBe(true);
     expect(can(pro, 'progression_analysis')).toBe(true);
     expect(can(pro, 'advanced_stats')).toBe(false);
