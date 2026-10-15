@@ -199,6 +199,8 @@ export interface SessionExercise {
   notes: string | null;
   sets: SessionSet[];
   lastTime: Array<{ weightKg: number | null; reps: number | null }> | null;
+  /** Récord de peso previo (sin contar este entrenamiento); null si es la primera vez. */
+  bestWeightKg: number | null;
 }
 export interface WorkoutSession {
   id: string;
@@ -291,6 +293,18 @@ export async function getWorkoutSession(
     }
   }
 
+  // Récord de peso previo por ejercicio (excluye este mismo entrenamiento).
+  const bestByExercise = new Map<string, number>();
+  if (exerciseIds.length > 0) {
+    const prs = await db.personalRecord.findMany({
+      where: { exerciseId: { in: exerciseIds }, type: 'MAX_WEIGHT', NOT: { workoutId } },
+      select: { exerciseId: true, value: true },
+    });
+    for (const p of prs) {
+      bestByExercise.set(p.exerciseId, Math.max(bestByExercise.get(p.exerciseId) ?? 0, p.value));
+    }
+  }
+
   return {
     id: w.id,
     name: w.name,
@@ -312,6 +326,7 @@ export async function getWorkoutSession(
       notes: e.notes,
       sets: e.sets,
       lastTime: lastByExercise.get(e.exerciseId) ?? null,
+      bestWeightKg: bestByExercise.get(e.exerciseId) ?? null,
     })),
   };
 }

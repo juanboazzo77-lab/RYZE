@@ -5,7 +5,7 @@ import { DecimalInput } from '@/components/form/decimal-input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -450,6 +450,11 @@ function ExerciseBlock({
         : `${ex.targetRepsMin}–${ex.targetRepsMax}`
       : null;
   const plannedSets = ex.sets.filter((x) => !x.isWarmup).length;
+  // Récord de peso: marca chica y discreta, sólo si ya había un récord previo.
+  const isPr =
+    ex.type !== 'CARDIO' &&
+    ex.bestWeightKg != null &&
+    ex.sets.some((x) => x.isCompleted && !x.isWarmup && (x.weightKg ?? 0) > (ex.bestWeightKg ?? 0));
 
   const last = ex.lastTime && ex.lastTime.length > 0
     ? ex.lastTime
@@ -461,9 +466,21 @@ function ExerciseBlock({
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-2 pb-2">
         <div className="min-w-0">
-          <Link href={`/training/exercises/${ex.exerciseId}`} className="font-semibold hover:underline">
-            {ex.name}
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <Link href={`/training/exercises/${ex.exerciseId}`} className="font-semibold hover:underline">
+              {ex.name}
+            </Link>
+            {isPr ? (
+              <span
+                title={t.training.pr.MAX_WEIGHT}
+                aria-label={t.training.pr.MAX_WEIGHT}
+                className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-warning/80"
+              >
+                <Trophy className="size-3" />
+                {t.training.pr.badge}
+              </span>
+            ) : null}
+          </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
             {ex.type === 'CARDIO' ? (
               <Badge variant="secondary">{t.training.fields.cardio}</Badge>

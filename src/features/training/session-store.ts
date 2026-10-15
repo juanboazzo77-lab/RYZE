@@ -28,6 +28,8 @@ export interface StoreExercise {
   targetDurationSec: number | null;
   targetDistanceMeters: number | null;
   lastTime: Array<{ weightKg: number | null; reps: number | null }> | null;
+  /** Mejor peso histórico (récord) para marcar un PR discreto durante la sesión. */
+  bestWeightKg?: number | null;
   sets: StoreSet[];
 }
 
@@ -70,6 +72,7 @@ const fromServer = (s: WorkoutSession): StoreExercise[] =>
     targetDurationSec: e.targetDurationSec,
     targetDistanceMeters: e.targetDistanceMeters,
     lastTime: e.lastTime,
+    bestWeightKg: e.bestWeightKg,
     sets: e.sets.map((st) => ({
       id: st.id,
       setNumber: st.setNumber,
