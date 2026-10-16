@@ -80,7 +80,8 @@ export function maxOutputTokensFor(task: AiTask): number {
       // sets/reps/RIR/descanso, note y rationale, ocupa bastante JSON — con
       // 4000 el modelo cortaba a mitad de respuesta (stopReason max_tokens)
       // en planes normales, no sólo en los más largos.
-      return 8000;
+      // Con razonamiento activo parte del presupuesto se va en pensar: 16000 deja lugar al JSON completo.
+      return 16000;
     case 'weekly_checkin':
       // Con fotos + progresión de entrenamiento + el informe largo del plan
       // COACH, 1400 se quedaba corto y cortaba el JSON a mitad de respuesta.

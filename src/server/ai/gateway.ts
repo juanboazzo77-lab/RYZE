@@ -15,7 +15,7 @@ import {
 } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
-import type { AiChatMessage, AiContentBlock } from './providers/types';
+import type { AiChatMessage, AiContentBlock, AiStructuredResult } from './providers/types';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
@@ -131,32 +131,38 @@ export async function generateWorkoutPlanDraft(args: {
       ? `Pedido adicional del usuario (tomalo en cuenta, no rompe las reglas): ${brief.trim()}`
       : 'Sin pedidos adicionales.');
 
-  const res = await activeProvider().generateStructured({
-    model,
-    system,
-    messages: [{ role: 'user', content: userMessage }],
-    schema: planDraftSchema,
-    schemaName: 'WorkoutPlanDraft',
-    maxOutputTokens: maxOutputTokensFor('generate_plan'),
-    timeoutMs: PLAN_TIMEOUT_MS,
-    temperature: 0.6,
-    thinking: true,
-    // 'high': un plan (sobre todo con foco en un deporte específico o
-    // hipertrofia por grupo muscular) necesita más "pensar antes de
-    // responder" que un mensaje de chat — menos plantilla, más razonado.
-    effort: 'high',
-  });
-
-  if (!res.data) {
+  // 'medium': con 'high' el modelo gastaba gran parte del presupuesto en pensar y el JSON
+  // salía cortado ("respuesta incompleta"). Si igual se corta, se reintenta con menos razonamiento.
+  const attempts: Array<'medium' | 'low'> = ['medium', 'low'];
+  let res: AiStructuredResult<PlanDraft> | null = null;
+  for (const effort of attempts) {
+    res = await activeProvider().generateStructured({
+      model,
+      system,
+      messages: [{ role: 'user', content: userMessage }],
+      schema: planDraftSchema,
+      schemaName: 'WorkoutPlanDraft',
+      maxOutputTokens: maxOutputTokensFor('generate_plan'),
+      timeoutMs: PLAN_TIMEOUT_MS,
+      temperature: 0.6,
+      thinking: true,
+      effort,
+    });
+    if (res.data) break;
     console.error('[ai] plan gen: salida inválida', {
       model,
+      effort,
       stopReason: res.stopReason,
       usage: res.usage,
       rawLen: res.rawText.length,
       rawHead: res.rawText.slice(0, 400),
     });
-    // No consume la cuota mensual: sólo registramos el costo, sin contar plan.
+    // Sólo vale reintentar si se cortó por largo; una negativa o un formato roto se repite igual.
     await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, false);
+    if (res.stopReason !== 'max_tokens') break;
+  }
+
+  if (!res || !res.data) {
     throw new AiError('INVALID_OUTPUT', `el modelo no devolvió un plan válido`);
   }
 
