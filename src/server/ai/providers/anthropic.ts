@@ -45,6 +45,13 @@ const UNSUPPORTED_KEYS = new Set([
   '$schema',
 ]);
 
+/**
+ * Campos que de verdad pueden faltar. El resto se le marca al modelo como obligatorio: los
+ * esquemas de zod tolerantes (`.catch`/`.optional`) no declaran `required`, y con salida
+ * estructurada el modelo puede entonces omitir series, repeticiones o descansos.
+ */
+const OPTIONAL_KEYS = new Set(['durationMinutes', 'distanceKm', 'physiqueNote', 'training']);
+
 /** Quita lo no soportado y exige `additionalProperties:false` en cada objeto (el esquema de zod igual valida después). */
 function cleanForAnthropic(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(cleanForAnthropic);
@@ -61,6 +68,9 @@ function cleanForAnthropic(node: unknown): unknown {
           : cleanForAnthropic(v);
     }
     if (out.type === 'object' || out.properties) out.additionalProperties = false;
+    if (out.properties && typeof out.properties === 'object') {
+      out.required = Object.keys(out.properties as Record<string, unknown>).filter((k) => !OPTIONAL_KEYS.has(k));
+    }
     return out;
   }
   return node;

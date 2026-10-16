@@ -191,7 +191,11 @@ export async function generateWorkoutPlanDraft(args: {
     await recordUsage(profile.id, 'generate_plan', model, r.usage, profile.timezone, r === chosen);
   }
   if (!chosen || !chosen.data) {
-    throw new AiError('INVALID_OUTPUT', `el modelo no devolvió un plan válido`);
+    const last = all[all.length - 1];
+    throw new AiError(
+      'INVALID_OUTPUT',
+      `el modelo no devolvió un plan válido (stop=${last?.stopReason ?? '?'}, salida=${last?.usage.outputTokens ?? 0} tokens)`,
+    );
   }
 
   let draft = chosen.data;
