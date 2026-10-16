@@ -1,5 +1,6 @@
 import 'server-only';
 import { getProvider, type AiProvider } from './providers';
+import { withProviderFallback } from './providers/fallback';
 
 /**
  * Configuración del núcleo de IA: qué proveedor y qué modelo usa cada tarea.
@@ -22,8 +23,30 @@ export function providerName(): string {
   return process.env.AI_PROVIDER?.trim() || DEFAULT_PROVIDER;
 }
 
+/**
+ * Un nombre de modelo de una variable de entorno sólo vale si es de la familia del
+ * proveedor activo. Si quedó, por ejemplo, AI_MODEL="gemini-..." de cuando se usaba
+ * Gemini y ahora el proveedor es Anthropic, se ignora y se usa el default en vez de
+ * mandarle a Anthropic un modelo que no existe (eso rompía toda la IA).
+ */
+function modelFromEnv(value: string | undefined): string | undefined {
+  const v = value?.trim();
+  if (!v) return undefined;
+  const family = providerName() === 'anthropic' ? /^claude-/ : /^gemini-/;
+  return family.test(v) ? v : undefined;
+}
+
+/**
+ * Proveedor activo. Si el otro proveedor también tiene clave, queda de respaldo: si el
+ * principal falla (sin crédito, caída, saturación) se reintenta con el otro.
+ */
 export function activeProvider(): AiProvider {
-  return getProvider(providerName());
+  const name = providerName();
+  const primary = getProvider(name);
+  const otherName = name === 'anthropic' ? 'gemini' : 'anthropic';
+  const backup = getProvider(otherName);
+  if (!backup.isConfigured()) return primary;
+  return withProviderFallback(primary, backup, otherName === 'gemini' ? 'gemini-3.5-flash' : 'claude-sonnet-5-5');
 }
 
 export function aiConfigured(): boolean {
@@ -33,16 +56,16 @@ export function aiConfigured(): boolean {
 /** Modelo para cada tarea. `AI_MODEL` cubre las tareas "grandes"; `AI_MODEL_FAST` las livianas. */
 export function modelFor(task: AiTask): string {
   const anthropic = providerName() === 'anthropic';
-  const big = process.env.AI_MODEL?.trim() || (anthropic ? ANTHROPIC_MODEL : DEFAULT_MODEL);
+  const big = modelFromEnv(process.env.AI_MODEL) || (anthropic ? ANTHROPIC_MODEL : DEFAULT_MODEL);
   const fast =
-    process.env.AI_MODEL_FAST?.trim() || (anthropic ? ANTHROPIC_MODEL_FAST : DEFAULT_MODEL_FAST);
+    modelFromEnv(process.env.AI_MODEL_FAST) || (anthropic ? ANTHROPIC_MODEL_FAST : DEFAULT_MODEL_FAST);
   // El chat del coach va con el modelo liviano (mucho más barato); planes y revisiones con el grande.
   return task === 'parse' || task === 'coach_chat' ? fast : big;
 }
 
 /** Modelo para análisis de fotos: pide mejor visión que el modelo liviano. */
 export function visionModel(): string {
-  const set = process.env.AI_VISION_MODEL?.trim();
+  const set = modelFromEnv(process.env.AI_VISION_MODEL);
   if (set) return set;
   return providerName() === 'anthropic' ? ANTHROPIC_MODEL : 'gemini-3.5-flash';
 }

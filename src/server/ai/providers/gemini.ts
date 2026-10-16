@@ -193,7 +193,8 @@ async function once<T>(fn: (signal: AbortSignal) => Promise<T>, budgetMs: number
 function fallbackChain(model: string): string[] {
   const second = process.env.AI_FALLBACK_MODEL?.trim() || 'gemini-3.5-flash';
   const third = process.env.AI_FALLBACK_MODEL_2?.trim() || 'gemini-3.8-flash';
-  const lite = process.env.AI_MODEL?.trim() || 'gemini-3.5-flash-lite';
+  const envModel = process.env.AI_MODEL?.trim();
+  const lite = envModel && envModel.startsWith('gemini-') ? envModel : 'gemini-3.5-flash-lite';
   return [...new Set([model, second, third, lite])];
 }
 

@@ -293,7 +293,10 @@ const baseProvider: AiProvider = {
  * Si el modelo liviano (Haiku) rechaza el pedido o falla, se reintenta una vez con
  * el modelo grande. Así una diferencia entre modelos nunca deja al usuario sin respuesta.
  */
-const FALLBACK_MODEL = () => process.env.AI_MODEL?.trim() || 'claude-sonnet-5-5';
+const FALLBACK_MODEL = () => {
+  const m = process.env.AI_MODEL?.trim();
+  return m && m.startsWith('claude-') ? m : 'claude-sonnet-5-5';
+};
 const shouldFallback = (model: string, e: unknown) =>
   /haiku/.test(model) &&
   model !== FALLBACK_MODEL() &&
