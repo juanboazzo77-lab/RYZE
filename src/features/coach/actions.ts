@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { DateTime } from 'luxon';
 import type { MuscleGroup, PrimaryGoal } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
@@ -184,6 +185,27 @@ export async function generatePlan(
 
   const { userId, profile, entitlement } = await requireUser();
   const db = forUser(userId);
+
+  // Borradores anteriores que no se aceptaron ni se descartaron (se generó otra rutina sin
+  // elegir) no tienen por qué gastar el cupo del mes: se descartan y se devuelve su lugar.
+  try {
+    const monthStart = DateTime.now().setZone(profile.timezone).startOf('month').toJSDate();
+    const staleThisMonth = await db.aiGeneration.count({
+      where: { kind: 'WORKOUT_PLAN', status: 'DRAFT', createdAt: { gte: monthStart } },
+    });
+    await db.aiGeneration.updateMany({
+      where: { kind: 'WORKOUT_PLAN', status: 'DRAFT' },
+      data: { status: 'REJECTED' },
+    });
+    if (staleThisMonth > 0) {
+      const { refundPlanGeneration } = await import('@/server/ai/usage');
+      for (let i = 0; i < Math.min(staleThisMonth, 10); i++) {
+        await refundPlanGeneration(userId, profile.timezone).catch(() => {});
+      }
+    }
+  } catch (e) {
+    console.error('[coach] no se pudieron limpiar borradores', e instanceof Error ? e.message : e);
+  }
 
   const excluded = [...new Set((parsed.data.excluded ?? []).map((n) => n.slice(0, 40)))];
   let brief = parsed.data.brief;

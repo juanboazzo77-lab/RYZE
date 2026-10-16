@@ -77,7 +77,10 @@ export async function assertWithinLimits(
     });
     const used = rows.reduce((n, r) => n + r.messageCount, 0);
     if (used >= limits.aiPlansPerMonth) {
-      throw new AiRateLimitedError(`planes ${used}/${limits.aiPlansPerMonth}`);
+      throw new AiRateLimitedError(
+        `planes ${used}/${limits.aiPlansPerMonth}`,
+        `Llegaste al máximo de rutinas con IA de tu plan este mes (${limits.aiPlansPerMonth}). Si borrás una que no usás, se libera un lugar.`,
+      );
     }
   }
 }

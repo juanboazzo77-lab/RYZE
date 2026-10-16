@@ -33,11 +33,11 @@ export class AiError extends Error {
 }
 
 export class AiRateLimitedError extends AiError {
-  constructor(label: string) {
+  constructor(label: string, userMessage?: string) {
     super(
       'RATE_LIMITED',
       `Límite de uso de IA alcanzado (${label})`,
-      'Alcanzaste el límite de uso de IA de tu plan por hoy. Volvé mañana o pasate a PRO.',
+      userMessage ?? 'Alcanzaste el límite de uso de IA de tu plan por hoy. Volvé mañana o pasate a PRO.',
     );
     this.name = 'AiRateLimitedError';
   }
