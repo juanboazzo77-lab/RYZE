@@ -7,7 +7,7 @@ import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { can } from '@/server/entitlements';
 import { aiConfigured } from '@/server/ai/config';
-import { AiError } from '@/server/ai/errors';
+import { AiError, AiRateLimitedError } from '@/server/ai/errors';
 import { isoToUtcDate } from '@/lib/date';
 import {
   addMealPlanSchema,
@@ -41,6 +41,7 @@ export async function generateMealPlanAction(raw: { brief: string }): Promise<Re
     if (!plan) return { error: 'INVALID_OUTPUT' };
     return { ok: true, data: plan };
   } catch (e) {
+    if (e instanceof AiRateLimitedError) return { error: 'LIMIT' };
     if (e instanceof AiError) return { error: e.code };
     console.error('[meal-plan] gen falló', e instanceof Error ? e.message : e);
     return { error: 'PROVIDER_ERROR' };

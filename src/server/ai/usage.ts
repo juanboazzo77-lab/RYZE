@@ -39,6 +39,32 @@ export async function assertWithinLimits(
     return;
   }
 
+  if (task === 'parse') {
+    const today = now.toISODate()!;
+    const rows = await prisma.aiUsageDaily.findMany({
+      where: { userId, day: new Date(`${today}T00:00:00.000Z`), task: 'parse' },
+      select: { messageCount: true },
+    });
+    const used = rows.reduce((n, r) => n + r.messageCount, 0);
+    if (used >= limits.aiQuickPerDay) {
+      throw new AiRateLimitedError(`lecturas ${used}/${limits.aiQuickPerDay}`);
+    }
+    return;
+  }
+
+  if (task === 'meal_plan') {
+    const monthStart = now.startOf('month').toISODate()!;
+    const rows = await prisma.aiUsageDaily.findMany({
+      where: { userId, day: { gte: new Date(`${monthStart}T00:00:00.000Z`) }, task: 'meal_plan' },
+      select: { messageCount: true },
+    });
+    const used = rows.reduce((n, r) => n + r.messageCount, 0);
+    if (used >= limits.mealPlansPerMonth) {
+      throw new AiRateLimitedError(`planes de comida ${used}/${limits.mealPlansPerMonth}`);
+    }
+    return;
+  }
+
   if (PLAN_TASKS.includes(task)) {
     const monthStart = now.startOf('month').toISODate()!;
     const rows = await prisma.aiUsageDaily.findMany({

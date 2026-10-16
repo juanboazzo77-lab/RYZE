@@ -7,7 +7,7 @@ import { withProviderFallback } from './providers/fallback';
  * Todo se lee de env con defaults sensatos para Gemini.
  */
 
-export type AiTask = 'coach_chat' | 'generate_plan' | 'weekly_checkin' | 'parse';
+export type AiTask = 'coach_chat' | 'generate_plan' | 'meal_plan' | 'weekly_checkin' | 'parse';
 
 const DEFAULT_PROVIDER = 'gemini';
 // `flash-lite` es rápido, barato y suficiente para coach y planes. Pinneado a
@@ -82,6 +82,8 @@ export function maxOutputTokensFor(task: AiTask): number {
       // en planes normales, no sólo en los más largos.
       // Con razonamiento activo parte del presupuesto se va en pensar: 16000 deja lugar al JSON completo.
       return 16000;
+    case 'meal_plan':
+      return 8000;
     case 'weekly_checkin':
       // Con fotos + progresión de entrenamiento + el informe largo del plan
       // COACH, 1400 se quedaba corto y cortaba el JSON a mitad de respuesta.

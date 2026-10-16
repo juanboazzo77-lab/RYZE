@@ -60,3 +60,48 @@ export function describeTotals(plan: MealPlan): string {
     .map((m) => `${m.title}: ${Math.round(m.items.reduce((s, i) => s + i.kcal, 0))} kcal`)
     .join(' · ');
 }
+
+/** Sin tildes, en minúsculas y sin signos: para comparar nombres de alimentos. */
+function norm(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9ñ ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Items del plan cuyo nombre contiene un alimento prohibido (excluido o alergia). */
+export function findForbidden(plan: MealPlan, forbidden: string[]): string[] {
+  const terms = forbidden.map(norm).filter((t) => t.length >= 3);
+  if (terms.length === 0) return [];
+  const hits = new Set<string>();
+  for (const m of plan.meals) {
+    for (const i of m.items) {
+      const n = norm(i.name);
+      if (terms.some((t) => n.includes(t) || (n.length >= 4 && t.includes(n)))) hits.add(i.name);
+    }
+  }
+  return [...hits];
+}
+
+/** Saca del plan los items prohibidos y las comidas que quedan vacías. */
+export function removeForbidden(plan: MealPlan, forbidden: string[]): MealPlan {
+  const bad = new Set(findForbidden(plan, forbidden));
+  if (bad.size === 0) return plan;
+  return {
+    ...plan,
+    meals: plan.meals
+      .map((m) => ({ ...m, items: m.items.filter((i) => !bad.has(i.name)) }))
+      .filter((m) => m.items.length > 0),
+  };
+}
+
+/** Proteína total del día. */
+export function planProtein(plan: MealPlan): number {
+  return plan.meals.reduce((sum, m) => sum + m.items.reduce((s, i) => s + i.proteinG, 0), 0);
+}
+
+/** Piso aceptable de proteína respecto del objetivo. */
+export const PROTEIN_MIN_RATIO = 0.9;

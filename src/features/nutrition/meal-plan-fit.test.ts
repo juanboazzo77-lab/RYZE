@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { kcalDeviation, planKcal, scalePlanToKcal, withinBand } from './meal-plan-fit';
+import {
+  findForbidden,
+  kcalDeviation,
+  planKcal,
+  planProtein,
+  removeForbidden,
+  scalePlanToKcal,
+  withinBand,
+} from './meal-plan-fit';
 import type { MealPlan } from './meal-plan-schema';
 
 const plan = (kcals: number[]): MealPlan => ({
@@ -52,5 +60,26 @@ describe('meal-plan-fit', () => {
   it('no escala más de ±40 %', () => {
     const out = scalePlanToKcal(plan([500]), 5000);
     expect(planKcal(out)).toBeCloseTo(700, 0);
+  });
+
+  it('detecta alimentos prohibidos sin importar tildes ni mayúsculas', () => {
+    const p = plan([300, 200]);
+    p.meals[0]!.items[0]!.name = 'Maní tostado';
+    p.meals[0]!.items[1]!.name = 'Pollo';
+    expect(findForbidden(p, ['mani'])).toEqual(['Maní tostado']);
+    expect(findForbidden(p, ['lactosa'])).toEqual([]);
+  });
+
+  it('saca los items prohibidos y las comidas vacías', () => {
+    const p = plan([300, 200]);
+    p.meals[0]!.items[0]!.name = 'Leche entera';
+    p.meals.push({ type: 'SNACK', title: 'Snack', items: [{ ...p.meals[0]!.items[0]! }] });
+    const out = removeForbidden(p, ['leche']);
+    expect(out.meals).toHaveLength(1);
+    expect(out.meals[0]!.items.map((i) => i.name)).toEqual(['Item 1']);
+  });
+
+  it('suma la proteína del día', () => {
+    expect(planProtein(plan([100, 300]))).toBeCloseTo(40);
   });
 });

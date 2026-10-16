@@ -22,9 +22,13 @@ import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-ad
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 import {
   KCAL_AIM,
+  PROTEIN_MIN_RATIO,
   describeTotals,
+  findForbidden,
   kcalDeviation,
   planKcal,
+  planProtein,
+  removeForbidden,
   scalePlanToKcal,
   withinBand,
 } from '@/features/nutrition/meal-plan-fit';
@@ -117,29 +121,36 @@ export async function generateWorkoutPlanDraft(args: {
   profile: Profile;
   entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   brief: string;
+  /** Días de entrenamiento que eligió el usuario: el plan tiene que tener exactamente esos. */
+  expectedDays?: number;
 }): Promise<{ draft: PlanDraft; raw: string }> {
-  const { profile, entitlement, brief } = args;
+  const { profile, entitlement, brief, expectedDays } = args;
   await assertWithinLimits(profile.id, entitlement, 'generate_plan', profile.timezone);
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = planSystemPrompt(profile.locale, contextBlock);
   const model = modelFor('generate_plan');
 
-  const userMessage =
+  const baseMessage =
     `Generá el plan de entrenamiento ahora. ` +
     (brief.trim()
       ? `Pedido adicional del usuario (tomalo en cuenta, no rompe las reglas): ${brief.trim()}`
       : 'Sin pedidos adicionales.');
 
   // 'medium': con 'high' el modelo gastaba gran parte del presupuesto en pensar y el JSON
-  // salía cortado ("respuesta incompleta"). Si igual se corta, se reintenta con menos razonamiento.
-  const attempts: Array<'medium' | 'low'> = ['medium', 'low'];
-  let res: AiStructuredResult<PlanDraft> | null = null;
-  for (const effort of attempts) {
-    res = await activeProvider().generateStructured({
+  // salía cortado ("respuesta incompleta"). Si se corta, o si trae otra cantidad de días que
+  // la elegida, se reintenta (hasta 3 veces) con menos razonamiento.
+  const efforts: Array<'medium' | 'low'> = ['medium', 'low', 'low'];
+  const all: Array<AiStructuredResult<PlanDraft>> = [];
+  let good: AiStructuredResult<PlanDraft> | null = null;
+  let mismatched: AiStructuredResult<PlanDraft> | null = null;
+  let message = baseMessage;
+
+  for (const effort of efforts) {
+    const res = await activeProvider().generateStructured({
       model,
       system,
-      messages: [{ role: 'user', content: userMessage }],
+      messages: [{ role: 'user', content: message }],
       schema: planDraftSchema,
       schemaName: 'WorkoutPlanDraft',
       maxOutputTokens: maxOutputTokensFor('generate_plan'),
@@ -148,7 +159,20 @@ export async function generateWorkoutPlanDraft(args: {
       thinking: true,
       effort,
     });
-    if (res.data) break;
+    all.push(res);
+
+    if (res.data) {
+      if (!expectedDays || res.data.days.length === expectedDays) {
+        good = res;
+        break;
+      }
+      mismatched = res;
+      message =
+        baseMessage +
+        `\nIMPORTANTE: el plan tiene que tener EXACTAMENTE ${expectedDays} días de entrenamiento (el intento anterior tuvo ${res.data.days.length}).`;
+      continue;
+    }
+
     console.error('[ai] plan gen: salida inválida', {
       model,
       effort,
@@ -158,16 +182,24 @@ export async function generateWorkoutPlanDraft(args: {
       rawHead: res.rawText.slice(0, 400),
     });
     // Sólo vale reintentar si se cortó por largo; una negativa o un formato roto se repite igual.
-    await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, false);
     if (res.stopReason !== 'max_tokens') break;
   }
 
-  if (!res || !res.data) {
+  const chosen = good ?? mismatched;
+  // Sólo el plan elegido consume la cuota; el resto sólo registra el costo.
+  for (const r of all) {
+    await recordUsage(profile.id, 'generate_plan', model, r.usage, profile.timezone, r === chosen);
+  }
+  if (!chosen || !chosen.data) {
     throw new AiError('INVALID_OUTPUT', `el modelo no devolvió un plan válido`);
   }
 
-  await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, true);
-  return { draft: res.data, raw: res.rawText };
+  let draft = chosen.data;
+  // Si insistió con más días de los elegidos, se recorta (no se pueden inventar los que faltan).
+  if (expectedDays && draft.days.length > expectedDays) {
+    draft = { ...draft, days: draft.days.slice(0, expectedDays) };
+  }
+  return { draft, raw: chosen.rawText };
 }
 
 /* ------------------------------------------------------------------ */
@@ -180,12 +212,14 @@ export async function generateWorkoutPlanDraft(args: {
  */
 export async function estimateMealFromPhoto(args: {
   userId: string;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   timezone: string;
   locale: Profile['locale'];
   photo: string;
   note?: string;
 }): Promise<MealPhotoEstimate | null> {
-  const { userId, timezone, locale, photo, note } = args;
+  const { userId, entitlement, timezone, locale, photo, note } = args;
+  await assertWithinLimits(userId, entitlement, 'parse', timezone);
   const model = modelFor('parse');
 
   const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/s.exec(photo);
@@ -213,7 +247,7 @@ export async function estimateMealFromPhoto(args: {
       temperature: 0.3,
       thinking: false,
     });
-    await recordUsage(userId, 'parse', model, res.usage, timezone, false);
+    await recordUsage(userId, 'parse', model, res.usage, timezone, Boolean(res.data));
     return res.data;
   } catch (e) {
     console.error('[ai] estimateMealFromPhoto falló', e instanceof Error ? e.message : e);
@@ -227,11 +261,13 @@ export async function estimateMealFromPhoto(args: {
  */
 export async function estimateMealFromText(args: {
   userId: string;
+  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   timezone: string;
   locale: Profile['locale'];
   description: string;
 }): Promise<MealPhotoEstimate | null> {
-  const { userId, timezone, locale, description } = args;
+  const { userId, entitlement, timezone, locale, description } = args;
+  await assertWithinLimits(userId, entitlement, 'parse', timezone);
   const model = modelFor('parse');
 
   try {
@@ -246,7 +282,7 @@ export async function estimateMealFromText(args: {
       temperature: 0.3,
       thinking: false,
     });
-    await recordUsage(userId, 'parse', model, res.usage, timezone, false);
+    await recordUsage(userId, 'parse', model, res.usage, timezone, Boolean(res.data));
     return res.data;
   } catch (e) {
     console.error('[ai] estimateMealFromText falló', e instanceof Error ? e.message : e);
@@ -312,8 +348,9 @@ export async function generateMealPlan(args: {
   brief: string;
 }): Promise<{ plan: MealPlan | null; raw: string }> {
   const { profile, entitlement, target, brief } = args;
+  await assertWithinLimits(profile.id, entitlement, 'meal_plan', profile.timezone);
   const contextBlock = await buildUserContextBlock(profile, entitlement);
-  const model = modelFor('generate_plan');
+  const model = modelFor('meal_plan');
 
   const system = mealPlanSystemPrompt(profile.locale, contextBlock, target, profile.mealsPerDay ?? 4);
 
@@ -328,37 +365,48 @@ export async function generateMealPlan(args: {
       messages,
       schema: mealPlanSchema,
       schemaName: 'MealPlan',
-      maxOutputTokens: maxOutputTokensFor('generate_plan'),
+      maxOutputTokens: maxOutputTokensFor('meal_plan'),
       timeoutMs: PLAN_TIMEOUT_MS,
       temperature: 0.6,
       thinking: true,
       effort: 'low',
     });
 
+  // Alimentos que no puede comer: excluidos y alergias del perfil.
+  const asStrings = (v: unknown) =>
+    Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  const forbidden = [...asStrings(profile.excludedFoods), ...asStrings(profile.allergies)];
+
   const first = await ask([{ role: 'user', content: userMessage }]);
-  await recordUsage(profile.id, 'generate_plan', model, first.usage, profile.timezone, false);
+  await recordUsage(profile.id, 'meal_plan', model, first.usage, profile.timezone, false);
   let plan = first.data;
   let raw = first.rawText;
 
-  // Las IAs suman mal: si el día se pasa (o queda corto) del objetivo, se corrige. Un error
-  // grande (> 8 %) se le devuelve a la IA con los totales reales, para no perder las medidas
-  // caseras; el resto, y lo que la IA no logre corregir, se ajusta escalando las porciones.
-  if (plan && !withinBand(plan, target.kcal)) {
-    if (Math.abs(kcalDeviation(plan, target.kcal)) > 0.08) {
-      const total = Math.round(planKcal(plan));
+  // Problemas que la IA tiene que corregir: alimentos prohibidos, proteína baja o un error
+  // grande de calorías (> 8 %). Se le devuelve el detalle real para no perder las medidas caseras.
+  const problems = (p: MealPlan): string[] => {
+    const out: string[] = [];
+    const bad = findForbidden(p, forbidden);
+    if (bad.length > 0) out.push(`Tiene alimentos que NO puede comer (alergia o exclusión): ${bad.join(', ')}. Sacalos y reemplazalos por otros.`);
+    if (target.proteinG > 0 && planProtein(p) < target.proteinG * PROTEIN_MIN_RATIO) {
+      out.push(`La proteína suma ${Math.round(planProtein(p))} g y el objetivo es ${target.proteinG} g: subí la proteína (carnes magras, huevos, lácteos, legumbres) sin pasarte de calorías.`);
+    }
+    if (Math.abs(kcalDeviation(p, target.kcal)) > 0.08) {
+      out.push(`El día suma ${Math.round(planKcal(p))} kcal y el objetivo es ${target.kcal} kcal (${describeTotals(p)}): ajustá porciones de carbohidratos y grasas para quedar entre ${Math.round(target.kcal * 0.96)} y ${target.kcal} kcal.`);
+    }
+    return out;
+  };
+
+  if (plan) {
+    const issues = problems(plan);
+    if (issues.length > 0) {
       try {
         const fix = await ask([
           { role: 'user', content: userMessage },
           { role: 'assistant', content: first.rawText },
-          {
-            role: 'user',
-            content:
-              `El día suma ${total} kcal y el objetivo es ${target.kcal} kcal (${describeTotals(plan)}). ` +
-              `Corregilo para que sume entre ${Math.round(target.kcal * 0.96)} y ${target.kcal} kcal ajustando porciones ` +
-              'de carbohidratos y grasas, y devolvé el JSON completo de nuevo.',
-          },
+          { role: 'user', content: `Corregí estos problemas y devolvé el JSON completo de nuevo:\n- ${issues.join('\n- ')}` },
         ]);
-        await recordUsage(profile.id, 'generate_plan', model, fix.usage, profile.timezone, false);
+        await recordUsage(profile.id, 'meal_plan', model, fix.usage, profile.timezone, false);
         if (fix.data) {
           plan = fix.data;
           raw = fix.rawText;
@@ -367,9 +415,22 @@ export async function generateMealPlan(args: {
         console.error('[ai] meal plan: la corrección falló', e instanceof Error ? e.message : e);
       }
     }
-    if (plan && !withinBand(plan, target.kcal)) {
+    // Lo que la IA no logre corregir se arregla acá: se sacan los alimentos prohibidos y se
+    // escalan las porciones para que las calorías no se pasen.
+    plan = removeForbidden(plan, forbidden);
+    if (plan.meals.length === 0) return { plan: null, raw };
+    if (!withinBand(plan, target.kcal)) {
       plan = scalePlanToKcal(plan, Math.round(target.kcal * KCAL_AIM));
     }
+    // Sólo un plan entregado consume el cupo mensual.
+    await recordUsage(
+      profile.id,
+      'meal_plan',
+      model,
+      { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
+      profile.timezone,
+      true,
+    );
   }
 
   return { plan, raw };

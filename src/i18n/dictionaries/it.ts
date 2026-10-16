@@ -879,6 +879,7 @@ export const it: Dictionary = {
       title: 'Pianifica i pasti con IA',
       upsell: 'Componi una giornata di pasti mirata ai tuoi obiettivi, con lista della spesa.',
       noTarget: 'Definisci i tuoi obiettivi nutrizionali per pianificare i pasti.',
+      limitReached: 'Hai raggiunto il limite del tuo piano per questa funzione. Si rinnova presto.',
       targetTitle: 'Obiettivo del giorno',
       briefLabel: 'Richiesta per il Coach (facoltativo)',
       briefPh: 'Es: senza latticini, qualcosa di veloce per pranzo, budget ridotto…',

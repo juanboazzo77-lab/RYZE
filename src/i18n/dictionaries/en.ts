@@ -879,6 +879,7 @@ export const en: Dictionary = {
       title: 'Plan meals with AI',
       upsell: 'Build a day of meals that hits your targets, with a shopping list.',
       noTarget: 'Set your nutrition targets to plan meals.',
+      limitReached: 'You reached your plan’s limit for this feature. It renews soon.',
       targetTitle: "Day's target",
       briefLabel: 'Request for the Coach (optional)',
       briefPh: 'e.g. no dairy, something quick for lunch, tight budget…',

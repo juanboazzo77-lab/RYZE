@@ -34,6 +34,10 @@ export interface TierLimits {
   physiquePerMonth: number;
   /** Cada cuántas semanas puede hacer la revisión semanal con IA (0 = no incluida). */
   checkinEveryWeeks: number;
+  /** Lecturas de comida por foto/texto con IA por día. */
+  aiQuickPerDay: number;
+  /** Planes de comidas con IA por mes. */
+  mealPlansPerMonth: number;
   features: Record<Feature, boolean>;
 }
 
@@ -48,6 +52,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     aiPlansPerMonth: 0,
     physiquePerMonth: 0,
     checkinEveryWeeks: 0,
+    aiQuickPerDay: 0,
+    mealPlansPerMonth: 0,
     features: {
       ai_coach_message: false,
       ai_generate_plan: false,
@@ -64,6 +70,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     aiPlansPerMonth: 1,
     physiquePerMonth: 0,
     checkinEveryWeeks: 0,
+    aiQuickPerDay: 5,
+    mealPlansPerMonth: 0,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -80,6 +88,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     aiPlansPerMonth: 4,
     physiquePerMonth: 0,
     checkinEveryWeeks: 2,
+    aiQuickPerDay: 12,
+    mealPlansPerMonth: 4,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -96,6 +106,8 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
     aiPlansPerMonth: 8,
     physiquePerMonth: 2,
     checkinEveryWeeks: 1,
+    aiQuickPerDay: 20,
+    mealPlansPerMonth: 10,
     features: {
       ai_coach_message: true,
       ai_generate_plan: true,
@@ -131,6 +143,8 @@ export const TRIAL_LIMITS: TierLimits = {
   aiPlansPerMonth: 1,
   physiquePerMonth: 1,
   checkinEveryWeeks: 1,
+  aiQuickPerDay: 8,
+  mealPlansPerMonth: 1,
 };
 
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */

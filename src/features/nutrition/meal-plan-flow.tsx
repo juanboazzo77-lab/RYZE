@@ -30,7 +30,7 @@ export function MealPlanFlow({ todayISO, target }: { todayISO: string; target: T
     startGen(async () => {
       const res = await generateMealPlanAction({ brief });
       if (res.ok && res.data) setPlan(res.data);
-      else toast.error(res.error === 'NO_TARGET' ? tm.noTarget : tm.genError);
+      else toast.error(res.error === 'NO_TARGET' ? tm.noTarget : res.error === 'LIMIT' ? tm.limitReached : tm.genError);
     });
   }
 

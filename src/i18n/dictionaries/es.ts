@@ -877,6 +877,7 @@ export const es = {
       title: 'Planificar comidas con IA',
       upsell: 'Armá un día de comidas que apunta a tus objetivos, con lista de compras.',
       noTarget: 'Definí tus objetivos nutricionales para planificar comidas.',
+      limitReached: 'Llegaste al límite de tu plan para esta función. Se renueva pronto.',
       targetTitle: 'Objetivo del día',
       briefLabel: 'Pedido para el Coach (opcional)',
       briefPh: 'Ej: sin lácteos, algo rápido para el almuerzo, presupuesto ajustado…',

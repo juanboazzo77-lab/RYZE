@@ -879,6 +879,7 @@ export const pt: Dictionary = {
       title: 'Planejar refeições com IA',
       upsell: 'Monte um dia de refeições que mira seus objetivos, com lista de compras.',
       noTarget: 'Defina seus objetivos nutricionais para planejar refeições.',
+      limitReached: 'Você atingiu o limite do seu plano para esta função. Ele renova em breve.',
       targetTitle: 'Objetivo do dia',
       briefLabel: 'Pedido para o Coach (opcional)',
       briefPh: 'Ex: sem laticínios, algo rápido para o almoço, orçamento apertado…',

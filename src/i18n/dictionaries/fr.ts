@@ -879,6 +879,7 @@ export const fr: Dictionary = {
       title: 'Planifier les repas avec IA',
       upsell: 'Composez une journée de repas qui vise vos objectifs, avec liste de courses.',
       noTarget: 'Définissez vos objectifs nutritionnels pour planifier des repas.',
+      limitReached: 'Vous avez atteint la limite de votre forfait pour cette fonction. Elle se renouvelle bientôt.',
       targetTitle: 'Objectif du jour',
       briefLabel: 'Demande pour le Coach (optionnel)',
       briefPh: 'Ex: sans laitages, quelque chose de rapide pour le déjeuner, budget serré…',

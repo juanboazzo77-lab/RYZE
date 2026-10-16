@@ -6,6 +6,7 @@ import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { isoToUtcDate } from '@/lib/date';
+import { AiRateLimitedError } from '@/server/ai/errors';
 import { computeEntryMacros } from '@/lib/nutrition/food-math';
 import {
   addEntrySchema,
@@ -376,7 +377,7 @@ export async function estimateMealPhotoAction(raw: {
   const { estimateMealPhotoSchema } = await import('./meal-photo-schema');
   const parsed = estimateMealPhotoSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const { userId, profile } = await requireUser();
+  const { userId, profile, entitlement } = await requireUser();
   const { aiConfigured } = await import('@/server/ai/config');
   if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
 
@@ -384,6 +385,7 @@ export async function estimateMealPhotoAction(raw: {
     const { estimateMealFromPhoto } = await import('@/server/ai/gateway');
     const est = await estimateMealFromPhoto({
       userId,
+      entitlement,
       timezone: profile.timezone,
       locale: profile.locale,
       photo: parsed.data.photo,
@@ -392,6 +394,7 @@ export async function estimateMealPhotoAction(raw: {
     if (!est) return { error: 'INVALID_OUTPUT' };
     return { ok: true, data: est };
   } catch (e) {
+    if (e instanceof AiRateLimitedError) return { error: 'LIMIT' };
     console.error('[meal-photo] falló', e instanceof Error ? e.message : e);
     return { error: 'PROVIDER_ERROR' };
   }
@@ -408,7 +411,7 @@ export async function estimateMealTextAction(raw: {
   const { estimateMealTextSchema } = await import('./meal-photo-schema');
   const parsed = estimateMealTextSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const { userId, profile } = await requireUser();
+  const { userId, profile, entitlement } = await requireUser();
   const { aiConfigured } = await import('@/server/ai/config');
   if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
 
@@ -416,6 +419,7 @@ export async function estimateMealTextAction(raw: {
     const { estimateMealFromText } = await import('@/server/ai/gateway');
     const est = await estimateMealFromText({
       userId,
+      entitlement,
       timezone: profile.timezone,
       locale: profile.locale,
       description: parsed.data.description,
@@ -423,6 +427,7 @@ export async function estimateMealTextAction(raw: {
     if (!est) return { error: 'INVALID_OUTPUT' };
     return { ok: true, data: est };
   } catch (e) {
+    if (e instanceof AiRateLimitedError) return { error: 'LIMIT' };
     console.error('[meal-text] falló', e instanceof Error ? e.message : e);
     return { error: 'PROVIDER_ERROR' };
   }

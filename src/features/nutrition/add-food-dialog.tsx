@@ -280,7 +280,13 @@ function PhotoTab({
         );
         setPhotos([]); // la foto no se guarda: se descarta también del cliente
       } else {
-        toast.error(res.error === 'NOT_CONFIGURED' ? tp.notConfigured : tp.estError);
+        toast.error(
+          res.error === 'NOT_CONFIGURED'
+            ? tp.notConfigured
+            : res.error === 'LIMIT'
+              ? t.nutrition.mealPlan.limitReached
+              : tp.estError,
+        );
       }
     });
   }
@@ -492,7 +498,13 @@ function DescribeTab({
           })),
         );
       } else {
-        toast.error(res.error === 'NOT_CONFIGURED' ? tp.notConfigured : tp.estError);
+        toast.error(
+          res.error === 'NOT_CONFIGURED'
+            ? tp.notConfigured
+            : res.error === 'LIMIT'
+              ? t.nutrition.mealPlan.limitReached
+              : tp.estError,
+        );
       }
     });
   }

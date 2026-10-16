@@ -879,6 +879,7 @@ export const de: Dictionary = {
       title: 'Mahlzeiten mit KI planen',
       upsell: 'Stelle einen Tagesplan zusammen, der auf deine Ziele abzielt, mit Einkaufsliste.',
       noTarget: 'Lege deine Ernährungsziele fest, um Mahlzeiten zu planen.',
+      limitReached: 'Du hast das Limit deines Tarifs für diese Funktion erreicht. Es erneuert sich bald.',
       targetTitle: 'Tagesziel',
       briefLabel: 'Anfrage an den Coach (optional)',
       briefPh: 'z. B. ohne Milchprodukte, etwas Schnelles zum Mittagessen, knappes Budget…',

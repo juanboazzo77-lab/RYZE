@@ -217,7 +217,12 @@ NO puede hacer estos ejercicios (no tiene la máquina o no puede): ${excluded.jo
 
   let draft: PlanDraft;
   try {
-    const res = await generateWorkoutPlanDraft({ profile, entitlement, brief });
+    const res = await generateWorkoutPlanDraft({
+      profile,
+      entitlement,
+      brief,
+      expectedDays: chosenDays,
+    });
     draft = res.draft;
   } catch (e) {
     return { error: aiErrorMessage(e) };
