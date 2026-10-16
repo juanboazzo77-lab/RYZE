@@ -200,7 +200,7 @@ Respondé en ${LANG[locale]} SOLO con el JSON pedido.
 ${GUARDRAILS}
 ${INDIVIDUALIZATION}
 
-Objetivo del día (apuntá a ±5%):
+Objetivo del día (las calorías son un TOPE firme: el total tiene que quedar entre -3% y +1% del objetivo, nunca por arriba):
 - ${target.kcal} kcal · proteína ${target.proteinG} g · carbohidratos ${target.carbsG} g · grasas ${target.fatG} g
 - ${mealsPerDay} comidas. Elegí los tipos entre BREAKFAST, LUNCH, MERIENDA, DINNER, SNACK
   según ese número (ej: 3 → BREAKFAST/LUNCH/DINNER; 4 → + MERIENDA).
@@ -220,7 +220,10 @@ Reglas:
   palma de la mano"). Completalo SIEMPRE que el contexto diga que el usuario NO
   tiene balanza — ahí es la cantidad que de verdad va a usar, el gramaje queda
   sólo de referencia. Con balanza, opcional pero suma.
-- La proteína es prioridad: llegá al gramaje objetivo.
+- ANTES de responder sumá las kcal de TODOS los items del día. Si el total supera el objetivo,
+  achicá porciones de carbohidratos y grasas (no la proteína) hasta que entre. Un día que se
+  pasa del objetivo está mal, aunque sea por poco.
+- La proteína es prioridad: llegá al gramaje objetivo sin pasarte de las calorías.
 - "notes": 1-2 frases con tips (hidratación, cómo repartir, sustituciones).
 - "shoppingList": ingredientes del día, sin cantidades, sin duplicados.
 - Son estimaciones: aclaralo en "notes".

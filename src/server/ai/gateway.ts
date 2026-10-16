@@ -21,6 +21,13 @@ import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/sche
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 import {
+  KCAL_TOLERANCE,
+  describeTotals,
+  kcalDeviation,
+  planKcal,
+  scalePlanToKcal,
+} from '@/features/nutrition/meal-plan-fit';
+import {
   mealPhotoEstimateSchema,
   type MealPhotoEstimate,
 } from '@/features/nutrition/meal-photo-schema';
@@ -307,21 +314,55 @@ export async function generateMealPlan(args: {
     'Generá el día de comidas ahora.' +
     (brief.trim() ? ` Pedido del usuario (respetá las reglas): ${brief.trim()}` : ' Sin pedidos extra.');
 
-  const res = await activeProvider().generateStructured({
-    model,
-    system,
-    messages: [{ role: 'user', content: userMessage }],
-    schema: mealPlanSchema,
-    schemaName: 'MealPlan',
-    maxOutputTokens: maxOutputTokensFor('generate_plan'),
-    timeoutMs: PLAN_TIMEOUT_MS,
-    temperature: 0.6,
-    thinking: true,
-    effort: 'low',
-  });
+  const ask = (messages: AiChatMessage[]) =>
+    activeProvider().generateStructured({
+      model,
+      system,
+      messages,
+      schema: mealPlanSchema,
+      schemaName: 'MealPlan',
+      maxOutputTokens: maxOutputTokensFor('generate_plan'),
+      timeoutMs: PLAN_TIMEOUT_MS,
+      temperature: 0.6,
+      thinking: true,
+      effort: 'low',
+    });
 
-  await recordUsage(profile.id, 'generate_plan', model, res.usage, profile.timezone, false);
-  return { plan: res.data, raw: res.rawText };
+  const first = await ask([{ role: 'user', content: userMessage }]);
+  await recordUsage(profile.id, 'generate_plan', model, first.usage, profile.timezone, false);
+  let plan = first.data;
+  let raw = first.rawText;
+
+  // Las IAs suman mal: si el día se pasa (o queda corto) del objetivo, se le pide una
+  // corrección con los totales reales y, si igual no llega, se escalan las porciones.
+  if (plan && Math.abs(kcalDeviation(plan, target.kcal)) > KCAL_TOLERANCE) {
+    const total = Math.round(planKcal(plan));
+    try {
+      const fix = await ask([
+        { role: 'user', content: userMessage },
+        { role: 'assistant', content: first.rawText },
+        {
+          role: 'user',
+          content:
+            `El día suma ${total} kcal y el objetivo es ${target.kcal} kcal (${describeTotals(plan)}). ` +
+            `Corregilo para que sume entre ${Math.round(target.kcal * 0.97)} y ${target.kcal} kcal ajustando porciones ` +
+            'de carbohidratos y grasas, y devolvé el JSON completo de nuevo.',
+        },
+      ]);
+      await recordUsage(profile.id, 'generate_plan', model, fix.usage, profile.timezone, false);
+      if (fix.data) {
+        plan = fix.data;
+        raw = fix.rawText;
+      }
+    } catch (e) {
+      console.error('[ai] meal plan: la corrección falló', e instanceof Error ? e.message : e);
+    }
+    if (plan && Math.abs(kcalDeviation(plan, target.kcal)) > KCAL_TOLERANCE) {
+      plan = scalePlanToKcal(plan, target.kcal);
+    }
+  }
+
+  return { plan, raw };
 }
 
 /* ------------------------------------------------------------------ */
