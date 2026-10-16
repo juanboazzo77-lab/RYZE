@@ -54,13 +54,13 @@ export function NewPlanFlow({
   const [used, setUsed] = useState(usage.used);
   const [refining, setRefining] = useState(false);
   const [genDays, setGenDays] = useState<number | null>(null);
-  const [genFailed, setGenFailed] = useState(false);
+  const [genFailed, setGenFailed] = useState<string | null>(null);
   const atLimit = used >= usage.limit;
 
   function generate(opts?: { brief?: string; days?: number; style?: PlanStyle }) {
     if (pending || atLimit) return;
     setGenDays(opts?.days ?? null);
-    setGenFailed(false);
+    setGenFailed(null);
     start(async () => {
       const res = await generatePlan({
         brief: (opts?.brief ?? brief).trim(),
@@ -71,7 +71,8 @@ export function NewPlanFlow({
         setDraft(res.data);
         setUsed((n) => n + 1);
       } else {
-        setGenFailed(true);
+        // Queda a la vista el motivo real (límite, crédito, formato) y no sólo un aviso genérico.
+        setGenFailed(res.error || t.coach.error);
         toast.error(res.error || t.coach.error);
       }
     });
@@ -169,7 +170,7 @@ function PlanWizard({
   used: number;
   limit: number;
   generatingDays: number | null;
-  failed: boolean;
+  failed: string | null;
   onGenerate: (opts: { brief?: string; days?: number; style?: PlanStyle }) => void;
 }) {
   const t = useT();
@@ -200,7 +201,7 @@ function PlanWizard({
           role="alert"
           className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
         >
-          {tp.failed}
+          {failed}
         </p>
       ) : null}
       {atLimit ? <p className="text-sm text-warning">{tp.limitReached}</p> : null}
