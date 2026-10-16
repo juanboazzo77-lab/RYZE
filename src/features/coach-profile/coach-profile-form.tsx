@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { Loader2, Sparkles } from 'lucide-react';
 import { useT } from '@/i18n/provider';
 import { useReturn } from '@/lib/use-return';
 import { interpolate } from '@/i18n/interpolate';
@@ -16,10 +17,11 @@ import { ChipMulti } from '@/components/form/chip-multi';
 import { OptionCards } from '@/components/form/option-cards';
 import { NumberStepper } from '@/components/form/number-stepper';
 import { TagInput } from '@/components/form/tag-input';
+import { PhotoPicker } from '@/components/form/photo-picker';
 import type { Sex } from '@prisma/client';
 import * as S from './schema';
 import type { CoachProfileData, SectionKey } from './schema';
-import { saveCoachProfile } from './actions';
+import { saveCoachProfile, analyzePhysiqueAction } from './actions';
 
 type OptMap = Record<string, string>;
 const optList = <T extends string>(vals: readonly T[], map: OptMap) =>
@@ -589,6 +591,10 @@ export function CoachProfileForm({
   );
 }
 
+/**
+ * Texto sobre el físico + análisis por foto (opcional). Las fotos nunca se guardan: se
+ * mandan al modelo y se descartan del cliente al terminar. El resultado completa el texto.
+ */
 function PhysiqueAnalyzer({
   value,
   onChange,
@@ -596,14 +602,84 @@ function PhysiqueAnalyzer({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const c = useT().coachProfile;
+  const t = useT();
+  const c = t.coachProfile;
+  const [photos, setPhotos] = useState<string[]>([]);
+  // Cambia al terminar un análisis para vaciar las miniaturas del selector.
+  const [photoKey, setPhotoKey] = useState(0);
+  const [analyzing, start] = useTransition();
+
+  function analyze() {
+    if (photos.length === 0) return;
+    start(async () => {
+      try {
+        const res = await analyzePhysiqueAction({ photos });
+        if (res.ok && res.data) {
+          onChange(
+            [
+              res.data.bodyFatEstimate ? `${c.physiqueBodyFat}: ${res.data.bodyFatEstimate}.` : '',
+              res.data.weakPoints || res.data.summary || res.data.photoTips,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .slice(0, 700),
+          );
+          setPhotos([]);
+          setPhotoKey((k) => k + 1);
+        } else {
+          toast.error(
+            res.error === 'NOT_CONFIGURED'
+              ? c.physiqueNotConfigured
+              : res.error === 'BLOCKED'
+                ? c.physiqueBlocked
+                : res.error === 'LIMIT_MONTH'
+                  ? t.physique.errLimitMonth
+                  : res.error === 'BUSY' || res.error === 'TIMEOUT'
+                    ? c.physiqueBusy
+                    : c.physiqueError,
+          );
+        }
+      } catch {
+        // Corte de red o foto demasiado pesada: no romper la pantalla.
+        toast.error(c.physiqueError);
+      }
+    });
+  }
+
   return (
-    <Textarea
-      value={value}
-      placeholder={c.fields.physiqueNotePh}
-      maxLength={700}
-      rows={3}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <div className="space-y-2">
+      <Textarea
+        value={value}
+        placeholder={c.fields.physiqueNotePh}
+        maxLength={700}
+        rows={3}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <div className="space-y-2 rounded-lg border border-dashed p-3">
+        <p className="text-xs text-muted-foreground">{c.physiqueHint}</p>
+        <PhotoPicker
+          key={photoKey}
+          value={photos}
+          onChange={setPhotos}
+          max={3}
+          labels={{
+            add: c.physiquePhotoAdd,
+            remove: t.common.delete,
+            max: c.physiquePhotoMax,
+            error: c.physiquePhotoError,
+          }}
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={photos.length === 0 || analyzing}
+          onClick={analyze}
+        >
+          {analyzing ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+          {analyzing ? c.physiqueAnalyzing : c.physiqueAnalyze}
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -1,10 +1,14 @@
 'use server';
 
-import { getSession } from '@/server/context';
+import { DateTime } from 'luxon';
+import { getSession, requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
-import { can } from '@/server/entitlements';
+import { can, limitsFor, physiqueMonthlyCap } from '@/server/entitlements';
+import { aiConfigured } from '@/server/ai/config';
+import { previousSummary } from '@/features/physique/summary';
 import { saveCoachProfileSchema } from './schema';
+import { analyzePhysiqueSchema, physiqueAnalysisSchema, type PhysiqueAnalysis } from './physique-schema';
 
 export interface Result<T = void> {
   ok?: boolean;
@@ -76,4 +80,59 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
     }
   }
   return { error: 'SAVE_FAILED' };
+}
+
+/**
+ * Análisis de físico por foto desde el perfil del coach (al completarlo). Sólo COACH y
+ * con cupo mensual. Las fotos viven sólo en esta variable local: se mandan al modelo y
+ * se descartan. Se guarda el informe de texto, que después aparece en la revisión semanal.
+ */
+export async function analyzePhysiqueAction(raw: {
+  photos: string[];
+}): Promise<Result<PhysiqueAnalysis>> {
+  const parsed = analyzePhysiqueSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+
+  const { userId, profile, entitlement } = await requireUser();
+  if (!can(entitlement, 'coach_profile')) return { error: 'FORBIDDEN' };
+  if (!aiConfigured()) return { error: 'NOT_CONFIGURED' };
+
+  const db = forUser(userId);
+  const monthStart = DateTime.now().setZone(profile.timezone).startOf('month').toJSDate();
+  const [monthCount, last] = await Promise.all([
+    db.physiqueAnalysis.count({ where: { createdAt: { gte: monthStart } } }),
+    db.physiqueAnalysis.findFirst({ orderBy: { createdAt: 'desc' } }),
+  ]);
+  if (monthCount >= physiqueMonthlyCap(limitsFor(entitlement))) return { error: 'LIMIT_MONTH' };
+
+  try {
+    const { analyzePhysique } = await import('@/server/ai/gateway');
+    const analysis = await analyzePhysique({
+      profile,
+      entitlement,
+      photos: parsed.data.photos,
+      previous: last
+        ? previousSummary(physiqueAnalysisSchema.parse(last.report ?? {}), last.createdAt)
+        : null,
+    });
+    if ('failure' in analysis) {
+      return {
+        error:
+          analysis.failure === 'blocked'
+            ? 'BLOCKED'
+            : analysis.failure === 'busy'
+              ? 'BUSY'
+              : analysis.failure === 'timeout'
+                ? 'TIMEOUT'
+                : 'INVALID_OUTPUT',
+      };
+    }
+    await db.physiqueAnalysis.create({
+      data: { userId, report: analysis as object, photoCount: parsed.data.photos.length },
+    });
+    return { ok: true, data: analysis };
+  } catch (e) {
+    console.error('[physique] falló', e instanceof Error ? e.message : e);
+    return { error: 'PROVIDER_ERROR' };
+  }
 }

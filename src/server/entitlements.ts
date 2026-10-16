@@ -94,7 +94,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
   COACH: {
     aiCoachMessagesPerDay: 60,
     aiPlansPerMonth: 8,
-    physiquePerMonth: 0,
+    physiquePerMonth: 2,
     checkinEveryWeeks: 1,
     features: {
       ai_coach_message: true,
@@ -129,7 +129,7 @@ export const TRIAL_LIMITS: TierLimits = {
   // Todas las features, pero con cupos chicos: la prueba es gratis y cuesta IA real.
   aiCoachMessagesPerDay: 5,
   aiPlansPerMonth: 1,
-  physiquePerMonth: 0,
+  physiquePerMonth: 1,
   checkinEveryWeeks: 1,
 };
 
@@ -150,6 +150,15 @@ export function trialDaysLeft(entitlement: Pick<Entitlement, 'tier' | 'createdAt
 export function limitsFor(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): TierLimits {
   if (isInTrial(entitlement)) return TRIAL_LIMITS;
   return TIER_LIMITS[entitlement.tier];
+}
+
+/**
+ * Tope de informes de físico por mes: los de la revisión semanal (uno por revisión) más los
+ * `physiquePerMonth` extra que se piden desde el perfil del coach.
+ */
+export function physiqueMonthlyCap(limits: TierLimits): number {
+  const fromCheckins = limits.checkinEveryWeeks > 0 ? Math.ceil(5 / limits.checkinEveryWeeks) : 0;
+  return fromCheckins + limits.physiquePerMonth;
 }
 
 /** ¿El tier del usuario habilita esta feature? (no chequea límites de uso). */
