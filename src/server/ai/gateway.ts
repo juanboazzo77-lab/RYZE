@@ -21,11 +21,12 @@ import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/sche
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 import {
-  KCAL_TOLERANCE,
+  KCAL_AIM,
   describeTotals,
   kcalDeviation,
   planKcal,
   scalePlanToKcal,
+  withinBand,
 } from '@/features/nutrition/meal-plan-fit';
 import {
   mealPhotoEstimateSchema,
@@ -333,32 +334,35 @@ export async function generateMealPlan(args: {
   let plan = first.data;
   let raw = first.rawText;
 
-  // Las IAs suman mal: si el día se pasa (o queda corto) del objetivo, se le pide una
-  // corrección con los totales reales y, si igual no llega, se escalan las porciones.
-  if (plan && Math.abs(kcalDeviation(plan, target.kcal)) > KCAL_TOLERANCE) {
-    const total = Math.round(planKcal(plan));
-    try {
-      const fix = await ask([
-        { role: 'user', content: userMessage },
-        { role: 'assistant', content: first.rawText },
-        {
-          role: 'user',
-          content:
-            `El día suma ${total} kcal y el objetivo es ${target.kcal} kcal (${describeTotals(plan)}). ` +
-            `Corregilo para que sume entre ${Math.round(target.kcal * 0.97)} y ${target.kcal} kcal ajustando porciones ` +
-            'de carbohidratos y grasas, y devolvé el JSON completo de nuevo.',
-        },
-      ]);
-      await recordUsage(profile.id, 'generate_plan', model, fix.usage, profile.timezone, false);
-      if (fix.data) {
-        plan = fix.data;
-        raw = fix.rawText;
+  // Las IAs suman mal: si el día se pasa (o queda corto) del objetivo, se corrige. Un error
+  // grande (> 8 %) se le devuelve a la IA con los totales reales, para no perder las medidas
+  // caseras; el resto, y lo que la IA no logre corregir, se ajusta escalando las porciones.
+  if (plan && !withinBand(plan, target.kcal)) {
+    if (Math.abs(kcalDeviation(plan, target.kcal)) > 0.08) {
+      const total = Math.round(planKcal(plan));
+      try {
+        const fix = await ask([
+          { role: 'user', content: userMessage },
+          { role: 'assistant', content: first.rawText },
+          {
+            role: 'user',
+            content:
+              `El día suma ${total} kcal y el objetivo es ${target.kcal} kcal (${describeTotals(plan)}). ` +
+              `Corregilo para que sume entre ${Math.round(target.kcal * 0.96)} y ${target.kcal} kcal ajustando porciones ` +
+              'de carbohidratos y grasas, y devolvé el JSON completo de nuevo.',
+          },
+        ]);
+        await recordUsage(profile.id, 'generate_plan', model, fix.usage, profile.timezone, false);
+        if (fix.data) {
+          plan = fix.data;
+          raw = fix.rawText;
+        }
+      } catch (e) {
+        console.error('[ai] meal plan: la corrección falló', e instanceof Error ? e.message : e);
       }
-    } catch (e) {
-      console.error('[ai] meal plan: la corrección falló', e instanceof Error ? e.message : e);
     }
-    if (plan && Math.abs(kcalDeviation(plan, target.kcal)) > KCAL_TOLERANCE) {
-      plan = scalePlanToKcal(plan, target.kcal);
+    if (plan && !withinBand(plan, target.kcal)) {
+      plan = scalePlanToKcal(plan, Math.round(target.kcal * KCAL_AIM));
     }
   }
 

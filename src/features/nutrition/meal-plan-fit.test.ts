@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kcalDeviation, planKcal, scalePlanToKcal } from './meal-plan-fit';
+import { kcalDeviation, planKcal, scalePlanToKcal, withinBand } from './meal-plan-fit';
 import type { MealPlan } from './meal-plan-schema';
 
 const plan = (kcals: number[]): MealPlan => ({
@@ -26,6 +26,13 @@ describe('meal-plan-fit', () => {
     const p = plan([500, 700, 400]);
     expect(planKcal(p)).toBe(1600);
     expect(kcalDeviation(p, 1500)).toBeCloseTo(100 / 1500);
+  });
+
+  it('la banda acepta quedar un poco corto pero casi nada de más', () => {
+    expect(withinBand(plan([1000, 960]), 2000)).toBe(true); // -2 %
+    expect(withinBand(plan([1000, 1005]), 2000)).toBe(true); // +0,25 %
+    expect(withinBand(plan([1000, 1040]), 2000)).toBe(false); // +2 %
+    expect(withinBand(plan([1000, 800]), 2000)).toBe(false); // -10 %
   });
 
   it('escala las porciones para llegar al objetivo', () => {

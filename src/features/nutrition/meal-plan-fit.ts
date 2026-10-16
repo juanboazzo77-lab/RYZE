@@ -1,7 +1,10 @@
 import type { MealPlan } from './meal-plan-schema';
 
-/** Margen aceptable respecto del objetivo de calorías del día. */
-export const KCAL_TOLERANCE = 0.03;
+/** Cuánto puede pasarse del objetivo (casi nada) y cuánto puede quedar por debajo. */
+export const KCAL_MAX_OVER = 0.005;
+export const KCAL_MAX_UNDER = 0.04;
+/** A qué fracción del objetivo se apunta al escalar: un pelín por debajo, nunca por arriba. */
+export const KCAL_AIM = 0.99;
 
 /** Calorías totales del día (suma de todos los items). */
 export function planKcal(plan: MealPlan): number {
@@ -12,6 +15,12 @@ export function planKcal(plan: MealPlan): number {
 export function kcalDeviation(plan: MealPlan, targetKcal: number): number {
   if (targetKcal <= 0) return 0;
   return (planKcal(plan) - targetKcal) / targetKcal;
+}
+
+/** ¿El día cae dentro de la banda aceptable? (se pasa poco o queda un poco corto). */
+export function withinBand(plan: MealPlan, targetKcal: number): boolean {
+  const d = kcalDeviation(plan, targetKcal);
+  return d <= KCAL_MAX_OVER && d >= -KCAL_MAX_UNDER;
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
