@@ -5,7 +5,7 @@ import type { MuscleGroup, PrimaryGoal } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
-import { AiError } from '@/server/ai/errors';
+import { AiError, AiRateLimitedError, AiPermissionError, AiNotConfiguredError } from '@/server/ai/errors';
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
 import {
@@ -35,10 +35,14 @@ export interface Result<T = void> {
 function aiErrorMessage(e: unknown): string {
   if (e instanceof AiError) {
     console.error('[coach] AiError', e.code, '-', e.message);
-    return e.userMessage;
+    // Los errores con mensaje propio (límite, plan, sin crédito) se muestran tal cual; el resto
+    // lleva el código y el motivo técnico, para poder diagnosticar desde lo que ve el usuario.
+    const own = e instanceof AiRateLimitedError || e instanceof AiPermissionError || e instanceof AiNotConfiguredError;
+    return own ? e.userMessage : `${e.userMessage} (${e.code}: ${e.message.slice(0, 140)})`;
   }
   console.error('[coach] error inesperado', e instanceof Error ? `${e.name}: ${e.message}` : e);
-  return 'No pudimos generar la respuesta ahora. Probá de nuevo en un rato.';
+  const detail = e instanceof Error ? `${e.name}: ${e.message}`.replace(/\s+/g, ' ').slice(0, 140) : 'desconocido';
+  return `No pudimos generar la respuesta ahora. Probá de nuevo en un rato. (${detail})`;
 }
 
 /* ------------------------------------------------------------------ */
