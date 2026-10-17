@@ -22,6 +22,32 @@ import { cn } from '@/lib/utils';
 import type { ExerciseResult } from '@/server/training/exercise-search';
 import { createExercise, searchExercisesAction } from './actions';
 
+/**
+ * En el celu el teclado tapa la parte de abajo de la hoja y el listado queda a medio ver. Se mide
+ * el área realmente visible (visualViewport) para que la hoja ocupe sólo eso y la lista scrollee
+ * adentro. En pantallas grandes devuelve null y el diálogo queda centrado como siempre.
+ */
+function useVisibleArea(active: boolean): { height: number; top: number } | null {
+  const [area, setArea] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    if (!active) return;
+    const vv = window.visualViewport;
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () =>
+      setArea(mq.matches && vv ? { height: Math.round(vv.height), top: Math.round(vv.offsetTop) } : null);
+    update();
+    vv?.addEventListener('resize', update);
+    vv?.addEventListener('scroll', update);
+    mq.addEventListener('change', update);
+    return () => {
+      vv?.removeEventListener('resize', update);
+      vv?.removeEventListener('scroll', update);
+      mq.removeEventListener('change', update);
+    };
+  }, [active]);
+  return area;
+}
+
 export function ExercisePicker({
   onPick,
   children,
@@ -30,10 +56,18 @@ export function ExercisePicker({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const area = useVisibleArea(open);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="gap-3">
+      <DialogContent
+        className="gap-2 p-4 sm:gap-3 sm:p-5"
+        style={
+          area
+            ? { top: area.top, bottom: 'auto', height: area.height, maxHeight: 'none', borderRadius: 0 }
+            : undefined
+        }
+      >
         <Body
           onPick={async (id, name) => {
             await onPick(id, name);
@@ -77,20 +111,20 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
 
   return (
     <>
-      <DialogHeader>
+      <DialogHeader className="shrink-0">
         <DialogTitle>{tp.title}</DialogTitle>
       </DialogHeader>
-      <div className="relative">
+      <div className="relative shrink-0">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          autoFocus
+          autoFocus={typeof window !== 'undefined' && !window.matchMedia('(pointer: coarse)').matches}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={tp.searchPlaceholder}
           className="pl-9"
         />
       </div>
-      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      <div className="-mx-1 flex shrink-0 gap-1.5 overflow-x-auto px-1 pb-1">
         {[null, ...MUSCLE_GROUPS].map((m) => (
           <button
             key={m ?? 'all'}
@@ -108,7 +142,7 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
           </button>
         ))}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {searching && results.length === 0 ? (
           <div className="flex justify-center py-6 text-muted-foreground">
             <Loader2 className="size-5 animate-spin" />
@@ -129,7 +163,7 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
                     <li key={ex.id}>
                       <button
                         onClick={() => onPick(ex.id, ex.name)}
-                        className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-secondary/50"
+                        className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/50 active:bg-secondary"
                       >
                         <span className="text-sm font-medium">{ex.name}</span>
                         {ex.equipment ? (
@@ -144,7 +178,7 @@ function Body({ onPick }: { onPick: (id: string, name: string) => void | Promise
           </div>
         )}
       </div>
-      <Button variant="outline" onClick={() => setCreating(true)}>
+      <Button variant="outline" className="shrink-0" onClick={() => setCreating(true)}>
         <Plus className="size-4" />
         {tp.createTitle}
       </Button>
