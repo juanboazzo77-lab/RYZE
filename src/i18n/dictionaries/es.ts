@@ -947,7 +947,7 @@ export const es = {
       totalsMode: 'Totales directos',
       scanHint: 'Apuntá la cámara al código de barras del producto.',
       scanLooking: 'Buscando el producto…',
-      scanNotFound: 'No encontramos ese producto. Podés cargarlo manualmente.',
+      scanNotFound: 'No encontramos ese producto. Probá con la pestaña de foto (sacale una foto al producto o a la tabla nutricional) o cargalo manualmente.',
       scanNoNutriments: 'El producto no tiene información nutricional. Cargá los valores a mano.',
       scanError: 'No pudimos conectarnos. Probá de nuevo.',
       scanPermissionDenied: 'Necesitamos permiso para usar la cámara.',

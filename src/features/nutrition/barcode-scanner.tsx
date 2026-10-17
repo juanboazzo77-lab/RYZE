@@ -72,6 +72,9 @@ export function BarcodeScanner({
           BarcodeFormat.QR_CODE,
         ]);
 
+        // Más intentos por cuadro: lee mejor códigos chicos, brillosos o torcidos.
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
         const reader = new BrowserMultiFormatReader(hints, {
           delayBetweenScanAttempts: 150,
           delayBetweenScanSuccess: 400,
@@ -83,8 +86,8 @@ export function BarcodeScanner({
           {
             video: {
               facingMode: { ideal: 'environment' },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
             },
           },
           videoRef.current,

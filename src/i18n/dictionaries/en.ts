@@ -949,7 +949,7 @@ export const en: Dictionary = {
       totalsMode: 'Direct totals',
       scanHint: 'Point the camera at the product barcode.',
       scanLooking: 'Looking up the product…',
-      scanNotFound: "We couldn't find that product. You can add it manually.",
+      scanNotFound: 'We couldn’t find that product. Try the photo tab (take a picture of the product or its nutrition label) or enter it manually.',
       scanNoNutriments: 'This product has no nutrition info. Enter the values manually.',
       scanError: "We couldn't connect. Try again.",
       scanPermissionDenied: 'We need permission to use the camera.',

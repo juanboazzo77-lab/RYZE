@@ -1,5 +1,6 @@
 import 'server-only';
 import { prisma } from '@/server/db';
+import { candidateCodes, parseOffMacros, toNumber } from '@/lib/nutrition/off-parse';
 
 /**
  * Abstracción del buscador de alimentos. El MVP resuelve sólo contra la
@@ -111,51 +112,13 @@ export type BarcodeLookup =
 
 const OFF_ENDPOINT = 'https://world.openfoodfacts.org/api/v2/product';
 const OFF_FIELDS =
-  'code,product_name,product_name_es,generic_name,generic_name_es,abbreviated_product_name,brands,serving_quantity,nutriments';
-
-const clamp = (n: number, max: number) => Math.min(Math.max(n, 0), max);
+  'code,product_name,product_name_es,product_name_en,generic_name,generic_name_es,abbreviated_product_name,brands,serving_quantity,nutriments';
 
 function firstString(...vals: unknown[]): string | null {
   for (const v of vals) {
     if (typeof v === 'string' && v.trim().length > 0) return v.trim();
   }
   return null;
-}
-
-function toNumber(v: unknown): number | null {
-  if (typeof v === 'number' && Number.isFinite(v)) return v;
-  if (typeof v === 'string') {
-    const n = Number.parseFloat(v.replace(',', '.'));
-    if (Number.isFinite(n)) return n;
-  }
-  return null;
-}
-
-interface OffNutriments {
-  'energy-kcal_100g'?: unknown;
-  energy_100g?: unknown;
-  proteins_100g?: unknown;
-  carbohydrates_100g?: unknown;
-  fat_100g?: unknown;
-}
-
-/** Extrae macros por 100 g de la respuesta de OFF. `null` si no hay energía usable. */
-function parseOffMacros(n: OffNutriments): {
-  kcalPer100: number;
-  proteinPer100: number;
-  carbsPer100: number;
-  fatPer100: number;
-} | null {
-  const kcalDirect = toNumber(n['energy-kcal_100g']);
-  const energyKj = toNumber(n.energy_100g);
-  const kcal = kcalDirect ?? (energyKj !== null ? energyKj / 4.184 : null);
-  if (kcal === null || kcal <= 0) return null;
-  return {
-    kcalPer100: Math.round(clamp(kcal, 1000)),
-    proteinPer100: Math.round(clamp(toNumber(n.proteins_100g) ?? 0, 1000) * 10) / 10,
-    carbsPer100: Math.round(clamp(toNumber(n.carbohydrates_100g) ?? 0, 1000) * 10) / 10,
-    fatPer100: Math.round(clamp(toNumber(n.fat_100g) ?? 0, 1000) * 10) / 10,
-  };
 }
 
 function toResult(food: {
@@ -196,82 +159,112 @@ function toResult(food: {
  * trae información nutricional, lo guarda en `food` (`source: 'API'`) para
  * reusarlo después.
  */
+type OffProduct = {
+  product_name?: string;
+  product_name_es?: string;
+  product_name_en?: string;
+  generic_name?: string;
+  generic_name_es?: string;
+  abbreviated_product_name?: string;
+  brands?: string;
+  serving_quantity?: unknown;
+  nutriments?: Record<string, unknown>;
+};
+
+/** Pide un código a Open Food Facts. Un fallo de red se reintenta una vez. */
+async function fetchOff(code: string): Promise<{ kind: 'found'; product: OffProduct } | { kind: 'missing' } | { kind: 'error' }> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(`${OFF_ENDPOINT}/${code}.json?fields=${OFF_FIELDS}`, {
+        headers: {
+          'User-Agent': 'FORZA AI/0.1 (barcode nutrition lookup)',
+          Accept: 'application/json',
+        },
+        signal: AbortSignal.timeout(6000),
+        cache: 'no-store',
+      });
+      if (res.status === 404) return { kind: 'missing' };
+      if (!res.ok) continue;
+      const json = (await res.json()) as { status?: number; product?: OffProduct };
+      if (json.status !== 1 || !json.product) return { kind: 'missing' };
+      return { kind: 'found', product: json.product };
+    } catch {
+      // reintenta
+    }
+  }
+  return { kind: 'error' };
+}
+
+/**
+ * Busca un alimento por código de barras. Primero en la biblioteca local
+ * (`food.external_id`); si no está, consulta Open Food Facts (probando las variantes del código:
+ * UPC-A con cero adelante, GTIN-14) y, si el producto trae información nutricional, lo guarda en
+ * `food` (`source: 'API'`) para reusarlo después. Los datos incompletos se reconstruyen: kcal desde
+ * los macros, valores por 100 g desde los de la porción.
+ */
 export async function lookupBarcode(userId: string, barcode: string): Promise<BarcodeLookup> {
   const code = barcode.trim();
   if (!/^\d{8,14}$/.test(code)) return { status: 'not_found' };
+  const candidates = candidateCodes(code);
 
-  const existing = await prisma.food.findUnique({ where: { externalId: code } });
+  const existing = await prisma.food.findFirst({ where: { externalId: { in: candidates } } });
   if (existing) return { status: 'ok', food: toResult(existing) };
 
-  let json: {
-    status?: number;
-    product?: {
-      product_name?: string;
-      product_name_es?: string;
-      generic_name?: string;
-      generic_name_es?: string;
-      abbreviated_product_name?: string;
-      brands?: string;
-      serving_quantity?: unknown;
-      nutriments?: OffNutriments;
-    };
-  };
-  try {
-    const res = await fetch(`${OFF_ENDPOINT}/${code}.json?fields=${OFF_FIELDS}`, {
-      headers: {
-        'User-Agent': 'FORZA AI/0.1 (barcode nutrition lookup)',
-        Accept: 'application/json',
-      },
-      signal: AbortSignal.timeout(6000),
-      cache: 'no-store',
-    });
-    if (res.status === 404) return { status: 'not_found' };
-    if (!res.ok) return { status: 'error' };
-    json = await res.json();
-  } catch {
-    return { status: 'error' };
+  let sawError = false;
+  let partialName: string | null = null;
+  for (const candidate of candidates) {
+    const off = await fetchOff(candidate);
+    if (off.kind === 'error') {
+      sawError = true;
+      continue;
+    }
+    if (off.kind === 'missing') continue;
+
+    const p = off.product;
+    const name = firstString(
+      p.product_name_es,
+      p.product_name,
+      p.product_name_en,
+      p.generic_name_es,
+      p.generic_name,
+      p.abbreviated_product_name,
+    );
+    const servingRaw = toNumber(p.serving_quantity);
+    const servingQty = servingRaw !== null && servingRaw > 0 && servingRaw <= 5000 ? servingRaw : null;
+    const macros = parseOffMacros(p.nutriments ?? {}, servingQty);
+    if (!macros || !name) {
+      partialName = partialName ?? name;
+      continue;
+    }
+
+    const brand = firstString(p.brands?.split(',')[0]);
+    try {
+      const created = await prisma.food.create({
+        data: {
+          name: name.slice(0, 120),
+          brand: brand ? brand.slice(0, 80) : null,
+          source: 'API',
+          externalId: code,
+          verified: false,
+          kcalPer100: macros.kcalPer100,
+          proteinPer100: macros.proteinPer100,
+          carbsPer100: macros.carbsPer100,
+          fatPer100: macros.fatPer100,
+          servingQty,
+          servingUnit: servingQty ? 'g' : null,
+          servingLabel: servingQty ? `${servingQty} g` : null,
+        },
+      });
+      return { status: 'ok', food: toResult(created) };
+    } catch {
+      // Otra request creó la fila en paralelo (índice único): la releemos.
+      const row = await prisma.food.findUnique({ where: { externalId: code } });
+      if (row) return { status: 'ok', food: toResult(row) };
+      return { status: 'error' };
+    }
   }
 
-  if (json.status !== 1 || !json.product) return { status: 'not_found' };
-
-  const p = json.product;
-  const name = firstString(
-    p.product_name_es,
-    p.product_name,
-    p.generic_name_es,
-    p.generic_name,
-    p.abbreviated_product_name,
-  );
-  const macros = parseOffMacros(p.nutriments ?? {});
-  if (!macros) return { status: 'no_nutriments', name };
-  if (!name) return { status: 'no_nutriments', name: null };
-
-  const brand = firstString(p.brands?.split(',')[0]);
-  const servingRaw = toNumber(p.serving_quantity);
-  const servingQty = servingRaw !== null && servingRaw > 0 && servingRaw <= 5000 ? servingRaw : null;
-
-  try {
-    const created = await prisma.food.create({
-      data: {
-        name: name.slice(0, 120),
-        brand: brand ? brand.slice(0, 80) : null,
-        source: 'API',
-        externalId: code,
-        verified: false,
-        kcalPer100: macros.kcalPer100,
-        proteinPer100: macros.proteinPer100,
-        carbsPer100: macros.carbsPer100,
-        fatPer100: macros.fatPer100,
-        servingQty,
-        servingUnit: servingQty ? 'g' : null,
-        servingLabel: servingQty ? `${servingQty} g` : null,
-      },
-    });
-    return { status: 'ok', food: toResult(created) };
-  } catch {
-    // Otra request creó la fila en paralelo (índice único): la releemos.
-    const row = await prisma.food.findUnique({ where: { externalId: code } });
-    if (row) return { status: 'ok', food: toResult(row) };
-    return { status: 'error' };
-  }
+  // Existe en OFF pero sin datos usables: se devuelve el nombre para precargar la carga manual.
+  if (partialName) return { status: 'no_nutriments', name: partialName };
+  return sawError ? { status: 'error' } : { status: 'not_found' };
 }

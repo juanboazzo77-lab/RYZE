@@ -949,7 +949,7 @@ export const de: Dictionary = {
       totalsMode: 'Direkte Gesamtwerte',
       scanHint: 'Richte die Kamera auf den Barcode des Produkts.',
       scanLooking: 'Produkt wird gesucht…',
-      scanNotFound: 'Produkt nicht gefunden. Du kannst es manuell eintragen.',
+      scanNotFound: 'Produkt nicht gefunden. Versuche den Foto-Tab (fotografiere das Produkt oder die Nährwerttabelle) oder gib es manuell ein.',
       scanNoNutriments: 'Das Produkt hat keine Nährwertangaben. Trage die Werte manuell ein.',
       scanError: 'Verbindung fehlgeschlagen. Versuch es erneut.',
       scanPermissionDenied: 'Wir benötigen die Erlaubnis, die Kamera zu verwenden.',

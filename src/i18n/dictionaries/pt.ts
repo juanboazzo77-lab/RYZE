@@ -949,7 +949,7 @@ export const pt: Dictionary = {
       totalsMode: 'Totais diretos',
       scanHint: 'Aponte a câmera para o código de barras do produto.',
       scanLooking: 'Procurando o produto…',
-      scanNotFound: 'Não encontramos esse produto. Você pode cadastrar manualmente.',
+      scanNotFound: 'Não encontramos esse produto. Tente a aba de foto (fotografe o produto ou a tabela nutricional) ou cadastre manualmente.',
       scanNoNutriments: 'O produto não tem informação nutricional. Informe os valores manualmente.',
       scanError: 'Não conseguimos conectar. Tente de novo.',
       scanPermissionDenied: 'Precisamos de permissão para usar a câmera.',
