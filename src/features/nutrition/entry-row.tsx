@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react';
 import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
-import { Check, Copy, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowRightLeft, Check, Copy, Pencil, Trash2, X } from 'lucide-react';
+import type { MealType } from '@prisma/client';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
@@ -19,6 +20,7 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
   const [pending, start] = useTransition();
   const [quantity, setQuantity] = useState(entry.quantity);
   const [unit, setUnit] = useState(entry.unit);
+  const [moving, setMoving] = useState(false);
 
   function save() {
     start(async () => {
@@ -35,6 +37,20 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
     start(async () => {
       const res = await deleteFoodEntry({ id: entry.id });
       if (res.ok) toast.success(t.nutrition.toast.deleted);
+      else {
+        setRemoved(false);
+        toast.error(t.nutrition.toast.genericError);
+      }
+    });
+  }
+  function move(to: MealType) {
+    if (to === entry.mealType) return;
+    // Se saca de acá al instante y aparece en la otra comida cuando la pantalla se refresca.
+    setMoving(false);
+    setRemoved(true);
+    start(async () => {
+      const res = await updateFoodEntry({ id: entry.id, mealType: to });
+      if (res.ok) toast.success(t.nutrition.toast.moved);
       else {
         setRemoved(false);
         toast.error(t.nutrition.toast.genericError);
@@ -88,7 +104,8 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
   }
 
   return (
-    <div className={cn('group flex items-center gap-3 py-2', pending && 'opacity-50')}>
+    <div className={cn(pending && 'opacity-50')}>
+    <div className="group flex items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{entry.name}</span>
@@ -119,6 +136,17 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
           variant="ghost"
           className="size-8"
           disabled={pending}
+          onClick={() => setMoving((v) => !v)}
+          aria-label={t.nutrition.actions.move}
+          aria-expanded={moving}
+        >
+          <ArrowRightLeft className="size-3.5" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-8"
+          disabled={pending}
           onClick={duplicate}
           aria-label={t.nutrition.actions.duplicate}
         >
@@ -135,6 +163,24 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
           <Trash2 className="size-3.5 text-destructive" />
         </Button>
       </div>
+    </div>
+    {moving ? (
+      <div className="flex flex-wrap items-center gap-1.5 pb-2">
+        <span className="text-xs text-muted-foreground">{t.nutrition.actions.moveTo}</span>
+        {(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const)
+          .filter((m) => m !== entry.mealType)
+          .map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => move(m)}
+              className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-secondary/50"
+            >
+              {t.nutrition.meals[m]}
+            </button>
+          ))}
+      </div>
+    ) : null}
     </div>
   );
 }
