@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
-import { ArrowRightLeft, Check, Copy, Pencil, Trash2, X } from 'lucide-react';
+import { ArrowRightLeft, Check, ChevronDown, Copy, Pencil, Trash2, X } from 'lucide-react';
 import type { MealType } from '@prisma/client';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
   const [quantity, setQuantity] = useState(entry.quantity);
   const [unit, setUnit] = useState(entry.unit);
   const [moving, setMoving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   function save() {
     start(async () => {
@@ -103,84 +104,102 @@ export function EntryRow({ entry }: { entry: DayEntry }) {
     );
   }
 
+  // Cerrado: sólo nombre y calorías. Todo lo demás (cantidad, macros y acciones) al tocar.
   return (
     <div className={cn(pending && 'opacity-50')}>
-    <div className="group flex items-center gap-3 py-2">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium">{entry.name}</span>
-          {entry.isEstimated ? (
-            <span className="shrink-0 rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
-              {t.nutrition.estimatedBadge}
+      <button
+        type="button"
+        onClick={() => {
+          setOpen((v) => !v);
+          setMoving(false);
+        }}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 py-2.5 text-left"
+      >
+        <span className="min-w-0 flex-1 break-words text-sm font-medium">{entry.name}</span>
+        <span className="shrink-0 text-sm font-semibold tabular-nums">{entry.kcal} kcal</span>
+        <ChevronDown
+          className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
+        />
+      </button>
+
+      {open ? (
+        <div className="space-y-2 pb-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground tabular-nums">
+            <span>
+              {entry.quantity} {entry.unit}
             </span>
+            <span>P {entry.proteinG}</span>
+            <span>C {entry.carbsG}</span>
+            <span>G {entry.fatG}</span>
+            {entry.isEstimated ? (
+              <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+                {t.nutrition.estimatedBadge}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs"
+              disabled={pending}
+              onClick={() => setEditing(true)}
+            >
+              <Pencil className="size-3.5" />
+              {t.nutrition.actions.edit}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs"
+              disabled={pending}
+              onClick={() => setMoving((v) => !v)}
+              aria-expanded={moving}
+            >
+              <ArrowRightLeft className="size-3.5" />
+              {t.nutrition.actions.move}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs"
+              disabled={pending}
+              onClick={duplicate}
+            >
+              <Copy className="size-3.5" />
+              {t.nutrition.actions.duplicate}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5 text-xs text-destructive"
+              disabled={pending}
+              onClick={remove}
+            >
+              <Trash2 className="size-3.5" />
+              {t.nutrition.actions.deleteE}
+            </Button>
+          </div>
+          {moving ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">{t.nutrition.actions.moveTo}</span>
+              {(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const)
+                .filter((m) => m !== entry.mealType)
+                .map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => move(m)}
+                    className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-secondary/50"
+                  >
+                    {t.nutrition.meals[m]}
+                  </button>
+                ))}
+            </div>
           ) : null}
         </div>
-        <p className="text-xs text-muted-foreground tabular-nums">
-          {entry.quantity} {entry.unit} · P {entry.proteinG} · C {entry.carbsG} · G {entry.fatG}
-        </p>
-      </div>
-      <span className="shrink-0 text-sm font-semibold tabular-nums">{entry.kcal} kcal</span>
-      <div className="flex shrink-0 items-center opacity-60 transition-opacity group-hover:opacity-100">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={pending}
-          onClick={() => setEditing(true)}
-          aria-label={t.nutrition.actions.edit}
-        >
-          <Pencil className="size-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={pending}
-          onClick={() => setMoving((v) => !v)}
-          aria-label={t.nutrition.actions.move}
-          aria-expanded={moving}
-        >
-          <ArrowRightLeft className="size-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={pending}
-          onClick={duplicate}
-          aria-label={t.nutrition.actions.duplicate}
-        >
-          <Copy className="size-3.5" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={pending}
-          onClick={remove}
-          aria-label={t.nutrition.actions.deleteE}
-        >
-          <Trash2 className="size-3.5 text-destructive" />
-        </Button>
-      </div>
-    </div>
-    {moving ? (
-      <div className="flex flex-wrap items-center gap-1.5 pb-2">
-        <span className="text-xs text-muted-foreground">{t.nutrition.actions.moveTo}</span>
-        {(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const)
-          .filter((m) => m !== entry.mealType)
-          .map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => move(m)}
-              className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-secondary/50"
-            >
-              {t.nutrition.meals[m]}
-            </button>
-          ))}
-      </div>
-    ) : null}
+      ) : null}
     </div>
   );
 }
