@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { getSession, requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
-import { can, limitsFor, physiqueMonthlyCap } from '@/server/entitlements';
+import { can, limitsFor, physiqueMonthlyCap, withFullAccess } from '@/server/entitlements';
 import { aiConfigured } from '@/server/ai/config';
 import { previousSummary } from '@/features/physique/summary';
 import { saveCoachProfileSchema } from './schema';
@@ -36,10 +36,11 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
   // Defensa en profundidad: la pantalla ya bloquea el acceso, pero la Server
   // Action se puede llamar directo. Sólo un `findUnique` liviano (no el upsert
   // de requireUser) para no sumar latencia al guardado.
-  const entitlement = await prisma.entitlement.findUnique({
+  const row = await prisma.entitlement.findUnique({
     where: { userId: user.id },
     select: { tier: true, createdAt: true },
   });
+  const entitlement = row ? withFullAccess(user.email, row) : null;
   if (!entitlement || !can(entitlement, 'coach_profile')) return { error: 'FORBIDDEN' };
 
   const db = forUser(user.id);

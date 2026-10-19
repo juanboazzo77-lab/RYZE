@@ -3,6 +3,7 @@ import { cache } from 'react';
 import type { Entitlement, Profile } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase/server';
 import { prisma } from './db';
+import { withFullAccess } from './entitlements';
 
 export interface UserContext {
   userId: string;
@@ -65,7 +66,7 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
     userId: profile.id,
     email: profile.email,
     profile,
-    entitlement,
+    entitlement: withFullAccess(profile.email, entitlement),
     needsOnboarding: profile.onboardingCompletedAt === null,
   };
 });

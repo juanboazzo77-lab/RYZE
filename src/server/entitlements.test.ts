@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { can, limitsFor, showAds, isInTrial, trialDaysLeft } from './entitlements';
+import { can, hasFullAccess, limitsFor, showAds, isInTrial, trialDaysLeft, withFullAccess } from './entitlements';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
 
@@ -60,5 +60,14 @@ describe('entitlements', () => {
     expect(showAds({ tier: 'BASIC' })).toBe(false);
     expect(showAds({ tier: 'PRO' })).toBe(false);
     expect(showAds({ tier: 'COACH' })).toBe(false);
+  });
+
+  it('la cuenta de demostración tiene plan COACH aunque su prueba haya vencido', () => {
+    const expired = { tier: 'FREE' as const, createdAt: daysAgo(60) };
+    expect(hasFullAccess('Demo@Fitai.app')).toBe(true);
+    expect(hasFullAccess('otra@persona.com')).toBe(false);
+    const full = withFullAccess('demo@fitai.app', expired);
+    expect(can(full, 'coach_profile')).toBe(true);
+    expect(can(withFullAccess('otra@persona.com', expired), 'ai_coach_message')).toBe(false);
   });
 });

@@ -180,6 +180,31 @@ export function can(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>, featur
   return limitsFor(entitlement).features[feature];
 }
 
+/**
+ * Cuentas con acceso completo (plan COACH) sin depender de la base de datos: la cuenta de
+ * demostración que usa el revisor de la tienda tiene que ver todas las funciones aunque su
+ * prueba gratis haya vencido. Se pueden sumar más mails con FULL_ACCESS_EMAILS (separados
+ * por coma). Son cuentas propias ya creadas; no hace falta que existan en la base.
+ */
+const DEFAULT_FULL_ACCESS = ['demo@fitai.app'];
+
+export function hasFullAccess(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const extra = (process.env.FULL_ACCESS_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return [...DEFAULT_FULL_ACCESS, ...extra].includes(email.trim().toLowerCase());
+}
+
+/** Devuelve el entitlement con plan COACH si el mail es de una cuenta con acceso completo. */
+export function withFullAccess<T extends { tier: EntitlementTier }>(
+  email: string | null | undefined,
+  entitlement: T,
+): T {
+  return hasFullAccess(email) ? { ...entitlement, tier: 'COACH' as EntitlementTier } : entitlement;
+}
+
 /** Sólo FREE ve publicidad (BASIC/PRO/COACH la sacan, sin importar la prueba). */
 export function showAds(entitlement: Pick<Entitlement, 'tier'>): boolean {
   return entitlement.tier === 'FREE';
