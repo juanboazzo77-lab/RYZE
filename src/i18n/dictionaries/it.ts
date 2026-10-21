@@ -1225,6 +1225,13 @@ export const it: Dictionary = {
     title: 'AI Coach',
     subtitle: 'Il tuo allenatore e guida nutrizionale. Risponde con i tuoi dati reali.',
     inputPlaceholder: 'Chiedi qualcosa al Coach…',
+    foodAsk: 'Vuoi aggiungerlo a oggi? Quanto?',
+    foodPer100: 'per 100 g',
+    foodAmount: 'Quantità (g)',
+    foodMeal: 'Pasto',
+    foodAdd: 'Aggiungi',
+    foodAdded: 'Aggiunto a oggi',
+    foodSkip: 'No, grazie',
     send: 'Invia',
     sending: 'Sto pensando…',
     empty:

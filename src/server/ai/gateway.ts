@@ -20,6 +20,7 @@ import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
+import { coachReplySchema, type CoachFood } from '@/features/coach/reply-schema';
 import {
   KCAL_AIM,
   PROTEIN_MIN_RATIO,
@@ -68,7 +69,7 @@ export async function runCoachTurn(args: {
   entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   history: CoachHistoryMsg[];
   userMessage: string;
-}): Promise<{ text: string }> {
+}): Promise<{ text: string; food: CoachFood | null }> {
   const { profile, entitlement, history, userMessage } = args;
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
 
@@ -85,6 +86,24 @@ export async function runCoachTurn(args: {
   let lastError: unknown = new AiError('INVALID_OUTPUT', 'sin respuesta del modelo');
   for (const model of models) {
     try {
+      // Primero salida estructurada (texto + alimento detectado); si el formato falla, texto simple.
+      const structured = await activeProvider().generateStructured({
+        model,
+        system,
+        messages,
+        schema: coachReplySchema,
+        schemaName: 'CoachReply',
+        maxOutputTokens: maxOutputTokensFor('coach_chat') + 400,
+        timeoutMs: COACH_TIMEOUT_MS,
+        temperature: 0.7,
+        thinking: false,
+      });
+      if (structured.data?.reply.trim()) {
+        await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, true);
+        return { text: structured.data.reply.trim(), food: structured.data.food };
+      }
+      await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, false);
+
       const res = await activeProvider().generate({
         model,
         system,
@@ -104,7 +123,7 @@ export async function runCoachTurn(args: {
       }
 
       await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
-      return { text };
+      return { text, food: null };
     } catch (e) {
       console.error('[ai] coach falló', { model, error: e instanceof Error ? e.message : String(e) });
       // Sin crédito, sin clave o sin permiso: otro modelo no lo arregla.

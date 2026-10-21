@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { DateTime } from 'luxon';
 import type { MuscleGroup, PrimaryGoal } from '@prisma/client';
 import { requireUser } from '@/server/context';
@@ -9,6 +10,8 @@ import { prisma } from '@/server/db';
 import { AiError, AiRateLimitedError, AiPermissionError, AiNotConfiguredError } from '@/server/ai/errors';
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
+import { localTodayISO } from '@/lib/date';
+import { coachFoodSchema, type CoachFood } from './reply-schema';
 import {
   computeTargets,
   ageFromBirthdate,
@@ -52,7 +55,7 @@ function aiErrorMessage(e: unknown): string {
 
 export async function sendCoachMessage(
   raw: SendMessageInput,
-): Promise<Result<{ reply: string }>> {
+): Promise<Result<{ reply: string; food: CoachFood | null }>> {
   const parsed = sendMessageSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   if (!aiConfigured()) return { error: 'La IA todavía no está configurada.' };
@@ -75,6 +78,7 @@ export async function sendCoachMessage(
   }));
 
   let reply: string;
+  let food: CoachFood | null = null;
   try {
     const res = await runCoachTurn({
       profile,
@@ -83,6 +87,7 @@ export async function sendCoachMessage(
       userMessage: parsed.data.text,
     });
     reply = res.text;
+    food = res.food;
   } catch (e) {
     return { error: aiErrorMessage(e) };
   }
@@ -108,7 +113,42 @@ export async function sendCoachMessage(
   });
 
   revalidatePath('/coach');
-  return { ok: true, data: { reply } };
+  return { ok: true, data: { reply, food } };
+}
+
+const addCoachFoodSchema = coachFoodSchema
+  .omit({ suggestedGrams: true })
+  .extend({
+    grams: z.number().positive().max(5000),
+    mealType: z.enum(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK']),
+  });
+
+/** Agrega al día de hoy el alimento que el coach explicó, con la cantidad que elija el usuario. */
+export async function addCoachFoodToToday(
+  raw: z.infer<typeof addCoachFoodSchema>,
+): Promise<Result> {
+  const parsed = addCoachFoodSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const f = parsed.data;
+  const { profile } = await requireUser();
+  const k = f.grams / 100;
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+
+  const { addFoodEntry } = await import('@/features/nutrition/actions');
+  const res = await addFoodEntry({
+    date: localTodayISO(profile.timezone),
+    mealType: f.mealType,
+    customName: f.name,
+    quantity: Math.round(f.grams),
+    unit: 'g',
+    manualMacros: {
+      kcal: Math.round(f.kcalPer100 * k),
+      proteinG: round1(f.proteinPer100 * k),
+      carbsG: round1(f.carbsPer100 * k),
+      fatG: round1(f.fatPer100 * k),
+    },
+  });
+  return res.ok ? { ok: true } : { error: res.error };
 }
 
 export async function resetCoachConversation(): Promise<Result> {

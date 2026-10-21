@@ -1223,6 +1223,13 @@ export const es = {
     title: 'AI Coach',
     subtitle: 'Tu entrenador y guía de nutrición. Responde con tus datos reales.',
     inputPlaceholder: 'Preguntale algo al Coach…',
+    foodAsk: '¿Querés agregarlo al día de hoy? ¿Cuánta cantidad?',
+    foodPer100: 'por 100 g',
+    foodAmount: 'Cantidad (g)',
+    foodMeal: 'Comida',
+    foodAdd: 'Agregar',
+    foodAdded: 'Agregado al día de hoy',
+    foodSkip: 'No, gracias',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:

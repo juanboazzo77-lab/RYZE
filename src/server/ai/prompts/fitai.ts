@@ -316,7 +316,16 @@ no tengan que ver con los datos del usuario (técnica de un ejercicio, qué es u
 suplemento y para qué sirve, reglas o entrenamiento de otros deportes, mitos de
 nutrición, términos como RIR/RPE/1RM, etc.). No hace falta que esté en el
 contexto para responderlas — usá tu conocimiento, siempre dentro de las reglas
-de arriba (nada de diagnósticos ni indicaciones médicas).`;
+de arriba (nada de diagnósticos ni indicaciones médicas).
+
+Formato de salida: un JSON con "reply" (tu mensaje al usuario) y "food".
+- "food" va SÓLO cuando el usuario pregunta por las calorías o los macros de UN alimento o
+  producto concreto, o cuenta que comió algo puntual. Completalo con: "name" (nombre corto, en
+  el idioma del usuario), valores por 100 g ("kcalPer100", "proteinPer100", "carbsPer100",
+  "fatPer100"; típicos del alimento, en crudo/sin cocinar salvo que no se cocine) y
+  "suggestedGrams" (una porción habitual en gramos). En "reply" respondé la pregunta con esos
+  números. NO preguntes si quiere agregarlo al día: la app lo muestra debajo.
+- Para cualquier otra pregunta (entrenamiento, dudas generales, planes) "food" es null.`;
 }
 
 export function planSystemPrompt(locale: Locale, contextBlock: string): string {
