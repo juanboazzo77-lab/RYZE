@@ -5,7 +5,7 @@ import { DecimalInput } from '@/components/form/decimal-input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy } from 'lucide-react';
+import { ArrowRightLeft, Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { useT } from '@/i18n/provider';
+import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import type { Dictionary } from '@/i18n';
 import type { WorkoutSession } from './queries';
@@ -27,6 +29,9 @@ import {
   addWorkoutExercise,
   discardWorkout,
   finishWorkout,
+  findExerciseVariants,
+  swapWorkoutExercise,
+  type ExerciseVariant,
   removeWorkoutExercise,
   restartWorkoutClock,
   saveWorkout,
@@ -62,6 +67,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
   const dirty = useSession((s) => s.dirty);
   const markClean = useSession((s) => s.markClean);
   const dropExercise = useSession((s) => s.dropExercise);
+  const swapExercise = useSession((s) => s.swapExercise);
 
   const alreadyLogged = useMemo(
     () => session.exercises.some((e) => e.sets.some((s) => s.isCompleted)),
@@ -223,6 +229,23 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
                 onRemove={async () => {
                   dropExercise(ex.id);
                   await removeWorkoutExercise({ id: ex.id });
+                }}
+                excludeIds={exercises.map((x) => x.exerciseId)}
+                onSwap={async (variant) => {
+                  const res = await swapWorkoutExercise({ id: ex.id, exerciseId: variant.id });
+                  if (res.ok && res.data) {
+                    swapExercise(ex.id, {
+                      exerciseId: res.data.id,
+                      name: res.data.name,
+                      type: res.data.type,
+                      primaryMuscle: res.data.primaryMuscle,
+                    });
+                    toast.success(t.training.session.swapped);
+                    router.refresh();
+                    return true;
+                  }
+                  toast.error(t.training.toast.genericError);
+                  return false;
                 }}
               />
             ))
@@ -432,11 +455,15 @@ function ExerciseBlock({
   ex,
   onCompleted,
   onRemove,
+  onSwap,
+  excludeIds,
 }: {
   t: Dictionary;
   ex: StoreExercise;
   onCompleted: (restSeconds: number | null) => void;
   onRemove: () => void;
+  onSwap: (variant: ExerciseVariant) => Promise<boolean>;
+  excludeIds: string[];
 }) {
   const patchSet = useSession((s) => s.patchSet);
   const toggleComplete = useSession((s) => s.toggleComplete);
@@ -499,9 +526,14 @@ function ExerciseBlock({
             )}
           </div>
         </div>
+        <div className="flex shrink-0 items-center">
+          {ex.type === 'CARDIO' ? null : (
+            <VariantPicker t={t} ex={ex} excludeIds={excludeIds} onSwap={onSwap} />
+          )}
         <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onRemove} aria-label={t.training.remove}>
           <Trash2 className="size-3.5 text-destructive" />
         </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {ex.sets.map((st) => (
@@ -530,6 +562,88 @@ function ExerciseBlock({
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/** "Máquina ocupada": busca variantes del ejercicio y permite cambiarlo sin perder las series. */
+function VariantPicker({
+  t,
+  ex,
+  excludeIds,
+  onSwap,
+}: {
+  t: Dictionary;
+  ex: StoreExercise;
+  excludeIds: string[];
+  onSwap: (variant: ExerciseVariant) => Promise<boolean>;
+}) {
+  const ts = t.training.session;
+  const [open, setOpen] = useState(false);
+  const [variants, setVariants] = useState<ExerciseVariant[] | null>(null);
+  const [swapping, setSwapping] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    setVariants(null);
+    findExerciseVariants({ exerciseId: ex.exerciseId, excludeIds })
+      .then((v) => alive && setVariants(v))
+      .catch(() => alive && setVariants([]));
+    return () => {
+      alive = false;
+    };
+    // sólo al abrir o si cambia el ejercicio
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, ex.exerciseId]);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-muted-foreground">
+          <ArrowRightLeft className="size-3.5" />
+          {ts.busyMachine}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="gap-2 p-4">
+        <DialogHeader>
+          <DialogTitle>{interpolate(ts.variantsTitle, { name: ex.name })}</DialogTitle>
+        </DialogHeader>
+        <p className="text-xs text-muted-foreground">{ts.variantsHint}</p>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {variants === null ? (
+            <div className="flex justify-center py-6 text-muted-foreground">
+              <Loader2 className="size-5 animate-spin" />
+            </div>
+          ) : variants.length === 0 ? (
+            <p className="py-4 text-center text-sm text-muted-foreground">{ts.variantsEmpty}</p>
+          ) : (
+            <ul className="divide-y">
+              {variants.map((v) => (
+                <li key={v.id}>
+                  <button
+                    type="button"
+                    disabled={swapping !== null}
+                    onClick={async () => {
+                      setSwapping(v.id);
+                      const ok = await onSwap(v);
+                      setSwapping(null);
+                      if (ok) setOpen(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-secondary/50 active:bg-secondary"
+                  >
+                    <span className="text-sm font-medium">{v.name}</span>
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {v.equipment}
+                      {swapping === v.id ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

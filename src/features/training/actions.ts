@@ -447,6 +447,71 @@ export async function removeWorkoutExercise(raw: { id: string }): Promise<Result
   return { ok: true };
 }
 
+export interface ExerciseVariant {
+  id: string;
+  name: string;
+  equipment: string | null;
+}
+
+/**
+ * Variantes de un ejercicio cuando la máquina está ocupada: mismo músculo y tipo, priorizando los
+ * que usan otro equipo (así no dependen de la misma máquina) y los de nombre parecido.
+ */
+export async function findExerciseVariants(raw: {
+  exerciseId: string;
+  excludeIds?: string[];
+}): Promise<ExerciseVariant[]> {
+  const id = idSchema.safeParse({ id: raw.exerciseId });
+  if (!id.success) return [];
+  const { userId } = await requireUser();
+  const exclude = new Set([id.data.id, ...(raw.excludeIds ?? [])]);
+
+  const rows = await prisma.$queryRaw<Array<{ id: string; name: string; equipment: string | null }>>`
+    SELECT e.id, e.name, e.equipment
+    FROM "exercise" e
+    JOIN "exercise" c ON c.id = ${id.data.id}::uuid
+    WHERE (e.is_custom = false OR e.created_by = ${userId}::uuid)
+      AND e.primary_muscle = c.primary_muscle
+      AND e.type = c.type
+      AND e.id <> c.id
+    ORDER BY (e.equipment IS DISTINCT FROM c.equipment) DESC,
+             similarity(e.name, c.name) DESC,
+             e.name ASC
+    LIMIT 40
+  `;
+  return rows.filter((r) => !exclude.has(r.id)).slice(0, 14);
+}
+
+/** Cambia, dentro del entrenamiento en curso, un ejercicio por una variante (mantiene las series). */
+export async function swapWorkoutExercise(raw: {
+  id: string;
+  exerciseId: string;
+}): Promise<Result<{ id: string; name: string; type: 'STRENGTH' | 'CARDIO'; primaryMuscle: string }>> {
+  const a = idSchema.safeParse({ id: raw.id });
+  const b = idSchema.safeParse({ id: raw.exerciseId });
+  if (!a.success || !b.success) return { error: 'INVALID' };
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+  if (!(await ownsWorkoutViaExercise(db, a.data.id))) return { error: 'FORBIDDEN' };
+
+  const next = await prisma.exercise.findUnique({ where: { id: b.data.id } });
+  if (!next || (next.isCustom && next.createdById !== userId)) return { error: 'EXERCISE_NOT_FOUND' };
+  const current = await db.workoutExercise.findFirst({
+    where: { id: a.data.id },
+    select: { workoutId: true, exercise: { select: { type: true } } },
+  });
+  if (!current) return { error: 'NOT_FOUND' };
+  // No se mezcla fuerza con cardio: las series no significan lo mismo.
+  if (current.exercise.type !== next.type) return { error: 'TYPE_MISMATCH' };
+
+  await db.workoutExercise.update({ where: { id: a.data.id }, data: { exerciseId: next.id } });
+  revalidatePath(`/training/session/${current.workoutId}`);
+  return {
+    ok: true,
+    data: { id: next.id, name: next.name, type: next.type, primaryMuscle: next.primaryMuscle },
+  };
+}
+
 export async function saveWorkout(raw: SaveWorkoutInput): Promise<Result> {
   const parsed = saveWorkoutSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };

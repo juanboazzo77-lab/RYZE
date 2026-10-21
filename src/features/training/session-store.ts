@@ -47,6 +47,11 @@ interface SessionState {
   removeSet: (exId: string, setId: string) => void;
   appendExercise: (ex: StoreExercise) => void;
   dropExercise: (exId: string) => void;
+  /** Cambia el ejercicio por una variante conservando las series cargadas. */
+  swapExercise: (
+    exId: string,
+    next: { exerciseId: string; name: string; type: 'STRENGTH' | 'CARDIO'; primaryMuscle: string },
+  ) => void;
   markClean: () => void;
   payload: () => SaveWorkoutInput;
 }
@@ -187,6 +192,24 @@ export const useSession = create<SessionState>()(
 
       appendExercise: (ex) =>
         set((s) => ({ exercises: [...s.exercises.filter((e) => e.id !== ex.id), ex] })),
+
+      swapExercise: (exId, next) =>
+        set((s) => ({
+          dirty: true,
+          exercises: s.exercises.map((e) =>
+            e.id !== exId
+              ? e
+              : {
+                  ...e,
+                  exerciseId: next.exerciseId,
+                  name: next.name,
+                  type: next.type,
+                  primaryMuscle: next.primaryMuscle,
+                  lastTime: null,
+                  bestWeightKg: null,
+                },
+          ),
+        })),
 
       dropExercise: (exId) =>
         set((s) => ({ exercises: s.exercises.filter((e) => e.id !== exId) })),
