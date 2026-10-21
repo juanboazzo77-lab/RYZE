@@ -16,8 +16,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const metadata: Metadata = { title: 'Revisión semanal' };
 
-// La revisión llama a la IA (revisión + informe del físico en paralelo).
-export const maxDuration = 60;
 
 export default async function CheckinPage() {
   const [{ t, locale }, ctx] = await Promise.all([getT(), requireUser()]);

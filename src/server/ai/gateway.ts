@@ -55,7 +55,8 @@ export interface CoachHistoryMsg {
 
 const COACH_TIMEOUT_MS = 70_000;
 const PLAN_TIMEOUT_MS = 110_000;
-const CHECKIN_TIMEOUT_MS = 100_000;
+// La revisión semanal corre revisión + informe de físico en paralelo: tope total de espera.
+const CHECKIN_TIMEOUT_MS = 80_000;
 const PHYSIQUE_TIMEOUT_MS = 58_000;
 
 export type PhysiqueFailure = 'blocked' | 'busy' | 'timeout' | 'invalid';
