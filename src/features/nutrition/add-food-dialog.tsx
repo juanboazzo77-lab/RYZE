@@ -70,9 +70,11 @@ function Body({
   const td = t.nutrition.dialog;
   const [tab, setTab] = useState('search');
   const [prefillName, setPrefillName] = useState('');
+  const [prefillBarcode, setPrefillBarcode] = useState<string | undefined>(undefined);
 
-  function goManual(name?: string) {
+  function goManual(name?: string, barcode?: string) {
     if (name) setPrefillName(name);
+    setPrefillBarcode(barcode);
     setTab('manual');
   }
 
@@ -117,6 +119,7 @@ function Body({
             mealType={mealType}
             onDone={onDone}
             initialName={prefillName}
+            barcode={prefillBarcode}
           />
         </TabsContent>
       </Tabs>
@@ -134,15 +137,17 @@ function ScanTab({
   date: string;
   mealType: MealType;
   onDone: () => void;
-  onGoManual: (name?: string) => void;
+  onGoManual: (name?: string, barcode?: string) => void;
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
   const [looking, startLookup] = useTransition();
   const [result, setResult] = useState<BarcodeLookup | null>(null);
   const [manualCode, setManualCode] = useState('');
+  const [lastCode, setLastCode] = useState<string | undefined>(undefined);
 
   function handleDetected(code: string) {
+    setLastCode(code);
     startLookup(async () => {
       try {
         setResult(await lookupBarcodeAction(code));
@@ -190,7 +195,7 @@ function ScanTab({
           <Button variant="outline" onClick={() => setResult(null)}>
             {td.scanRetry}
           </Button>
-          <Button onClick={() => onGoManual(prefill)}>{td.scanManualCta}</Button>
+          <Button onClick={() => onGoManual(prefill, lastCode)}>{td.scanManualCta}</Button>
         </div>
       </div>
     );
@@ -780,15 +785,18 @@ function ManualTab({
   mealType,
   onDone,
   initialName = '',
+  barcode,
 }: {
   date: string;
   mealType: MealType;
   onDone: () => void;
   initialName?: string;
+  barcode?: string;
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
-  const [mode, setMode] = useState<'totals' | 'per100'>('totals');
+  // Un producto escaneado trae los datos por 100 g en la etiqueta: se carga así y queda para todos.
+  const [mode, setMode] = useState<'totals' | 'per100'>(barcode ? 'per100' : 'totals');
   const [name, setName] = useState(initialName);
   const [v, setV] = useState({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
   const [quantity, setQuantity] = useState(100);
@@ -821,6 +829,7 @@ function ManualTab({
         proteinPer100: v.proteinG,
         carbsPer100: v.carbsG,
         fatPer100: v.fatG,
+        barcode,
       });
       if (!created.ok || !created.data) {
         toast.error(t.nutrition.toast.genericError);
@@ -875,6 +884,10 @@ function ManualTab({
           <Label>{td.quantity} (g)</Label>
           <DecimalInput value={quantity} onValueChange={(v) => setQuantity(v ?? 0)} />
         </div>
+      ) : null}
+
+      {mode === 'per100' ? (
+        <p className="text-xs text-muted-foreground">{td.manualShared}</p>
       ) : null}
 
       <Button onClick={submit} className="w-full" disabled={pending}>

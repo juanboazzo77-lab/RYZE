@@ -932,6 +932,7 @@ export const es = {
       add: 'Agregar',
       adding: 'Agregando…',
       manualName: 'Nombre',
+      manualShared: 'Este alimento queda guardado para todos los usuarios de la app.',
       manualBrand: 'Marca',
       manualKcalPer100: 'Calorías por 100 g',
       manualProteinPer100: 'Proteínas por 100 g',

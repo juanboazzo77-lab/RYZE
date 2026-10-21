@@ -934,6 +934,7 @@ export const pt: Dictionary = {
       add: 'Adicionar',
       adding: 'Adicionando…',
       manualName: 'Nome',
+      manualShared: 'Este alimento fica salvo para todos os usuários do app.',
       manualBrand: 'Marca',
       manualKcalPer100: 'Calorias por 100 g',
       manualProteinPer100: 'Proteínas por 100 g',

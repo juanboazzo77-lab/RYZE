@@ -934,6 +934,7 @@ export const de: Dictionary = {
       add: 'Hinzufügen',
       adding: 'Wird hinzugefügt…',
       manualName: 'Name',
+      manualShared: 'Dieses Lebensmittel wird für alle Nutzer der App gespeichert.',
       manualBrand: 'Marke',
       manualKcalPer100: 'Kalorien pro 100 g',
       manualProteinPer100: 'Protein pro 100 g',

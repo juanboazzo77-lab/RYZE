@@ -60,19 +60,28 @@ export function localFoodProvider(userId: string): FoodProvider {
                kcal_per_100, protein_per_100, carbs_per_100, fat_per_100,
                serving_qty, serving_unit, serving_label, verified
         FROM "food"
-        WHERE (source = 'SYSTEM' OR created_by = ${userId}::uuid)
-          AND (
+        WHERE (
             unaccent(name) ILIKE unaccent(${'%' + q + '%'})
             OR similarity(unaccent(name), unaccent(${q})) > 0.2
           )
         ORDER BY
           (unaccent(name) ILIKE unaccent(${q + '%'})) DESC,
+          COALESCE(created_by = ${userId}::uuid, false) DESC,
           similarity(unaccent(name), unaccent(${q})) DESC,
           verified DESC,
           name ASC
-        LIMIT ${limit}
+        LIMIT ${limit * 3}
       `;
-      return rows.map((r) => ({
+      // Los alimentos que cargan los usuarios son de todos: se ocultan los repetidos
+      // (mismo nombre, marca y calorías) y se queda el primero (el propio, o el verificado).
+      const seen = new Set<string>();
+      const unique = rows.filter((r) => {
+        const key = `${r.name.trim().toLowerCase()}|${(r.brand ?? '').trim().toLowerCase()}|${Math.round(r.kcal_per_100)}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      return unique.slice(0, limit).map((r) => ({
         id: r.id,
         name: r.name,
         brand: r.brand,

@@ -49,6 +49,11 @@ export const createFoodSchema = z.object({
   fatPer100: macro,
   servingQty: z.number().positive().max(5000).nullable().optional(),
   servingLabel: z.string().trim().max(40).nullable().optional(),
+  /** Código de barras con el que se escaneó el producto, para que el próximo que lo escanee lo encuentre. */
+  barcode: z
+    .string()
+    .regex(/^\d{8,14}$/)
+    .optional(),
 });
 export type CreateFoodInput = z.infer<typeof createFoodSchema>;
 

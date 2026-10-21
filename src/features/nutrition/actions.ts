@@ -46,12 +46,11 @@ async function nextPosition(
   return count;
 }
 
-/** Alimento accesible por el usuario: SYSTEM, propio (USER), o de una API
- * pública como Open Food Facts (source API, sin dueño, se comparte). */
-async function loadUsableFood(foodId: string, userId: string) {
+/** Los alimentos son compartidos: SYSTEM, de la API pública (Open Food Facts) y los que
+ * cargó cualquier usuario (USER) los puede usar todo el mundo. */
+async function loadUsableFood(foodId: string) {
   const food = await prisma.food.findUnique({ where: { id: foodId } });
   if (!food) return null;
-  if (food.source === 'USER' && food.createdById !== userId) return null;
   return food;
 }
 
@@ -67,7 +66,7 @@ export async function addFoodEntry(raw: AddEntryInput): Promise<Result<{ id: str
   let macros = { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, isEstimated: true };
 
   if (d.foodId) {
-    const food = await loadUsableFood(d.foodId, userId);
+    const food = await loadUsableFood(d.foodId);
     if (!food) return { error: 'FOOD_NOT_FOUND' };
     macros = computeEntryMacros(food, d.quantity, d.unit);
     name = d.customName ?? null; // el nombre "real" se resuelve desde food en las queries
@@ -126,7 +125,7 @@ export async function updateFoodEntry(raw: UpdateEntryInput): Promise<Result> {
   if (p.macros) {
     Object.assign(data, { ...p.macros, isEstimated: true });
   } else if (entry.foodId && qtyOrUnitChanged) {
-    const food = await loadUsableFood(entry.foodId, userId);
+    const food = await loadUsableFood(entry.foodId);
     if (food) {
       const m = computeEntryMacros(food, quantity, unit);
       Object.assign(data, {
@@ -191,12 +190,33 @@ export async function createCustomFood(raw: CreateFoodInput): Promise<Result<{ i
   const f = parsed.data;
   const { userId } = await requireUser();
 
+  // Alimento compartido: si ya existe uno igual (mismo código de barras, o mismo nombre, marca y
+  // calorías) se usa ese en vez de crear un duplicado.
+  if (f.barcode) {
+    const { candidateCodes } = await import('@/lib/nutrition/off-parse');
+    const byCode = await prisma.food.findFirst({
+      where: { externalId: { in: candidateCodes(f.barcode) } },
+      select: { id: true },
+    });
+    if (byCode) return { ok: true, data: { id: byCode.id } };
+  }
+  const same = await prisma.food.findFirst({
+    where: {
+      name: { equals: f.name, mode: 'insensitive' },
+      brand: f.brand ? { equals: f.brand, mode: 'insensitive' } : null,
+      kcalPer100: { gte: f.kcalPer100 - 1, lte: f.kcalPer100 + 1 },
+    },
+    select: { id: true },
+  });
+  if (same) return { ok: true, data: { id: same.id } };
+
   const food = await prisma.food.create({
     data: {
       name: f.name,
       brand: f.brand || null,
       source: 'USER',
       createdById: userId,
+      externalId: f.barcode ?? null,
       kcalPer100: f.kcalPer100,
       proteinPer100: f.proteinPer100,
       carbsPer100: f.carbsPer100,
