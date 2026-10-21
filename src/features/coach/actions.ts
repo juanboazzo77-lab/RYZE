@@ -149,8 +149,13 @@ export async function addCoachExerciseToPlan(
   const { userId } = await requireUser();
   const db = forUser(userId);
 
-  const day = await db.planDay.findFirst({ where: { id: e.planDayId }, select: { id: true, planId: true } });
-  if (!day) return { error: 'FORBIDDEN' };
+  // El día tiene que pertenecer a una rutina del propio usuario (mismo chequeo que el editor de rutinas).
+  const owned = await db.workoutPlan.findFirst({
+    where: { days: { some: { id: e.planDayId } } },
+    select: { id: true },
+  });
+  if (!owned) return { error: 'FORBIDDEN' };
+  const day = { id: e.planDayId, planId: owned.id };
 
   const exerciseId = await resolveExerciseId(e.name, userId, e.type);
   const already = await db.planExercise.findFirst({
