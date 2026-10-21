@@ -12,8 +12,13 @@ import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import type { CoachMessage } from './queries';
-import { addCoachFoodToToday, resetCoachConversation, sendCoachMessage } from './actions';
-import type { CoachFood } from './reply-schema';
+import {
+  addCoachExerciseToPlan,
+  addCoachFoodToToday,
+  resetCoachConversation,
+  sendCoachMessage,
+} from './actions';
+import type { CoachExercise, CoachFood } from './reply-schema';
 
 const MEALS = ['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const;
 type Meal = (typeof MEALS)[number];
@@ -22,6 +27,116 @@ type Meal = (typeof MEALS)[number];
 function mealForNow(): Meal {
   const h = new Date().getHours();
   return h < 11 ? 'BREAKFAST' : h < 15 ? 'LUNCH' : h < 19 ? 'MERIENDA' : 'DINNER';
+}
+
+type PlanDayOption = { id: string; name: string };
+
+/** Debajo de la respuesta: pregunta si quiere sumar el ejercicio a un día de su rutina. */
+function ExerciseSuggestion({
+  exercise,
+  planDays,
+  onClose,
+}: {
+  exercise: CoachExercise;
+  planDays: PlanDayOption[];
+  onClose: () => void;
+}) {
+  const t = useT();
+  const tc = t.coach;
+  const cardio = exercise.type === 'CARDIO';
+  const [dayId, setDayId] = useState(planDays[0]?.id ?? '');
+  const [sets, setSets] = useState<number>(exercise.sets);
+  const [repsMin, setRepsMin] = useState<number>(exercise.repsMin);
+  const [repsMax, setRepsMax] = useState<number>(exercise.repsMax);
+  const [pending, start] = useTransition();
+  const [added, setAdded] = useState(false);
+
+  function add() {
+    if (!dayId) return;
+    start(async () => {
+      const res = await addCoachExerciseToPlan({
+        name: exercise.name,
+        type: exercise.type,
+        sets: Math.max(1, Math.round(sets || 1)),
+        repsMin: Math.max(1, Math.round(repsMin || 1)),
+        repsMax: Math.max(1, Math.round(repsMax || 1)),
+        planDayId: dayId,
+      });
+      if (res.ok) {
+        setAdded(true);
+        toast.success(tc.exerciseAdded);
+      } else toast.error(res.error === 'ALREADY' ? tc.exerciseAlready : tc.error);
+    });
+  }
+
+  if (added) {
+    return (
+      <p className="flex items-center gap-1.5 pl-1 text-xs text-success">
+        <Check className="size-3.5" />
+        {tc.exerciseAdded}
+      </p>
+    );
+  }
+
+  if (planDays.length === 0) {
+    return (
+      <div className="max-w-[85%] space-y-2 rounded-2xl border bg-card p-3 text-sm">
+        <p className="text-xs text-muted-foreground">{tc.exerciseNoPlan}</p>
+        <div className="flex gap-2">
+          <Button asChild size="sm">
+            <Link href="/coach/new-plan">{tc.newPlanCta}</Link>
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            {tc.foodSkip}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-[85%] space-y-2 rounded-2xl border bg-card p-3 text-sm">
+      <p className="font-medium">{tc.exerciseAsk}</p>
+      <p className="text-xs text-muted-foreground">{exercise.name}</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="space-y-1">
+          <span className="block text-xs text-muted-foreground">{tc.exerciseDay}</span>
+          <NativeSelect value={dayId} onChange={(e) => setDayId(e.target.value)} className="h-9 w-40">
+            {planDays.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </label>
+        {cardio ? null : (
+          <>
+            <label className="space-y-1">
+              <span className="block text-xs text-muted-foreground">{tc.exerciseSets}</span>
+              <DecimalInput value={sets} onValueChange={(v) => setSets(v ?? 0)} className="h-9 w-16" />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-xs text-muted-foreground">{tc.exerciseReps}</span>
+              <span className="flex items-center gap-1">
+                <DecimalInput value={repsMin} onValueChange={(v) => setRepsMin(v ?? 0)} className="h-9 w-14" />
+                <span className="text-muted-foreground">–</span>
+                <DecimalInput value={repsMax} onValueChange={(v) => setRepsMax(v ?? 0)} className="h-9 w-14" />
+              </span>
+            </label>
+          </>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={add} disabled={pending || !dayId}>
+          {pending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {tc.exerciseAdd}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose} disabled={pending}>
+          {tc.foodSkip}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 /** Debajo de la respuesta: pregunta si quiere sumar el alimento al día de hoy y cuánta cantidad. */
@@ -113,6 +228,9 @@ export function CoachChat({ initialMessages, usage }: Props) {
   const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
   // Alimento sugerido por mensaje de respuesta (sólo vive mientras la pantalla está abierta).
   const [foods, setFoods] = useState<Record<string, CoachFood>>({});
+  const [exercises, setExercises] = useState<
+    Record<string, { exercise: CoachExercise; planDays: PlanDayOption[] }>
+  >({});
   const [draft, setDraft] = useState('');
   const [used, setUsed] = useState(usage.used);
   const [pending, start] = useTransition();
@@ -141,6 +259,10 @@ export function CoachChat({ initialMessages, usage }: Props) {
         const replyId = `reply-${Date.now()}`;
         const food = res.data.food;
         if (food) setFoods((f) => ({ ...f, [replyId]: food }));
+        const exercise = res.data.exercise;
+        if (exercise) {
+          setExercises((x) => ({ ...x, [replyId]: { exercise, planDays: res.data!.planDays } }));
+        }
         setMessages((m) => [
           ...m,
           {
@@ -209,6 +331,17 @@ export function CoachChat({ initialMessages, usage }: Props) {
                   {m.content}
                 </div>
               </div>
+              {exercises[m.id] ? (
+                <div className="flex justify-start">
+                  <ExerciseSuggestion
+                    exercise={exercises[m.id]!.exercise}
+                    planDays={exercises[m.id]!.planDays}
+                    onClose={() =>
+                      setExercises((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))
+                    }
+                  />
+                </div>
+              ) : null}
               {foods[m.id] ? (
                 <div className="flex justify-start">
                   <FoodSuggestion

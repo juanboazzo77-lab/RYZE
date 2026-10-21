@@ -11,7 +11,7 @@ import { AiError, AiRateLimitedError, AiPermissionError, AiNotConfiguredError } 
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
 import { localTodayISO } from '@/lib/date';
-import { coachFoodSchema, type CoachFood } from './reply-schema';
+import { coachExerciseSchema, coachFoodSchema, type CoachExercise, type CoachFood } from './reply-schema';
 import {
   computeTargets,
   ageFromBirthdate,
@@ -55,7 +55,14 @@ function aiErrorMessage(e: unknown): string {
 
 export async function sendCoachMessage(
   raw: SendMessageInput,
-): Promise<Result<{ reply: string; food: CoachFood | null }>> {
+): Promise<
+  Result<{
+    reply: string;
+    food: CoachFood | null;
+    exercise: CoachExercise | null;
+    planDays: Array<{ id: string; name: string }>;
+  }>
+> {
   const parsed = sendMessageSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   if (!aiConfigured()) return { error: 'La IA todavía no está configurada.' };
@@ -79,6 +86,7 @@ export async function sendCoachMessage(
 
   let reply: string;
   let food: CoachFood | null = null;
+  let exercise: CoachExercise | null = null;
   try {
     const res = await runCoachTurn({
       profile,
@@ -88,6 +96,7 @@ export async function sendCoachMessage(
     });
     reply = res.text;
     food = res.food;
+    exercise = res.exercise;
   } catch (e) {
     return { error: aiErrorMessage(e) };
   }
@@ -113,7 +122,62 @@ export async function sendCoachMessage(
   });
 
   revalidatePath('/coach');
-  return { ok: true, data: { reply, food } };
+  // Si propone un ejercicio, se devuelven los días de la rutina activa para elegir dónde agregarlo.
+  let planDays: Array<{ id: string; name: string }> = [];
+  if (exercise) {
+    const plan = await db.workoutPlan.findFirst({
+      where: { isActive: true },
+      select: { days: { orderBy: { orderIndex: 'asc' }, select: { id: true, name: true } } },
+    });
+    planDays = plan?.days ?? [];
+  }
+
+  return { ok: true, data: { reply, food, exercise, planDays } };
+}
+
+const addCoachExerciseSchema = coachExerciseSchema.extend({
+  planDayId: z.string().uuid(),
+});
+
+/** Agrega a un día de la rutina activa el ejercicio que explicó el coach. */
+export async function addCoachExerciseToPlan(
+  raw: z.infer<typeof addCoachExerciseSchema>,
+): Promise<Result> {
+  const parsed = addCoachExerciseSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const e = parsed.data;
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+
+  const day = await db.planDay.findFirst({ where: { id: e.planDayId }, select: { id: true, planId: true } });
+  if (!day) return { error: 'FORBIDDEN' };
+
+  const exerciseId = await resolveExerciseId(e.name, userId, e.type);
+  const already = await db.planExercise.findFirst({
+    where: { planDayId: day.id, exerciseId },
+    select: { id: true },
+  });
+  if (already) return { error: 'ALREADY' };
+  const count = await db.planExercise.count({ where: { planDayId: day.id } });
+  const { min, max } = widenReps(e.repsMin, e.repsMax, e.type);
+
+  await db.planExercise.create({
+    data:
+      e.type === 'CARDIO'
+        ? { planDayId: day.id, exerciseId, orderIndex: count, targetSets: 1, targetDurationSec: 1800 }
+        : {
+            planDayId: day.id,
+            exerciseId,
+            orderIndex: count,
+            targetSets: e.sets,
+            targetRepsMin: min,
+            targetRepsMax: max,
+            restSeconds: 90,
+          },
+  });
+  revalidatePath(`/training/plans/${day.planId}`);
+  revalidatePath('/training');
+  return { ok: true };
 }
 
 const addCoachFoodSchema = coachFoodSchema
