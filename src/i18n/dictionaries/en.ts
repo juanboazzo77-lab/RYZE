@@ -390,6 +390,8 @@ export const en: Dictionary = {
     restoreNothingFound: 'No purchases found to restore.',
     topPlan: 'Top plan',
     billingNote: 'Payments are processed securely through Lemon Squeezy (web) or Apple/Google (installed app).',
+    autoRenewIos: 'Payment will be charged to your Apple account when you confirm the purchase. The subscription renews automatically unless you cancel at least 24 hours before the end of the period. You can manage or cancel it in your Apple account settings.',
+    autoRenewAndroid: 'Payment will be charged to your Google Play account when you confirm the purchase. The subscription renews automatically unless you cancel before the end of the period. You can manage or cancel it in Google Play.',
     manageBilling: 'Manage subscription',
     openingPortal: 'Opening...',
     manageBillingError: "We couldn't open billing management. Please try again.",

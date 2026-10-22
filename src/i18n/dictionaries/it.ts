@@ -390,6 +390,8 @@ export const it: Dictionary = {
     restoreNothingFound: 'Nessun acquisto trovato da ripristinare.',
     topPlan: 'Il più completo',
     billingNote: 'I pagamenti vengono elaborati in modo sicuro tramite Lemon Squeezy (web) o Apple/Google (app installata).',
+    autoRenewIos: 'Il pagamento verrà addebitato sul tuo account Apple alla conferma dell’acquisto. L’abbonamento si rinnova automaticamente, a meno che tu non lo annulli almeno 24 ore prima della fine del periodo. Puoi gestirlo o annullarlo nelle impostazioni del tuo account Apple.',
+    autoRenewAndroid: 'Il pagamento verrà addebitato sul tuo account Google Play alla conferma dell’acquisto. L’abbonamento si rinnova automaticamente, a meno che tu non lo annulli prima della fine del periodo. Puoi gestirlo o annullarlo in Google Play.',
     manageBilling: 'Gestisci abbonamento',
     openingPortal: 'Apertura...',
     manageBillingError: 'Impossibile aprire la gestione fatturazione. Riprova.',

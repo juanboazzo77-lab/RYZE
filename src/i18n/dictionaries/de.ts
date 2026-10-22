@@ -390,6 +390,8 @@ export const de: Dictionary = {
     restoreNothingFound: 'Keine Käufe zum Wiederherstellen gefunden.',
     topPlan: 'Der Top-Plan',
     billingNote: 'Zahlungen werden sicher über Lemon Squeezy (Web) oder Apple/Google (installierte App) verarbeitet.',
+    autoRenewIos: 'Die Zahlung wird bei Bestätigung des Kaufs deinem Apple-Konto belastet. Das Abo verlängert sich automatisch, es sei denn, du kündigst mindestens 24 Stunden vor Ende des Zeitraums. Du kannst es in den Einstellungen deines Apple-Kontos verwalten oder kündigen.',
+    autoRenewAndroid: 'Die Zahlung wird bei Bestätigung des Kaufs deinem Google-Play-Konto belastet. Das Abo verlängert sich automatisch, es sei denn, du kündigst vor Ende des Zeitraums. Du kannst es in Google Play verwalten oder kündigen.',
     manageBilling: 'Abo verwalten',
     openingPortal: 'Wird geöffnet...',
     manageBillingError: 'Die Abrechnungsverwaltung konnte nicht geöffnet werden. Bitte erneut versuchen.',

@@ -388,6 +388,8 @@ export const es = {
     restoreNothingFound: 'No encontramos compras para restaurar.',
     topPlan: 'El más top',
     billingNote: 'Los pagos se procesan de forma segura a través de Lemon Squeezy (web) o Apple/Google (app instalada).',
+    autoRenewIos: 'El pago se cargará a tu cuenta de Apple al confirmar la compra. La suscripción se renueva automáticamente, salvo que la canceles al menos 24 horas antes de que termine el período. Podés administrarla o cancelarla desde los ajustes de tu cuenta de Apple.',
+    autoRenewAndroid: 'El pago se cargará a tu cuenta de Google Play al confirmar la compra. La suscripción se renueva automáticamente, salvo que la canceles antes de que termine el período. Podés administrarla o cancelarla desde Google Play.',
     manageBilling: 'Gestionar suscripción',
     openingPortal: 'Abriendo...',
     manageBillingError: 'No pudimos abrir la gestión de facturación. Intentá de nuevo.',

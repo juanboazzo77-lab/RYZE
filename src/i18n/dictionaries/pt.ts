@@ -390,6 +390,8 @@ export const pt: Dictionary = {
     restoreNothingFound: 'Não encontramos compras para restaurar.',
     topPlan: 'O mais top',
     billingNote: 'Os pagamentos são processados com segurança via Lemon Squeezy (web) ou Apple/Google (app instalado).',
+    autoRenewIos: 'O pagamento será cobrado na sua conta Apple ao confirmar a compra. A assinatura é renovada automaticamente, a menos que você cancele pelo menos 24 horas antes do fim do período. Você pode gerenciá-la ou cancelá-la nos ajustes da sua conta Apple.',
+    autoRenewAndroid: 'O pagamento será cobrado na sua conta do Google Play ao confirmar a compra. A assinatura é renovada automaticamente, a menos que você cancele antes do fim do período. Você pode gerenciá-la ou cancelá-la no Google Play.',
     manageBilling: 'Gerenciar assinatura',
     openingPortal: 'Abrindo...',
     manageBillingError: 'Não conseguimos abrir a gestão de cobrança. Tente novamente.',

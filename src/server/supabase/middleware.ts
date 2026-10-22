@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   '/offline',
   '/privacy',
   '/terms',
+  // Vista de prueba para capturas: sólo existe fuera de producción.
+  ...(process.env.NODE_ENV !== 'production' ? ['/dev-preview'] : []),
 ];
 /**
  * Rutas de autenticación: si ya hay sesión, se redirige al dashboard.
