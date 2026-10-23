@@ -31,10 +31,12 @@ export async function configurePurchases(userId: string): Promise<void> {
   if (!Capacitor.isNativePlatform() || configured) return;
   const apiKey = sdkKey();
   if (!apiKey) return;
-  // Una clave del "Test Store" de RevenueCat en una app de tienda hace que el SDK muestre
-  // "Wrong API Key" y cierre la app (fue el motivo del rechazo 2.1(a) de Apple). Mejor no
-  // configurarlo: las compras quedan no disponibles, pero la app no se rompe.
-  if (apiKey.startsWith('test_')) return;
+  // Una clave equivocada (la del "Test Store", `test_…`, o la de la otra tienda) hace que el SDK
+  // muestre "Wrong API Key" y cierre la app: fue el motivo del rechazo 2.1(a) de Apple. Sólo se
+  // configura con la clave que corresponde a la plataforma; si no, las compras quedan no
+  // disponibles pero la app no se rompe.
+  const expectedPrefix = Capacitor.getPlatform() === 'ios' ? 'appl_' : 'goog_';
+  if (!apiKey.startsWith(expectedPrefix)) return;
 
   try {
     await Purchases.configure({ apiKey, appUserID: userId });
