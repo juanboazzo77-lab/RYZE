@@ -6,6 +6,7 @@ import { AppShell } from '@/components/app-shell/app-shell';
 import { RegisterSW } from '@/components/pwa/register-sw';
 import { NavTracker } from '@/components/nav-tracker';
 import { NotificationPrompt } from '@/features/notifications/notification-prompt';
+import { WeighInReminder } from '@/features/notifications/weigh-in-reminder';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { RevenueCatInit } from '@/features/billing/revenuecat-init';
 
@@ -18,6 +19,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell email={ctx.email} showAds={showAds(ctx.entitlement)} adCopy={t.ads}>
       <NavTracker />
       <NotificationPrompt />
+      <WeighInReminder />
       <RegisterSW />
       <OfflineIndicator />
       <RevenueCatInit userId={ctx.userId} />

@@ -59,6 +59,8 @@ export function LogWeightDialog({
       const res = await logWeight({ date, weightKg, note: note.trim() || undefined });
       if (res.ok) {
         toast.success(t.progress.saved);
+        // Avisa al recordatorio de la mañana (apps nativas) para que saque el aviso de hoy.
+        window.dispatchEvent(new Event('forza:weight-logged'));
         setOpen(false);
       } else toast.error(t.progress.genericError);
     });

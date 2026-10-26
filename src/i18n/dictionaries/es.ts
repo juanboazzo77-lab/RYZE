@@ -1070,6 +1070,9 @@ export const es = {
     saved: 'Peso registrado',
     deleted: 'Registro eliminado',
     invalidWeight: 'Ingresá un peso válido.',
+    reminderTitle: 'Registrá tu peso',
+    reminderBody: 'Pesate en ayunas y anotalo en unos segundos.',
+    reminderBodyLate: 'Todavía no registraste tu peso de hoy.',
     genericError: 'No se pudo completar la acción',
   },
   notifications: {

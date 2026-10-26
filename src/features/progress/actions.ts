@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
-import { isoToUtcDate } from '@/lib/date';
+import { isoToUtcDate, localTodayISO } from '@/lib/date';
 
 export interface Result {
   ok?: boolean;
@@ -45,6 +45,18 @@ export async function logWeight(raw: LogWeightInput): Promise<Result> {
   await syncAchievements(db, userId, profile.timezone);
   refresh();
   return { ok: true };
+}
+
+/** Para el aviso de la mañana (apps nativas): si ya registró el peso hoy y si tiene el recordatorio activado. */
+export async function getWeighInStatus(): Promise<{ weighedToday: boolean; enabled: boolean }> {
+  const { userId, profile } = await requireUser();
+  const db = forUser(userId);
+  const today = isoToUtcDate(localTodayISO(profile.timezone));
+  const [entry, pref] = await Promise.all([
+    db.weightEntry.findFirst({ where: { date: today }, select: { id: true } }),
+    db.notificationPreference.findFirst({ where: { kind: 'WEIGH_IN' }, select: { enabled: true } }),
+  ]);
+  return { weighedToday: Boolean(entry), enabled: pref?.enabled ?? true };
 }
 
 export async function deleteWeightEntry(raw: { id: string }): Promise<Result> {

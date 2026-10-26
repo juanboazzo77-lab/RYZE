@@ -1072,6 +1072,9 @@ export const it: Dictionary = {
     saved: 'Peso registrato',
     deleted: 'Registrazione eliminata',
     invalidWeight: 'Inserisci un peso valido.',
+    reminderTitle: 'Registra il tuo peso',
+    reminderBody: 'Pesati a digiuno e registralo in pochi secondi.',
+    reminderBodyLate: 'Non hai ancora registrato il peso di oggi.',
     genericError: 'Impossibile completare l’azione',
   },
   notifications: {

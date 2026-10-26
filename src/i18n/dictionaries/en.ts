@@ -1072,6 +1072,9 @@ export const en: Dictionary = {
     saved: 'Weight logged',
     deleted: 'Entry removed',
     invalidWeight: 'Enter a valid weight.',
+    reminderTitle: 'Log your weight',
+    reminderBody: 'Weigh yourself fasted and log it in a few seconds.',
+    reminderBodyLate: 'You haven’t logged today’s weight yet.',
     genericError: 'Could not complete the action',
   },
   notifications: {

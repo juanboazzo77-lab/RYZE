@@ -1072,6 +1072,9 @@ export const de: Dictionary = {
     saved: 'Gewicht erfasst',
     deleted: 'Eintrag gelöscht',
     invalidWeight: 'Gib ein gültiges Gewicht an.',
+    reminderTitle: 'Gewicht eintragen',
+    reminderBody: 'Wiege dich nüchtern und trage es in wenigen Sekunden ein.',
+    reminderBodyLate: 'Du hast dein heutiges Gewicht noch nicht eingetragen.',
     genericError: 'Aktion konnte nicht abgeschlossen werden',
   },
   notifications: {
