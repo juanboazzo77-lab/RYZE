@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { Check, Pause, Play } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -74,21 +74,54 @@ export function ExerciseDemo({ name, className }: { name: string; className?: st
   );
 }
 
-/** Botón chico para ver la demostración en una ventana (se usa durante el entrenamiento). */
-export function ExerciseDemoButton({ name }: { name: string }) {
+/**
+ * Cabecera de un ejercicio en el entrenamiento: la primera foto de la demostración como miniatura
+ * (un toque abre la animación) o, si no hay demostración, el número del ejercicio. Con todas las
+ * series hechas se marca con un tilde.
+ */
+export function ExerciseThumb({
+  name,
+  index,
+  done,
+}: {
+  name: string;
+  index: number;
+  done: boolean;
+}) {
   const t = useT();
-  if (!exerciseMedia(name)) return null;
+  const media = exerciseMedia(name);
+
+  if (!media) {
+    return (
+      <span
+        className={cn(
+          'grid size-14 shrink-0 place-items-center rounded-xl text-lg font-extrabold tabular-nums',
+          done ? 'bg-success/15 text-success' : 'bg-secondary text-muted-foreground',
+        )}
+      >
+        {done ? <Check className="size-6" strokeWidth={3} /> : index + 1}
+      </span>
+    );
+  }
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <button
           type="button"
           aria-label={`${t.training.guide.demo}: ${name}`}
-          title={t.training.guide.demo}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-secondary"
         >
-          <Play className="size-3" />
-          {t.training.guide.demo}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={media[0]} alt="" loading="lazy" decoding="async" draggable={false} className="size-full object-cover" />
+          <span
+            className={cn(
+              'absolute bottom-0.5 right-0.5 grid size-5 place-items-center rounded-full text-white',
+              done ? 'bg-success' : 'bg-black/60',
+            )}
+          >
+            {done ? <Check className="size-3.5" strokeWidth={3} /> : <Play className="size-3 fill-current" />}
+          </span>
         </button>
       </DialogTrigger>
       <DialogContent>

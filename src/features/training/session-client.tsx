@@ -5,9 +5,9 @@ import { DecimalInput } from '@/components/form/decimal-input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowRightLeft, Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy, X } from 'lucide-react';
+import { ArrowRightLeft, Check, ChevronLeft, Dumbbell, Loader2, MoreHorizontal, Plus, Timer, Trash2, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,7 +25,8 @@ import type { WorkoutSession } from './queries';
 import { useSession, type StoreExercise, type StoreSet } from './session-store';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer, primeRestAudio } from './rest-timer';
-import { ExerciseDemoButton } from './exercise-demo';
+import { ExerciseThumb } from './exercise-demo';
+import { exerciseMedia } from './exercise-media';
 import { fireConfetti } from '@/lib/confetti';
 import {
   addWorkoutExercise,
@@ -181,61 +182,60 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
         <ReadyScreen t={t} session={session} onStart={begin} onCancel={cancelWorkout} />
       ) : null}
 
-      {/* Barra superior compacta */}
-      <div className="flex items-center gap-2 border-b px-3 py-2">
-        <Link
-          href="/training"
-          aria-label={ts.minimize}
-          className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary"
-        >
-          <ChevronLeft className="size-5" />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold leading-tight">{session.name}</p>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground tabular-nums">
-            <span>{elapsedStr(clockStart, now)}</span>
-            <span>·</span>
-            <span>
-              {setStats.done}/{setStats.total} {ts.setsShort}
-            </span>
-            {saving ? <Loader2 className="size-3 animate-spin" /> : null}
-          </p>
-        </div>
-        {setStats.done === 0 ? (
-          <button
-            type="button"
-            aria-label={ts.cancelWorkout}
-            title={ts.cancelWorkout}
-            onClick={() => {
-              if (confirm(ts.cancelConfirm)) void cancelWorkout();
-            }}
-            className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-destructive"
+      {/* Barra superior: cronómetro grande + avance */}
+      <div className="border-b bg-background/90 backdrop-blur">
+        <div className="flex items-center gap-2 px-3 pt-2">
+          <Link
+            href="/training"
+            aria-label={ts.minimize}
+            className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary"
           >
-            <X className="size-5" />
-          </button>
-        ) : null}
-        <Button size="sm" onClick={() => setFinishOpen(true)}>
-          {ts.finish}
-        </Button>
+            <ChevronLeft className="size-5" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-muted-foreground">{session.name}</p>
+            <p className="text-2xl font-extrabold leading-none tabular-nums">{elapsedStr(clockStart, now)}</p>
+          </div>
+          {setStats.done === 0 ? (
+            <button
+              type="button"
+              aria-label={ts.cancelWorkout}
+              title={ts.cancelWorkout}
+              onClick={() => {
+                if (confirm(ts.cancelConfirm)) void cancelWorkout();
+              }}
+              className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-destructive"
+            >
+              <X className="size-5" />
+            </button>
+          ) : null}
+          <Button size="sm" className="rounded-full px-5 font-bold" onClick={() => setFinishOpen(true)}>
+            {ts.finish}
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 px-4 pb-2.5 pt-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-300"
+              style={{
+                width: `${setStats.total > 0 ? Math.round((setStats.done / setStats.total) * 100) : 0}%`,
+              }}
+            />
+          </div>
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+            {setStats.done}/{setStats.total} {ts.setsShort}
+          </span>
+          {saving ? <Loader2 className="size-3 animate-spin text-muted-foreground" /> : null}
+        </div>
       </div>
 
       {savedLocally ? (
         <p className="bg-warning/10 px-3 py-1 text-center text-xs text-warning">{ts.savedOffline}</p>
       ) : null}
 
-      {/* Progreso */}
-      {setStats.total > 0 ? (
-        <div className="h-1 w-full bg-secondary">
-          <div
-            className="h-full bg-primary transition-[width] duration-300"
-            style={{ width: `${Math.round((setStats.done / setStats.total) * 100)}%` }}
-          />
-        </div>
-      ) : null}
-
       {/* Contenido */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-3 pb-28 pt-3">
-        <div className="mx-auto max-w-2xl space-y-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain bg-secondary/30 px-3 pb-28 pt-3">
+        <div className="mx-auto max-w-2xl space-y-4">
           {exercises.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-sm text-muted-foreground">
@@ -243,11 +243,12 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
               </CardContent>
             </Card>
           ) : (
-            exercises.map((ex) => (
+            exercises.map((ex, i) => (
               <ExerciseBlock
                 key={ex.id}
                 t={t}
                 ex={ex}
+                index={i}
                 onCompleted={(restSeconds) => {
                   primeRestAudio();
                   setRestEndsAt(Date.now() + (restSeconds ?? 90) * 1000);
@@ -288,7 +289,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
               }
             }}
           >
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="h-12 w-full rounded-2xl border-dashed">
               <Plus className="size-4" />
               {t.training.addExercise}
             </Button>
@@ -368,24 +369,26 @@ function ReadyScreen({
     <div className="absolute inset-0 z-10 flex flex-col bg-background">
       <div className="flex-1 overflow-y-auto px-5 pt-10">
         <div className="mx-auto max-w-md">
-          <div className="mb-6 flex items-center gap-2 text-primary">
-            <Dumbbell className="size-5" />
-            <span className="text-sm font-medium uppercase tracking-wide">{tr.kicker}</span>
-          </div>
+          <div className="rounded-3xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-5">
+            <div className="mb-4 flex items-center gap-2 text-primary">
+              <Dumbbell className="size-5" />
+              <span className="text-sm font-semibold uppercase tracking-wide">{tr.kicker}</span>
+            </div>
 
-          <h1 className="text-3xl font-extrabold leading-tight">{session.name}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{line}</p>
+            <h1 className="text-3xl font-extrabold leading-tight">{session.name}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{line}</p>
 
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              {session.exercises.length} {tr.exercises}
-            </Badge>
-            <Badge variant="secondary">
-              <Timer className="size-3.5" />~{mins} min
-            </Badge>
-            {muscles.map((m) => (
-              <Badge key={m}>{m}</Badge>
-            ))}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Badge variant="secondary">
+                {session.exercises.length} {tr.exercises}
+              </Badge>
+              <Badge variant="secondary">
+                <Timer className="size-3.5" />~{mins} min
+              </Badge>
+              {muscles.map((m) => (
+                <Badge key={m}>{m}</Badge>
+              ))}
+            </div>
           </div>
 
           {session.exercises.length > 0 ? (
@@ -405,11 +408,22 @@ function ReadyScreen({
                 return (
                   <li
                     key={e.id}
-                    className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm"
+                    className="flex items-center gap-3 rounded-2xl border bg-card p-2 pr-3 text-sm"
                   >
-                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-secondary text-xs font-semibold tabular-nums">
-                      {i + 1}
-                    </span>
+                    {exerciseMedia(e.name) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={exerciseMedia(e.name)![0]}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="size-11 shrink-0 rounded-xl bg-secondary object-cover"
+                      />
+                    ) : (
+                      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-sm font-bold tabular-nums text-muted-foreground">
+                        {i + 1}
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1 truncate font-medium">{e.name}</span>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{target}</span>
                   </li>
@@ -491,6 +505,7 @@ function Countdown({ label, onDone }: { label: string; onDone: () => void }) {
 function ExerciseBlock({
   t,
   ex,
+  index,
   onCompleted,
   onRemove,
   onSwap,
@@ -498,6 +513,7 @@ function ExerciseBlock({
 }: {
   t: Dictionary;
   ex: StoreExercise;
+  index: number;
   onCompleted: (restSeconds: number | null) => void;
   onRemove: () => void;
   onSwap: (variant: ExerciseVariant) => Promise<boolean>;
@@ -507,17 +523,22 @@ function ExerciseBlock({
   const toggleComplete = useSession((s) => s.toggleComplete);
   const addSet = useSession((s) => s.addSet);
   const removeSet = useSession((s) => s.removeSet);
+  const [tools, setTools] = useState(false);
+  const cardio = ex.type === 'CARDIO';
+  const ts = t.training.session;
 
   const repRange =
-    ex.type !== 'CARDIO' && ex.targetRepsMin && ex.targetRepsMax
+    !cardio && ex.targetRepsMin && ex.targetRepsMax
       ? ex.targetRepsMin === ex.targetRepsMax
         ? String(ex.targetRepsMin)
         : `${ex.targetRepsMin}–${ex.targetRepsMax}`
       : null;
-  const plannedSets = ex.sets.filter((x) => !x.isWarmup).length;
-  // Récord de peso: marca chica y discreta, sólo si ya había un récord previo.
+  const workSets = ex.sets.filter((x) => !x.isWarmup);
+  const plannedSets = workSets.length;
+  const allDone = workSets.length > 0 && workSets.every((x) => x.isCompleted);
+  // Récord de peso: sólo si ya había un récord previo.
   const isPr =
-    ex.type !== 'CARDIO' &&
+    !cardio &&
     ex.bestWeightKg != null &&
     ex.sets.some((x) => x.isCompleted && !x.isWarmup && (x.weightKg ?? 0) > (ex.bestWeightKg ?? 0));
 
@@ -528,88 +549,143 @@ function ExerciseBlock({
     prevPr.current = isPr;
   }, [isPr]);
 
-  const last = ex.lastTime && ex.lastTime.length > 0
-    ? ex.lastTime
-        .map((s) => `${s.weightKg ?? '–'}×${s.reps ?? '–'}`)
-        .join(' · ')
-    : null;
+  const last =
+    ex.lastTime && ex.lastTime.length > 0
+      ? ex.lastTime.map((s) => `${s.weightKg ?? '–'}×${s.reps ?? '–'}`).join(' · ')
+      : null;
+
+  const muscle = cardio ? t.training.fields.cardio : t.training.muscles[ex.primaryMuscle as 'CHEST'];
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between gap-2 pb-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <Link href={`/training/exercises/${ex.exerciseId}`} className="font-semibold hover:underline">
+    <div
+      className={cn(
+        'overflow-hidden rounded-2xl border bg-card shadow-sm transition-colors',
+        allDone && 'border-success/40',
+      )}
+    >
+      <div className="flex items-start gap-3 p-3">
+        <ExerciseThumb name={ex.name} index={index} done={allDone} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <Link
+              href={`/training/exercises/${ex.exerciseId}`}
+              className="text-base font-bold leading-snug hover:underline"
+            >
               {ex.name}
             </Link>
-            <ExerciseDemoButton name={ex.name} />
             {isPr ? (
               <span
                 title={t.training.pr.MAX_WEIGHT}
                 aria-label={t.training.pr.MAX_WEIGHT}
-                className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-warning/80"
+                className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning"
               >
                 <Trophy className="size-3" />
                 {t.training.pr.badge}
               </span>
             ) : null}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            {ex.type === 'CARDIO' ? (
-              <Badge variant="secondary">{t.training.fields.cardio}</Badge>
-            ) : (
-              <>
-                <Badge variant="secondary">{t.training.muscles[ex.primaryMuscle as 'CHEST']}</Badge>
-                {repRange ? (
-                  <Badge variant="outline" className="tabular-nums">
-                    {t.training.session.target}: {plannedSets} × {repRange}
-                  </Badge>
-                ) : null}
-                <span>
-                  {t.training.session.lastTime}: {last ?? t.training.session.noLastTime}
-                </span>
-              </>
-            )}
-          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {muscle}
+            {repRange ? (
+              <span className="tabular-nums">
+                {' · '}
+                {plannedSets} × {repRange}
+              </span>
+            ) : null}
+          </p>
+          {!cardio ? (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {ts.lastTime}:{' '}
+              <span className="font-medium tabular-nums text-foreground/80">{last ?? ts.noLastTime}</span>
+            </p>
+          ) : null}
         </div>
-        <div className="flex shrink-0 items-center">
-          {ex.type === 'CARDIO' ? null : (
-            <VariantPicker t={t} ex={ex} excludeIds={excludeIds} onSwap={onSwap} />
+        <button
+          type="button"
+          onClick={() => setTools((v) => !v)}
+          aria-expanded={tools}
+          aria-label={t.common.edit}
+          className={cn(
+            'grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary',
+            tools && 'bg-secondary text-foreground',
           )}
-        <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={onRemove} aria-label={t.training.remove}>
-          <Trash2 className="size-3.5 text-destructive" />
-        </Button>
+        >
+          <MoreHorizontal className="size-5" />
+        </button>
+      </div>
+
+      {tools ? (
+        <div className="flex flex-wrap items-center gap-1 border-t bg-secondary/40 px-2 py-1.5">
+          {cardio ? null : <VariantPicker t={t} ex={ex} excludeIds={excludeIds} onSwap={onSwap} />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+            onClick={onRemove}
+          >
+            <Trash2 className="size-3.5" />
+            {t.training.remove}
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        {ex.sets.map((st) => (
-          <SetRow
-            key={st.id}
-            t={t}
-            set={st}
-            cardio={ex.type === 'CARDIO'}
-            repsMin={ex.targetRepsMin}
-            repsMax={ex.targetRepsMax}
-            onWeight={(v) => patchSet(ex.id, st.id, { weightKg: v })}
-            onReps={(v) => patchSet(ex.id, st.id, { reps: v })}
-            onDuration={(v) => patchSet(ex.id, st.id, { durationSeconds: v })}
-            onDistance={(v) => patchSet(ex.id, st.id, { distanceMeters: v })}
-            onWarmup={() => patchSet(ex.id, st.id, { isWarmup: !st.isWarmup })}
-            onToggle={() => {
-              const nowDone = toggleComplete(ex.id, st.id);
-              if (nowDone) onCompleted(ex.restSeconds);
-            }}
-            onRemove={() => removeSet(ex.id, st.id)}
-          />
-        ))}
-        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => addSet(ex.id)}>
+      ) : null}
+
+      <div className="px-3 pb-3">
+        <div
+          className={cn(
+            'mb-1 grid items-center gap-2 px-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground',
+            SET_GRID,
+          )}
+        >
+          <span className="text-center">#</span>
+          <span className="text-center">{cardio ? ts.min : ts.kg}</span>
+          <span className="text-center">
+            {cardio ? ts.km : ts.reps}
+            {repRange ? <span className="ml-1 normal-case tabular-nums opacity-70">({repRange})</span> : null}
+          </span>
+          <span />
+          <span />
+        </div>
+
+        <div className="space-y-1.5">
+          {ex.sets.map((st, i) => (
+            <SetRow
+              key={st.id}
+              t={t}
+              set={st}
+              cardio={cardio}
+              repsMin={ex.targetRepsMin}
+              repsMax={ex.targetRepsMax}
+              prevWeight={ex.lastTime?.[i]?.weightKg ?? null}
+              prevReps={ex.lastTime?.[i]?.reps ?? null}
+              onWeight={(v) => patchSet(ex.id, st.id, { weightKg: v })}
+              onReps={(v) => patchSet(ex.id, st.id, { reps: v })}
+              onDuration={(v) => patchSet(ex.id, st.id, { durationSeconds: v })}
+              onDistance={(v) => patchSet(ex.id, st.id, { distanceMeters: v })}
+              onWarmup={() => patchSet(ex.id, st.id, { isWarmup: !st.isWarmup })}
+              onToggle={() => {
+                const nowDone = toggleComplete(ex.id, st.id);
+                if (nowDone) onCompleted(ex.restSeconds);
+              }}
+              onRemove={() => removeSet(ex.id, st.id)}
+            />
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => addSet(ex.id)}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+        >
           <Plus className="size-4" />
-          {t.training.session.addSet}
-        </Button>
-      </CardContent>
-    </Card>
+          {ts.addSet}
+        </button>
+      </div>
+    </div>
   );
 }
+
+/** Columnas de la grilla de series: número, dos campos, tilde y borrar. */
+const SET_GRID = 'grid-cols-[2.25rem_1fr_1fr_3rem_1.25rem]';
 
 /** "Máquina ocupada": busca variantes del ejercicio y permite cambiarlo sin perder las series. */
 function VariantPicker({
@@ -645,7 +721,7 @@ function VariantPicker({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs text-muted-foreground">
+        <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-xs">
           <ArrowRightLeft className="size-3.5" />
           {ts.busyMachine}
         </Button>
@@ -699,6 +775,8 @@ function SetRow({
   cardio,
   repsMin,
   repsMax,
+  prevWeight,
+  prevReps,
   onWeight,
   onReps,
   onDuration,
@@ -712,6 +790,9 @@ function SetRow({
   cardio: boolean;
   repsMin: number | null;
   repsMax: number | null;
+  /** Lo que hizo la última vez en esta misma serie (se ve de fondo como guía). */
+  prevWeight: number | null;
+  prevReps: number | null;
   onWeight: (v: number | null) => void;
   onReps: (v: number | null) => void;
   onDuration: (v: number | null) => void;
@@ -742,22 +823,30 @@ function SetRow({
           : 'in'
       : null;
 
+  const field = cn(
+    'h-12 rounded-xl border-0 bg-secondary/70 text-center text-lg font-bold tabular-nums shadow-none',
+    'placeholder:font-medium placeholder:text-muted-foreground/50',
+    'focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary',
+    set.isCompleted && 'bg-transparent text-success',
+  );
+
   return (
     <div
       className={cn(
-        'flex items-center gap-2 rounded-lg border p-2',
-        set.isCompleted && 'border-success/40 bg-success/10',
+        'grid items-center gap-2 rounded-xl px-1 py-1 transition-colors',
+        SET_GRID,
+        set.isCompleted && 'bg-success/10',
       )}
     >
       <button
         type="button"
         onClick={onWarmup}
         aria-pressed={set.isWarmup}
-        className={cn(
-          'grid size-8 shrink-0 place-items-center rounded-md border text-xs font-bold',
-          set.isWarmup ? 'border-warning bg-warning/15 text-warning' : 'text-muted-foreground',
-        )}
         aria-label={t.training.session.warmup}
+        className={cn(
+          'grid size-9 place-items-center rounded-full text-sm font-bold transition-colors',
+          set.isWarmup ? 'bg-warning/20 text-warning' : 'bg-secondary text-muted-foreground',
+        )}
       >
         {set.isWarmup ? t.training.session.warmup : set.setNumber}
       </button>
@@ -768,49 +857,36 @@ function SetRow({
             placeholder="min"
             value={set.durationSeconds != null ? set.durationSeconds / 60 : null}
             onValueChange={(v) => onDuration(v != null ? Math.round(v * 60) : null)}
-            className="h-11 flex-1 text-center text-base font-semibold"
+            className={field}
           />
-          <span className="text-xs text-muted-foreground">{t.training.session.min}</span>
-          <span className="text-muted-foreground">·</span>
           <DecimalInput
             placeholder="km"
             value={set.distanceMeters != null ? set.distanceMeters / 1000 : null}
             onValueChange={(v) => onDistance(v != null ? Math.round(v * 1000) : null)}
-            className="h-11 flex-1 text-center text-base font-semibold"
+            className={field}
           />
-          <span className="text-xs text-muted-foreground">{t.training.session.km}</span>
         </>
       ) : (
         <>
           <DecimalInput
-            placeholder="kg"
+            placeholder={prevWeight != null ? String(prevWeight) : 'kg'}
             value={set.weightKg ?? null}
             onValueChange={onWeight}
-            className="h-11 flex-1 text-center text-base font-semibold"
+            className={field}
           />
-          <span className="text-xs text-muted-foreground">{t.training.session.kg}</span>
-          <span className="text-muted-foreground">×</span>
           <Input
             type="number"
             inputMode="numeric"
             min={0}
-            placeholder={range ?? 'reps'}
+            placeholder={prevReps != null ? String(prevReps) : (range ?? 'reps')}
             value={set.reps ?? ''}
             onChange={(e) => onReps(parseNum(e.target.value))}
             className={cn(
-              'h-11 flex-1 text-center text-base font-semibold',
-              repsStatus === 'below' && 'border-warning text-warning',
-              repsStatus === 'in' && 'border-success/70',
+              field,
+              repsStatus === 'below' && 'text-warning ring-2 ring-warning/70',
+              repsStatus === 'in' && !set.isCompleted && 'ring-2 ring-success/50',
             )}
           />
-          <span className="flex flex-col items-start text-xs leading-tight text-muted-foreground">
-            {t.training.session.reps}
-            {range && !set.isWarmup ? (
-              <span className="text-[10px] tabular-nums">
-                {t.training.session.targetShort} {range}
-              </span>
-            ) : null}
-          </span>
         </>
       )}
 
@@ -820,19 +896,19 @@ function SetRow({
         aria-label={t.training.session.done}
         aria-pressed={set.isCompleted}
         className={cn(
-          'grid size-11 shrink-0 place-items-center rounded-md border transition-colors',
+          'grid size-12 place-items-center rounded-full border-2 transition-colors',
           set.isCompleted
-            ? 'anim-pop border-success bg-success text-white'
-            : 'hover:border-primary hover:text-primary',
+            ? 'anim-pop border-success bg-success text-white shadow-sm'
+            : 'border-input text-muted-foreground/60 hover:border-primary hover:text-primary',
         )}
       >
-        <Check className="size-5" />
+        <Check className="size-6" strokeWidth={3} />
       </button>
       <button
         type="button"
         onClick={onRemove}
         aria-label={t.common.delete}
-        className="shrink-0 text-muted-foreground hover:text-destructive"
+        className="grid size-5 place-items-center text-muted-foreground/40 hover:text-destructive"
       >
         <Trash2 className="size-3.5" />
       </button>
