@@ -5,7 +5,7 @@ import { DecimalInput } from '@/components/form/decimal-input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowRightLeft, Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy } from 'lucide-react';
+import { ArrowRightLeft, Check, ChevronLeft, Dumbbell, Loader2, Plus, Timer, Trash2, Trophy, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -142,6 +142,16 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     return true;
   }
 
+  /** Borra el entrenamiento (si no estaba terminado) y vuelve a Entrenar. */
+  async function cancelWorkout() {
+    try {
+      useSession.persist.clearStorage();
+    } catch {
+      /* noop */
+    }
+    await discardWorkout({ id: session.id });
+  }
+
   function begin() {
     setStarted(true);
     if (!alreadyLogged) {
@@ -166,7 +176,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {!started ? (
-        <ReadyScreen t={t} session={session} onStart={begin} />
+        <ReadyScreen t={t} session={session} onStart={begin} onCancel={cancelWorkout} />
       ) : null}
 
       {/* Barra superior compacta */}
@@ -189,6 +199,19 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
             {saving ? <Loader2 className="size-3 animate-spin" /> : null}
           </p>
         </div>
+        {setStats.done === 0 ? (
+          <button
+            type="button"
+            aria-label={ts.cancelWorkout}
+            title={ts.cancelWorkout}
+            onClick={() => {
+              if (confirm(ts.cancelConfirm)) void cancelWorkout();
+            }}
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-destructive"
+          >
+            <X className="size-5" />
+          </button>
+        ) : null}
         <Button size="sm" onClick={() => setFinishOpen(true)}>
           {ts.finish}
         </Button>
@@ -306,13 +329,16 @@ function ReadyScreen({
   t,
   session,
   onStart,
+  onCancel,
 }: {
   t: Dictionary;
   session: WorkoutSession;
   onStart: () => void;
+  onCancel: () => Promise<void>;
 }) {
   const tr = t.training.session.ready;
   const [counting, setCounting] = useState(false);
+  const [cancelling, startCancel] = useTransition();
 
   const line = useMemo(() => {
     const arr = tr.lines;
@@ -401,6 +427,15 @@ function ReadyScreen({
           onClick={() => setCounting(true)}
         >
           {tr.start}
+        </Button>
+        <Button
+          variant="ghost"
+          className="mx-auto mt-2 flex w-full max-w-md text-muted-foreground"
+          disabled={cancelling}
+          onClick={() => startCancel(() => onCancel())}
+        >
+          {cancelling ? <Loader2 className="animate-spin" /> : null}
+          {t.training.session.cancelWorkout}
         </Button>
       </div>
     </div>
@@ -843,7 +878,7 @@ function FinishDialog({
             className="text-destructive"
             disabled={pending}
             onClick={() => {
-              if (confirm(t.training.session.discard + '?')) {
+              if (confirm(t.training.session.cancelConfirm)) {
                 try {
                   useSession.persist.clearStorage();
                 } catch {
@@ -853,7 +888,7 @@ function FinishDialog({
               }
             }}
           >
-            {t.training.session.discard}
+            {t.training.session.cancelWorkout}
           </Button>
           <Button
             className="flex-1"

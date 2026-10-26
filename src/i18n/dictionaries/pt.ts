@@ -790,6 +790,8 @@ export const pt: Dictionary = {
       savedOffline: 'Sem conexão — salvo no dispositivo',
       finishOffline: 'Você precisa de conexão para finalizar. O que foi registrado ficou salvo.',
       discard: 'Descartar',
+      cancelWorkout: 'Cancelar treino',
+      cancelConfirm: 'Cancelar este treino? O que você registrou será apagado e não ficará no histórico.',
       addSet: 'Adicionar série',
       set: 'Série',
       warmup: 'A',

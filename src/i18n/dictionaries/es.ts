@@ -788,6 +788,8 @@ export const es = {
       savedOffline: 'Sin conexión — guardado en el dispositivo',
       finishOffline: 'Necesitás conexión para finalizar. Lo registrado quedó guardado.',
       discard: 'Descartar',
+      cancelWorkout: 'Cancelar entrenamiento',
+      cancelConfirm: '¿Cancelar este entrenamiento? Se borra lo que cargaste y no queda en tu historial.',
       addSet: 'Agregar serie',
       set: 'Serie',
       warmup: 'W',
