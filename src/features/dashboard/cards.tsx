@@ -5,7 +5,7 @@ import type { Dictionary } from '@/i18n';
 import { interpolate } from '@/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { displayWeight, weightUnitLabel } from '@/lib/units';
+import { displayWeight, displayWeightDelta, weightUnitLabel } from '@/lib/units';
 import { cn } from '@/lib/utils';
 import type { DashboardData } from './queries';
 
@@ -96,11 +96,6 @@ export function WeightCard({
       </CardContent>
     </Card>
   );
-}
-
-function displayWeightDelta(deltaKg: number, unitSystem: UnitSystem): { value: number } {
-  const v = unitSystem === 'IMPERIAL' ? deltaKg / 0.45359237 : deltaKg;
-  return { value: Math.round(v * 10) / 10 };
 }
 
 export function ProgressCard({ t, data }: { t: Dictionary; data: DashboardData['progress'] }) {

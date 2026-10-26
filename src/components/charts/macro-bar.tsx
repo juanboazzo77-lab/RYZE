@@ -25,7 +25,7 @@ export function MacroBar({
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
         <div
-          className="h-full rounded-full transition-all"
+          className="anim-bar h-full rounded-full transition-all"
           style={{ width: `${pct}%`, background: over ? 'var(--warning)' : colorVar }}
         />
       </div>

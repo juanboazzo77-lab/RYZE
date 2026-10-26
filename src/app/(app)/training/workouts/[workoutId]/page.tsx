@@ -7,6 +7,7 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { getCompletedWorkout } from '@/features/training/history-queries';
 import { ImprovementBadges, PrBadges } from '@/features/training/progress-badges';
+import { CelebrateOnMount } from '@/components/celebrate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -32,9 +33,12 @@ export default async function CompletedWorkoutPage({
   if (!w) notFound();
 
   const allPrTypes = [...new Set(w.exercises.flatMap((e) => e.prTypes))];
+  // Celebra sólo si acaba de terminar (no al mirarlo después desde el historial).
+  const justFinished = w.finishedAt ? Date.now() - w.finishedAt.getTime() < 5 * 60 * 1000 : false;
 
   return (
     <div className="space-y-4">
+      {justFinished && allPrTypes.length > 0 ? <CelebrateOnMount storageKey={`pr-${workoutId}`} /> : null}
       <Link
         href="/training/history"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"

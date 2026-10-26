@@ -6,6 +6,8 @@ import type { Dictionary } from '@/i18n';
 import { TIER_LIMITS, TRIAL_LIMITS, showAds } from '@/server/entitlements';
 import { PLAN_ORDER, PLAN_PRICE_USD, BASIC_PRICE_USD, FEATURE_ROWS } from './plans';
 import { PlanPriceSelector } from './plan-price-selector';
+import { TrialRecapCard } from './trial-recap';
+import type { TrialRecap } from './recap';
 import { PlanSelectButton } from './plan-select-button';
 import { RestorePurchasesButton } from './restore-purchases-button';
 import { ManageBillingButton } from './manage-billing-button';
@@ -23,6 +25,8 @@ export function PlansView({
   trial,
   hasSubscription,
   previewPlatform,
+  recap,
+  unitSystem = 'METRIC',
 }: {
   t: Dictionary;
   currentTier: EntitlementTier;
@@ -30,6 +34,9 @@ export function PlansView({
   hasSubscription: boolean;
   /** Sólo para capturas de pantalla de la tienda. */
   previewPlatform?: 'web' | 'ios' | 'android';
+  /** Lo que la persona hizo en la app (sólo se muestra a quien todavía no paga). */
+  recap?: TrialRecap | null;
+  unitSystem?: 'METRIC' | 'IMPERIAL';
 }) {
   const p = t.plans;
   return (
@@ -48,6 +55,10 @@ export function PlansView({
         <h1 className="text-2xl font-bold tracking-tight">{p.title}</h1>
         <p className="text-sm text-muted-foreground">{p.subtitle}</p>
       </div>
+
+      {recap ? (
+        <TrialRecapCard t={t} recap={recap} ended={!trial.inTrial} unitSystem={unitSystem} />
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_ORDER.map((tier) => {

@@ -42,6 +42,7 @@ export function CalorieRing({
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${dash} ${c}`}
+            className="anim-ring"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

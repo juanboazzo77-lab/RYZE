@@ -43,3 +43,9 @@ export function inputWeightToKg(value: number, system: UnitSystem): number {
 export function weightUnitLabel(system: UnitSystem): 'kg' | 'lb' {
   return system === 'IMPERIAL' ? 'lb' : 'kg';
 }
+
+/** Diferencia de peso (en kg) llevada a la unidad de la persona, con un decimal. */
+export function displayWeightDelta(deltaKg: number, unitSystem: 'METRIC' | 'IMPERIAL'): { value: number } {
+  const v = unitSystem === 'IMPERIAL' ? deltaKg / 0.45359237 : deltaKg;
+  return { value: Math.round(v * 10) / 10 };
+}

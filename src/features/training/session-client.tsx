@@ -25,6 +25,7 @@ import type { WorkoutSession } from './queries';
 import { useSession, type StoreExercise, type StoreSet } from './session-store';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer, primeRestAudio } from './rest-timer';
+import { fireConfetti } from '@/lib/confetti';
 import {
   addWorkoutExercise,
   discardWorkout,
@@ -519,6 +520,13 @@ function ExerciseBlock({
     ex.bestWeightKg != null &&
     ex.sets.some((x) => x.isCompleted && !x.isWarmup && (x.weightKg ?? 0) > (ex.bestWeightKg ?? 0));
 
+  // Confeti sólo en el momento en que se rompe el récord, no al entrar con el récord ya roto.
+  const prevPr = useRef(isPr);
+  useEffect(() => {
+    if (isPr && !prevPr.current) fireConfetti(60);
+    prevPr.current = isPr;
+  }, [isPr]);
+
   const last = ex.lastTime && ex.lastTime.length > 0
     ? ex.lastTime
         .map((s) => `${s.weightKg ?? '–'}×${s.reps ?? '–'}`)
@@ -812,7 +820,7 @@ function SetRow({
         className={cn(
           'grid size-11 shrink-0 place-items-center rounded-md border transition-colors',
           set.isCompleted
-            ? 'border-success bg-success text-white'
+            ? 'anim-pop border-success bg-success text-white'
             : 'hover:border-primary hover:text-primary',
         )}
       >
