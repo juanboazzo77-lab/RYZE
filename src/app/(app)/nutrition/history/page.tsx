@@ -27,7 +27,7 @@ export default async function NutritionHistoryPage() {
 
       {days.length === 0 ? (
         <Card className="p-4">
-          <EmptyState compact title={t.nutrition.history.noDays} />
+          <EmptyState compact illustration="calendar" title={t.nutrition.history.noDays} />
         </Card>
       ) : (
         <Card className="divide-y">

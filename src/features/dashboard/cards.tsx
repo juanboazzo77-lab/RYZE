@@ -31,7 +31,7 @@ export function WeightCard({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <EmptyState compact title={tw.noData} action={{ label: tw.logCta, href: '/progress' }} />
+          <EmptyState compact illustration="scale" title={tw.noData} action={{ label: tw.logCta, href: '/progress' }} />
         </CardContent>
       </Card>
     );

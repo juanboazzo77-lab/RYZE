@@ -4,6 +4,7 @@ import type { Dictionary } from '@/i18n';
 import { Card, CardContent } from '@/components/ui/card';
 import type { UnitSystem } from '@prisma/client';
 import { displayWeightDelta } from '@/lib/units';
+import { cn } from '@/lib/utils';
 import type { TrialRecap } from './recap';
 
 /**
@@ -45,8 +46,15 @@ export function TrialRecapCard({
           <p className="text-xs text-muted-foreground">{ended ? r.hintEnded : r.hint}</p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {items.map((it) => (
-            <div key={it.label} className="rounded-lg border bg-card p-3 text-center">
+          {items.map((it, i) => (
+            <div
+              key={it.label}
+              className={cn(
+                'rounded-lg border bg-card p-3 text-center',
+                // Si queda uno solo en la última fila del celular, ocupa el ancho entero.
+                i === items.length - 1 && items.length % 2 === 1 && 'col-span-2 sm:col-span-1',
+              )}
+            >
               <div className="mx-auto mb-1 grid size-7 place-items-center rounded-full bg-primary/10 text-primary">
                 {it.icon}
               </div>

@@ -115,7 +115,7 @@ export default async function StatsPage() {
         </CardHeader>
         <CardContent className="pt-0">
           {data.recentPrs.length === 0 ? (
-            <EmptyState compact title={t.stats.noPrs} />
+            <EmptyState compact illustration="trophy" title={t.stats.noPrs} />
           ) : (
             <div className="divide-y">
               {data.recentPrs.map((pr) => (

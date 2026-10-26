@@ -14,6 +14,7 @@ export function DaySummary({ t, log }: { t: Dictionary; log: DayLog }) {
         <CardContent className="pt-5">
           <EmptyState
             compact
+            illustration="food"
             title={tn.noTarget}
             action={{ label: t.dashboard.nutrition.noTargetCta, href: '/settings/goals' }}
           />

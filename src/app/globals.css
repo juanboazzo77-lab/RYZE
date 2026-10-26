@@ -51,9 +51,9 @@
   --background: hsl(220 20% 7%);
   --foreground: hsl(210 20% 96%);
 
-  --card: hsl(220 18% 10%);
+  --card: hsl(220 18% 11%);
   --card-foreground: hsl(210 20% 96%);
-  --popover: hsl(220 18% 10%);
+  --popover: hsl(220 18% 11%);
   --popover-foreground: hsl(210 20% 96%);
 
   --primary: hsl(151 70% 45%);
@@ -74,8 +74,8 @@
   --success: hsl(151 70% 45%);
   --warning: hsl(35 92% 58%);
 
-  --border: hsl(220 14% 18%);
-  --input: hsl(220 14% 20%);
+  --border: hsl(220 14% 21%);
+  --input: hsl(220 14% 23%);
   --ring: hsl(151 70% 45%);
 
   --chart-kcal: hsl(151 70% 48%);

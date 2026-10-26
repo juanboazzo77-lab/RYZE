@@ -57,6 +57,7 @@ export function TodayHero({ t, data }: { t: Dictionary; data: DashboardData }) {
         {!target ? (
           <EmptyState
             compact
+            illustration="food"
             title={tn.noTarget}
             action={{ label: tn.noTargetCta, href: '/settings/goals' }}
           />

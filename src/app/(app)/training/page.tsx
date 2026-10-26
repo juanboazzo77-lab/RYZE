@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
-import { Dumbbell } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { interpolate } from '@/i18n';
@@ -111,7 +110,7 @@ export default async function TrainingPage() {
           <Card className="p-4">
             <EmptyState
               compact
-              icon={<Dumbbell className="size-5" />}
+              illustration="workout"
               title={t.training.noPlans}
             />
           </Card>

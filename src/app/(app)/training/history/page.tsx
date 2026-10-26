@@ -33,7 +33,7 @@ export default async function TrainingHistoryPage() {
 
       {items.length === 0 ? (
         <Card className="p-4">
-          <EmptyState compact title={t.training.history.empty} />
+          <EmptyState compact illustration="calendar" title={t.training.history.empty} />
         </Card>
       ) : (
         <Card className="divide-y">
