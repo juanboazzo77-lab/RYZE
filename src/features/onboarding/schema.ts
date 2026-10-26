@@ -35,6 +35,8 @@ export const onboardingSchema = z.object({
   injuries: z.string().max(1000),
   trainingExperienceNote: z.string().max(1000),
   unitSystem: z.enum(['METRIC', 'IMPERIAL']),
+  /** Código de un amigo (opcional): quedan como amigos y los dos ganan días de acceso completo. */
+  referralCode: z.string().trim().max(16).optional(),
   locale: z.enum(['ES', 'EN']),
   /**
    * Fotos para la recomendación de objetivo (sólo si `primaryGoal` es

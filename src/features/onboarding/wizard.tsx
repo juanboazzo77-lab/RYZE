@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Dumbbell, Salad, Sparkles, Target, User, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
 import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { ageFromBirthdate } from '@/lib/nutrition/targets';
@@ -36,7 +37,15 @@ const STEP_COMPONENTS: Array<(p: StepProps) => React.JSX.Element> = [
 const STEP_ICONS = [User, Target, Dumbbell, Salad, Sparkles];
 
 /** Pantalla de bienvenida: qué se va a llevar la persona, antes de pedirle datos. */
-function Intro({ onStart }: { onStart: () => void }) {
+function Intro({
+  onStart,
+  code,
+  onCode,
+}: {
+  onStart: () => void;
+  code: string;
+  onCode: (v: string) => void;
+}) {
   const t = useT();
   const i = t.onboarding.intro;
   const points = [
@@ -66,6 +75,23 @@ function Intro({ onStart }: { onStart: () => void }) {
           </li>
         ))}
       </ul>
+      <div className="space-y-1.5">
+        <label htmlFor="ob-code" className="text-sm font-medium">
+          {i.codeLabel}
+        </label>
+        <Input
+          id="ob-code"
+          value={code}
+          onChange={(e) => onCode(e.target.value.toUpperCase())}
+          placeholder={i.codePh}
+          maxLength={16}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          className="font-mono uppercase tracking-widest"
+        />
+        <p className="text-xs text-muted-foreground">{i.codeHint}</p>
+      </div>
       <div className="space-y-2">
         <Button size="lg" className="h-12 w-full text-base font-bold" onClick={onStart}>
           {i.cta}
@@ -83,6 +109,7 @@ export function OnboardingWizard({
 }) {
   const t = useT();
   const [intro, setIntro] = useState(true);
+  const [referralCode, setReferralCode] = useState('');
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
@@ -207,6 +234,7 @@ export function OnboardingWizard({
 
     const payload = onboardingSchema.safeParse({
       ...data,
+      referralCode: referralCode.trim() || undefined,
       injuries: data.injuries ?? '',
       trainingExperienceNote: data.trainingExperienceNote ?? '',
       photos: data.primaryGoal === 'UNDECIDED' && data.photos.length > 0 ? data.photos : undefined,
@@ -226,7 +254,7 @@ export function OnboardingWizard({
   const progress = useMemo(() => ((step + 1) / STEP_KEYS.length) * 100, [step]);
   const StepIcon = STEP_ICONS[step]!;
 
-  if (intro) return <Intro onStart={() => setIntro(false)} />;
+  if (intro) return <Intro onStart={() => setIntro(false)} code={referralCode} onCode={setReferralCode} />;
 
   return (
     <div className="space-y-6">

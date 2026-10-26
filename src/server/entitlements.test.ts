@@ -70,4 +70,17 @@ describe('entitlements', () => {
     expect(can(full, 'coach_profile')).toBe(true);
     expect(can(withFullAccess('otra@persona.com', expired), 'ai_coach_message')).toBe(false);
   });
+
+  it('los días regalados por invitar extienden la prueba aunque ya hubiera vencido', () => {
+    const old = { tier: 'FREE' as const, createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+    expect(isInTrial(old)).toBe(false);
+    const withBonus = { ...old, bonusUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) };
+    expect(isInTrial(withBonus)).toBe(true);
+    expect(trialDaysLeft(withBonus)).toBe(5);
+  });
+
+  it('un bonus vencido no cambia nada', () => {
+    const old = { tier: 'FREE' as const, createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), bonusUntil: new Date(Date.now() - 1000) };
+    expect(isInTrial(old)).toBe(false);
+  });
 });

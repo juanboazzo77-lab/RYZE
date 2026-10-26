@@ -5,6 +5,7 @@ import { requireUser } from '@/server/context';
 import { forUser } from '@/server/user-db';
 import { prisma } from '@/server/db';
 import { computeTargets, ageFromBirthdate } from '@/lib/nutrition/targets';
+import { redeemCode } from '@/server/friends';
 import { onboardingSchema, type OnboardingPayload } from './schema';
 
 export interface OnboardingResult {
@@ -95,6 +96,15 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
       },
     }),
   ]);
+
+  // Código de un amigo (opcional): best-effort, un código mal escrito nunca frena el alta.
+  if (data.referralCode) {
+    try {
+      await redeemCode(userId, data.referralCode);
+    } catch (e) {
+      console.error('[onboarding] código de invitación falló', e instanceof Error ? e.message : e);
+    }
+  }
 
   // Deporte + competencia (opcionales, fuera de la transacción principal).
   if (data.sport) {

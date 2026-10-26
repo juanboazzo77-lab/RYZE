@@ -147,21 +147,33 @@ export const TRIAL_LIMITS: TierLimits = {
   mealPlansPerMonth: 1,
 };
 
+/** Lo que hace falta del entitlement para saber si está en prueba. */
+export type TrialInfo = Pick<Entitlement, 'tier' | 'createdAt'> & {
+  /** Días regalados por invitar: extienden la prueba más allá de los `TRIAL_DAYS`. */
+  bonusUntil?: Date | null;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Fin de la prueba: los `TRIAL_DAYS` desde el alta o, si es posterior, los días regalados. */
+function trialEndMs(entitlement: TrialInfo): number {
+  const base = entitlement.createdAt.getTime() + TRIAL_DAYS * DAY_MS;
+  return Math.max(base, entitlement.bonusUntil?.getTime() ?? 0);
+}
+
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */
-export function isInTrial(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): boolean {
+export function isInTrial(entitlement: TrialInfo): boolean {
   if (entitlement.tier !== 'FREE') return false;
-  const trialEndMs = entitlement.createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000;
-  return Date.now() < trialEndMs;
+  return Date.now() < trialEndMs(entitlement);
 }
 
 /** Días de prueba gratis que le quedan (0 si ya terminó o el tier no es FREE). */
-export function trialDaysLeft(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): number {
+export function trialDaysLeft(entitlement: TrialInfo): number {
   if (entitlement.tier !== 'FREE') return 0;
-  const trialEndMs = entitlement.createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000;
-  return Math.max(0, Math.ceil((trialEndMs - Date.now()) / (24 * 60 * 60 * 1000)));
+  return Math.max(0, Math.ceil((trialEndMs(entitlement) - Date.now()) / DAY_MS));
 }
 
-export function limitsFor(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>): TierLimits {
+export function limitsFor(entitlement: TrialInfo): TierLimits {
   if (isInTrial(entitlement)) return TRIAL_LIMITS;
   return TIER_LIMITS[entitlement.tier];
 }
@@ -176,7 +188,7 @@ export function physiqueMonthlyCap(limits: TierLimits): number {
 }
 
 /** ¿El tier del usuario habilita esta feature? (no chequea límites de uso). */
-export function can(entitlement: Pick<Entitlement, 'tier' | 'createdAt'>, feature: Feature): boolean {
+export function can(entitlement: TrialInfo, feature: Feature): boolean {
   return limitsFor(entitlement).features[feature];
 }
 

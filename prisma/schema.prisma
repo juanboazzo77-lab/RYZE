@@ -258,6 +258,12 @@ model Profile {
   timezone               String           @default("America/Argentina/Buenos_Aires")
   weekStart              Int              @default(1) @map("week_start")
   onboardingCompletedAt  DateTime?        @map("onboarding_completed_at")
+  /// Código para invitar amigos (y para que un amigo lo agregue). Se genera la primera vez que se pide.
+  referralCode           String?          @unique @map("referral_code")
+  /// Quién lo invitó (se usó su código al empezar). Sólo se puede fijar una vez.
+  referredById           String?          @db.Uuid @map("referred_by_id")
+  referredBy             Profile?         @relation("Referral", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals              Profile[]        @relation("Referral")
   createdAt              DateTime         @default(now()) @map("created_at")
   updatedAt              DateTime         @updatedAt @map("updated_at")
 
@@ -286,7 +292,10 @@ model Profile {
   physiqueAnalyses        PhysiqueAnalysis[]
   competitions            Competition[]
   coachProfile            CoachProfile?
+  friendshipsSent         Friendship[]             @relation("FriendshipRequester")
+  friendshipsReceived     Friendship[]             @relation("FriendshipAddressee")
 
+  @@index([referredById])
   @@map("profile")
 }
 
@@ -336,12 +345,29 @@ model Entitlement {
   tier                 EntitlementTier   @default(FREE)
   status               EntitlementStatus @default(ACTIVE)
   currentPeriodEnd     DateTime?         @map("current_period_end")
+  /// Días de acceso completo regalados (invitaciones): se suman a la prueba gratis.
+  bonusUntil           DateTime?         @map("bonus_until")
   lemonSqueezyCustomerId     String?     @map("lemon_squeezy_customer_id")
   lemonSqueezySubscriptionId String?     @map("lemon_squeezy_subscription_id")
   createdAt            DateTime          @default(now()) @map("created_at")
   updatedAt            DateTime          @updatedAt @map("updated_at")
 
   @@map("entitlement")
+}
+
+/// Amistad entre dos usuarios (se crea al usar el código del otro). Es de los dos: no es un
+/// modelo "del usuario" para forUser; se accede desde src/server/friends.ts.
+model Friendship {
+  id          String   @id @default(uuid()) @db.Uuid
+  requesterId String   @db.Uuid @map("requester_id")
+  requester   Profile  @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId String   @db.Uuid @map("addressee_id")
+  addressee   Profile  @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
+  @@map("friendship")
 }
 
 // ---------------------------------------------------------------------
