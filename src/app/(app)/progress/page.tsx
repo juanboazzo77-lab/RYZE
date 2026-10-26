@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart3, Camera, ClipboardCheck, TrendingDown, TrendingUp, Trophy, Users } from 'lucide-react';
+import { BarChart3, CalendarRange, Camera, ClipboardCheck, TrendingDown, TrendingUp, Trophy, Users } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
@@ -54,7 +54,7 @@ export default async function ProgressPage({
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">{t.progress.title}</h1>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Link
           href="/progress/stats"
           className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
@@ -85,10 +85,17 @@ export default async function ProgressPage({
         </Link>
         <Link
           href="/progress/friends"
-          className="col-span-2 flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50 sm:col-span-1"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
         >
           <Users className="size-4 text-primary" />
           {t.friends.title}
+        </Link>
+        <Link
+          href="/progress/report"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <CalendarRange className="size-4 text-primary" />
+          {t.report.title}
         </Link>
       </div>
 
