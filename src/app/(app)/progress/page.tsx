@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart3, ClipboardCheck, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
+import { BarChart3, Camera, ClipboardCheck, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
@@ -75,6 +75,13 @@ export default async function ProgressPage({
         >
           <ClipboardCheck className="size-4 text-primary" />
           {t.checkin.title}
+        </Link>
+        <Link
+          href="/progress/photos"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <Camera className="size-4 text-primary" />
+          {t.progress.photosTitle}
         </Link>
       </div>
 

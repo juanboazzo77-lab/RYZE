@@ -24,7 +24,7 @@ import type { Dictionary } from '@/i18n';
 import type { WorkoutSession } from './queries';
 import { useSession, type StoreExercise, type StoreSet } from './session-store';
 import { ExercisePicker } from './exercise-picker';
-import { RestTimer } from './rest-timer';
+import { RestTimer, primeRestAudio } from './rest-timer';
 import {
   addWorkoutExercise,
   discardWorkout,
@@ -223,9 +223,10 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
                 key={ex.id}
                 t={t}
                 ex={ex}
-                onCompleted={(restSeconds) =>
-                  setRestEndsAt(Date.now() + (restSeconds ?? 90) * 1000)
-                }
+                onCompleted={(restSeconds) => {
+                  primeRestAudio();
+                  setRestEndsAt(Date.now() + (restSeconds ?? 90) * 1000);
+                }}
                 onRemove={async () => {
                   dropExercise(ex.id);
                   await removeWorkoutExercise({ id: ex.id });

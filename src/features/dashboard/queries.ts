@@ -42,6 +42,8 @@ export interface DashboardData {
     startKg: number | null;
     targetKg: number | null;
     weeklyChangeKg: number | null;
+    /** ¿Ya registró el peso de hoy? */
+    loggedToday: boolean;
   };
   progress: {
     streak: number;
@@ -225,6 +227,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
       startKg: goal?.startWeightKg ?? null,
       targetKg: goal?.targetWeightKg ?? null,
       weeklyChangeKg,
+      loggedToday: datedWeights.at(-1)?.date === todayISO,
     },
     progress: {
       streak,

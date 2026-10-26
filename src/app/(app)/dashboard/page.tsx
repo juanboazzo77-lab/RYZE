@@ -7,10 +7,10 @@ import { can, limitsFor } from '@/server/entitlements';
 import { aiConfigured } from '@/server/ai/config';
 import { getDashboardData } from '@/features/dashboard/queries';
 import { isCheckinDue } from '@/features/checkin/queries';
-import { NutritionCard, ProgressCard, TrainingCard, WeightCard } from '@/features/dashboard/cards';
+import { ProgressCard, WeightCard } from '@/features/dashboard/cards';
+import { TodayHero } from '@/features/dashboard/today-hero';
 import { CheckinReminder } from '@/features/dashboard/checkin-reminder';
 import { FirstPlanCard } from '@/features/dashboard/first-plan-card';
-import { QuickActions } from '@/features/dashboard/quick-actions';
 import { CompetitionBanner } from '@/features/sports/competition-banner';
 import { CoachProfileNudge } from '@/features/coach-profile/completion-card';
 
@@ -60,16 +60,12 @@ export default async function DashboardPage() {
 
       {!data.hasPlan ? <FirstPlanCard t={t} aiReady={aiConfigured()} /> : null}
 
-      <QuickActions t={t} />
-
-      <NutritionCard t={t} data={data.nutrition} />
+      <TodayHero t={t} data={data} />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <TrainingCard t={t} data={data.training} />
         <WeightCard t={t} data={data.weight} unitSystem={ctx.profile.unitSystem} />
+        <ProgressCard t={t} data={data.progress} />
       </div>
-
-      <ProgressCard t={t} data={data.progress} />
     </div>
   );
 }

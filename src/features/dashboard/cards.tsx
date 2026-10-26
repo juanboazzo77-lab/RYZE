@@ -1,133 +1,13 @@
 import Link from 'next/link';
-import { ChevronRight, Dumbbell, Flame, Scale, TrendingDown, TrendingUp } from 'lucide-react';
+import { ChevronRight, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import type { UnitSystem } from '@prisma/client';
 import type { Dictionary } from '@/i18n';
 import { interpolate } from '@/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { displayWeight, weightUnitLabel } from '@/lib/units';
 import { cn } from '@/lib/utils';
-import { CalorieRing } from '@/components/charts/calorie-ring';
-import { MacroBar } from '@/components/charts/macro-bar';
 import type { DashboardData } from './queries';
-
-export function NutritionCard({ t, data }: { t: Dictionary; data: DashboardData['nutrition'] }) {
-  const tn = t.dashboard.nutrition;
-  const { target, consumed } = data;
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Flame className="size-4 text-chart-kcal" />
-          {tn.title}
-        </CardTitle>
-        <Link href="/nutrition" className="text-muted-foreground hover:text-foreground">
-          <ChevronRight className="size-4" />
-        </Link>
-      </CardHeader>
-      <CardContent>
-        {!target ? (
-          <EmptyState
-            compact
-            title={tn.noTarget}
-            action={{ label: tn.noTargetCta, href: '/settings/goals' }}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-6">
-            <CalorieRing
-              consumed={consumed.kcal}
-              target={target.kcal}
-              centerLabel={String(consumed.kcal)}
-              footer={
-                consumed.kcal <= target.kcal
-                  ? `${target.kcal - consumed.kcal} ${tn.remaining}`
-                  : `${consumed.kcal - target.kcal} ${tn.over}`
-              }
-            />
-            <div className="w-full flex-1 space-y-3">
-              <MacroBar
-                label={tn.protein}
-                consumed={consumed.proteinG}
-                target={target.proteinG}
-                colorVar="var(--chart-protein)"
-              />
-              <MacroBar
-                label={tn.carbs}
-                consumed={consumed.carbsG}
-                target={target.carbsG}
-                colorVar="var(--chart-carbs)"
-              />
-              <MacroBar
-                label={tn.fat}
-                consumed={consumed.fatG}
-                target={target.fatG}
-                colorVar="var(--chart-fat)"
-              />
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function TrainingCard({ t, data }: { t: Dictionary; data: DashboardData['training'] }) {
-  const tt = t.dashboard.training;
-
-  const statusLabel: Record<string, string> = {
-    PENDING: tt.statusPending,
-    ACTIVE: tt.statusActive,
-    COMPLETED: tt.statusCompleted,
-    SKIPPED: tt.statusSkipped,
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Dumbbell className="size-4 text-primary" />
-          {tt.title}
-        </CardTitle>
-        <Link href="/training" className="text-muted-foreground hover:text-foreground">
-          <ChevronRight className="size-4" />
-        </Link>
-      </CardHeader>
-      <CardContent>
-        {data.kind === 'none' ? (
-          <EmptyState compact title={tt.none} action={{ label: tt.noneCta, href: '/training' }} />
-        ) : (
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="truncate font-semibold">{data.name}</span>
-                <Badge variant={data.kind === 'workout' && data.status === 'COMPLETED' ? 'success' : 'secondary'}>
-                  {data.kind === 'planned' ? tt.planned : statusLabel[data.status]}
-                </Badge>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {data.exerciseCount} {tt.exercises} · {data.estMinutes} {tt.minutesEst}
-              </p>
-            </div>
-            <Link
-              href="/training"
-              className="shrink-0 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              {data.kind === 'planned'
-                ? tt.start
-                : data.status === 'ACTIVE'
-                  ? tt.continueW
-                  : data.status === 'COMPLETED'
-                    ? tt.review
-                    : tt.start}
-            </Link>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export function WeightCard({
   t,
