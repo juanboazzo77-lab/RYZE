@@ -540,6 +540,19 @@ export const en: Dictionary = {
     subtitle: 'We need a few details to personalize your plan.',
     stepOf: 'Step {n} of {total}',
     finishLater: 'Go to home',
+    intro: {
+      title: 'Your plan, made for you',
+      subtitle: 'Answer a few short questions and the Coach builds your training and nutrition.',
+      b1Title: 'Tailored training',
+      b1Desc: 'Routines for your level, equipment and time.',
+      b2Title: 'Nutrition with your calories',
+      b2Desc: 'Daily targets calculated for your goal.',
+      b3Title: 'AI Coach',
+      b3Desc: 'Answers you and adjusts your plan whenever you need.',
+      cta: 'Get started',
+      note: 'Under 2 minutes. You can change everything later.',
+    },
+    skip: 'Skip for now',
     start: 'Start',
     goalPhotos: {
       title: 'Photos for the Coach to recommend (optional)',
@@ -576,6 +589,7 @@ export const en: Dictionary = {
     },
     steps: {
       about: { title: 'About you', desc: 'Basic data to estimate your needs.' },
+      preferences: { title: 'Preferences', desc: 'Optional: meals, allergies and injuries. You can fill it in later.' },
       weightGoal: { title: 'Weight & goal', desc: 'Where you are and where you want to go.' },
       training: { title: 'Training', desc: 'How and where you train.' },
       nutrition: { title: 'Nutrition', desc: 'Your preferences and restrictions.' },

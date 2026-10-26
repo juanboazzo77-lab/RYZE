@@ -538,6 +538,19 @@ export const es = {
     subtitle: 'Necesitamos algunos datos para personalizar tu plan.',
     stepOf: 'Paso {n} de {total}',
     finishLater: 'Ir al inicio',
+    intro: {
+      title: 'Tu plan, hecho a tu medida',
+      subtitle: 'Respondé unas preguntas cortas y el Coach arma tu entrenamiento y tu nutrición.',
+      b1Title: 'Entrenamiento a medida',
+      b1Desc: 'Rutinas según tu nivel, tu equipo y tu tiempo.',
+      b2Title: 'Nutrición con tus calorías',
+      b2Desc: 'Objetivos diarios calculados para tu meta.',
+      b3Title: 'Coach con IA',
+      b3Desc: 'Te responde y ajusta tu plan cuando lo necesites.',
+      cta: 'Empezar',
+      note: 'Menos de 2 minutos. Después podés cambiar todo.',
+    },
+    skip: 'Saltar por ahora',
     start: 'Empezar',
     goalPhotos: {
       title: 'Fotos para que el Coach te recomiende (opcional)',
@@ -574,6 +587,7 @@ export const es = {
     },
     steps: {
       about: { title: 'Sobre vos', desc: 'Datos básicos para calcular tus necesidades.' },
+      preferences: { title: 'Preferencias', desc: 'Opcional: comidas, alergias y lesiones. Podés completarlo después.' },
       weightGoal: { title: 'Peso y objetivo', desc: '¿Dónde estás y a dónde querés llegar?' },
       training: { title: 'Entrenamiento', desc: 'Cómo y dónde entrenás.' },
       nutrition: { title: 'Nutrición', desc: 'Tus preferencias y restricciones.' },

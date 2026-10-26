@@ -540,6 +540,19 @@ export const pt: Dictionary = {
     subtitle: 'Precisamos de alguns dados para personalizar seu plano.',
     stepOf: 'Passo {n} de {total}',
     finishLater: 'Ir para o início',
+    intro: {
+      title: 'Seu plano, feito sob medida',
+      subtitle: 'Responda algumas perguntas curtas e o Coach monta seu treino e sua nutrição.',
+      b1Title: 'Treino sob medida',
+      b1Desc: 'Rotinas conforme seu nível, equipamento e tempo.',
+      b2Title: 'Nutrição com suas calorias',
+      b2Desc: 'Metas diárias calculadas para o seu objetivo.',
+      b3Title: 'Coach com IA',
+      b3Desc: 'Responde e ajusta seu plano quando você precisar.',
+      cta: 'Começar',
+      note: 'Menos de 2 minutos. Depois você pode mudar tudo.',
+    },
+    skip: 'Pular por agora',
     start: 'Começar',
     goalPhotos: {
       title: 'Fotos para o Coach te recomendar (opcional)',
@@ -576,6 +589,7 @@ export const pt: Dictionary = {
     },
     steps: {
       about: { title: 'Sobre você', desc: 'Dados básicos para calcular suas necessidades.' },
+      preferences: { title: 'Preferências', desc: 'Opcional: refeições, alergias e lesões. Você pode preencher depois.' },
       weightGoal: { title: 'Peso e objetivo', desc: 'Onde você está e aonde quer chegar?' },
       training: { title: 'Treino', desc: 'Como e onde você treina.' },
       nutrition: { title: 'Nutrição', desc: 'Suas preferências e restrições.' },

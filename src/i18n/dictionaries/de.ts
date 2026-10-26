@@ -540,6 +540,19 @@ export const de: Dictionary = {
     subtitle: 'Wir brauchen ein paar Angaben, um deinen Plan zu personalisieren.',
     stepOf: 'Schritt {n} von {total}',
     finishLater: 'Zum Start',
+    intro: {
+      title: 'Dein Plan, maßgeschneidert',
+      subtitle: 'Beantworte ein paar kurze Fragen und der Coach erstellt dein Training und deine Ernährung.',
+      b1Title: 'Maßgeschneidertes Training',
+      b1Desc: 'Routinen für dein Niveau, deine Ausrüstung und deine Zeit.',
+      b2Title: 'Ernährung mit deinen Kalorien',
+      b2Desc: 'Tagesziele, berechnet für dein Ziel.',
+      b3Title: 'KI-Coach',
+      b3Desc: 'Antwortet dir und passt deinen Plan an, wann immer nötig.',
+      cta: 'Los geht’s',
+      note: 'Weniger als 2 Minuten. Alles lässt sich später ändern.',
+    },
+    skip: 'Vorerst überspringen',
     start: 'Loslegen',
     goalPhotos: {
       title: 'Fotos, damit der Coach dir etwas empfehlen kann (optional)',
@@ -576,6 +589,7 @@ export const de: Dictionary = {
     },
     steps: {
       about: { title: 'Über dich', desc: 'Grunddaten, um deinen Bedarf zu berechnen.' },
+      preferences: { title: 'Vorlieben', desc: 'Optional: Mahlzeiten, Allergien und Verletzungen. Du kannst es später ausfüllen.' },
       weightGoal: { title: 'Gewicht und Ziel', desc: 'Wo stehst du und wo willst du hin?' },
       training: { title: 'Training', desc: 'Wie und wo du trainierst.' },
       nutrition: { title: 'Ernährung', desc: 'Deine Vorlieben und Einschränkungen.' },

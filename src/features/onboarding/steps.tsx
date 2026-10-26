@@ -447,6 +447,16 @@ export function StepHealth({ data, patch, t }: StepProps) {
 /* ================================================================== */
 /* Paso 6 — Resumen + objetivos estimados                             */
 /* ================================================================== */
+/** Comidas, alergias y lesiones en un solo paso (opcional): antes eran dos pantallas. */
+export function StepPreferences(props: StepProps) {
+  return (
+    <div className="space-y-8">
+      <StepNutrition {...props} />
+      <StepHealth {...props} />
+    </div>
+  );
+}
+
 export function StepSummary({ data, t }: StepProps) {
   const s = t.onboarding.summary;
   const canCompute =
