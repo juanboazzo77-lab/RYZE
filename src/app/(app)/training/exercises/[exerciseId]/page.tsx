@@ -7,6 +7,9 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { getExerciseProgress } from '@/features/training/history-queries';
 import { ExerciseProgressView } from '@/features/training/exercise-progress-view';
+import { ExerciseDemo } from '@/features/training/exercise-demo';
+import { exerciseMedia } from '@/features/training/exercise-media';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ExerciseGuideCard,
   ExerciseGuideSkeleton,
@@ -42,6 +45,18 @@ export default async function ExerciseProgressPage({
         <ChevronLeft className="size-4" />
         {t.training.history.title}
       </Link>
+      {exerciseMedia(data.exercise.name) ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t.training.guide.demo}</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ExerciseDemo name={data.exercise.name} />
+            <p className="mt-2 text-center text-xs text-muted-foreground">{t.training.guide.demoHint}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <ExerciseProgressView data={data} />
 
       <Suspense fallback={<ExerciseGuideSkeleton />}>

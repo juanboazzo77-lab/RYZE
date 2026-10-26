@@ -776,6 +776,10 @@ export const de: Dictionary = {
       muscles: 'Muskeln',
       howTo: 'Ausführung',
       alternatives: 'Alternativen',
+      demo: 'Demo',
+      demoHint: 'Tippe auf das Bild, um zu pausieren oder fortzusetzen.',
+      demoPause: 'Demo pausieren',
+      demoPlay: 'Demo abspielen',
     },
     muscles: {
       CHEST: 'Brust',

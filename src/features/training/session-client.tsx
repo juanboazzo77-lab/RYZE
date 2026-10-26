@@ -25,6 +25,7 @@ import type { WorkoutSession } from './queries';
 import { useSession, type StoreExercise, type StoreSet } from './session-store';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer, primeRestAudio } from './rest-timer';
+import { ExerciseDemoButton } from './exercise-demo';
 import { fireConfetti } from '@/lib/confetti';
 import {
   addWorkoutExercise,
@@ -541,6 +542,7 @@ function ExerciseBlock({
             <Link href={`/training/exercises/${ex.exerciseId}`} className="font-semibold hover:underline">
               {ex.name}
             </Link>
+            <ExerciseDemoButton name={ex.name} />
             {isPr ? (
               <span
                 title={t.training.pr.MAX_WEIGHT}

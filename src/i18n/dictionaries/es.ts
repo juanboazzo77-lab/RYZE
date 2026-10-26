@@ -774,6 +774,10 @@ export const es = {
       muscles: 'Músculos',
       howTo: 'Cómo se hace',
       alternatives: 'Alternativas',
+      demo: 'Demo',
+      demoHint: 'Tocá la imagen para pausar o reanudar.',
+      demoPause: 'Pausar demostración',
+      demoPlay: 'Reproducir demostración',
     },
     muscles: {
       CHEST: 'Pecho',
