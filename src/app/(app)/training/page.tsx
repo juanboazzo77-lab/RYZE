@@ -9,6 +9,7 @@ import { getTrainingOverview } from '@/features/training/queries';
 import { StartWorkoutButton } from '@/features/training/start-button';
 import { NewPlanButton } from '@/features/training/new-plan-button';
 import { PlanRow } from '@/features/training/plan-row';
+import { ShiftDaysControls } from '@/features/training/shift-days';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -90,6 +91,7 @@ export default async function TrainingPage() {
                 </div>
               ))
             )}
+            {data.activePlan.days.some((d) => d.weekday) ? <ShiftDaysControls /> : null}
           </CardContent>
         </Card>
       ) : null}

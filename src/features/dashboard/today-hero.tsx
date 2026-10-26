@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { CalorieRing } from '@/components/charts/calorie-ring';
 import { MacroBar } from '@/components/charts/macro-bar';
 import { cn } from '@/lib/utils';
+import { SkipTodayButton } from '@/features/training/shift-days';
 import type { DashboardData } from './queries';
 
 /**
@@ -112,6 +113,7 @@ export function TodayHero({ t, data }: { t: Dictionary; data: DashboardData }) {
               subtitle={`${data.training.exerciseCount} ${tt.exercises} · ${data.training.estMinutes} ${tt.minutesEst}`}
               href="/training"
               cta={trainingLabel}
+              extra={data.training.kind === 'planned' ? <SkipTodayButton /> : undefined}
             />
           ) : (
             <Row
@@ -146,6 +148,7 @@ function Row({
   href,
   cta,
   hideCta,
+  extra,
 }: {
   done: boolean;
   muted?: boolean;
@@ -155,6 +158,8 @@ function Row({
   href: string;
   cta: string;
   hideCta?: boolean;
+  /** Algo chico debajo del texto (p. ej. un atajo). */
+  extra?: ReactNode;
 }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5">
@@ -169,6 +174,7 @@ function Row({
       <div className="min-w-0 flex-1">
         <p className={cn('truncate text-sm font-medium', muted && 'text-muted-foreground')}>{title}</p>
         {subtitle ? <p className="truncate text-xs text-muted-foreground">{subtitle}</p> : null}
+        {extra}
       </div>
       {hideCta ? null : (
         <Link

@@ -60,6 +60,9 @@ export const createExerciseSchema = z.object({
   equipment: z.string().trim().max(40).optional(),
 });
 
+/** Corre todos los días de la rutina activa: +1 = un día después, -1 = un día antes. */
+export const shiftWeekdaysSchema = z.object({ by: z.number().int().min(-6).max(6) });
+
 export const startWorkoutSchema = z.object({
   planDayId: uuid.nullable().optional(),
 });
@@ -102,6 +105,7 @@ export type UpdateDayInput = z.infer<typeof updateDaySchema>;
 export type AddPlanExerciseInput = z.infer<typeof addPlanExerciseSchema>;
 export type UpdatePlanExerciseInput = z.infer<typeof updatePlanExerciseSchema>;
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
+export type ShiftWeekdaysInput = z.infer<typeof shiftWeekdaysSchema>;
 export type StartWorkoutInput = z.infer<typeof startWorkoutSchema>;
 export type AddWorkoutExerciseInput = z.infer<typeof addWorkoutExerciseSchema>;
 export type SaveWorkoutInput = z.infer<typeof saveWorkoutSchema>;
