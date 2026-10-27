@@ -16,7 +16,39 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		F0A1D00000000000000000B1 /* ForzaWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A1 /* ForzaWidgetBundle.swift */; };
+		F0A1D00000000000000000B2 /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A2 /* Snapshot.swift */; };
+		F0A1D00000000000000000B3 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A3 /* Theme.swift */; };
+		F0A1D00000000000000000B4 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A4 /* TodayWidget.swift */; };
+		F0A1D00000000000000000B5 /* ReviewWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A5 /* ReviewWidget.swift */; };
+		F0A1D00000000000000000B6 /* ForzaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A8 /* ForzaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F0A1D00000000000000000C4 /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000C2 /* WidgetBridgePlugin.swift */; };
+		F0A1D00000000000000000C5 /* AppBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000C3 /* AppBridgeViewController.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F0A1D00000000000000000D7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F0A1D00000000000000000D2;
+			remoteInfo = ForzaWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F0A1D00000000000000000D6 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F0A1D00000000000000000B6 /* ForzaWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -30,6 +62,17 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		F0A1D00000000000000000A1 /* ForzaWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForzaWidgetBundle.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000A2 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000A3 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000A4 /* TodayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidget.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000A5 /* ReviewWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewWidget.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F0A1D00000000000000000A7 /* ForzaWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ForzaWidget.entitlements; sourceTree = "<group>"; };
+		F0A1D00000000000000000A8 /* ForzaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ForzaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F0A1D00000000000000000C1 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		F0A1D00000000000000000C2 /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000C3 /* AppBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBridgeViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +84,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0A1D00000000000000000D4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -49,6 +99,7 @@
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
+				F0A1D00000000000000000D1 /* ForzaWidget */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -57,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				F0A1D00000000000000000A8 /* ForzaWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -65,6 +117,9 @@
 			isa = PBXGroup;
 			children = (
 				9582B6822FE993A50072D4E8 /* SceneDelegate.swift */,
+				F0A1D00000000000000000C3 /* AppBridgeViewController.swift */,
+				F0A1D00000000000000000C2 /* WidgetBridgePlugin.swift */,
+				F0A1D00000000000000000C1 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
@@ -77,6 +132,20 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		F0A1D00000000000000000D1 /* ForzaWidget */ = {
+			isa = PBXGroup;
+			children = (
+				F0A1D00000000000000000A1 /* ForzaWidgetBundle.swift */,
+				F0A1D00000000000000000A2 /* Snapshot.swift */,
+				F0A1D00000000000000000A3 /* Theme.swift */,
+				F0A1D00000000000000000A4 /* TodayWidget.swift */,
+				F0A1D00000000000000000A5 /* ReviewWidget.swift */,
+				F0A1D00000000000000000A6 /* Info.plist */,
+				F0A1D00000000000000000A7 /* ForzaWidget.entitlements */,
+			);
+			path = ForzaWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -87,10 +156,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				F0A1D00000000000000000D6 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F0A1D00000000000000000D8 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -99,6 +170,23 @@
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
 			productType = "com.apple.product-type.application";
+		};
+		F0A1D00000000000000000D2 /* ForzaWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F0A1D00000000000000000D9 /* Build configuration list for PBXNativeTarget "ForzaWidget" */;
+			buildPhases = (
+				F0A1D00000000000000000D3 /* Sources */,
+				F0A1D00000000000000000D4 /* Frameworks */,
+				F0A1D00000000000000000D5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ForzaWidget;
+			productName = ForzaWidget;
+			productReference = F0A1D00000000000000000A8 /* ForzaWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -113,6 +201,9 @@
 						CreatedOnToolsVersion = 9.2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
+					};
+					F0A1D00000000000000000D2 = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -133,6 +224,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				F0A1D00000000000000000D2 /* ForzaWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -151,6 +243,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F0A1D00000000000000000D5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -160,10 +259,32 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+				F0A1D00000000000000000C5 /* AppBridgeViewController.swift in Sources */,
+				F0A1D00000000000000000C4 /* WidgetBridgePlugin.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F0A1D00000000000000000D3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0A1D00000000000000000B1 /* ForzaWidgetBundle.swift in Sources */,
+				F0A1D00000000000000000B2 /* Snapshot.swift in Sources */,
+				F0A1D00000000000000000B3 /* Theme.swift in Sources */,
+				F0A1D00000000000000000B4 /* TodayWidget.swift in Sources */,
+				F0A1D00000000000000000B5 /* ReviewWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0A1D00000000000000000D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F0A1D00000000000000000D2 /* ForzaWidget */;
+			targetProxy = F0A1D00000000000000000D7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -299,6 +420,7 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
@@ -307,7 +429,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = app.forzaai.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -321,6 +443,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = 5J58VJ635N;
@@ -331,13 +454,62 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = app.forzaai.mobile;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "Forza AI App Store";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F0A1D00000000000000000DA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ForzaWidget/ForzaWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = ForzaWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.forzaai.mobile.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CODE_SIGN_STYLE = Automatic;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+			};
+			name = Debug;
+		};
+		F0A1D00000000000000000DB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ForzaWidget/ForzaWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = ForzaWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.forzaai.mobile.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = 5J58VJ635N;
+				PROVISIONING_PROFILE_SPECIFIER = "Forza AI Widget App Store";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 			};
 			name = Release;
 		};
@@ -358,6 +530,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F0A1D00000000000000000D9 /* Build configuration list for PBXNativeTarget "ForzaWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F0A1D00000000000000000DA /* Debug */,
+				F0A1D00000000000000000DB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -255,16 +255,26 @@ export async function checkinBlockedByCadence(
   return Boolean(recent);
 }
 
-/**
- * ¿Toca mostrar el recordatorio de la revisión semanal? True si el usuario
- * activó el recordatorio, ya pasó (o es) el día elegido de esta semana, y
- * todavía no hizo el check-in de la semana en curso.
- */
-export async function isCheckinDue(profile: Profile, everyWeeks = 1): Promise<boolean> {
-  if (await checkinBlockedByCadence(profile, everyWeeks)) return false;
-  const db = forUser(profile.id);
+export interface CheckinStatus {
+  /** El recordatorio está activado (por defecto sí). */
+  enabled: boolean;
+  /** Día elegido para la revisión: 1 lunes … 7 domingo. */
+  dayOfWeek: number;
+  /** Ya hizo la revisión de esta semana. */
+  submitted: boolean;
+  /** Ya hizo la revisión de esta semana, o la cadencia de su plan todavía no la pide. */
+  done: boolean;
+  /** Hoy ya pasó (o es) el día elegido de esta semana. */
+  dayReached: boolean;
+  /** Inicio (yyyy-mm-dd) de la semana en curso. */
+  weekStartISO: string;
+}
+
+/** Estado de la revisión semanal de la semana en curso. */
+export async function getCheckinStatus(profile: Profile, everyWeeks = 1): Promise<CheckinStatus> {
   const todayISO = localTodayISO(profile.timezone);
-  const weekStartDate = isoToUtcDate(weekStartISO(todayISO, profile.weekStart));
+  const weekStart = weekStartISO(todayISO, profile.weekStart);
+  const db = forUser(profile.id);
   const todayWeekday = DateTime.fromISO(todayISO, { zone: 'utc' }).weekday; // 1..7
 
   const [pref, existing] = await db.$transaction([
@@ -272,11 +282,27 @@ export async function isCheckinDue(profile: Profile, everyWeeks = 1): Promise<bo
       where: { kind: 'WEEKLY_CHECKIN' },
       select: { enabled: true, dayOfWeek: true },
     }),
-    db.weeklyCheckin.findFirst({ where: { weekStart: weekStartDate }, select: { id: true } }),
+    db.weeklyCheckin.findFirst({ where: { weekStart: isoToUtcDate(weekStart) }, select: { id: true } }),
   ]);
 
-  if (existing) return false;
-  const enabled = pref?.enabled ?? true;
-  const day = pref?.dayOfWeek ?? 1;
-  return enabled && todayWeekday >= day;
+  const dayOfWeek = pref?.dayOfWeek ?? 1;
+  const blocked = !existing && (await checkinBlockedByCadence(profile, everyWeeks));
+  return {
+    enabled: pref?.enabled ?? true,
+    dayOfWeek,
+    submitted: Boolean(existing),
+    done: Boolean(existing) || blocked,
+    dayReached: todayWeekday >= dayOfWeek,
+    weekStartISO: weekStart,
+  };
+}
+
+/**
+ * ¿Toca mostrar el recordatorio de la revisión semanal? True si el usuario
+ * activó el recordatorio, ya pasó (o es) el día elegido de esta semana, y
+ * todavía no hizo el check-in de la semana en curso.
+ */
+export async function isCheckinDue(profile: Profile, everyWeeks = 1): Promise<boolean> {
+  const st = await getCheckinStatus(profile, everyWeeks);
+  return !st.done && st.enabled && st.dayReached;
 }

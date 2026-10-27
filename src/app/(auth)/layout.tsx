@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getT } from '@/i18n/server';
+import { WidgetClear } from '@/features/widgets/widget-sync';
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const { t } = await getT();
@@ -22,6 +23,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         </div>
         {children}
       </div>
+      <WidgetClear />
     </div>
   );
 }

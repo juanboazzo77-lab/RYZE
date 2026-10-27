@@ -9,6 +9,7 @@ import { NotificationPrompt } from '@/features/notifications/notification-prompt
 import { WeighInReminder } from '@/features/notifications/weigh-in-reminder';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { RevenueCatInit } from '@/features/billing/revenuecat-init';
+import { WidgetSync } from '@/features/widgets/widget-sync';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, { t }] = await Promise.all([getUserContext(), getT()]);
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <RegisterSW />
       <OfflineIndicator />
       <RevenueCatInit userId={ctx.userId} />
+      <WidgetSync />
       {children}
     </AppShell>
   );

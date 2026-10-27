@@ -1,0 +1,42 @@
+name: iOS Build Check
+
+# Compila la app y la extensión de widgets para el simulador, sin firmar ni subir nada.
+# Sirve para detectar errores de Swift o del proyecto de Xcode antes de hacer una versión.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-build-check.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Habilitar pnpm
+        run: corepack enable
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Sincronizar proyecto iOS de Capacitor
+        run: npx cap sync ios
+
+      - name: Compilar (simulador, sin firmar)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            | tail -n 200

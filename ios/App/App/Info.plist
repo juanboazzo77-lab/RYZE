@@ -66,6 +66,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.forzaai.mobile</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>forzaai</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Forza AI usa la cámara para escanear el código de barras de los alimentos y para sacar fotos de tu físico o de tus comidas.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
