@@ -200,9 +200,11 @@
   .anim-bar {
     animation: bar-grow 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
-  /* Sólo opacidad: un transform acá rompería los elementos fijos (temporizador, sesión). */
+  /* Sólo opacidad: un transform acá rompería los elementos fijos (temporizador, sesión).
+     Sin fill-mode: con `both` la animación sigue "activa" y el contenedor queda como capa propia,
+     y la pantalla de entrenamiento (fixed z-50) quedaba debajo del encabezado y la barra inferior. */
   .anim-page {
-    animation: page-in 180ms ease-out both;
+    animation: page-in 180ms ease-out;
   }
   .anim-pop {
     animation: pop 320ms ease-out;
