@@ -1207,6 +1207,12 @@ export const de: Dictionary = {
     loggedDays: '{n} erfasste Tage',
     recentPrs: 'Aktuelle Rekorde',
     noPrs: 'Du hast noch keine persönlichen Rekorde.',
+    lastWeeks: 'Letzte {n} Wochen',
+    totalWorkouts: 'Workouts',
+    totalVolume: 'Gesamtvolumen',
+    perWeek: 'Pro Woche',
+    bestWeek: 'Beste Woche',
+    thisWeek: 'Diese Woche',
     noData: '—',
   },
   checkin: {

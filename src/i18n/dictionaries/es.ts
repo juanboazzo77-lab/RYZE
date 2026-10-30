@@ -1205,6 +1205,12 @@ export const es = {
     loggedDays: '{n} días registrados',
     recentPrs: 'Récords recientes',
     noPrs: 'Todavía no tenés récords personales.',
+    lastWeeks: 'Últimas {n} semanas',
+    totalWorkouts: 'Entrenamientos',
+    totalVolume: 'Volumen total',
+    perWeek: 'Por semana',
+    bestWeek: 'Mejor semana',
+    thisWeek: 'Esta semana',
     noData: '—',
   },
   checkin: {

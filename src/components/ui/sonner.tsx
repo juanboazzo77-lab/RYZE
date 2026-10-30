@@ -11,6 +11,7 @@ export function Toaster(props: ToasterProps) {
       theme={theme as ToasterProps['theme']}
       className="toaster group"
       position="top-center"
+      offset="calc(env(safe-area-inset-top) + 12px)"
       toastOptions={{
         classNames: {
           toast:

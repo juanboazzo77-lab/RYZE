@@ -22,6 +22,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // La app de iPhone dibuja bajo la barra de estado: con `cover` env(safe-area-inset-*) trae los márgenes reales.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

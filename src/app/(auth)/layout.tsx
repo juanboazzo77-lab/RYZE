@@ -7,7 +7,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const { t } = await getT();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 pb-10 pt-[calc(2.5rem+env(safe-area-inset-top))]">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Link

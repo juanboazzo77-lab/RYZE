@@ -184,7 +184,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
 
       {/* Barra superior: cronómetro grande + avance */}
       <div className="border-b bg-background/90 backdrop-blur">
-        <div className="flex items-center gap-2 px-3 pt-2">
+        <div className="flex items-center gap-2 px-3 pt-[calc(0.5rem+env(safe-area-inset-top))]">
           <Link
             href="/training"
             aria-label={ts.minimize}
@@ -234,7 +234,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
       ) : null}
 
       {/* Contenido */}
-      <div className="flex-1 overflow-y-auto overscroll-contain bg-secondary/30 px-3 pb-28 pt-3">
+      <div className="flex-1 overflow-y-auto overscroll-contain bg-secondary/30 px-3 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-3">
         <div className="mx-auto max-w-2xl space-y-4">
           {exercises.length === 0 ? (
             <Card>
@@ -367,7 +367,7 @@ function ReadyScreen({
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col bg-background">
-      <div className="flex-1 overflow-y-auto px-5 pt-10">
+      <div className="flex-1 overflow-y-auto px-5 pt-[calc(2.5rem+env(safe-area-inset-top))]">
         <div className="mx-auto max-w-md">
           <div className="rounded-3xl bg-gradient-to-br from-primary/25 via-primary/10 to-transparent p-5">
             <div className="mb-4 flex items-center gap-2 text-primary">
@@ -436,7 +436,7 @@ function ReadyScreen({
         </div>
       </div>
 
-      <div className="border-t bg-background/95 p-4 backdrop-blur">
+      <div className="border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
         <Button
           size="lg"
           className="mx-auto flex h-14 w-full max-w-md text-base font-bold tracking-wide"

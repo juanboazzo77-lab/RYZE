@@ -23,7 +23,7 @@ export function OfflineIndicator() {
   if (!offline) return null;
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-warning px-3 py-1.5 text-center text-xs font-medium text-white">
+    <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-warning px-3 pb-1.5 pt-[calc(0.375rem+env(safe-area-inset-top))] text-center text-xs font-medium text-white">
       <WifiOff className="size-3.5" />
       {t.common.offline}
     </div>

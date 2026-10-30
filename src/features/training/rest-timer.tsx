@@ -176,7 +176,7 @@ export function RestTimer({
   const fraction = finished ? 0 : Math.min(1, remaining / totalRef.current);
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-2xl px-4">
+    <div className="fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-2xl px-4">
       <div
         className={cn(
           'overflow-hidden rounded-xl border bg-card shadow-lg transition-colors',
