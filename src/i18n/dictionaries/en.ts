@@ -1152,6 +1152,7 @@ export const en: Dictionary = {
     subtitle: 'Turn on push notifications and pick which reminders you want.',
     reminderDay: 'Reminder day',
     native: {
+      needsUpdate: 'This version of the app does not include reminders yet. Install the latest one from TestFlight or the App Store.',
       title: 'Phone notifications',
       permOn: 'They are on. Reminders reach you even with the app closed.',
       permAsk: 'Turn them on to get reminders on your lock screen.',

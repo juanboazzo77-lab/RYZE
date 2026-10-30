@@ -1150,6 +1150,7 @@ export const es = {
     subtitle: 'Activá las notificaciones push y elegí qué recordatorios querés recibir.',
     reminderDay: 'Día del recordatorio',
     native: {
+      needsUpdate: 'Esta versión de la app todavía no incluye los avisos. Instalá la última desde TestFlight o la App Store.',
       title: 'Notificaciones del teléfono',
       permOn: 'Están activadas. Los avisos te llegan aunque la app esté cerrada.',
       permAsk: 'Activalas para recibir los avisos en la pantalla de bloqueo.',

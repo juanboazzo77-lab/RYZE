@@ -17,10 +17,15 @@ const TEST_ID = 3999;
 function NativeNotificationsCard() {
   const t = useT();
   const tn = t.notifications.native;
-  const [perm, setPerm] = useState<Permission | null>(null);
+  const [perm, setPerm] = useState<Permission | 'missing' | null>(null);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
+    // Versiones viejas de la app no traen el módulo de avisos: no es un permiso denegado.
+    if (!Capacitor.isPluginAvailable('LocalNotifications')) {
+      setPerm('missing');
+      return;
+    }
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       const p = await LocalNotifications.checkPermissions();
@@ -83,7 +88,13 @@ function NativeNotificationsCard() {
         <div>
           <p className="text-sm font-medium">{tn.title}</p>
           <p className="text-xs text-muted-foreground">
-            {perm === 'granted' ? tn.permOn : perm === 'denied' ? tn.permOff : tn.permAsk}
+            {perm === 'missing'
+              ? tn.needsUpdate
+              : perm === 'granted'
+                ? tn.permOn
+                : perm === 'denied'
+                  ? tn.permOff
+                  : tn.permAsk}
           </p>
         </div>
         {perm === 'granted' ? (

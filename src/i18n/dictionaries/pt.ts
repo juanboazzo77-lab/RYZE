@@ -1152,6 +1152,7 @@ export const pt: Dictionary = {
     subtitle: 'Ative as notificações push e escolha quais lembretes você quer receber.',
     reminderDay: 'Dia do lembrete',
     native: {
+      needsUpdate: 'Esta versão do app ainda não inclui os avisos. Instale a mais recente pelo TestFlight ou pela App Store.',
       title: 'Notificações do celular',
       permOn: 'Estão ativadas. Os avisos chegam mesmo com o app fechado.',
       permAsk: 'Ative para receber os avisos na tela de bloqueio.',

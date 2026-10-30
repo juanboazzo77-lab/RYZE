@@ -1152,6 +1152,7 @@ export const it: Dictionary = {
     subtitle: 'Attiva le notifiche push e scegli quali promemoria vuoi ricevere.',
     reminderDay: 'Giorno del promemoria',
     native: {
+      needsUpdate: 'Questa versione dell’app non include ancora i promemoria. Installa l’ultima da TestFlight o dall’App Store.',
       title: 'Notifiche del telefono',
       permOn: 'Sono attive. I promemoria arrivano anche con l’app chiusa.',
       permAsk: 'Attivale per ricevere i promemoria nella schermata di blocco.',

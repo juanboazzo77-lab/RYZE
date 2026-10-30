@@ -44,7 +44,7 @@ export function DeviceReminders() {
   const queued = useRef(false);
 
   syncRef.current = async function sync() {
-    if (!Capacitor.isNativePlatform()) return;
+    if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable('LocalNotifications')) return;
     if (running.current) {
       queued.current = true;
       return;

@@ -1152,6 +1152,7 @@ export const de: Dictionary = {
     subtitle: 'Aktiviere Push-Benachrichtigungen und wähle, welche Erinnerungen du erhalten möchtest.',
     reminderDay: 'Tag der Erinnerung',
     native: {
+      needsUpdate: 'Diese App-Version enthält die Erinnerungen noch nicht. Installiere die neueste über TestFlight oder den App Store.',
       title: 'Benachrichtigungen auf dem Handy',
       permOn: 'Sie sind aktiviert. Erinnerungen kommen auch bei geschlossener App an.',
       permAsk: 'Aktiviere sie, um Erinnerungen auf dem Sperrbildschirm zu erhalten.',

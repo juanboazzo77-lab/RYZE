@@ -1152,6 +1152,7 @@ export const fr: Dictionary = {
     subtitle: 'Activez les notifications push et choisissez les rappels que vous voulez recevoir.',
     reminderDay: 'Jour du rappel',
     native: {
+      needsUpdate: 'Cette version de l’app n’inclut pas encore les rappels. Installez la dernière depuis TestFlight ou l’App Store.',
       title: 'Notifications du téléphone',
       permOn: 'Elles sont activées. Les rappels arrivent même quand l’app est fermée.',
       permAsk: 'Activez-les pour recevoir les rappels sur l’écran de verrouillage.',
