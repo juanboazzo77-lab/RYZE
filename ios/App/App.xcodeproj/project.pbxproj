@@ -21,6 +21,9 @@
 		F0A1D00000000000000000B3 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A3 /* Theme.swift */; };
 		F0A1D00000000000000000B4 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A4 /* TodayWidget.swift */; };
 		F0A1D00000000000000000B5 /* ReviewWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A5 /* ReviewWidget.swift */; };
+		F0A1D00000000000000000E2 /* RestActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000E1 /* RestActivityAttributes.swift */; };
+		F0A1D00000000000000000E3 /* RestActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000E1 /* RestActivityAttributes.swift */; };
+		F0A1D00000000000000000E5 /* RestActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000E4 /* RestActivityWidget.swift */; };
 		F0A1D00000000000000000B6 /* ForzaWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000A8 /* ForzaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F0A1D00000000000000000C4 /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000C2 /* WidgetBridgePlugin.swift */; };
 		F0A1D00000000000000000C5 /* AppBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A1D00000000000000000C3 /* AppBridgeViewController.swift */; };
@@ -67,6 +70,8 @@
 		F0A1D00000000000000000A3 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F0A1D00000000000000000A4 /* TodayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayWidget.swift; sourceTree = "<group>"; };
 		F0A1D00000000000000000A5 /* ReviewWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewWidget.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000E1 /* RestActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestActivityAttributes.swift; sourceTree = "<group>"; };
+		F0A1D00000000000000000E4 /* RestActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestActivityWidget.swift; sourceTree = "<group>"; };
 		F0A1D00000000000000000A6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F0A1D00000000000000000A7 /* ForzaWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ForzaWidget.entitlements; sourceTree = "<group>"; };
 		F0A1D00000000000000000A8 /* ForzaWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ForzaWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -140,6 +145,8 @@
 				F0A1D00000000000000000A3 /* Theme.swift */,
 				F0A1D00000000000000000A4 /* TodayWidget.swift */,
 				F0A1D00000000000000000A5 /* ReviewWidget.swift */,
+				F0A1D00000000000000000E1 /* RestActivityAttributes.swift */,
+				F0A1D00000000000000000E4 /* RestActivityWidget.swift */,
 				F0A1D00000000000000000A6 /* Info.plist */,
 				F0A1D00000000000000000A7 /* ForzaWidget.entitlements */,
 			);
@@ -261,6 +268,7 @@
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				F0A1D00000000000000000C5 /* AppBridgeViewController.swift in Sources */,
 				F0A1D00000000000000000C4 /* WidgetBridgePlugin.swift in Sources */,
+				F0A1D00000000000000000E2 /* RestActivityAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,6 +281,8 @@
 				F0A1D00000000000000000B3 /* Theme.swift in Sources */,
 				F0A1D00000000000000000B4 /* TodayWidget.swift in Sources */,
 				F0A1D00000000000000000B5 /* ReviewWidget.swift in Sources */,
+				F0A1D00000000000000000E3 /* RestActivityAttributes.swift in Sources */,
+				F0A1D00000000000000000E5 /* RestActivityWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

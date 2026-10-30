@@ -25,6 +25,7 @@ import type { WorkoutSession } from './queries';
 import { useSession, type StoreExercise, type StoreSet } from './session-store';
 import { ExercisePicker } from './exercise-picker';
 import { RestTimer, primeRestAudio } from './rest-timer';
+import { endRestActivity } from '@/features/widgets/native';
 import { ExerciseThumb } from './exercise-demo';
 import { exerciseMedia } from './exercise-media';
 import { fireConfetti } from '@/lib/confetti';
@@ -99,7 +100,11 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     try {
       const saved = Number(localStorage.getItem(restKey));
       if (saved > Date.now()) setRestEndsAt(saved);
-      else localStorage.removeItem(restKey);
+      else {
+        localStorage.removeItem(restKey);
+        // Un descanso que terminó con la app cerrada no deja su cuenta regresiva colgada.
+        endRestActivity();
+      }
     } catch {
       /* sin almacenamiento: el descanso sólo vive mientras la pantalla esté abierta */
     }
@@ -324,6 +329,7 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
       {restEndsAt ? (
         <RestTimer
           endsAt={restEndsAt}
+          label={session.name}
           onSkip={() => setRestEndsAt(null)}
           onExtend={(sec) => setRestEndsAt((v) => (v ?? Date.now()) + sec * 1000)}
         />

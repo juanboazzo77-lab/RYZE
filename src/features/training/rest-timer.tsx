@@ -6,6 +6,7 @@ import { Check, Timer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
+import { endRestActivity, startRestActivity } from '@/features/widgets/native';
 
 function fmt(sec: number): string {
   const s = Math.max(0, Math.ceil(sec));
@@ -108,11 +109,14 @@ export function RestTimer({
   endsAt,
   onSkip,
   onExtend,
+  label,
 }: {
   endsAt: number;
   onSkip: () => void;
   /** Segundos a sumar (o restar, si es negativo) al descanso. */
   onExtend: (seconds: number) => void;
+  /** Nombre del entrenamiento, para la cuenta regresiva de la pantalla de bloqueo. */
+  label?: string;
 }) {
   const t = useT();
   const s = t.training.session;
@@ -146,6 +150,18 @@ export function RestTimer({
     scheduleRestNotification(new Date(endsAt), s.restNotifTitle, s.restNotifBody);
     return () => clearRestNotification();
   }, [endsAt, s.restNotifTitle, s.restNotifBody]);
+
+  // Cuenta regresiva en la pantalla de bloqueo (Live Activity): se actualiza si cambia el fin y se
+  // cierra al salir del descanso.
+  useEffect(() => {
+    startRestActivity({
+      endsAt,
+      totalSeconds: totalRef.current,
+      title: s.restTitle,
+      subtitle: label,
+    });
+  }, [endsAt, s.restTitle, label]);
+  useEffect(() => () => endRestActivity(), []);
 
   const remaining = (endsAt - now) / 1000;
   const finished = remaining <= 0;

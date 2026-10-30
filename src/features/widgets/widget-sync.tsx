@@ -2,20 +2,8 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Capacitor, registerPlugin } from '@capacitor/core';
 import { getWidgetSnapshot } from './actions';
-
-/** Plugin nativo propio (ios/App/App/WidgetBridgePlugin.swift): deja la foto de datos para los widgets. */
-interface WidgetBridgePlugin {
-  setSnapshot(options: { json: string }): Promise<void>;
-  clear(): Promise<void>;
-}
-const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
-
-/** Sólo en la app de iPhone y sólo si esa versión de la app trae el plugin (las anteriores no lo tienen). */
-function bridgeAvailable(): boolean {
-  return Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('WidgetBridge');
-}
+import { WidgetBridge, bridgeAvailable } from './native';
 
 const DEBOUNCE_MS = 2000;
 const REFRESH_MS = 90_000;
