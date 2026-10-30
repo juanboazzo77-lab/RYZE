@@ -24,12 +24,12 @@ export function Switch({
       onClick={() => onCheckedChange(!checked)}
       className={cn(
         'relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50',
-        checked ? 'bg-primary' : 'bg-secondary',
+        checked ? 'bg-primary' : 'bg-muted-foreground/35',
       )}
     >
       <span
         className={cn(
-          'absolute top-0.5 size-5 rounded-full bg-background shadow transition-transform',
+          'absolute left-0 top-0.5 size-5 rounded-full bg-white shadow transition-transform',
           checked ? 'translate-x-[22px]' : 'translate-x-0.5',
         )}
       />
