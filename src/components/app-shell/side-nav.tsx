@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { NAV_ITEMS } from './nav-items';
 import { useT } from '@/i18n/provider';
@@ -13,8 +14,8 @@ export function SideNav() {
   return (
     <aside className="hidden w-56 shrink-0 flex-col border-r bg-card md:flex">
       <div className="flex h-16 items-center gap-2 px-5 text-lg font-bold tracking-tight">
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-          F
+        <span className="grid size-9 place-items-center rounded-lg border bg-white p-1 shadow-sm">
+          <Image src="/brand/logo.png" alt="" width={28} height={28} />
         </span>
         {t.common.appName}
       </div>

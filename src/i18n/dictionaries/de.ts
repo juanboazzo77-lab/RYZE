@@ -1140,6 +1140,7 @@ export const de: Dictionary = {
     photosSaved: 'Foto gespeichert',
     photosErr: 'Das Foto konnte nicht gespeichert werden.',
     photosUnsupported: 'Dieses Gerät erlaubt hier kein Speichern von Fotos.',
+    photosEmptyCheckin: 'Noch keine Fotos. Die Fotos aus deinem wöchentlichen Check-in werden hier mit Datum gespeichert, damit du deine körperliche Veränderung siehst.',
     photosTimeline: 'Alle Fotos',
     reminderTitle: 'Gewicht eintragen',
     reminderBody: 'Wiege dich nüchtern und trage es in wenigen Sekunden ein.',
@@ -1249,13 +1250,13 @@ export const de: Dictionary = {
     photos: {
       title: 'Fotos vom Körperbau (optional)',
       privacyNote:
-        'Die KI analysiert sie, um dir Feedback entsprechend deinem Ziel zu geben (Erhalt, Muskelaufbau oder Definition). Sie werden nirgendwo gespeichert: Sie werden nur für diesen Check-in an das Modell gesendet und danach verworfen.',
+        'Die KI analysiert sie, um dir Feedback entsprechend deinem Ziel zu geben (Erhalt, Muskelaufbau oder Definition). Unsere Server speichern sie nicht: Sie werden nur für diesen Check-in an das Modell gesendet. Sie werden ausschließlich auf deinem Handy unter Fortschrittsfotos gespeichert, damit du deine Veränderung siehst.',
       add: 'Foto hinzufügen',
       remove: 'Entfernen',
       max: 'Du kannst bis zu 4 Fotos hochladen.',
       error: 'Das Bild konnte nicht verarbeitet werden.',
       analysisTitle: 'Fotoanalyse',
-      notStored: 'Die Fotos wurden nicht gespeichert. Dieser Text ist alles, was bleibt.',
+      notStored: 'Unsere Server speichern die Fotos nicht. Dieser Text ist alles, was bleibt.',
     },
     submit: 'Check-in speichern',
     resubmit: 'Check-in aktualisieren',

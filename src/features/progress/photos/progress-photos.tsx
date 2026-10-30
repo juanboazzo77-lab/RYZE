@@ -1,25 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { toast } from 'sonner';
-import { Camera, Loader2, Lock, X } from 'lucide-react';
+import { ImageOff, Loader2, Lock, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useT } from '@/i18n/provider';
-import { downscaleImage } from '@/lib/image/downscale';
 import { cn } from '@/lib/utils';
-import {
-  POSES,
-  addPhoto,
-  deletePhoto,
-  listPhotos,
-  photoStorageAvailable,
-  type Pose,
-  type ProgressPhoto,
-} from './photo-store';
+import { deletePhoto, listPhotos, photoStorageAvailable, type ProgressPhoto } from './photo-store';
 
 type Mode = 'slider' | 'side';
 
@@ -38,27 +29,22 @@ const fmtShort = (iso: string) =>
     year: '2-digit',
   });
 
-export function ProgressPhotos({ todayISO }: { todayISO: string }) {
+/**
+ * Galería de fotos de progreso: sólo muestra las que se mandaron en la revisión semanal, con su
+ * fecha. No hay forma de subir fotos desde acá.
+ */
+export function ProgressPhotos() {
   const t = useT();
   const p = t.progress;
-  const poseLabel: Record<Pose, string> = {
-    front: p.photosPoseFront,
-    side: p.photosPoseSide,
-    back: p.photosPoseBack,
-  };
 
   // Se decide en el navegador: en el servidor no existe IndexedDB y el HTML no coincidiría.
   const [available, setAvailable] = useState<boolean | null>(null);
   const [photos, setPhotos] = useState<ProgressPhoto[] | null>(null);
-  const [pose, setPose] = useState<Pose>('front');
-  const [newPose, setNewPose] = useState<Pose>('front');
-  const [newDate, setNewDate] = useState(todayISO);
-  const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<Mode>('slider');
   const [beforeId, setBeforeId] = useState<string | null>(null);
   const [afterId, setAfterId] = useState<string | null>(null);
   const [pos, setPos] = useState(50);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -75,33 +61,31 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
     else setPhotos([]);
   }, [reload]);
 
-  const ofPose = useMemo(() => (photos ?? []).filter((x) => x.pose === pose), [photos, pose]);
+  const list = useMemo(() => photos ?? [], [photos]);
 
-  // Por defecto se compara la primera foto con la última de la pose elegida.
-  const before = ofPose.find((x) => x.id === beforeId) ?? ofPose[0] ?? null;
-  const after = ofPose.find((x) => x.id === afterId) ?? ofPose[ofPose.length - 1] ?? null;
-  const canCompare = ofPose.length >= 2 && before && after && before.id !== after.id;
+  // Etiqueta de cada foto: la fecha, con número si ese día hay más de una.
+  const labelOf = useMemo(() => {
+    const perDay = new Map<string, ProgressPhoto[]>();
+    for (const x of list) perDay.set(x.date, [...(perDay.get(x.date) ?? []), x]);
+    return (x: ProgressPhoto) => {
+      const day = perDay.get(x.date) ?? [];
+      return day.length > 1 ? `${fmtShort(x.date)} (${day.indexOf(x) + 1}/${day.length})` : fmtShort(x.date);
+    };
+  }, [list]);
 
-  async function onFile(files: FileList | null) {
-    const file = files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) return;
-    setSaving(true);
-    try {
-      const dataUrl = await downscaleImage(file);
-      const saved = await addPhoto({ date: newDate || todayISO, pose: newPose, dataUrl });
-      toast.success(p.photosSaved);
-      setPose(newPose);
-      setBeforeId(null);
-      setAfterId(saved.id);
-      await reload();
-    } catch {
-      toast.error(p.photosErr);
-    } finally {
-      setSaving(false);
-      if (fileInput.current) fileInput.current.value = '';
-    }
-  }
+  // Por defecto se compara la primera foto con la última.
+  const before = list.find((x) => x.id === beforeId) ?? list[0] ?? null;
+  const after = list.find((x) => x.id === afterId) ?? list[list.length - 1] ?? null;
+  const canCompare = list.length >= 2 && before && after && before.id !== after.id;
+
+  // Agrupadas por día, la más nueva arriba.
+  const days = useMemo(() => {
+    const map = new Map<string, ProgressPhoto[]>();
+    for (const x of list) map.set(x.date, [...(map.get(x.date) ?? []), x]);
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+  }, [list]);
+
+  const viewing = list.find((x) => x.id === viewId) ?? null;
 
   async function remove(id: string) {
     if (!confirm(p.photosDeleteConfirm)) return;
@@ -109,6 +93,7 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
       await deletePhoto(id);
       if (beforeId === id) setBeforeId(null);
       if (afterId === id) setAfterId(null);
+      if (viewId === id) setViewId(null);
       await reload();
     } catch {
       toast.error(p.photosErr);
@@ -126,83 +111,24 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
         {p.photosPrivacy}
       </p>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{p.photosAddTitle}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-0">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="photo-pose">{p.photosPose}</Label>
-              <NativeSelect
-                id="photo-pose"
-                value={newPose}
-                onChange={(e) => setNewPose(e.target.value as Pose)}
-              >
-                {POSES.map((x) => (
-                  <option key={x} value={x}>
-                    {poseLabel[x]}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="photo-date">{p.photosDate}</Label>
-              <Input
-                id="photo-date"
-                type="date"
-                value={newDate}
-                max={todayISO}
-                onChange={(e) => setNewDate(e.target.value)}
-              />
-            </div>
-          </div>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => void onFile(e.target.files)}
-          />
-          <Button className="w-full" disabled={saving} onClick={() => fileInput.current?.click()}>
-            {saving ? <Loader2 className="animate-spin" /> : <Camera />}
-            {p.photosAdd}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <div className="flex rounded-lg border bg-secondary p-0.5 text-sm">
-        {POSES.map((x) => (
-          <button
-            key={x}
-            type="button"
-            onClick={() => {
-              setPose(x);
-              setBeforeId(null);
-              setAfterId(null);
-            }}
-            className={cn(
-              'flex-1 rounded-md px-3 py-1.5 font-medium transition-colors',
-              pose === x
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {poseLabel[x]}
-          </button>
-        ))}
-      </div>
-
       {photos === null ? (
         <div className="flex justify-center py-8">
           <Loader2 className="size-5 animate-spin text-muted-foreground" />
         </div>
-      ) : ofPose.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">{p.photosEmpty}</p>
+      ) : list.length === 0 ? (
+        <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed px-6 py-10 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-secondary text-muted-foreground">
+            <ImageOff className="size-6" />
+          </span>
+          <p className="max-w-xs text-sm text-muted-foreground">{p.photosEmptyCheckin}</p>
+          <Button asChild className="rounded-full px-6">
+            <Link href="/checkin">{t.checkin.title}</Link>
+          </Button>
+        </div>
       ) : (
         <>
           {canCompare && before && after ? (
-            <Card>
+            <Card className="rounded-3xl">
               <CardContent className="space-y-3 pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -212,9 +138,9 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
                       value={before.id}
                       onChange={(e) => setBeforeId(e.target.value)}
                     >
-                      {ofPose.map((x) => (
+                      {list.map((x) => (
                         <option key={x.id} value={x.id}>
-                          {fmtShort(x.date)}
+                          {labelOf(x)}
                         </option>
                       ))}
                     </NativeSelect>
@@ -226,9 +152,9 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
                       value={after.id}
                       onChange={(e) => setAfterId(e.target.value)}
                     >
-                      {ofPose.map((x) => (
+                      {list.map((x) => (
                         <option key={x.id} value={x.id}>
-                          {fmtShort(x.date)}
+                          {labelOf(x)}
                         </option>
                       ))}
                     </NativeSelect>
@@ -312,34 +238,63 @@ export function ProgressPhotos({ todayISO }: { todayISO: string }) {
                 )}
               </CardContent>
             </Card>
-          ) : (
-            <p className="text-center text-sm text-muted-foreground">{p.photosNeedTwo}</p>
-          )}
+          ) : null}
 
-          <div className="space-y-2">
+          <div className="space-y-4">
             <h2 className="text-sm font-semibold">{p.photosTimeline}</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {[...ofPose].reverse().map((x) => (
-                <div key={x.id} className="relative">
-                  <div className="aspect-[3/4] overflow-hidden rounded-md bg-secondary">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={x.dataUrl} alt={fmtDate(x.date)} className="size-full object-cover" />
-                  </div>
-                  <p className="mt-1 text-center text-[11px] text-muted-foreground">{fmtDate(x.date)}</p>
-                  <button
-                    type="button"
-                    onClick={() => void remove(x.id)}
-                    aria-label={p.photosDelete}
-                    className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-black/60 text-white"
-                  >
-                    <X className="size-3.5" />
-                  </button>
+            {days.map(([date, items]) => (
+              <section key={date} className="space-y-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold">
+                  <span className="size-2 rounded-full bg-primary" />
+                  {fmtDate(date)}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {items.map((x) => (
+                    <button
+                      key={x.id}
+                      type="button"
+                      onClick={() => setViewId(x.id)}
+                      className="aspect-[3/4] overflow-hidden rounded-xl bg-secondary"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={x.dataUrl} alt={fmtDate(x.date)} className="size-full object-cover" />
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </section>
+            ))}
           </div>
         </>
       )}
+
+      {viewing ? (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+          <div className="flex items-center justify-between px-4 pb-2 pt-[calc(0.75rem+env(safe-area-inset-top))] text-white">
+            <span className="text-sm font-semibold">{fmtDate(viewing.date)}</span>
+            <button
+              type="button"
+              onClick={() => setViewId(null)}
+              aria-label={t.common.cancel}
+              className="grid size-9 place-items-center rounded-full bg-white/15"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 p-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={viewing.dataUrl} alt={fmtDate(viewing.date)} className="size-full object-contain" />
+          </div>
+          <div className="px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => void remove(viewing.id)}
+              className="text-sm font-medium text-red-400"
+            >
+              {p.photosDelete}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

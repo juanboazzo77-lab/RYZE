@@ -1138,6 +1138,7 @@ export const es = {
     photosSaved: 'Foto guardada',
     photosErr: 'No se pudo guardar la foto.',
     photosUnsupported: 'Este dispositivo no permite guardar fotos acá.',
+    photosEmptyCheckin: 'Todavía no hay fotos. Las que mandes en tu revisión semanal se guardan acá, con su fecha, para que veas tu cambio físico.',
     photosTimeline: 'Todas las fotos',
     reminderTitle: 'Registrá tu peso',
     reminderBody: 'Pesate en ayunas y anotalo en unos segundos.',
@@ -1247,13 +1248,13 @@ export const es = {
     photos: {
       title: 'Fotos de físico (opcional)',
       privacyNote:
-        'La IA las analiza para darte feedback según tu objetivo (mantener, volumen o definición). No se guardan en ningún lado: sólo se envían al modelo para esta revisión y se descartan.',
+        'La IA las analiza para darte feedback según tu objetivo (mantener, volumen o definición). Nuestros servidores no las guardan: se envían al modelo sólo para esta revisión. Se guardan únicamente en tu teléfono, en Fotos de progreso, para que veas tu cambio.',
       add: 'Agregar foto',
       remove: 'Quitar',
       max: 'Podés subir hasta 4 fotos.',
       error: 'No se pudo procesar la imagen.',
       analysisTitle: 'Análisis de fotos',
-      notStored: 'Las fotos no se guardaron. Este texto es lo único que queda.',
+      notStored: 'Nuestros servidores no guardan las fotos. Este texto es lo único que queda.',
     },
     submit: 'Guardar check-in',
     resubmit: 'Actualizar check-in',

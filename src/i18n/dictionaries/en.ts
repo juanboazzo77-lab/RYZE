@@ -1140,6 +1140,7 @@ export const en: Dictionary = {
     photosSaved: 'Photo saved',
     photosErr: 'The photo could not be saved.',
     photosUnsupported: 'This device doesn’t allow saving photos here.',
+    photosEmptyCheckin: 'No photos yet. The ones you send in your weekly review are saved here, with their date, so you can see your physical change.',
     photosTimeline: 'All photos',
     reminderTitle: 'Log your weight',
     reminderBody: 'Weigh yourself fasted and log it in a few seconds.',
@@ -1249,13 +1250,13 @@ export const en: Dictionary = {
     photos: {
       title: 'Physique photos (optional)',
       privacyNote:
-        'The AI analyzes them to give you feedback for your goal (maintain, bulk or cut). They are not stored anywhere: they are only sent to the model for this review and then discarded.',
+        'The AI analyzes them to give you feedback for your goal (maintain, bulk or cut). Our servers do not store them: they are only sent to the model for this review. They are saved only on your phone, in Progress photos, so you can see your change.',
       add: 'Add photo',
       remove: 'Remove',
       max: 'You can upload up to 4 photos.',
       error: "Couldn't process the image.",
       analysisTitle: 'Photo analysis',
-      notStored: 'The photos were not saved. This text is all that remains.',
+      notStored: 'Our servers do not store the photos. This text is all that remains.',
     },
     submit: 'Save check-in',
     resubmit: 'Update check-in',

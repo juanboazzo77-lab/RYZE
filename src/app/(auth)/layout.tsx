@@ -14,8 +14,8 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
             href="/"
             className="inline-flex items-center gap-2 text-2xl font-bold tracking-tight"
           >
-            <span className="grid h-9 w-9 place-items-center rounded-lg border bg-white p-1 shadow-sm">
-              <Image src="/brand/logo.png" alt="" width={28} height={28} priority />
+            <span className="grid size-12 place-items-center rounded-xl border bg-white p-1.5 shadow-sm">
+              <Image src="/brand/logo.png" alt="" width={36} height={36} priority />
             </span>
             {t.common.appName}
           </Link>

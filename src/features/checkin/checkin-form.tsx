@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PhotoPicker } from '@/components/form/photo-picker';
+import { addPhoto, photoStorageAvailable } from '@/features/progress/photos/photo-store';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 import type { WeeklyCheckin } from '@prisma/client';
@@ -67,6 +68,22 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [pending, start] = useTransition();
 
+  /** Día de hoy en el teléfono (YYYY-MM-DD). */
+  function localDayISO(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  async function saveLocally(list: string[]) {
+    if (list.length === 0 || !photoStorageAvailable()) return;
+    try {
+      const date = localDayISO();
+      for (const dataUrl of list) await addPhoto({ date, dataUrl });
+    } catch {
+      // sin almacenamiento local la revisión igual quedó guardada
+    }
+  }
+
   function submit() {
     start(async () => {
       try {
@@ -84,7 +101,9 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
       });
       if (res.ok) {
         toast.success(tc.submitted);
-        setPhotos([]); // las fotos no se guardan: se descartan del cliente también
+        // El servidor las descarta; en el teléfono quedan, con su fecha, en Fotos de progreso.
+        await saveLocally(photos);
+        setPhotos([]);
       } else toast.error(tc.genericError);
       } catch {
         // Corte de red o fotos demasiado pesadas: no romper la pantalla.

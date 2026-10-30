@@ -1140,6 +1140,7 @@ export const fr: Dictionary = {
     photosSaved: 'Photo enregistrée',
     photosErr: 'Impossible d’enregistrer la photo.',
     photosUnsupported: 'Cet appareil ne permet pas d’enregistrer des photos ici.',
+    photosEmptyCheckin: 'Pas encore de photos. Celles que vous envoyez dans votre bilan hebdomadaire sont enregistrées ici, avec leur date, pour voir votre évolution physique.',
     photosTimeline: 'Toutes les photos',
     reminderTitle: 'Enregistrez votre poids',
     reminderBody: 'Pesez-vous à jeun et notez-le en quelques secondes.',
@@ -1249,13 +1250,13 @@ export const fr: Dictionary = {
     photos: {
       title: 'Photos du physique (optionnel)',
       privacyNote:
-        'L’IA les analyse pour vous donner un retour selon votre objectif (maintien, volume ou définition). Elles ne sont enregistrées nulle part : elles sont seulement envoyées au modèle pour ce bilan puis supprimées.',
+        'L’IA les analyse pour vous donner un retour selon votre objectif (maintien, volume ou définition). Nos serveurs ne les conservent pas : elles sont envoyées au modèle uniquement pour ce bilan. Elles sont enregistrées seulement sur votre téléphone, dans Photos de progression, pour voir votre évolution.',
       add: 'Ajouter une photo',
       remove: 'Retirer',
       max: 'Vous pouvez envoyer jusqu’à 4 photos.',
       error: 'Impossible de traiter l’image.',
       analysisTitle: 'Analyse des photos',
-      notStored: 'Les photos n’ont pas été enregistrées. Ce texte est tout ce qui reste.',
+      notStored: 'Nos serveurs ne conservent pas les photos. Ce texte est tout ce qui reste.',
     },
     submit: 'Enregistrer le bilan',
     resubmit: 'Mettre à jour le bilan',

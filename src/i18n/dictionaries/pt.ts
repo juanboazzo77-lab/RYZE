@@ -1140,6 +1140,7 @@ export const pt: Dictionary = {
     photosSaved: 'Foto salva',
     photosErr: 'Não foi possível salvar a foto.',
     photosUnsupported: 'Este dispositivo não permite salvar fotos aqui.',
+    photosEmptyCheckin: 'Ainda não há fotos. As que você enviar na sua revisão semanal ficam salvas aqui, com a data, para você ver sua mudança física.',
     photosTimeline: 'Todas as fotos',
     reminderTitle: 'Registre seu peso',
     reminderBody: 'Pese-se em jejum e registre em poucos segundos.',
@@ -1249,13 +1250,13 @@ export const pt: Dictionary = {
     photos: {
       title: 'Fotos do físico (opcional)',
       privacyNote:
-        'A IA as analisa para te dar um retorno de acordo com seu objetivo (manter, volume ou definição). Não são salvas em lugar nenhum: só são enviadas ao modelo para esta revisão e depois descartadas.',
+        'A IA as analisa para te dar um retorno de acordo com seu objetivo (manter, volume ou definição). Nossos servidores não as guardam: elas são enviadas ao modelo só para esta revisão. Ficam salvas apenas no seu celular, em Fotos de progresso, para você ver sua mudança.',
       add: 'Adicionar foto',
       remove: 'Remover',
       max: 'Você pode enviar até 4 fotos.',
       error: 'Não foi possível processar a imagem.',
       analysisTitle: 'Análise de fotos',
-      notStored: 'As fotos não foram salvas. Este texto é tudo que fica.',
+      notStored: 'Nossos servidores não guardam as fotos. Este texto é tudo que fica.',
     },
     submit: 'Salvar check-in',
     resubmit: 'Atualizar check-in',

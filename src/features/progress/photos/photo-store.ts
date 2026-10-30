@@ -1,6 +1,7 @@
 /**
  * Fotos de progreso: se guardan SÓLO en este dispositivo (IndexedDB del navegador/app). No se
- * suben a ningún servidor ni pasan por la IA; es lo que se le promete a la persona. Por eso
+ * suben a ningún servidor; es lo que se le promete a la persona. Entran sólo desde la revisión
+ * semanal (las mismas fotos que se mandan a la IA para el análisis, que el servidor descarta). Por eso
  * se pierden si desinstala la app o cambia de teléfono, y la pantalla se lo avisa.
  */
 
@@ -11,7 +12,8 @@ export interface ProgressPhoto {
   id: string;
   /** Día de la foto (YYYY-MM-DD), elegido por la persona. */
   date: string;
-  pose: Pose;
+  /** Las fotos viejas traen pose; las de la revisión semanal no. */
+  pose?: Pose;
   /** JPEG ya reducido, como data URL. */
   dataUrl: string;
   createdAt: number;
@@ -59,7 +61,7 @@ export async function listPhotos(): Promise<ProgressPhoto[]> {
   return all.sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
 }
 
-export async function addPhoto(input: Pick<ProgressPhoto, 'date' | 'pose' | 'dataUrl'>): Promise<ProgressPhoto> {
+export async function addPhoto(input: Pick<ProgressPhoto, 'date' | 'dataUrl'> & { pose?: Pose }): Promise<ProgressPhoto> {
   const photo: ProgressPhoto = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
   await run('readwrite', (s) => s.put(photo));
   // Pide que el sistema no borre el almacenamiento si hay poco espacio (mejor esfuerzo).
