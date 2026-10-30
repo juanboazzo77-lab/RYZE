@@ -91,6 +91,30 @@ export function SessionClient({ session }: { session: WorkoutSession }) {
     hydrate(session);
   }, [session, hydrate]);
 
+  // El descanso sobrevive a que el teléfono apague la pantalla y el sistema recargue la app:
+  // el fin se guarda en el dispositivo y, si todavía no pasó, el cronómetro vuelve a mostrarse.
+  const restKey = `forza-rest-${session.id}`;
+  const restReady = useRef(false);
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem(restKey));
+      if (saved > Date.now()) setRestEndsAt(saved);
+      else localStorage.removeItem(restKey);
+    } catch {
+      /* sin almacenamiento: el descanso sólo vive mientras la pantalla esté abierta */
+    }
+    restReady.current = true;
+  }, [restKey]);
+  useEffect(() => {
+    if (!restReady.current) return;
+    try {
+      if (restEndsAt) localStorage.setItem(restKey, String(restEndsAt));
+      else localStorage.removeItem(restKey);
+    } catch {
+      /* ignorar */
+    }
+  }, [restEndsAt, restKey]);
+
   // Modo foco: sin scroll del fondo mientras dura el entreno.
   useEffect(() => {
     const prev = document.body.style.overflow;
