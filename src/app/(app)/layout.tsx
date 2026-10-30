@@ -7,6 +7,7 @@ import { RegisterSW } from '@/components/pwa/register-sw';
 import { NavTracker } from '@/components/nav-tracker';
 import { NotificationPrompt } from '@/features/notifications/notification-prompt';
 import { WeighInReminder } from '@/features/notifications/weigh-in-reminder';
+import { DeviceReminders } from '@/features/notifications/device-reminders';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { RevenueCatInit } from '@/features/billing/revenuecat-init';
 import { WidgetSync } from '@/features/widgets/widget-sync';
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NavTracker />
       <NotificationPrompt />
       <WeighInReminder />
+      <DeviceReminders />
       <RegisterSW />
       <OfflineIndicator />
       <RevenueCatInit userId={ctx.userId} />

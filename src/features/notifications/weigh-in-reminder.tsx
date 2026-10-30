@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useT } from '@/i18n/provider';
 import { getWeighInStatus } from '@/features/progress/actions';
+import { REMINDERS_CHANGED_EVENT } from './reminder-events';
 
 /** Evento que se dispara al registrar el peso, para sacar el aviso de hoy. */
 export const WEIGHT_LOGGED_EVENT = 'forza:weight-logged';
@@ -89,9 +90,11 @@ export function WeighInReminder() {
       if (document.visibilityState === 'visible') void sync();
     };
     window.addEventListener(WEIGHT_LOGGED_EVENT, onLogged);
+    window.addEventListener(REMINDERS_CHANGED_EVENT, onLogged);
     document.addEventListener('visibilitychange', onVisible);
     return () => {
       window.removeEventListener(WEIGHT_LOGGED_EVENT, onLogged);
+      window.removeEventListener(REMINDERS_CHANGED_EVENT, onLogged);
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [title, body, bodyLate]);

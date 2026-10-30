@@ -9,6 +9,7 @@ import { NativeSelect } from '@/components/ui/native-select';
 import { useT } from '@/i18n/provider';
 import type { NotificationPrefView } from './queries';
 import { setNotificationPref } from './actions';
+import { notifyRemindersChanged } from './reminder-events';
 
 export function NotificationToggles({ initial }: { initial: NotificationPrefView[] }) {
   const t = useT();
@@ -19,8 +20,10 @@ export function NotificationToggles({ initial }: { initial: NotificationPrefView
     setPrefs((p) => p.map((x) => (x.kind === kind ? { ...x, ...next } : x)));
     start(async () => {
       const res = await setNotificationPref({ kind, ...next });
-      if (res.ok) toast.success(t.common.saved);
-      else toast.error(t.common.error);
+      if (res.ok) {
+        toast.success(t.common.saved);
+        notifyRemindersChanged();
+      } else toast.error(t.common.error);
     });
   }
 
