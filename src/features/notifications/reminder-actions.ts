@@ -7,6 +7,7 @@ import { forUser } from '@/server/user-db';
 import { can, limitsFor } from '@/server/entitlements';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { getCheckinStatus } from '@/features/checkin/queries';
+import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
 import { getNotificationPrefs } from './queries';
 
 /** Lo que el teléfono necesita saber para programar los avisos locales de los próximos días. */
@@ -14,6 +15,10 @@ export interface ReminderPlan {
   enabled: Partial<Record<NotificationKind, boolean>>;
   /** Días de entrenamiento del plan activo, por día de la semana (1 lunes … 7 domingo). */
   trainingDays: Record<number, { name: string; exercises: number }>;
+  /** Lo mismo con los días de siempre (sin el corrimiento de esta semana): rige desde la semana que viene. */
+  baseTrainingDays: Record<number, { name: string; exercises: number }>;
+  /** Último día (yyyy-mm-dd) de la semana en curso: hasta ahí rige `trainingDays`. */
+  weekEndISO: string;
   trainedToday: boolean;
   /** Viene entrenando seguido (2+ sesiones en las últimas dos semanas): tiene racha que cuidar. */
   hasStreak: boolean;
@@ -37,8 +42,13 @@ export async function getReminderPlan(): Promise<ReminderPlan> {
   const prefs = await getNotificationPrefs(profile);
   const plan = await db.workoutPlan.findFirst({
     where: { isActive: true },
-    select: { days: { select: { weekday: true, name: true, _count: { select: { exercises: true } } } } },
+    select: {
+      weekShift: true,
+      weekShiftStart: true,
+      days: { select: { weekday: true, name: true, _count: { select: { exercises: true } } } },
+    },
   });
+  const shift = plan ? activeWeekShift(plan, weekStartISO(todayISO, profile.weekStart)) : 0;
   const activeOrDone = await db.workout.findFirst({
     where: { OR: [{ status: 'ACTIVE' }, { status: 'COMPLETED', finishedAt: { gte: today } }] },
     select: { id: true },
@@ -54,9 +64,12 @@ export async function getReminderPlan(): Promise<ReminderPlan> {
   const target = await db.nutritionTarget.findFirst({ where: { active: true }, select: { proteinG: true } });
 
   const trainingDays: ReminderPlan['trainingDays'] = {};
+  const baseTrainingDays: ReminderPlan['trainingDays'] = {};
   for (const d of plan?.days ?? []) {
-    if (d.weekday == null) continue;
-    trainingDays[d.weekday] = { name: d.name, exercises: d._count.exercises };
+    const info = { name: d.name, exercises: d._count.exercises };
+    const weekday = effectiveWeekday(d.weekday, shift);
+    if (weekday != null) trainingDays[weekday] = info;
+    if (d.weekday != null) baseTrainingDays[d.weekday] = info;
   }
 
   const got = meals._sum.proteinG ?? 0;
@@ -80,6 +93,8 @@ export async function getReminderPlan(): Promise<ReminderPlan> {
   return {
     enabled: Object.fromEntries(prefs.map((p) => [p.kind, p.enabled])),
     trainingDays,
+    baseTrainingDays,
+    weekEndISO: addDaysISO(weekStartISO(todayISO, profile.weekStart), 6),
     trainedToday: Boolean(activeOrDone),
     hasStreak: recentDone >= 2,
     mealsToday: meals._count,

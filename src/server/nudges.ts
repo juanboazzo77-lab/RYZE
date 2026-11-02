@@ -2,6 +2,7 @@ import 'server-only';
 import { DateTime } from 'luxon';
 import type { NotificationKind } from '@prisma/client';
 import { prisma } from './db';
+import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
 
 /**
  * "Coach proactivo": condiciones que disparan un aviso, evaluadas por el cron en
@@ -49,7 +50,11 @@ export async function computeNudges(
     const [plan, doneToday] = await Promise.all([
       prisma.workoutPlan.findFirst({
         where: { userId, isActive: true },
-        select: { days: { where: { weekday: now.weekday }, select: { name: true, _count: { select: { exercises: true } } } } },
+        select: {
+          weekShift: true,
+          weekShiftStart: true,
+          days: { select: { weekday: true, name: true, _count: { select: { exercises: true } } } },
+        },
       }),
       prisma.workout.findFirst({
         where: {
@@ -59,7 +64,8 @@ export async function computeNudges(
         select: { id: true },
       }),
     ]);
-    const day = plan?.days[0];
+    const shift = plan ? activeWeekShift(plan, weekStartDate.toISOString().slice(0, 10)) : 0;
+    const day = plan?.days.find((d) => effectiveWeekday(d.weekday, shift) === now.weekday);
     if (day && !doneToday) {
       out.push({
         kind: 'WORKOUT_TODAY',
@@ -134,14 +140,16 @@ export async function computeNudges(
       }),
       prisma.workoutPlan.findFirst({
         where: { userId, isActive: true },
-        select: { days: { where: { weekday: now.weekday }, select: { id: true } } },
+        select: { weekShift: true, weekShiftStart: true, days: { select: { weekday: true } } },
       }),
       prisma.workout.findFirst({
         where: { userId, status: 'COMPLETED', finishedAt: { gte: todayStart } },
         select: { id: true },
       }),
     ]);
-    if (completed.length >= 2 && planDayToday?.days.length && !doneToday) {
+    const todayShift = planDayToday ? activeWeekShift(planDayToday, weekStartDate.toISOString().slice(0, 10)) : 0;
+    const isPlanDayToday = planDayToday?.days.some((d) => effectiveWeekday(d.weekday, todayShift) === now.weekday);
+    if (completed.length >= 2 && isPlanDayToday && !doneToday) {
       out.push({
         kind: 'STREAK',
         title: 'No pierdas el ritmo',

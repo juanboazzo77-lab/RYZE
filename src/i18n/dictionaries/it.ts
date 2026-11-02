@@ -722,7 +722,7 @@ export const it: Dictionary = {
     noPlans: 'Non hai ancora creato nessuna scheda.',
     emptyDays: 'Questa scheda non ha ancora giorni.',
     shift: {
-      hint: 'Hai saltato un giorno? Sposta tutte le schede della settimana.',
+      hint: 'Hai saltato un giorno? Sposta tutte le schede di questa settimana. La settimana prossima tornano ai giorni di sempre.',
       back: 'Un giorno prima',
       forward: 'Un giorno dopo',
       shifted: 'Fatto, le tue schede sono slittate di un giorno.',

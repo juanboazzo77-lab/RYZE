@@ -720,7 +720,7 @@ export const es = {
     noPlans: 'Todavía no creaste ninguna rutina.',
     emptyDays: 'Este plan todavía no tiene días.',
     shift: {
-      hint: 'Si un día no pudiste entrenar, corré todas las rutinas de la semana.',
+      hint: 'Si un día no pudiste entrenar, corré todas las rutinas de esta semana. La semana que viene vuelven a sus días de siempre.',
       back: 'Un día antes',
       forward: 'Un día después',
       shifted: 'Listo, tus rutinas se corrieron un día.',

@@ -4,6 +4,7 @@ import type { Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { coachProfileCompletion, parseSection } from '@/features/coach-profile/schema';
+import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
 import {
   nutritionAdherence,
   weeklyWeightChangeKg,
@@ -114,6 +115,8 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
       db.workoutPlan.findFirst({
         where: { isActive: true },
         select: {
+          weekShift: true,
+          weekShiftStart: true,
           days: {
             select: { id: true, name: true, weekday: true, _count: { select: { exercises: true } } },
           },
@@ -186,7 +189,8 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
       estMinutes,
     };
   } else if (activePlan) {
-    const day = activePlan.days.find((d) => d.weekday === todayWeekday);
+    const shift = activeWeekShift(activePlan, weekStartISO(todayISO, profile.weekStart));
+    const day = activePlan.days.find((d) => effectiveWeekday(d.weekday, shift) === todayWeekday);
     if (day) {
       training = {
         kind: 'planned',

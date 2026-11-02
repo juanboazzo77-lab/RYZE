@@ -34,7 +34,8 @@ import {
   type UpdatePlanExerciseInput,
   type UpdatePlanInput,
 } from './schema';
-import { shiftWeekday } from './weekday';
+import { activeWeekShift } from './weekday';
+import { isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 
 const FREE_WORKOUT_NAME: Record<Locale, string> = {
   ES: 'Entrenamiento libre',
@@ -180,21 +181,31 @@ export async function updatePlanDay(raw: UpdateDayInput): Promise<Result> {
 /**
  * Corre toda la semana de la rutina activa. Ej.: hoy es lunes y no pudo entrenar → +1 y lo del
  * lunes pasa al martes, lo del miércoles al jueves, etc. (el domingo da la vuelta al lunes).
+ * Sólo vale para la semana en curso: los días de la rutina no se tocan y la semana que viene
+ * vuelven a ser los de siempre.
  */
 export async function shiftPlanWeekdays(raw: ShiftWeekdaysInput): Promise<Result<{ moved: number }>> {
   const parsed = shiftWeekdaysSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { by } = parsed.data;
-  const { userId } = await requireUser();
+  const { userId, profile } = await requireUser();
   const db = forUser(userId);
   const plan = await db.workoutPlan.findFirst({
     where: { isActive: true },
-    select: { id: true, days: { where: { weekday: { not: null } }, select: { id: true, weekday: true } } },
+    select: {
+      id: true,
+      weekShift: true,
+      weekShiftStart: true,
+      days: { where: { weekday: { not: null } }, select: { id: true } },
+    },
   });
   if (!plan || plan.days.length === 0) return { error: 'NO_DAYS' };
-  for (const d of plan.days) {
-    await db.planDay.updateMany({ where: { id: d.id }, data: { weekday: shiftWeekday(d.weekday ?? 1, by) } });
-  }
+  const weekStart = weekStartISO(localTodayISO(profile.timezone), profile.weekStart);
+  const shift = (((activeWeekShift(plan, weekStart) + by) % 7) + 7) % 7;
+  await db.workoutPlan.updateMany({
+    where: { id: plan.id },
+    data: { weekShift: shift, weekShiftStart: isoToUtcDate(weekStart) },
+  });
   revalidatePath('/training');
   revalidatePath('/dashboard');
   revalidatePath(`/training/plans/${plan.id}`);

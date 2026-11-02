@@ -87,7 +87,8 @@ export function DeviceReminders() {
         const at = (h: number, m: number) =>
           new Date(day.getFullYear(), day.getMonth(), day.getDate(), h, m, 0, 0);
         const weekday = day.getDay() === 0 ? 7 : day.getDay();
-        const training = plan.trainingDays[weekday];
+        // El corrimiento de "hoy no pude entrenar" sólo rige hasta fin de esta semana.
+        const training = (localISO(day) <= plan.weekEndISO ? plan.trainingDays : plan.baseTrainingDays)[weekday];
         const isToday = d === 0;
 
         // Mañana: hoy toca entrenar.

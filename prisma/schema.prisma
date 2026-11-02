@@ -502,6 +502,10 @@ model WorkoutPlan {
   isActive       Boolean    @default(false) @map("is_active")
   source         PlanSource @default(MANUAL)
   aiGenerationId String?    @db.Uuid @map("ai_generation_id")
+  /// Corrimiento de los días de la semana ("hoy no pude entrenar"): sólo vale para la semana que
+  /// empieza en `weekShiftStart`; después los días vuelven a los de siempre (`PlanDay.weekday`).
+  weekShift      Int        @default(0) @map("week_shift")
+  weekShiftStart DateTime?  @db.Date @map("week_shift_start")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 

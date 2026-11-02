@@ -722,7 +722,7 @@ export const fr: Dictionary = {
     noPlans: 'Vous n’avez pas encore créé de programme.',
     emptyDays: 'Ce programme n’a pas encore de jours.',
     shift: {
-      hint: 'Un jour manqué ? Décalez toutes les séances de la semaine.',
+      hint: 'Un jour manqué ? Décalez toutes les séances de cette semaine. La semaine prochaine, elles reprennent leurs jours habituels.',
       back: 'Un jour plus tôt',
       forward: 'Un jour plus tard',
       shifted: 'C’est fait, vos séances sont décalées d’un jour.',

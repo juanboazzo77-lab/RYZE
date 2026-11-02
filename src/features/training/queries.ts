@@ -1,6 +1,8 @@
 import 'server-only';
 import type { ExerciseType, MuscleGroup, Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
+import { localTodayISO, weekStartISO } from '@/lib/date';
+import { activeWeekShift, effectiveWeekday } from './weekday';
 
 export interface OverviewDay {
   id: string;
@@ -34,6 +36,8 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
       select: {
         id: true,
         name: true,
+        weekShift: true,
+        weekShiftStart: true,
         days: {
           orderBy: { orderIndex: 'asc' },
           select: { id: true, name: true, weekday: true, _count: { select: { exercises: true } } },
@@ -46,6 +50,10 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
     }),
   ]);
 
+  const shift = activePlan
+    ? activeWeekShift(activePlan, weekStartISO(localTodayISO(profile.timezone), profile.weekStart))
+    : 0;
+
   return {
     activeWorkout: activeWorkout ?? null,
     activePlan: activePlan
@@ -55,7 +63,7 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
           days: activePlan.days.map((d) => ({
             id: d.id,
             name: d.name,
-            weekday: d.weekday,
+            weekday: effectiveWeekday(d.weekday, shift),
             exerciseCount: d._count.exercises,
           })),
         }
