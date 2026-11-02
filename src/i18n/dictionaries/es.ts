@@ -412,6 +412,8 @@ export const es = {
     },
     savingsBadge: 'Ahorrás {pct}%',
     billedEvery: 'Se cobran {price} cada {months} meses',
+    billedPer: 'cada {months} meses',
+    equivalentMonthly: 'Equivale a {price} por mes',
     trialDaysLeft: 'Te quedan {n} días de prueba con todo desbloqueado.',
     trialExpired: 'Tu prueba gratis terminó. Elegí un plan para seguir usando la IA.',
     basicPrice: '${price}/mes',

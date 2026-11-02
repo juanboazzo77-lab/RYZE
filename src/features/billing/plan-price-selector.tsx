@@ -19,7 +19,8 @@ export function PlanPriceSelector({
   durationLabels,
   perMonthLabel,
   savingsBadge,
-  billedEvery,
+  billedPer,
+  equivalentMonthly,
   currentPlanLabel,
   chooseLabel,
   comingSoonMessage,
@@ -34,7 +35,10 @@ export function PlanPriceSelector({
   durationLabels: Record<PlanDuration, string>;
   perMonthLabel: string;
   savingsBadge: string;
-  billedEvery: string;
+  /** Unidad del monto cobrado cuando no es mensual: "cada {months} meses". */
+  billedPer: string;
+  /** Lo calculado por mes: "Equivale a {price} por mes". */
+  equivalentMonthly: string;
   currentPlanLabel: string;
   chooseLabel: string;
   comingSoonMessage: string;
@@ -82,14 +86,18 @@ export function PlanPriceSelector({
         })}
       </div>
 
+      {/* El monto que se cobra es lo más grande y claro; el cálculo por mes va debajo, más chico. */}
       <div className="text-center">
         <p className="text-3xl font-bold tabular-nums">
-          ${monthlyEquivalent.toFixed(2)}
-          <span className="text-sm font-normal text-muted-foreground">{perMonthLabel}</span>
+          ${price.toFixed(2)}
+          <span className="text-sm font-normal text-muted-foreground">
+            {' '}
+            {months > 1 ? interpolate(billedPer, { months }) : perMonthLabel}
+          </span>
         </p>
         {months > 1 ? (
           <p className="text-xs text-muted-foreground">
-            {interpolate(billedEvery, { price: `$${price.toFixed(2)}`, months })}
+            {interpolate(equivalentMonthly, { price: `$${monthlyEquivalent.toFixed(2)}` })}
           </p>
         ) : null}
         {PLAN_DURATION_DISCOUNT_PCT[duration] > 0 ? (

@@ -414,6 +414,8 @@ export const de: Dictionary = {
     },
     savingsBadge: 'Spare {pct}%',
     billedEvery: '{price} alle {months} Monate abgerechnet',
+    billedPer: 'alle {months} Monate',
+    equivalentMonthly: 'Entspricht {price} pro Monat',
     trialDaysLeft: 'Noch {n} Tage deiner kostenlosen Testphase mit allem freigeschaltet.',
     trialExpired: 'Deine kostenlose Testphase ist abgelaufen. Wähle einen Plan, um die KI weiter zu nutzen.',
     basicPrice: '{price} $/Monat',

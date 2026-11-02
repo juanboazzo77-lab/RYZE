@@ -182,7 +182,8 @@ export function PlansView({
                     }}
                     perMonthLabel={p.perMonth}
                     savingsBadge={p.savingsBadge}
-                    billedEvery={p.billedEvery}
+                    billedPer={p.billedPer}
+                    equivalentMonthly={p.equivalentMonthly}
                     currentPlanLabel={p.currentPlan}
                     chooseLabel={p.choose}
                     comingSoonMessage={p.comingSoon}
