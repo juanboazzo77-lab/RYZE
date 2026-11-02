@@ -17,3 +17,6 @@ export default async function OnboardingPage() {
     />
   );
 }
+
+/** Las acciones de esta pantalla llaman a la IA con fotos: necesitan más que los 10 s por defecto. */
+export const maxDuration = 60;

@@ -7,6 +7,7 @@ import { prisma } from '@/server/db';
 import { computeTargets, ageFromBirthdate } from '@/lib/nutrition/targets';
 import { redeemCode } from '@/server/friends';
 import { onboardingSchema, type OnboardingPayload } from './schema';
+import { unpackPhotos } from '@/lib/image/photo-payload';
 
 export interface OnboardingResult {
   error?: string;
@@ -153,7 +154,7 @@ export async function submitOnboarding(raw: OnboardingPayload): Promise<Onboardi
         locale: data.locale,
         timezone: profile.timezone,
         profileFacts,
-        photos: data.photos ?? [],
+        photos: unpackPhotos(data.photos),
       });
 
       if (advice) {

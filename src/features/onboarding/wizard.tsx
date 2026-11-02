@@ -10,6 +10,7 @@ import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { ageFromBirthdate } from '@/lib/nutrition/targets';
 import { submitOnboarding } from './actions';
+import { packPhotos } from '@/lib/image/photo-payload';
 import { onboardingSchema } from './schema';
 import type { OnboardingData } from './types';
 import { GOALS_WITH_TARGET_WEIGHT } from './types';
@@ -237,7 +238,7 @@ export function OnboardingWizard({
       referralCode: referralCode.trim() || undefined,
       injuries: data.injuries ?? '',
       trainingExperienceNote: data.trainingExperienceNote ?? '',
-      photos: data.primaryGoal === 'UNDECIDED' && data.photos.length > 0 ? data.photos : undefined,
+      photos: data.primaryGoal === 'UNDECIDED' && data.photos.length > 0 ? packPhotos(data.photos) : undefined,
       sport,
       competition,
     });

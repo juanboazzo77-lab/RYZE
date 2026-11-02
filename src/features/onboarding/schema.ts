@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { photoPayloadSchema } from '@/lib/image/photo-payload';
 import { MUSCLE_PRIORITIES, ROUTINE_STYLE, SPORT_PRIORITY } from '@/features/coach-profile/schema';
 
 export const onboardingSchema = z.object({
@@ -43,10 +44,7 @@ export const onboardingSchema = z.object({
    * UNDECIDED). Data URLs ya reducidas en el cliente. NO se guardan: se mandan
    * al modelo para la recomendación y se descartan.
    */
-  photos: z
-    .array(z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/).max(4_000_000))
-    .max(4)
-    .optional(),
+  photos: photoPayloadSchema.optional(),
   /** Deporte que practica además del gimnasio (opcional). */
   sport: z
     .object({

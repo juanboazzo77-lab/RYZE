@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { photoPayloadSchema } from '@/lib/image/photo-payload';
 
 /**
  * Informe de análisis de físico por foto (IA). Fotos efímeras: nunca se guardan,
@@ -67,5 +68,6 @@ export function hasUsefulContent(a: PhysiqueAnalysis): boolean {
 }
 
 export const analyzePhysiqueSchema = z.object({
-  photos: z.array(z.string().regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/)).min(1).max(4),
+  /** Fotos en un objeto (no en una lista): ver `photoPayloadSchema`. Al menos una. */
+  photos: photoPayloadSchema.refine((p) => Object.values(p).some(Boolean)),
 });

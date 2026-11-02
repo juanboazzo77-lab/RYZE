@@ -9,6 +9,7 @@ import { can, limitsFor } from '@/server/entitlements';
 import { DateTime } from 'luxon';
 import { aiConfigured } from '@/server/ai/config';
 import { analyzePhysiqueSchema } from '@/features/coach-profile/physique-schema';
+import { unpackPhotos, type PhotoPayload } from '@/lib/image/photo-payload';
 import { PHYSIQUE_DAILY_LIMIT, type PhysiqueEntry } from './queries';
 import { previousSummary } from './summary';
 
@@ -23,7 +24,7 @@ const analyzeSchema = analyzePhysiqueSchema.extend({
 });
 
 export async function analyzePhysiqueReport(raw: {
-  photos: string[];
+  photos: PhotoPayload;
   note?: string;
 }): Promise<Result<PhysiqueEntry>> {
   const parsed = analyzeSchema.safeParse(raw);
@@ -51,7 +52,7 @@ export async function analyzePhysiqueReport(raw: {
     analysis = await analyzePhysique({
       profile,
       entitlement,
-      photos: parsed.data.photos,
+      photos: unpackPhotos(parsed.data.photos),
       note: parsed.data.note,
       previous: last
         ? previousSummary(physiqueAnalysisSchema.parse(last.report ?? {}), last.createdAt)
@@ -78,7 +79,7 @@ export async function analyzePhysiqueReport(raw: {
     data: {
       userId,
       report: analysis as object,
-      photoCount: parsed.data.photos.length,
+      photoCount: unpackPhotos(parsed.data.photos).length,
       note: parsed.data.note?.trim() || null,
     },
   });

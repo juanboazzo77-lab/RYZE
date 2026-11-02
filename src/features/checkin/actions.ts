@@ -18,6 +18,7 @@ import {
 } from '@/server/ai/gateway';
 import { physiqueAnalysisSchema } from '@/features/coach-profile/physique-schema';
 import { previousSummary } from '@/features/physique/summary';
+import { photoPayloadSchema, unpackPhotos } from '@/lib/image/photo-payload';
 import { checkinBlockedByCadence, computeTrainingWeek, computeWeekStats } from './queries';
 import { type CheckinProposal, type TrainingProposal, type TrainingReview } from './schema';
 
@@ -27,16 +28,6 @@ export interface Result {
 }
 
 const scale = z.number().int().min(1).max(5).nullable();
-
-/**
- * Foto de físico: data URL de imagen, ya reducida en el cliente. Tope ~4 MB por
- * las dudas. NUNCA se guarda: sólo se manda a la IA para el análisis de esta
- * revisión y se descarta.
- */
-const photo = z
-  .string()
-  .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/)
-  .max(4_000_000);
 
 const submitSchema = z.object({
   hunger: scale,
@@ -48,7 +39,8 @@ const submitSchema = z.object({
   outsideActivity: scale,
   adherenceNote: z.string().trim().max(500).optional(),
   notes: z.string().trim().max(500).optional(),
-  photos: z.array(photo).max(4).optional(),
+  /** Fotos de físico (ver `photoPayloadSchema`: van en un objeto, no en una lista). NUNCA se guardan. */
+  photos: photoPayloadSchema.optional(),
 });
 export type SubmitCheckinInput = z.infer<typeof submitSchema>;
 
@@ -115,8 +107,8 @@ async function applyNutritionProposal(
  * no requiere confirmación del usuario. Best-effort: no falla si algún
  * ejercicio no matchea con el plan.
  */
-async function applyTrainingProposal(proposal: TrainingReview): Promise<number> {
-  const plan = await prisma.workoutPlan.findFirst({
+async function applyTrainingProposal(db: UserDb, proposal: TrainingReview): Promise<number> {
+  const plan = await db.workoutPlan.findFirst({
     where: { isActive: true },
     select: {
       days: {
@@ -191,7 +183,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   const d = parsed.data;
   // Privacidad: las fotos viven SÓLO en esta variable local. No entran en
   // `baseData` ni en ninguna escritura a la DB; sólo se pasan a la IA.
-  const photos = d.photos ?? [];
+  const photos = unpackPhotos(d.photos);
   const { userId, profile, entitlement } = await requireUser();
 
   if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
@@ -359,7 +351,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         let trainingProposal: TrainingProposal | null = null;
         let trainingChanged = 0;
         if (trainingWeek.hasData && review.training) {
-          trainingChanged = await applyTrainingProposal(review.training);
+          trainingChanged = await applyTrainingProposal(db, review.training);
           trainingProposal = { ...review.training, applied: true };
         }
 

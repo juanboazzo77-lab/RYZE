@@ -12,6 +12,7 @@ import { PhotoPicker } from '@/components/form/photo-picker';
 import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
+import { packPhotos } from '@/lib/image/photo-payload';
 import {
   analyzePhysiqueReport,
   applyPhysiqueToCoachProfile,
@@ -50,7 +51,7 @@ export function PhysiqueClient({
     }
     startAnalyze(async () => {
       try {
-        const res = await analyzePhysiqueReport({ photos, note: note.trim() || undefined });
+        const res = await analyzePhysiqueReport({ photos: packPhotos(photos), note: note.trim() || undefined });
         if (res.ok && res.data) {
           const created = res.data;
           setEntries((prev) => [created, ...prev]);

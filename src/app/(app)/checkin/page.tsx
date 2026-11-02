@@ -164,3 +164,6 @@ function StatBox({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/** Las acciones de esta pantalla llaman a la IA con fotos: necesitan más que los 10 s por defecto. */
+export const maxDuration = 60;

@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { PhotoPicker } from '@/components/form/photo-picker';
 import { addPhoto, photoStorageAvailable } from '@/features/progress/photos/photo-store';
+import { packPhotos } from '@/lib/image/photo-payload';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 import type { WeeklyCheckin } from '@prisma/client';
@@ -97,7 +98,7 @@ export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
         outsideActivity,
         adherenceNote: adherenceNote.trim() || undefined,
         notes: notes.trim() || undefined,
-        photos: photos.length > 0 ? photos : undefined,
+        photos: photos.length > 0 ? packPhotos(photos) : undefined,
       });
       if (res.ok) {
         toast.success(tc.submitted);

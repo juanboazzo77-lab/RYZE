@@ -22,6 +22,7 @@ import type { Sex } from '@prisma/client';
 import * as S from './schema';
 import type { CoachProfileData, SectionKey } from './schema';
 import { saveCoachProfile, analyzePhysiqueAction } from './actions';
+import { packPhotos } from '@/lib/image/photo-payload';
 
 type OptMap = Record<string, string>;
 const optList = <T extends string>(vals: readonly T[], map: OptMap) =>
@@ -613,7 +614,7 @@ function PhysiqueAnalyzer({
     if (photos.length === 0) return;
     start(async () => {
       try {
-        const res = await analyzePhysiqueAction({ photos });
+        const res = await analyzePhysiqueAction({ photos: packPhotos(photos) });
         if (res.ok && res.data) {
           onChange(
             [

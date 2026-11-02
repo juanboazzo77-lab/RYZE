@@ -9,6 +9,7 @@ import { aiConfigured } from '@/server/ai/config';
 import { previousSummary } from '@/features/physique/summary';
 import { saveCoachProfileSchema } from './schema';
 import { analyzePhysiqueSchema, physiqueAnalysisSchema, type PhysiqueAnalysis } from './physique-schema';
+import { unpackPhotos, type PhotoPayload } from '@/lib/image/photo-payload';
 
 export interface Result<T = void> {
   ok?: boolean;
@@ -89,7 +90,7 @@ export async function saveCoachProfile(raw: unknown): Promise<Result> {
  * se descartan. Se guarda el informe de texto, que después aparece en la revisión semanal.
  */
 export async function analyzePhysiqueAction(raw: {
-  photos: string[];
+  photos: PhotoPayload;
 }): Promise<Result<PhysiqueAnalysis>> {
   const parsed = analyzePhysiqueSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
@@ -111,7 +112,7 @@ export async function analyzePhysiqueAction(raw: {
     const analysis = await analyzePhysique({
       profile,
       entitlement,
-      photos: parsed.data.photos,
+      photos: unpackPhotos(parsed.data.photos),
       previous: last
         ? previousSummary(physiqueAnalysisSchema.parse(last.report ?? {}), last.createdAt)
         : null,
@@ -129,7 +130,7 @@ export async function analyzePhysiqueAction(raw: {
       };
     }
     await db.physiqueAnalysis.create({
-      data: { userId, report: analysis as object, photoCount: parsed.data.photos.length },
+      data: { userId, report: analysis as object, photoCount: unpackPhotos(parsed.data.photos).length },
     });
     return { ok: true, data: analysis };
   } catch (e) {
