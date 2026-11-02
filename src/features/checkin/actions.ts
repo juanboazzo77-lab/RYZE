@@ -19,7 +19,7 @@ import {
 import { physiqueAnalysisSchema } from '@/features/coach-profile/physique-schema';
 import { previousSummary } from '@/features/physique/summary';
 import { photoPayloadSchema, unpackPhotos } from '@/lib/image/photo-payload';
-import { checkinBlockedByCadence, computeTrainingWeek, computeWeekStats } from './queries';
+import { checkinBlockedByCadence, computeTrainingWeek, computeWeekStats, getReviewPeriod } from './queries';
 import { type CheckinProposal, type TrainingProposal, type TrainingReview } from './schema';
 
 export interface Result {
@@ -196,10 +196,14 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   const todayISO = localTodayISO(profile.timezone);
   const weekStart = weekStartISO(todayISO, profile.weekStart);
   const weekStartDate = isoToUtcDate(weekStart);
-  const stats = await computeWeekStats(profile, weekStart);
+  // Lo que cubre la revisión: desde la anterior hasta hoy (no la semana calendario).
+  const period = await getReviewPeriod(profile);
+  const stats = await computeWeekStats(profile, period);
   const fallbackSummary = buildCheckinSummary(stats, profile.locale);
 
   const baseData = {
+    periodStart: isoToUtcDate(period.startISO),
+    periodEnd: isoToUtcDate(period.endISO),
     avgWeightKg: stats.avgWeightKg,
     weightChangeKg: stats.weightChangeKg,
     kcalAdherencePct: stats.kcalAdherencePct,
@@ -264,7 +268,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         applied: h.status === 'APPLIED',
       }));
 
-      const trainingWeek = await computeTrainingWeek(profile, weekStart);
+      const trainingWeek = await computeTrainingWeek(profile, period);
 
       // Informe completo del físico (sólo si mandó fotos), en paralelo con la revisión:
       // el tiempo total es el del más lento, no la suma.

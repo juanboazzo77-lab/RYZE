@@ -856,6 +856,10 @@ model WeeklyCheckin {
   userId              String        @db.Uuid @map("user_id")
   user                Profile       @relation(fields: [userId], references: [id], onDelete: Cascade)
   weekStart           DateTime      @db.Date @map("week_start")
+  /// Lo que cubre la revisión: desde el día siguiente a la revisión anterior hasta el día en que se hizo
+  /// (no la semana calendario). Las revisiones viejas no lo tienen: se toma la semana de `weekStart`.
+  periodStart         DateTime?     @db.Date @map("period_start")
+  periodEnd           DateTime?     @db.Date @map("period_end")
   avgWeightKg         Float?        @map("avg_weight_kg")
   weightChangeKg      Float?        @map("weight_change_kg")
   kcalAdherencePct    Float?        @map("kcal_adherence_pct")

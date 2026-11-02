@@ -56,6 +56,6 @@ describe('buildCheckinSummary', () => {
       { workoutsCompleted: 0, workoutsPlanned: 3, weightChangeKg: null, kcalAdherencePct: null, proteinAdherencePct: null },
       'ES',
     );
-    expect(text).toBe('Completaste 0/3 entrenamientos esta semana.');
+    expect(text).toBe('Completaste 0/3 entrenamientos desde tu última revisión.');
   });
 });

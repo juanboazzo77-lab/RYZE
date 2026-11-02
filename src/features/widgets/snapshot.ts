@@ -7,7 +7,7 @@ import type { Dictionary } from '@/i18n';
 import { addDaysISO } from '@/lib/date';
 import { displayWeightDelta } from '@/lib/units';
 import { getDashboardData } from '@/features/dashboard/queries';
-import { computeWeekStats, getCheckinStatus } from '@/features/checkin/queries';
+import { computeWeekStats, getCheckinStatus, getReviewPeriod } from '@/features/checkin/queries';
 import type { WidgetSnapshot } from './types';
 
 /** Aplana `{ review: { due: '…' } }` en `{ 'review.due': '…' }`. */
@@ -35,7 +35,7 @@ export async function buildWidgetSnapshot(ctx: UserContext): Promise<WidgetSnaps
   const hasReview = can(ctx.entitlement, 'weekly_checkin');
   const everyWeeks = Math.max(1, limitsFor(ctx.entitlement).checkinEveryWeeks);
   const status = await getCheckinStatus(profile, everyWeeks);
-  const week = await computeWeekStats(profile, status.weekStartISO);
+  const week = await computeWeekStats(profile, await getReviewPeriod(profile));
 
   // Fecha de la revisión dentro de la semana en curso (el día elegido es 1 lunes … 7 domingo).
   const startWeekday = DateTime.fromISO(status.weekStartISO, { zone: 'utc' }).weekday;

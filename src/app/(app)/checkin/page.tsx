@@ -49,7 +49,8 @@ export default async function CheckinPage() {
         <h1 className="text-2xl font-bold tracking-tight">{t.checkin.title}</h1>
         <p className="text-sm text-muted-foreground">
           {interpolate(t.checkin.weekOf, {
-            date: DateTime.fromISO(data.currentWeekStart, { zone: 'utc' }).setLocale(locale).toFormat('d LLL'),
+            from: DateTime.fromISO(data.period.startISO, { zone: 'utc' }).setLocale(locale).toFormat('d LLL'),
+            to: DateTime.fromISO(data.period.endISO, { zone: 'utc' }).setLocale(locale).toFormat('d LLL'),
           })}
         </p>
       </div>
@@ -144,7 +145,12 @@ export default async function CheckinPage() {
             {data.history.map((h) => (
               <div key={h.id} className="py-2.5">
                 <p className="text-sm font-medium">
-                  {DateTime.fromJSDate(h.weekStart).setLocale(locale).toFormat('d LLL yyyy')}
+                  {h.periodStart && h.periodEnd
+                    ? interpolate(t.checkin.weekOf, {
+                        from: DateTime.fromJSDate(h.periodStart, { zone: 'utc' }).setLocale(locale).toFormat('d LLL'),
+                        to: DateTime.fromJSDate(h.periodEnd, { zone: 'utc' }).setLocale(locale).toFormat('d LLL yyyy'),
+                      })
+                    : DateTime.fromJSDate(h.weekStart).setLocale(locale).toFormat('d LLL yyyy')}
                 </p>
                 {h.aiSummary ? <p className="mt-0.5 text-xs text-muted-foreground">{h.aiSummary}</p> : null}
               </div>

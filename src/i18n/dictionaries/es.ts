@@ -1241,8 +1241,8 @@ export const es = {
   },
   checkin: {
     title: 'Revisión semanal',
-    thisWeek: 'Esta semana',
-    weekOf: 'Semana del {date}',
+    thisWeek: 'Desde tu última revisión',
+    weekOf: 'Del {from} al {to}',
     alreadySubmitted: 'Ya completaste el check-in de esta semana. Podés editarlo.',
     stats: {
       workouts: 'Entrenamientos',

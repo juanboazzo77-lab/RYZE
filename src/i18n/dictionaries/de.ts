@@ -1243,8 +1243,8 @@ export const de: Dictionary = {
   },
   checkin: {
     title: 'Wöchentlicher Check-in',
-    thisWeek: 'Diese Woche',
-    weekOf: 'Woche vom {date}',
+    thisWeek: 'Seit deinem letzten Check-in',
+    weekOf: 'Vom {from} bis {to}',
     alreadySubmitted: 'Du hast den Check-in dieser Woche bereits abgeschlossen. Du kannst ihn bearbeiten.',
     stats: {
       workouts: 'Trainings',

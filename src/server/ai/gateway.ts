@@ -587,7 +587,10 @@ export async function analyzePhysique(args: {
 /* ------------------------------------------------------------------ */
 
 export interface CheckinWeekReport {
-  weekStartISO: string;
+  /** Lo que cubre la revisión: desde la revisión anterior hasta hoy (no es la semana calendario). */
+  periodStartISO: string;
+  periodEndISO: string;
+  days: number;
   weightChangeKg: number | null;
   avgWeightKg: number | null;
   kcalAdherencePct: number | null;
@@ -670,9 +673,9 @@ export async function reviewWeeklyCheckin(args: {
       : '  (sin revisiones previas)';
 
   const reportBlock = [
-    `Semana en revisión: ${week.weekStartISO}`,
-    `Entrenamientos: ${week.workoutsCompleted}/${week.workoutsPlanned}`,
-    `Cambio de peso en la semana: ${week.weightChangeKg ?? 's/d'} kg (promedio ${week.avgWeightKg ?? 's/d'} kg)`,
+    `Período en revisión: del ${week.periodStartISO} al ${week.periodEndISO} (${week.days} días, desde la revisión anterior)`,
+    `Entrenamientos en el período: ${week.workoutsCompleted}/${week.workoutsPlanned}`,
+    `Cambio de peso en el período: ${week.weightChangeKg ?? 's/d'} kg (promedio ${week.avgWeightKg ?? 's/d'} kg)`,
     `Adherencia calorías: ${week.kcalAdherencePct ?? 's/d'}% de los días · proteína: ${week.proteinAdherencePct ?? 's/d'}%`,
     `Pasos promedio del día: ${week.avgSteps ?? 's/d'}${week.avgSteps !== null ? ' (dato objetivo de actividad/NEAT)' : ''}`,
     `Subjetivo (1-5): hambre ${scale(subjective.hunger)} (1 mucha–5 bajo control), ` +

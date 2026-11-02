@@ -4,9 +4,15 @@ import type { Profile, WeeklyCheckin } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { nutritionAdherence } from '@/features/dashboard/compute';
+import { computeReviewPeriod, type ReviewPeriod } from '@/lib/checkin/period';
+
+export type { ReviewPeriod };
 
 export interface WeekStats {
-  weekStartISO: string;
+  /** Lo que cubren estas cifras: desde la revisión anterior hasta hoy (no la semana calendario). */
+  periodStartISO: string;
+  periodEndISO: string;
+  days: number;
   avgWeightKg: number | null;
   weightChangeKg: number | null;
   kcalAdherencePct: number | null;
@@ -16,10 +22,55 @@ export interface WeekStats {
   avgSteps: number | null;
 }
 
-export async function computeWeekStats(profile: Profile, weekStartStr: string): Promise<WeekStats> {
+const dayISO = (d: Date) => d.toISOString().slice(0, 10);
+
+/**
+ * Período que cubre la revisión: desde el día siguiente a la revisión anterior hasta hoy. Si la de
+ * esta semana ya está hecha (con IA), queda fijo en lo que cubrió. Ver `computeReviewPeriod`.
+ */
+export async function getReviewPeriod(profile: Profile): Promise<ReviewPeriod> {
   const db = forUser(profile.id);
-  const weekStartDate = isoToUtcDate(weekStartStr);
-  const weekEndExclusive = isoToUtcDate(addDaysISO(weekStartStr, 7));
+  const todayISO = localTodayISO(profile.timezone);
+  const weekStart = isoToUtcDate(weekStartISO(todayISO, profile.weekStart));
+
+  const [pref, current, previous] = await db.$transaction([
+    db.notificationPreference.findFirst({ where: { kind: 'WEEKLY_CHECKIN' }, select: { dayOfWeek: true } }),
+    db.weeklyCheckin.findFirst({
+      where: { weekStart },
+      select: { status: true, periodStart: true, periodEnd: true },
+    }),
+    db.weeklyCheckin.findFirst({
+      where: { weekStart: { lt: weekStart }, status: { in: ['SUBMITTED', 'REVIEWED', 'APPLIED'] } },
+      orderBy: { weekStart: 'desc' },
+      select: { weekStart: true, periodEnd: true },
+    }),
+  ]);
+
+  // Ya revisada: se muestra lo que cubrió, no se corre con los días.
+  if (
+    current?.periodStart &&
+    current.periodEnd &&
+    (current.status === 'REVIEWED' || current.status === 'APPLIED')
+  ) {
+    const startISO = dayISO(current.periodStart);
+    const endISO = dayISO(current.periodEnd);
+    const days = Math.round((current.periodEnd.getTime() - current.periodStart.getTime()) / 86_400_000) + 1;
+    return { startISO, endISO, days };
+  }
+
+  return computeReviewPeriod({
+    todayISO,
+    reviewWeekday: pref?.dayOfWeek ?? 1,
+    resubmitStartISO: current?.periodStart ? dayISO(current.periodStart) : null,
+    // Las revisiones viejas no guardaron el período: se toma el final de su semana.
+    previousEndISO: previous ? dayISO(previous.periodEnd ?? new Date(previous.weekStart.getTime() + 6 * 86_400_000)) : null,
+  });
+}
+
+export async function computeWeekStats(profile: Profile, period: ReviewPeriod): Promise<WeekStats> {
+  const db = forUser(profile.id);
+  const weekStartDate = isoToUtcDate(period.startISO);
+  const weekEndExclusive = isoToUtcDate(addDaysISO(period.endISO, 1));
 
   const [weights, target, foodByDay, workoutsCompleted, activity] = await db.$transaction([
     db.weightEntry.findMany({
@@ -64,14 +115,19 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
   const proteinAdherencePct =
     target && foodByDay.length > 0 ? Math.round((proteinDays / foodByDay.length) * 100) : null;
 
+  // Los entrenamientos planeados son por semana: se llevan al largo del período.
+  const perWeek = profile.daysAvailable ?? 3;
+
   return {
-    weekStartISO: weekStartStr,
+    periodStartISO: period.startISO,
+    periodEndISO: period.endISO,
+    days: period.days,
     avgWeightKg,
     weightChangeKg,
     kcalAdherencePct: adherence.pct,
     proteinAdherencePct,
     workoutsCompleted,
-    workoutsPlanned: profile.daysAvailable ?? 3,
+    workoutsPlanned: Math.max(1, Math.round((perWeek * period.days) / 7)),
     avgSteps: activity._avg.steps !== null ? Math.round(activity._avg.steps) : null,
   };
 }
@@ -83,12 +139,12 @@ export async function computeWeekStats(profile: Profile, weekStartStr: string): 
  */
 export async function computeTrainingWeek(
   profile: Profile,
-  weekStartStr: string,
+  period: ReviewPeriod,
 ): Promise<{ hasData: boolean; block: string }> {
   const db = forUser(profile.id);
-  const weekStartDate = isoToUtcDate(weekStartStr);
-  const weekEnd = isoToUtcDate(addDaysISO(weekStartStr, 7));
-  const prevStart = isoToUtcDate(addDaysISO(weekStartStr, -14));
+  const weekStartDate = isoToUtcDate(period.startISO);
+  const weekEnd = isoToUtcDate(addDaysISO(period.endISO, 1));
+  const prevStart = isoToUtcDate(addDaysISO(period.startISO, -14));
 
   const [workouts, plan] = await db.$transaction([
     db.workout.findMany({
@@ -168,7 +224,7 @@ export async function computeTrainingWeek(
     }
   }
 
-  if (thisWeek.size === 0) return { hasData: false, block: 'Sin entrenamientos completados esta semana.' };
+  if (thisWeek.size === 0) return { hasData: false, block: 'Sin entrenamientos completados en el período.' };
 
   const planByName = new Map<string, { sets: number; rMin: number | null; rMax: number | null; rir: number | null }>();
   for (const d of plan?.days ?? []) {
@@ -203,13 +259,14 @@ export async function computeTrainingWeek(
 
   return {
     hasData: true,
-    block: ['Rendimiento de entrenamiento de la semana (top 10 por volumen):', ...lines].join('\n'),
+    block: ['Rendimiento de entrenamiento del período (top 10 por volumen):', ...lines].join('\n'),
   };
 }
 
 export interface CheckinPageData {
   todayISO: string;
   currentWeekStart: string;
+  period: ReviewPeriod;
   currentStats: WeekStats;
   existing: WeeklyCheckin | null;
   history: WeeklyCheckin[];
@@ -225,9 +282,10 @@ export async function getCheckinPage(profile: Profile): Promise<CheckinPageData>
     db.weeklyCheckin.findMany({ orderBy: { weekStart: 'desc' }, take: 12 }),
   ]);
 
-  const currentStats = await computeWeekStats(profile, currentWeekStart);
+  const period = await getReviewPeriod(profile);
+  const currentStats = await computeWeekStats(profile, period);
 
-  return { todayISO, currentWeekStart, currentStats, existing, history };
+  return { todayISO, currentWeekStart, period, currentStats, existing, history };
 }
 
 /**

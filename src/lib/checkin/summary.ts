@@ -25,42 +25,42 @@ interface Lang {
 
 const LANGS: Record<Locale, Lang> = {
   ES: {
-    workouts: (d, p) => `Completaste ${d}/${p} entrenamientos esta semana.`,
+    workouts: (d, p) => `Completaste ${d}/${p} entrenamientos desde tu última revisión.`,
     weightSame: 'Tu peso se mantuvo estable.',
     weightChange: (down, abs) => `Tu peso ${down ? 'bajó' : 'subió'} ${abs} kg.`,
     kcal: (pct) => `Cumpliste tu objetivo de calorías en cerca del ${pct}% de los días registrados.`,
     protein: (pct) => `Llegaste a tu objetivo de proteína en cerca del ${pct}% de los días registrados.`,
   },
   EN: {
-    workouts: (d, p) => `You completed ${d}/${p} workouts this week.`,
+    workouts: (d, p) => `You completed ${d}/${p} workouts since your last review.`,
     weightSame: 'Your weight stayed about the same.',
     weightChange: (down, abs) => `Your weight ${down ? 'went down' : 'went up'} ${abs} kg.`,
     kcal: (pct) => `You hit your calorie target on about ${pct}% of logged days.`,
     protein: (pct) => `Protein target met on about ${pct}% of logged days.`,
   },
   PT: {
-    workouts: (d, p) => `Você completou ${d}/${p} treinos esta semana.`,
+    workouts: (d, p) => `Você completou ${d}/${p} treinos desde a sua última revisão.`,
     weightSame: 'Seu peso se manteve estável.',
     weightChange: (down, abs) => `Seu peso ${down ? 'caiu' : 'subiu'} ${abs} kg.`,
     kcal: (pct) => `Você bateu sua meta de calorias em cerca de ${pct}% dos dias registrados.`,
     protein: (pct) => `Meta de proteína atingida em cerca de ${pct}% dos dias registrados.`,
   },
   FR: {
-    workouts: (d, p) => `Vous avez terminé ${d}/${p} entraînements cette semaine.`,
+    workouts: (d, p) => `Vous avez terminé ${d}/${p} entraînements depuis votre dernier bilan.`,
     weightSame: 'Votre poids est resté stable.',
     weightChange: (down, abs) => `Votre poids a ${down ? 'baissé' : 'augmenté'} de ${abs} kg.`,
     kcal: (pct) => `Vous avez atteint votre objectif calorique environ ${pct}% des jours enregistrés.`,
     protein: (pct) => `Objectif de protéines atteint environ ${pct}% des jours enregistrés.`,
   },
   DE: {
-    workouts: (d, p) => `Du hast diese Woche ${d}/${p} Trainingseinheiten abgeschlossen.`,
+    workouts: (d, p) => `Du hast seit deinem letzten Check-in ${d}/${p} Trainingseinheiten abgeschlossen.`,
     weightSame: 'Dein Gewicht ist etwa gleich geblieben.',
     weightChange: (down, abs) => `Dein Gewicht ist um ${abs} kg ${down ? 'gesunken' : 'gestiegen'}.`,
     kcal: (pct) => `Du hast dein Kalorienziel an etwa ${pct}% der erfassten Tage erreicht.`,
     protein: (pct) => `Proteinziel an etwa ${pct}% der erfassten Tage erreicht.`,
   },
   IT: {
-    workouts: (d, p) => `Hai completato ${d}/${p} allenamenti questa settimana.`,
+    workouts: (d, p) => `Hai completato ${d}/${p} allenamenti dall’ultimo check-in.`,
     weightSame: 'Il tuo peso è rimasto stabile.',
     weightChange: (down, abs) => `Il tuo peso è ${down ? 'diminuito' : 'aumentato'} di ${abs} kg.`,
     kcal: (pct) => `Hai raggiunto il tuo obiettivo calorico in circa il ${pct}% dei giorni registrati.`,
