@@ -39,6 +39,14 @@ export interface TrainingProposal extends TrainingReview {
   applied: boolean;
 }
 
+/** ¿La progresión propuesta cambia algo en la rutina? (subir carga o mantener lo hacés vos en el gimnasio). */
+export function trainingHasChanges(p: Pick<TrainingReview, 'call' | 'adjustments'>): boolean {
+  return (
+    p.call === 'deload' ||
+    p.adjustments.some((a) => a.action === 'add_reps' || a.action === 'add_set' || a.action === 'reduce')
+  );
+}
+
 /** Lo que se guarda en `weekly_checkin.ai_proposal`. */
 export interface CheckinProposal {
   kind: 'nutrition_targets' | 'none';

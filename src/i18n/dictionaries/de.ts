@@ -1247,6 +1247,12 @@ export const de: Dictionary = {
     title: 'Wöchentlicher Check-in',
     thisWeek: 'Seit deinem letzten Check-in',
     weekOf: 'Vom {from} bis {to}',
+    applyAdjustments: {
+      hint: 'Der Coach schlägt diese Änderungen vor. Mit einem Tipp werden deine Ernährungsziele und deine Routine aktualisiert.',
+      button: 'Anpassungen übernehmen',
+      done: 'Anpassungen übernommen',
+      error: 'Die Anpassungen konnten nicht übernommen werden',
+    },
     alreadySubmitted: 'Du hast den Check-in dieser Woche bereits abgeschlossen. Du kannst ihn bearbeiten.',
     stats: {
       workouts: 'Trainings',
@@ -1304,6 +1310,7 @@ export const de: Dictionary = {
       dismiss: 'Ignorieren',
       applied: 'Anpassung angewendet. Deine neuen Ziele sind bereits aktiv.',
       appliedTitle: 'Anpassung angewendet',
+      proposedTitle: 'Vorgeschlagene Anpassung',
       dismissed: 'Anpassung verworfen.',
       noChange: 'Der Coach empfiehlt diese Woche keine Änderung der Ziele: {reason}',
     },
@@ -1316,6 +1323,7 @@ export const de: Dictionary = {
       appliedN: 'Die Ziele von {n} Übung(en) in deinem Plan wurden aktualisiert.',
       appliedNone: 'Anleitung gespeichert. Keine automatischen Änderungen (Gewicht rauf/runter machst du selbst im Studio).',
       doneNote: 'Anleitung angewendet.',
+      proposedNote: 'Sie wird auf deine Routine angewendet, sobald du auf „Anpassungen übernehmen“ tippst.',
     },
   },
   report: {

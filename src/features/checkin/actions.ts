@@ -72,10 +72,9 @@ function describeDecision(proposal: unknown): string {
 }
 
 /**
- * Aplica el ajuste de objetivos nutricionales que decidió el Coach. Se llama
- * automáticamente al terminar la revisión del check-in — el usuario no tiene
- * que confirmar nada, el cambio ya queda activo en toda la app (nutrición,
- * dashboard, etc.).
+ * Aplica el ajuste de objetivos nutricionales que propuso el Coach. Se llama al tocar
+ * "Aplicar ajustes" (`applyCheckinAdjustments`): el cambio queda activo en toda la app
+ * (nutrición, dashboard, etc.).
  */
 async function applyNutritionProposal(
   db: UserDb,
@@ -101,11 +100,9 @@ async function applyNutritionProposal(
 }
 
 /**
- * Aplica la progresión de entrenamiento que decidió el Coach (sube o baja
- * objetivos de reps/series en el plan activo, ver detalle en el comentario
- * histórico más abajo). Se llama automáticamente al terminar la revisión —
- * no requiere confirmación del usuario. Best-effort: no falla si algún
- * ejercicio no matchea con el plan.
+ * Aplica la progresión de entrenamiento que propuso el Coach (sube o baja
+ * objetivos de reps/series en el plan activo). Se llama al tocar "Aplicar ajustes".
+ * Best-effort: no falla si algún ejercicio no matchea con el plan.
  */
 async function applyTrainingProposal(db: UserDb, proposal: TrainingReview): Promise<number> {
   const plan = await db.workoutPlan.findFirst({
@@ -347,17 +344,10 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
         const photoNote =
           photos.length > 0 ? { aiPhotoNote: review.physiqueNote?.trim() || null } : {};
 
-        // Aplicar ya, sin que el usuario tenga que confirmar nada: si el
-        // Coach decide un ajuste, se refleja directo en toda la app
-        // (objetivos nutricionales, plan de entrenamiento).
-        const nutritionApplied = await applyNutritionProposal(db, userId, proposal);
-
-        let trainingProposal: TrainingProposal | null = null;
-        let trainingChanged = 0;
-        if (trainingWeek.hasData && review.training) {
-          trainingChanged = await applyTrainingProposal(db, review.training);
-          trainingProposal = { ...review.training, applied: true };
-        }
+        // El Coach propone: nada cambia hasta que la persona toca "Aplicar ajustes"
+        // (`applyCheckinAdjustments`), que aplica nutrición y rutina juntas.
+        const trainingProposal: TrainingProposal | null =
+          trainingWeek.hasData && review.training ? { ...review.training, applied: false } : null;
 
         await db.weeklyCheckin.updateMany({
           where: { weekStart: weekStartDate },
@@ -368,7 +358,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
             ...(trainingProposal
               ? { aiTrainingProposal: trainingProposal as unknown as object }
               : {}),
-            status: nutritionApplied || trainingChanged > 0 ? 'APPLIED' : 'REVIEWED',
+            status: 'REVIEWED',
           },
         });
       }
@@ -388,3 +378,42 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   return { ok: true };
 }
 
+
+/**
+ * "Aplicar ajustes": con un toque aplica lo que propuso el Coach en la revisión de esta semana —
+ * los nuevos objetivos de nutrición y la progresión de la rutina—. Es idempotente: si ya se
+ * aplicó, no hace nada.
+ */
+export async function applyCheckinAdjustments(): Promise<Result> {
+  const { userId, profile } = await requireUser();
+  const db = forUser(userId);
+  const weekStart = isoToUtcDate(weekStartISO(localTodayISO(profile.timezone), profile.weekStart));
+
+  const row = await db.weeklyCheckin.findFirst({
+    where: { weekStart, status: { in: ['REVIEWED', 'APPLIED'] } },
+    select: { id: true, status: true, aiProposal: true, aiTrainingProposal: true },
+  });
+  if (!row) return { error: 'NOT_FOUND' };
+  if (row.status === 'APPLIED') return { ok: true };
+
+  const proposal = row.aiProposal as CheckinProposal | null;
+  const training = row.aiTrainingProposal as TrainingProposal | null;
+
+  if (proposal?.kind === 'nutrition_targets') await applyNutritionProposal(db, userId, proposal);
+  if (training && !training.applied) await applyTrainingProposal(db, training);
+
+  await db.weeklyCheckin.updateMany({
+    where: { id: row.id },
+    data: {
+      status: 'APPLIED',
+      ...(training ? { aiTrainingProposal: { ...training, applied: true } as unknown as object } : {}),
+    },
+  });
+
+  revalidatePath('/checkin');
+  revalidatePath('/nutrition');
+  revalidatePath('/dashboard');
+  revalidatePath('/settings/goals');
+  revalidatePath('/training');
+  return { ok: true };
+}

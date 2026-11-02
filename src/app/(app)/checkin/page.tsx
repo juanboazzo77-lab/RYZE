@@ -8,7 +8,8 @@ import { checkinBlockedByCadence, getCheckinPage } from '@/features/checkin/quer
 import { CheckinForm } from '@/features/checkin/checkin-form';
 import { CheckinReview } from '@/features/checkin/checkin-review';
 import { CheckinTraining } from '@/features/checkin/checkin-training';
-import type { CheckinProposal, TrainingProposal } from '@/features/checkin/schema';
+import { ApplyAdjustments } from '@/features/checkin/apply-adjustments';
+import { trainingHasChanges, type CheckinProposal, type TrainingProposal } from '@/features/checkin/schema';
 import { UpsellCard } from '@/components/upsell-card';
 import { listPhysiqueAnalyses } from '@/features/physique/queries';
 import { PhysiqueReport } from '@/features/physique/physique-report';
@@ -42,6 +43,14 @@ export default async function CheckinPage() {
   const doneThisWeek = data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED';
   const s = data.currentStats;
   const na = t.checkin.stats.noData;
+
+  // Lo que propuso el Coach y si ya se aplicó (las revisiones viejas se aplicaban solas).
+  const nutritionProposal = (data.existing?.aiProposal as CheckinProposal | null) ?? null;
+  const trainingProposal = (data.existing?.aiTrainingProposal as unknown as TrainingProposal | null) ?? null;
+  const hasAdjustments =
+    (nutritionProposal?.kind === 'nutrition_targets' && nutritionProposal.to !== null) ||
+    (trainingProposal !== null && trainingHasChanges(trainingProposal));
+  const adjustmentsApplied = data.existing?.status === 'APPLIED';
 
   return (
     <div className="space-y-4">
@@ -87,16 +96,20 @@ export default async function CheckinPage() {
       {data.existing?.aiSummary ? (
         <CheckinReview
           summary={data.existing.aiSummary}
-          proposal={(data.existing.aiProposal as CheckinProposal | null) ?? null}
+          proposal={nutritionProposal}
           isCoachTier={ctx.entitlement.tier === 'COACH'}
+          applied={adjustmentsApplied}
         />
       ) : null}
 
       {data.existing?.aiTrainingProposal ? (
         <CheckinTraining
           proposal={data.existing.aiTrainingProposal as unknown as TrainingProposal}
+          applied={adjustmentsApplied}
         />
       ) : null}
+
+      {hasAdjustments && doneThisWeek ? <ApplyAdjustments applied={adjustmentsApplied} /> : null}
 
       {latestReport ? (
         <Card>

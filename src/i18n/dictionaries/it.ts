@@ -1247,6 +1247,12 @@ export const it: Dictionary = {
     title: 'Check-in settimanale',
     thisWeek: 'Dall’ultimo check-in',
     weekOf: 'Dal {from} al {to}',
+    applyAdjustments: {
+      hint: 'Il Coach ti propone questi cambiamenti. Con un tocco si aggiornano i tuoi obiettivi nutrizionali e la tua routine.',
+      button: 'Applica le modifiche',
+      done: 'Modifiche applicate',
+      error: 'Impossibile applicare le modifiche',
+    },
     alreadySubmitted: 'Hai già completato il check-in di questa settimana. Puoi modificarlo.',
     stats: {
       workouts: 'Allenamenti',
@@ -1304,6 +1310,7 @@ export const it: Dictionary = {
       dismiss: 'Ignora',
       applied: 'Aggiustamento applicato. I tuoi nuovi obiettivi sono già attivi.',
       appliedTitle: 'Aggiustamento applicato',
+      proposedTitle: 'Modifica proposta',
       dismissed: 'Aggiustamento ignorato.',
       noChange: 'Il Coach non raccomanda di cambiare gli obiettivi questa settimana: {reason}',
     },
@@ -1316,6 +1323,7 @@ export const it: Dictionary = {
       appliedN: 'Gli obiettivi di {n} esercizio/i della tua scheda sono stati aggiornati.',
       appliedNone: 'Indicazione salvata. Nessuna modifica automatica (aumentare/ridurre il carico lo fai tu in palestra).',
       doneNote: 'Indicazione applicata.',
+      proposedNote: 'Viene applicata alla tua routine quando tocchi «Applica le modifiche».',
     },
   },
   report: {

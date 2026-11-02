@@ -4,7 +4,7 @@ import { ArrowUp, Dumbbell, Minus, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useT } from '@/i18n/provider';
-import type { TrainingProposal } from './schema';
+import { trainingHasChanges, type TrainingProposal } from './schema';
 
 const ACTION_ICON = {
   increase_load: ArrowUp,
@@ -14,15 +14,11 @@ const ACTION_ICON = {
   reduce: Minus,
 } as const;
 
-export function CheckinTraining({ proposal }: { proposal: TrainingProposal }) {
+export function CheckinTraining({ proposal, applied }: { proposal: TrainingProposal; applied: boolean }) {
   const t = useT();
   const tt = t.checkin.training;
 
-  const hadRealChange =
-    proposal.call === 'deload' ||
-    proposal.adjustments.some(
-      (a) => a.action === 'add_reps' || a.action === 'add_set' || a.action === 'reduce',
-    );
+  const hadRealChange = trainingHasChanges(proposal);
 
   return (
     <Card>
@@ -55,7 +51,9 @@ export function CheckinTraining({ proposal }: { proposal: TrainingProposal }) {
           </ul>
         ) : null}
 
-        <p className="text-xs text-success">{hadRealChange ? tt.doneNote : tt.appliedNone}</p>
+        <p className={applied || !hadRealChange ? 'text-xs text-success' : 'text-xs text-muted-foreground'}>
+          {!hadRealChange ? tt.appliedNone : applied ? tt.doneNote : tt.proposedNote}
+        </p>
       </CardContent>
     </Card>
   );

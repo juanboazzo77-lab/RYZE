@@ -1247,6 +1247,12 @@ export const en: Dictionary = {
     title: 'Weekly check-in',
     thisWeek: 'Since your last review',
     weekOf: '{from} to {to}',
+    applyAdjustments: {
+      hint: 'The Coach suggests these changes. One tap updates your nutrition targets and your routine.',
+      button: 'Apply adjustments',
+      done: 'Adjustments applied',
+      error: 'Could not apply the adjustments',
+    },
     alreadySubmitted: 'You already completed this week’s check-in. You can edit it.',
     stats: {
       workouts: 'Workouts',
@@ -1304,6 +1310,7 @@ export const en: Dictionary = {
       dismiss: 'Dismiss',
       applied: 'Adjustment applied. Your new targets are active.',
       appliedTitle: 'Adjustment applied',
+      proposedTitle: 'Proposed adjustment',
       dismissed: 'Adjustment dismissed.',
       noChange: "The Coach doesn't recommend changing your targets this week: {reason}",
     },
@@ -1316,6 +1323,7 @@ export const en: Dictionary = {
       appliedN: 'Bumped targets on {n} exercise(s) in your plan.',
       appliedNone: 'Guidance saved. No automatic changes (load up/down is on you in the gym).',
       doneNote: 'Guidance applied.',
+      proposedNote: 'It is applied to your routine when you tap “Apply adjustments”.',
     },
   },
   report: {

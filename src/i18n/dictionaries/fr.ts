@@ -1247,6 +1247,12 @@ export const fr: Dictionary = {
     title: 'Bilan hebdomadaire',
     thisWeek: 'Depuis votre dernier bilan',
     weekOf: 'Du {from} au {to}',
+    applyAdjustments: {
+      hint: 'Le Coach vous propose ces changements. D’un geste, vos objectifs nutritionnels et votre routine sont mis à jour.',
+      button: 'Appliquer les ajustements',
+      done: 'Ajustements appliqués',
+      error: 'Impossible d’appliquer les ajustements',
+    },
     alreadySubmitted: 'Vous avez déjà complété le bilan de cette semaine. Vous pouvez le modifier.',
     stats: {
       workouts: 'Entraînements',
@@ -1304,6 +1310,7 @@ export const fr: Dictionary = {
       dismiss: 'Ignorer',
       applied: 'Ajustement appliqué. Vos nouveaux objectifs sont déjà actifs.',
       appliedTitle: 'Ajustement appliqué',
+      proposedTitle: 'Ajustement proposé',
       dismissed: 'Ajustement ignoré.',
       noChange: 'Le Coach ne recommande pas de changer les objectifs cette semaine : {reason}',
     },
@@ -1316,6 +1323,7 @@ export const fr: Dictionary = {
       appliedN: 'Les objectifs de {n} exercice(s) de votre programme ont été mis à jour.',
       appliedNone: 'Conseil enregistré. Aucun changement automatique (augmenter/baisser la charge se fait par vous à la salle).',
       doneNote: 'Conseil appliqué.',
+      proposedNote: 'Il est appliqué à votre routine quand vous touchez « Appliquer les ajustements ».',
     },
   },
   report: {

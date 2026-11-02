@@ -10,9 +10,11 @@ interface Props {
   summary: string | null;
   proposal: CheckinProposal | null;
   isCoachTier?: boolean;
+  /** Ya se tocó "Aplicar ajustes" (o la revisión es de cuando se aplicaban solos). */
+  applied: boolean;
 }
 
-export function CheckinReview({ summary, proposal, isCoachTier }: Props) {
+export function CheckinReview({ summary, proposal, isCoachTier, applied }: Props) {
   const t = useT();
   const tr = t.checkin.review;
 
@@ -38,8 +40,16 @@ export function CheckinReview({ summary, proposal, isCoachTier }: Props) {
         <p className="whitespace-pre-wrap text-sm">{summary}</p>
 
         {hasAdjustment ? (
-          <div className="rounded-lg border border-success/40 bg-success/10 p-3 text-sm">
-            <p className="font-medium text-success">{tr.appliedTitle}</p>
+          <div
+            className={
+              applied
+                ? 'rounded-lg border border-success/40 bg-success/10 p-3 text-sm'
+                : 'rounded-lg border border-primary/40 bg-primary/5 p-3 text-sm'
+            }
+          >
+            <p className={applied ? 'font-medium text-success' : 'font-medium'}>
+              {applied ? tr.appliedTitle : tr.proposedTitle}
+            </p>
             <p className="mt-1 tabular-nums text-muted-foreground">
               {macros(proposal!.from!)} → {macros(proposal!.to!)}
             </p>

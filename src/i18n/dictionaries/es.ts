@@ -1245,6 +1245,12 @@ export const es = {
     title: 'Revisión semanal',
     thisWeek: 'Desde tu última revisión',
     weekOf: 'Del {from} al {to}',
+    applyAdjustments: {
+      hint: 'El Coach te propone estos cambios. Con un toque se actualizan tus objetivos de nutrición y tu rutina.',
+      button: 'Aplicar ajustes',
+      done: 'Ajustes aplicados',
+      error: 'No se pudieron aplicar los ajustes',
+    },
     alreadySubmitted: 'Ya completaste el check-in de esta semana. Podés editarlo.',
     stats: {
       workouts: 'Entrenamientos',
@@ -1302,6 +1308,7 @@ export const es = {
       dismiss: 'Ignorar',
       applied: 'Ajuste aplicado. Tus nuevos objetivos ya están activos.',
       appliedTitle: 'Ajuste aplicado',
+      proposedTitle: 'Ajuste propuesto',
       dismissed: 'Ajuste descartado.',
       noChange: 'El Coach no recomienda cambiar los objetivos esta semana: {reason}',
     },
@@ -1314,6 +1321,7 @@ export const es = {
       appliedN: 'Se subieron los objetivos de {n} ejercicio(s) en tu plan.',
       appliedNone: 'Guía guardada. No hubo cambios automáticos (subir/bajar carga lo hacés vos en el gimnasio).',
       doneNote: 'Guía aplicada.',
+      proposedNote: 'Se aplica a tu rutina cuando toques «Aplicar ajustes».',
     },
   },
   report: {
