@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Check, Loader2, RotateCcw, Send, Sparkles } from 'lucide-react';
+import { Check, Loader2, Pencil, RotateCcw, Send, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -15,10 +15,11 @@ import type { CoachMessage } from './queries';
 import {
   addCoachExerciseToPlan,
   addCoachFoodToToday,
+  applyCoachEdit,
   resetCoachConversation,
   sendCoachMessage,
 } from './actions';
-import type { CoachExercise, CoachFood } from './reply-schema';
+import type { CoachEdit, CoachExercise, CoachFood } from './reply-schema';
 
 const MEALS = ['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const;
 type Meal = (typeof MEALS)[number];
@@ -217,6 +218,61 @@ function FoodSuggestion({ food, onClose }: { food: CoachFood; onClose: () => voi
   );
 }
 
+/** Debajo de la respuesta: el cambio que pidió el usuario, con un botón que lo aplica tal cual. */
+function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => void }) {
+  const t = useT();
+  const tc = t.coach;
+  const [pending, start] = useTransition();
+  const [applied, setApplied] = useState(false);
+
+  function apply() {
+    start(async () => {
+      const res = await applyCoachEdit(edit);
+      if (res.ok) {
+        setApplied(true);
+        toast.success(tc.editApplied);
+        return;
+      }
+      const message =
+        res.error === 'NOT_FOUND'
+          ? tc.editNotFound
+          : res.error === 'NO_PLAN'
+            ? tc.exerciseNoPlan
+            : res.error === 'LAST_EXERCISE'
+              ? tc.editLastExercise
+              : res.error === 'ALREADY'
+                ? tc.exerciseAlready
+                : tc.error;
+      toast.error(message);
+    });
+  }
+
+  if (applied) {
+    return (
+      <p className="flex items-center gap-1.5 pl-1 text-xs text-success">
+        <Check className="size-3.5" />
+        {tc.editApplied}
+      </p>
+    );
+  }
+
+  return (
+    <div className="max-w-[85%] space-y-2 rounded-2xl border bg-card p-3 text-sm">
+      <p className="font-medium">{tc.editAsk}</p>
+      <p className="text-xs text-muted-foreground">{edit.summary}</p>
+      <div className="flex gap-2">
+        <Button size="sm" onClick={apply} disabled={pending}>
+          {pending ? <Loader2 className="size-4 animate-spin" /> : <Pencil className="size-4" />}
+          {tc.editApply}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onClose} disabled={pending}>
+          {tc.foodSkip}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   initialMessages: CoachMessage[];
   usage: { used: number; limit: number };
@@ -231,6 +287,7 @@ export function CoachChat({ initialMessages, usage }: Props) {
   const [exercises, setExercises] = useState<
     Record<string, { exercise: CoachExercise; planDays: PlanDayOption[] }>
   >({});
+  const [edits, setEdits] = useState<Record<string, CoachEdit>>({});
   const [draft, setDraft] = useState('');
   const [used, setUsed] = useState(usage.used);
   const [pending, start] = useTransition();
@@ -259,6 +316,8 @@ export function CoachChat({ initialMessages, usage }: Props) {
         const replyId = `reply-${Date.now()}`;
         const food = res.data.food;
         if (food) setFoods((f) => ({ ...f, [replyId]: food }));
+        const edit = res.data.edit;
+        if (edit) setEdits((x) => ({ ...x, [replyId]: edit }));
         const exercise = res.data.exercise;
         if (exercise) {
           setExercises((x) => ({ ...x, [replyId]: { exercise, planDays: res.data!.planDays } }));
@@ -331,6 +390,16 @@ export function CoachChat({ initialMessages, usage }: Props) {
                   {m.content}
                 </div>
               </div>
+              {edits[m.id] ? (
+                <div className="flex justify-start">
+                  <EditSuggestion
+                    edit={edits[m.id]!}
+                    onClose={() =>
+                      setEdits((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))
+                    }
+                  />
+                </div>
+              ) : null}
               {exercises[m.id] ? (
                 <div className="flex justify-start">
                   <ExerciseSuggestion

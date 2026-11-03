@@ -11,7 +11,15 @@ import { AiError, AiRateLimitedError, AiPermissionError, AiNotConfiguredError } 
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
 import { localTodayISO } from '@/lib/date';
-import { coachExerciseSchema, coachFoodSchema, type CoachExercise, type CoachFood } from './reply-schema';
+import {
+  coachEditSchema,
+  coachExerciseSchema,
+  coachFoodSchema,
+  isApplicableCoachEdit,
+  type CoachEdit,
+  type CoachExercise,
+  type CoachFood,
+} from './reply-schema';
 import {
   computeTargets,
   ageFromBirthdate,
@@ -60,6 +68,7 @@ export async function sendCoachMessage(
     reply: string;
     food: CoachFood | null;
     exercise: CoachExercise | null;
+    edit: CoachEdit | null;
     planDays: Array<{ id: string; name: string }>;
   }>
 > {
@@ -87,6 +96,7 @@ export async function sendCoachMessage(
   let reply: string;
   let food: CoachFood | null = null;
   let exercise: CoachExercise | null = null;
+  let edit: CoachEdit | null = null;
   try {
     const res = await runCoachTurn({
       profile,
@@ -97,6 +107,7 @@ export async function sendCoachMessage(
     reply = res.text;
     food = res.food;
     exercise = res.exercise;
+    edit = res.edit;
   } catch (e) {
     return { error: aiErrorMessage(e) };
   }
@@ -132,7 +143,123 @@ export async function sendCoachMessage(
     planDays = plan?.days ?? [];
   }
 
-  return { ok: true, data: { reply, food, exercise, planDays } };
+  return { ok: true, data: { reply, food, exercise, edit, planDays } };
+}
+
+/** Busca un ejercicio por nombre dentro de la rutina: exacto o, si no, uno contiene al otro. */
+function sameExercise(planName: string, asked: string): boolean {
+  const a = normalizeName(planName);
+  const b = normalizeName(asked);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const short = a.length < b.length ? a : b;
+  return short.length >= 5 && (a.includes(b) || b.includes(a));
+}
+
+/**
+ * Aplica el cambio que el usuario le pidió al coach y confirmó con el botón "Editar".
+ * Toca sólo lo que dice el cambio, en la rutina activa o en los objetivos de nutrición.
+ */
+export async function applyCoachEdit(raw: CoachEdit): Promise<Result<{ changed: number }>> {
+  const parsed = coachEditSchema.safeParse(raw);
+  if (!parsed.success || !isApplicableCoachEdit(parsed.data)) return { error: 'INVALID' };
+  const e = parsed.data;
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+
+  if (e.kind === 'nutrition_targets') {
+    await db.nutritionTarget.updateMany({ where: { active: true }, data: { active: false } });
+    await db.nutritionTarget.create({
+      data: {
+        userId,
+        effectiveFrom: new Date(),
+        kcal: e.kcal!,
+        proteinG: e.proteinG!,
+        carbsG: e.carbsG!,
+        fatG: e.fatG!,
+        source: 'AI',
+        active: true,
+      },
+    });
+    revalidatePath('/nutrition');
+    revalidatePath('/dashboard');
+    return { ok: true, data: { changed: 1 } };
+  }
+
+  const plan = await db.workoutPlan.findFirst({
+    where: { isActive: true },
+    select: {
+      id: true,
+      days: {
+        orderBy: { orderIndex: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          exercises: { select: { id: true, exerciseId: true, exercise: { select: { name: true } } } },
+        },
+      },
+    },
+  });
+  if (!plan) return { error: 'NO_PLAN' };
+
+  // Si nombró un día y existe en la rutina, se limita a ese; si no, se aplica a donde esté el ejercicio.
+  const dayAsked = e.day ? normalizeName(e.day) : null;
+  const dayScoped = dayAsked
+    ? plan.days.filter((d) => normalizeName(d.name).includes(dayAsked) || dayAsked.includes(normalizeName(d.name)))
+    : [];
+  const days = dayScoped.length > 0 ? dayScoped : plan.days;
+
+  const matches = days.flatMap((d) =>
+    d.exercises.filter((pe) => sameExercise(pe.exercise.name, e.exercise!)).map((pe) => ({ day: d, pe })),
+  );
+  if (matches.length === 0) return { error: 'NOT_FOUND' };
+
+  let changed = 0;
+  if (e.kind === 'remove_exercise') {
+    // Un día no puede quedar sin ejercicios.
+    const removable = matches.filter((m) => m.day.exercises.length > 1);
+    if (removable.length === 0) return { error: 'LAST_EXERCISE' };
+    await prisma.planExercise.deleteMany({ where: { id: { in: removable.map((m) => m.pe.id) } } });
+    changed = removable.length;
+  } else if (e.kind === 'replace_exercise') {
+    const newId = await resolveExerciseId(e.newExercise!, userId, e.type);
+    const { min, max } =
+      e.repsMin != null && e.repsMax != null ? widenReps(e.repsMin, e.repsMax, e.type) : { min: null, max: null };
+    for (const { day, pe } of matches) {
+      if (day.exercises.some((x) => x.exerciseId === newId)) continue;
+      await prisma.planExercise.update({
+        where: { id: pe.id },
+        data: {
+          exerciseId: newId,
+          // La explicación guardada era del ejercicio anterior.
+          rationale: null,
+          ...(e.sets != null && e.type === 'STRENGTH' ? { targetSets: e.sets } : {}),
+          ...(min != null && max != null && e.type === 'STRENGTH'
+            ? { targetRepsMin: min, targetRepsMax: max }
+            : {}),
+        },
+      });
+      changed++;
+    }
+    if (changed === 0) return { error: 'ALREADY' };
+  } else {
+    const { min, max } =
+      e.repsMin != null && e.repsMax != null ? widenReps(e.repsMin, e.repsMax, 'STRENGTH') : { min: null, max: null };
+    for (const { pe } of matches) {
+      await prisma.planExercise.update({
+        where: { id: pe.id },
+        data: {
+          ...(e.sets != null ? { targetSets: e.sets } : {}),
+          ...(min != null && max != null ? { targetRepsMin: min, targetRepsMax: max } : {}),
+        },
+      });
+      changed++;
+    }
+  }
+
+  revalidatePath(`/training/plans/${plan.id}`);
+  revalidatePath('/training');
+  return { ok: true, data: { changed } };
 }
 
 const addCoachExerciseSchema = coachExerciseSchema.extend({

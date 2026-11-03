@@ -318,7 +318,7 @@ nutrición, términos como RIR/RPE/1RM, etc.). No hace falta que esté en el
 contexto para responderlas — usá tu conocimiento, siempre dentro de las reglas
 de arriba (nada de diagnósticos ni indicaciones médicas).
 
-Formato de salida: un JSON con "reply" (tu mensaje al usuario), "food" y "exercise".
+Formato de salida: un JSON con "reply" (tu mensaje al usuario), "food", "exercise" y "edit".
 - "food" va SÓLO cuando el usuario pregunta por las calorías o los macros de UN alimento o
   producto concreto, o cuenta que comió algo puntual. Completalo con: "name" (nombre corto, en
   el idioma del usuario), valores por 100 g ("kcalPer100", "proteinPer100", "carbsPer100",
@@ -331,8 +331,26 @@ Formato de salida: un JSON con "reply" (tu mensaje al usuario), "food" y "exerci
   objetivo y nivel ("sets", "repsMin", "repsMax"; el rango de reps con al menos 3 de diferencia,
   ej. 8-12). Si pide recomendaciones, elegí el MEJOR ejercicio y explicá las alternativas en
   "reply". NO preguntes si quiere agregarlo a la rutina: la app lo muestra debajo.
-- Nunca completes "food" y "exercise" a la vez. Para cualquier otra pregunta (dudas generales,
-  pedir un plan entero) ambos son null.`;
+- "edit" va SÓLO cuando el usuario te pide CAMBIAR algo concreto de su rutina activa o de sus
+  objetivos de nutrición ("cambiame X por Y", "sacame X", "ponele 4 series a X", "subime las
+  calorías"). La app lo muestra con un botón "Editar" que lo aplica tal cual: hacé EXACTAMENTE lo
+  que pidió, nada más. Completalo con:
+  · "kind": "replace_exercise" (cambiar un ejercicio por otro), "remove_exercise" (sacarlo),
+    "change_exercise" (cambiar series o repeticiones) o "nutrition_targets" (calorías y macros).
+  · "summary": una línea que diga qué va a cambiar, en el idioma del usuario.
+  · Para ejercicios: "exercise" = el nombre EXACTO como aparece en la rutina del contexto; "day"
+    sólo si el usuario nombró el día; en "replace_exercise" el nuevo en "newExercise" (y "type"),
+    el mejor reemplazo para el mismo músculo y que pueda hacer con su equipamiento; en
+    "change_exercise" las "sets" y/o "repsMin"/"repsMax" que pidió (rango de reps con al menos 3
+    de diferencia, ej. 8-12). Los campos que no apliquen, null.
+  · Para "nutrition_targets": completá "kcal", "proteinG", "carbsG" y "fatG" (todos), coherentes
+    entre sí (proteína y carbohidratos 4 kcal/g, grasa 9 kcal/g) y dentro de lo razonable para su
+    peso y objetivo; sólo cambiá lo que pidió y dejá el resto como está en el contexto.
+  · Si el ejercicio no está en su rutina, o falta un dato clave, NO completes "edit": preguntale en
+    "reply". En "reply" explicá brevemente el cambio y decile que lo confirma con el botón;
+    NO digas que ya lo cambiaste.
+- Nunca completes más de uno entre "food", "exercise" y "edit". Para cualquier otra pregunta
+  (dudas generales, pedir un plan entero) los tres son null.`;
 }
 
 export function planSystemPrompt(locale: Locale, contextBlock: string): string {

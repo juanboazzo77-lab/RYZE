@@ -1442,6 +1442,11 @@ export const de: Dictionary = {
     exerciseAdded: 'Zu deinem Plan hinzugefügt',
     exerciseAlready: 'Diese Übung ist an diesem Tag schon vorhanden',
     exerciseNoPlan: 'Du hast noch keinen aktiven Plan. Erstelle einen, um es hinzuzufügen.',
+    editAsk: 'Soll ich diese Änderung vornehmen?',
+    editApply: 'Bearbeiten',
+    editApplied: 'Erledigt, es ist geändert',
+    editNotFound: 'Ich habe diese Übung in deinem aktiven Plan nicht gefunden',
+    editLastExercise: 'Ich kann keinen Tag ohne Übungen lassen',
     send: 'Senden',
     sending: 'Denkt nach…',
     empty:

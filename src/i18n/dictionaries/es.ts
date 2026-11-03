@@ -1440,6 +1440,11 @@ export const es = {
     exerciseAdded: 'Agregado a tu rutina',
     exerciseAlready: 'Ese ejercicio ya está en ese día',
     exerciseNoPlan: 'Todavía no tenés una rutina activa. Creá una para poder agregarlo.',
+    editAsk: '¿Querés que lo cambie?',
+    editApply: 'Editar',
+    editApplied: 'Listo, ya está editado',
+    editNotFound: 'No encontré ese ejercicio en tu rutina activa',
+    editLastExercise: 'No puedo dejar un día sin ejercicios',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:

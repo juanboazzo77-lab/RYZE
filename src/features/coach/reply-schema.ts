@@ -22,10 +22,53 @@ export const coachExerciseSchema = z.object({
 });
 export type CoachExercise = z.infer<typeof coachExerciseSchema>;
 
-/** Respuesta del chat: el texto y, si preguntó por un alimento concreto, el alimento. */
+const nullableInt = (min: number, max: number) => z.number().int().min(min).max(max).nullable().catch(null);
+
+/**
+ * Cambio concreto que el usuario le pidió al coach sobre su rutina activa o sus objetivos de
+ * nutrición. La app lo muestra con un botón "Editar" y lo aplica tal cual, sin que la IA toque
+ * nada por su cuenta.
+ */
+export const coachEditSchema = z.object({
+  kind: z.enum(['replace_exercise', 'remove_exercise', 'change_exercise', 'nutrition_targets']),
+  /** Qué se va a cambiar, en una línea y en el idioma del usuario. */
+  summary: z.string().trim().min(1).max(240),
+  /** Nombre del ejercicio tal como figura hoy en la rutina. */
+  exercise: z.string().trim().min(1).max(80).nullable().catch(null),
+  /** Día de la rutina, sólo si el usuario lo aclaró. */
+  day: z.string().trim().min(1).max(60).nullable().catch(null),
+  /** Ejercicio nuevo (sólo al reemplazar). */
+  newExercise: z.string().trim().min(2).max(80).nullable().catch(null),
+  type: z.enum(['STRENGTH', 'CARDIO']).catch('STRENGTH'),
+  sets: nullableInt(1, 10),
+  repsMin: nullableInt(1, 50),
+  repsMax: nullableInt(1, 50),
+  kcal: nullableInt(1000, 6000),
+  proteinG: nullableInt(30, 400),
+  carbsG: nullableInt(0, 800),
+  fatG: nullableInt(10, 300),
+});
+export type CoachEdit = z.infer<typeof coachEditSchema>;
+
+/** Un cambio sólo se ofrece si trae todo lo que hace falta para aplicarlo sin adivinar. */
+export function isApplicableCoachEdit(e: CoachEdit): boolean {
+  switch (e.kind) {
+    case 'replace_exercise':
+      return !!e.exercise && !!e.newExercise;
+    case 'remove_exercise':
+      return !!e.exercise;
+    case 'change_exercise':
+      return !!e.exercise && (e.sets != null || (e.repsMin != null && e.repsMax != null));
+    case 'nutrition_targets':
+      return e.kcal != null && e.proteinG != null && e.carbsG != null && e.fatG != null;
+  }
+}
+
+/** Respuesta del chat: el texto y, si corresponde, un alimento, un ejercicio o un cambio a aplicar. */
 export const coachReplySchema = z.object({
   reply: z.string().min(1),
   food: coachFoodSchema.nullable().catch(null),
   exercise: coachExerciseSchema.nullable().catch(null),
+  edit: coachEditSchema.nullable().catch(null),
 });
 export type CoachReply = z.infer<typeof coachReplySchema>;

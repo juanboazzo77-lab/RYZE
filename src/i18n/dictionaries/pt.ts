@@ -1442,6 +1442,11 @@ export const pt: Dictionary = {
     exerciseAdded: 'Adicionado à sua rotina',
     exerciseAlready: 'Esse exercício já está nesse dia',
     exerciseNoPlan: 'Você ainda não tem uma rotina ativa. Crie uma para poder adicionar.',
+    editAsk: 'Quer que eu faça essa mudança?',
+    editApply: 'Editar',
+    editApplied: 'Pronto, já está editado',
+    editNotFound: 'Não encontrei esse exercício na sua rotina ativa',
+    editLastExercise: 'Não posso deixar um dia sem exercícios',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:
