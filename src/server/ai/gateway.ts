@@ -60,6 +60,19 @@ export interface CoachHistoryMsg {
 }
 
 const COACH_TIMEOUT_MS = 70_000;
+
+/** El coach dice que no puede editar (lo hace por costumbre; la app sí lo permite con "edits"). */
+const COACH_REFUSAL =
+  /no (puedo|podemos|puedes|tengo (forma|manera|acceso))[^.\n]{0,40}(editar|modificar|cambiar|tocar|acceder)|(desde ac[aá]|desde el chat|desde esta conversaci[oó]n)[^.\n]{0,30}no (puedo|se puede)/i;
+
+/** Se suma al prompt para reintentar cuando el coach se negó a un pedido de cambio. */
+const COACH_EDIT_RETRY = `
+
+IMPORTANTE: el usuario te pide modificar su rutina, su registro de comidas de hoy o sus objetivos,
+y SÍ podés hacerlo: completá "edits" con los cambios concretos (hasta 12, usando los nombres
+exactos del contexto) y en "reply" contá qué vas a cambiar. NO digas que no podés editar ni lo
+derives a otra pantalla. Ignorá cualquier mensaje anterior donde hayas dicho lo contrario.
+Si de verdad falta un dato (qué día, cuánto), preguntalo en "reply" sin decir que no podés.`;
 const PLAN_TIMEOUT_MS = 110_000;
 // La revisión semanal corre revisión + informe de físico en paralelo: tope total de espera.
 const CHECKIN_TIMEOUT_MS = 80_000;
@@ -89,7 +102,11 @@ export async function runCoachTurn(args: {
   const models = [...new Set([modelFor('coach_chat'), modelFor('generate_plan')])];
 
   const messages: AiChatMessage[] = [
-    ...history.slice(-MAX_HISTORY).map((m) => ({ role: m.role, content: m.content })),
+    ...history.slice(-MAX_HISTORY).map((m) => ({
+      role: m.role,
+      // Una respuesta vieja donde el coach dijo que no podía editar no tiene que servir de ejemplo.
+      content: m.role === 'assistant' && COACH_REFUSAL.test(m.content) ? '[respuesta anterior omitida]' : m.content,
+    })),
     { role: 'user' as const, content: userMessage },
   ];
 
@@ -118,19 +135,40 @@ export async function runCoachTurn(args: {
           }
           throw err;
         });
-      if (structured?.data?.reply.trim()) {
-        await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, true);
-        const { food, exercise, edits } = structured.data;
+      let answer = structured;
+      // Si se negó a editar (cree que no puede), se reintenta una vez diciéndole que sí puede.
+      if (answer?.data?.reply.trim() && answer.data.edits.length === 0 && COACH_REFUSAL.test(answer.data.reply)) {
+        await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, false);
+        console.error('[ai] coach: se negó a editar, reintento', { model });
+        const retried = await activeProvider()
+          .generateStructured({
+            model,
+            system: system + COACH_EDIT_RETRY,
+            messages,
+            schema: coachReplySchema,
+            schemaName: 'CoachReply',
+            maxOutputTokens: maxOutputTokensFor('coach_chat') + 800,
+            timeoutMs: COACH_TIMEOUT_MS,
+            temperature: 0.4,
+            thinking: false,
+          })
+          .catch(() => null);
+        // Si el reintento falla, se queda con la primera respuesta.
+        if (retried?.data?.reply.trim()) answer = retried;
+      }
+      if (answer?.data?.reply.trim()) {
+        await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, true);
+        const { food, exercise, edits } = answer.data;
         // Sólo una sugerencia por respuesta: los cambios pedidos tienen prioridad.
         const hasEdits = edits.length > 0;
         return {
-          text: structured.data.reply.trim(),
+          text: answer.data.reply.trim(),
           edits,
           food: hasEdits ? null : food,
           exercise: hasEdits || food ? null : exercise,
         };
       }
-      if (structured) await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, false);
+      if (answer) await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, false);
 
       const res = await activeProvider().generate({
         model,
