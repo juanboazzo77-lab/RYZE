@@ -56,15 +56,20 @@ export function PlanSelectButton({
       const packages = await getCurrentOfferingPackages();
       const pkg = packages.find((p) => p.identifier === packageId);
       if (!pkg) {
-        toast.error(errorMessage);
+        // Sin el paquete no hay nada que comprar: o RevenueCat no tiene el offering cargado o los
+        // identificadores no coinciden. Se muestra qué llegó para poder distinguirlo.
+        const found = packages.map((p) => p.identifier).join(', ') || 'sin paquetes';
+        toast.error(`${errorMessage} (falta ${packageId}; hay: ${found})`);
         return;
       }
       await purchasePackage(pkg);
       await syncMyEntitlementAction();
       toast.success(successMessage);
     } catch (e) {
-      if (!(e as { userCancelled?: boolean }).userCancelled) {
-        toast.error(errorMessage);
+      const err = e as { userCancelled?: boolean; code?: string | number; message?: string };
+      if (!err.userCancelled) {
+        const detail = [err.code, err.message].filter(Boolean).join(' · ');
+        toast.error(detail ? `${errorMessage} (${detail})` : errorMessage);
       }
     } finally {
       setLoading(false);
