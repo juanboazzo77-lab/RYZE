@@ -198,7 +198,7 @@ export function can(entitlement: TrialInfo, feature: Feature): boolean {
  * prueba gratis haya vencido. Se pueden sumar más mails con FULL_ACCESS_EMAILS (separados
  * por coma). Son cuentas propias ya creadas; no hace falta que existan en la base.
  */
-const DEFAULT_FULL_ACCESS = ['demo@fitai.app'];
+const DEFAULT_FULL_ACCESS = ['demo@fitai.app', 'vfernandezmussi@gmail.com'];
 
 export function hasFullAccess(email: string | null | undefined): boolean {
   if (!email) return false;

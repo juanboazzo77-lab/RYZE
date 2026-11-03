@@ -66,6 +66,7 @@ describe('entitlements', () => {
     const expired = { tier: 'FREE' as const, createdAt: daysAgo(60) };
     expect(hasFullAccess('Demo@Fitai.app')).toBe(true);
     expect(hasFullAccess('otra@persona.com')).toBe(false);
+    expect(hasFullAccess('VFernandezMussi@gmail.com')).toBe(true);
     const full = withFullAccess('demo@fitai.app', expired);
     expect(can(full, 'coach_profile')).toBe(true);
     expect(can(withFullAccess('otra@persona.com', expired), 'ai_coach_message')).toBe(false);
