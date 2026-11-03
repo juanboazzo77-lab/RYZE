@@ -1445,6 +1445,9 @@ export const es = {
     editApplied: 'Listo, ya está editado',
     editNotFound: 'No encontré ese ejercicio en tu rutina activa',
     editLastExercise: 'No puedo dejar un día sin ejercicios',
+    editAutoToggle: 'Aplicar los cambios automáticamente',
+    editAutoHint: 'Lo que le pidas al coach se edita solo, sin tocar “Editar”.',
+    editAppliedAuto: 'Aplicado automáticamente',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:

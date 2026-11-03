@@ -35,6 +35,7 @@ export default async function CoachPage() {
       <CoachChat
         initialMessages={thread.messages}
         usage={{ used: usage.coachUsed, limit: usage.coachLimit }}
+        autoApply={ctx.profile.coachAutoApply}
       />
     </div>
   );

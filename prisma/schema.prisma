@@ -232,6 +232,8 @@ enum NotificationChannel {
 model Profile {
   id                     String           @id @db.Uuid
   email                  String
+  /// Los cambios que el cliente le pide al coach (rutina, calorías) se aplican solos, sin tocar "Editar".
+  coachAutoApply         Boolean          @default(false) @map("coach_auto_apply")
   name                   String?
   sex                    Sex?
   birthdate              DateTime?        @db.Date

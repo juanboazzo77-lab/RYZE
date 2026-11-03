@@ -69,6 +69,9 @@ export async function sendCoachMessage(
     food: CoachFood | null;
     exercise: CoachExercise | null;
     edit: CoachEdit | null;
+    /** El cambio ya se aplicó solo (el cliente tiene activado "aplicar automáticamente"). */
+    editApplied: boolean;
+    editError: string | null;
     planDays: Array<{ id: string; name: string }>;
   }>
 > {
@@ -143,7 +146,19 @@ export async function sendCoachMessage(
     planDays = plan?.days ?? [];
   }
 
-  return { ok: true, data: { reply, food, exercise, edit, planDays } };
+  // Si el cliente eligió aplicar los cambios solos, se aplica el pedido acá mismo.
+  let editApplied = false;
+  let editError: string | null = null;
+  if (edit && profile.coachAutoApply) {
+    const done = await performCoachEdit(userId, edit).catch((err) => {
+      console.error('[coach] no se pudo aplicar el cambio solo', err instanceof Error ? err.message : err);
+      return { error: 'ERROR' } as Result<{ changed: number }>;
+    });
+    editApplied = !!done.ok;
+    editError = done.ok ? null : (done.error ?? 'ERROR');
+  }
+
+  return { ok: true, data: { reply, food, exercise, edit, editApplied, editError, planDays } };
 }
 
 /** Busca un ejercicio por nombre dentro de la rutina: exacto o, si no, uno contiene al otro. */
@@ -163,8 +178,18 @@ function sameExercise(planName: string, asked: string): boolean {
 export async function applyCoachEdit(raw: CoachEdit): Promise<Result<{ changed: number }>> {
   const parsed = coachEditSchema.safeParse(raw);
   if (!parsed.success || !isApplicableCoachEdit(parsed.data)) return { error: 'INVALID' };
-  const e = parsed.data;
   const { userId } = await requireUser();
+  return performCoachEdit(userId, parsed.data);
+}
+
+/** Elige si los cambios que pide el cliente se aplican solos (sin tocar "Editar"). */
+export async function setCoachAutoApply(enabled: boolean): Promise<Result> {
+  const { userId } = await requireUser();
+  await prisma.profile.update({ where: { id: userId }, data: { coachAutoApply: enabled === true } });
+  return { ok: true };
+}
+
+async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ changed: number }>> {
   const db = forUser(userId);
 
   if (e.kind === 'nutrition_targets') {

@@ -7,6 +7,7 @@ import { Check, Loader2, Pencil, RotateCcw, Send, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
+import { Switch } from '@/components/ui/switch';
 import { DecimalInput } from '@/components/form/decimal-input';
 import { useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
@@ -18,6 +19,7 @@ import {
   applyCoachEdit,
   resetCoachConversation,
   sendCoachMessage,
+  setCoachAutoApply,
 } from './actions';
 import type { CoachEdit, CoachExercise, CoachFood } from './reply-schema';
 
@@ -219,11 +221,42 @@ function FoodSuggestion({ food, onClose }: { food: CoachFood; onClose: () => voi
 }
 
 /** Debajo de la respuesta: el cambio que pidió el usuario, con un botón que lo aplica tal cual. */
-function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => void }) {
+function editErrorMessage(error: string | undefined, tc: ReturnType<typeof useT>['coach']): string {
+  switch (error) {
+    case 'NOT_FOUND':
+      return tc.editNotFound;
+    case 'NO_PLAN':
+      return tc.exerciseNoPlan;
+    case 'LAST_EXERCISE':
+      return tc.editLastExercise;
+    case 'ALREADY':
+      return tc.exerciseAlready;
+    default:
+      return tc.error;
+  }
+}
+
+function EditSuggestion({
+  edit,
+  alreadyApplied,
+  failed,
+  autoApply,
+  onAutoApplyChange,
+  onClose,
+}: {
+  edit: CoachEdit;
+  /** Se aplicó solo, apenas respondió el coach. */
+  alreadyApplied: boolean;
+  /** Se intentó aplicar solo y falló: queda el botón para reintentar. */
+  failed: string | null;
+  autoApply: boolean;
+  onAutoApplyChange: (v: boolean) => void;
+  onClose: () => void;
+}) {
   const t = useT();
   const tc = t.coach;
   const [pending, start] = useTransition();
-  const [applied, setApplied] = useState(false);
+  const [applied, setApplied] = useState(alreadyApplied);
 
   function apply() {
     start(async () => {
@@ -233,26 +266,19 @@ function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => voi
         toast.success(tc.editApplied);
         return;
       }
-      const message =
-        res.error === 'NOT_FOUND'
-          ? tc.editNotFound
-          : res.error === 'NO_PLAN'
-            ? tc.exerciseNoPlan
-            : res.error === 'LAST_EXERCISE'
-              ? tc.editLastExercise
-              : res.error === 'ALREADY'
-                ? tc.exerciseAlready
-                : tc.error;
-      toast.error(message);
+      toast.error(editErrorMessage(res.error, tc));
     });
   }
 
   if (applied) {
     return (
-      <p className="flex items-center gap-1.5 pl-1 text-xs text-success">
-        <Check className="size-3.5" />
-        {tc.editApplied}
-      </p>
+      <div className="max-w-[85%] space-y-1 pl-1">
+        <p className="flex items-center gap-1.5 text-xs text-success">
+          <Check className="size-3.5" />
+          {alreadyApplied ? tc.editAppliedAuto : tc.editApplied}
+        </p>
+        <p className="text-xs text-muted-foreground">{edit.summary}</p>
+      </div>
     );
   }
 
@@ -260,6 +286,7 @@ function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => voi
     <div className="max-w-[85%] space-y-2 rounded-2xl border bg-card p-3 text-sm">
       <p className="font-medium">{tc.editAsk}</p>
       <p className="text-xs text-muted-foreground">{edit.summary}</p>
+      {failed ? <p className="text-xs text-destructive">{editErrorMessage(failed, tc)}</p> : null}
       <div className="flex gap-2">
         <Button size="sm" onClick={apply} disabled={pending}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Pencil className="size-4" />}
@@ -269,6 +296,10 @@ function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => voi
           {tc.foodSkip}
         </Button>
       </div>
+      <label className="flex items-center justify-between gap-3 border-t pt-2 text-xs text-muted-foreground">
+        {tc.editAutoToggle}
+        <Switch checked={autoApply} onCheckedChange={onAutoApplyChange} aria-label={tc.editAutoToggle} />
+      </label>
     </div>
   );
 }
@@ -276,9 +307,11 @@ function EditSuggestion({ edit, onClose }: { edit: CoachEdit; onClose: () => voi
 interface Props {
   initialMessages: CoachMessage[];
   usage: { used: number; limit: number };
+  /** Los cambios que pide el cliente se aplican solos, sin tocar "Editar". */
+  autoApply: boolean;
 }
 
-export function CoachChat({ initialMessages, usage }: Props) {
+export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply }: Props) {
   const t = useT();
   const tc = t.coach;
   const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
@@ -287,7 +320,10 @@ export function CoachChat({ initialMessages, usage }: Props) {
   const [exercises, setExercises] = useState<
     Record<string, { exercise: CoachExercise; planDays: PlanDayOption[] }>
   >({});
-  const [edits, setEdits] = useState<Record<string, CoachEdit>>({});
+  const [edits, setEdits] = useState<
+    Record<string, { edit: CoachEdit; applied: boolean; failed: string | null }>
+  >({});
+  const [autoApply, setAutoApply] = useState(initialAutoApply);
   const [draft, setDraft] = useState('');
   const [used, setUsed] = useState(usage.used);
   const [pending, start] = useTransition();
@@ -317,7 +353,12 @@ export function CoachChat({ initialMessages, usage }: Props) {
         const food = res.data.food;
         if (food) setFoods((f) => ({ ...f, [replyId]: food }));
         const edit = res.data.edit;
-        if (edit) setEdits((x) => ({ ...x, [replyId]: edit }));
+        if (edit) {
+          setEdits((x) => ({
+            ...x,
+            [replyId]: { edit, applied: res.data!.editApplied, failed: res.data!.editError },
+          }));
+        }
         const exercise = res.data.exercise;
         if (exercise) {
           setExercises((x) => ({ ...x, [replyId]: { exercise, planDays: res.data!.planDays } }));
@@ -336,6 +377,16 @@ export function CoachChat({ initialMessages, usage }: Props) {
         setMessages((m) => m.filter((x) => x.id !== userMsg.id));
         setDraft(text);
         toast.error(res.error || tc.error);
+      }
+    });
+  }
+
+  function changeAutoApply(value: boolean) {
+    setAutoApply(value);
+    void setCoachAutoApply(value).then((res) => {
+      if (!res.ok) {
+        setAutoApply(!value);
+        toast.error(tc.error);
       }
     });
   }
@@ -370,6 +421,14 @@ export function CoachChat({ initialMessages, usage }: Props) {
         </div>
       </div>
 
+      <label className="flex items-center justify-between gap-3 rounded-xl border bg-card px-3 py-2 text-xs">
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-foreground">{tc.editAutoToggle}</span>
+          <span className="block text-muted-foreground">{tc.editAutoHint}</span>
+        </span>
+        <Switch checked={autoApply} onCheckedChange={changeAutoApply} aria-label={tc.editAutoToggle} />
+      </label>
+
       <div className="flex-1 space-y-3 overflow-y-auto pb-4">
         {messages.length === 0 ? (
           <p className="mx-auto max-w-md py-10 text-center text-sm text-muted-foreground">
@@ -393,7 +452,11 @@ export function CoachChat({ initialMessages, usage }: Props) {
               {edits[m.id] ? (
                 <div className="flex justify-start">
                   <EditSuggestion
-                    edit={edits[m.id]!}
+                    edit={edits[m.id]!.edit}
+                    alreadyApplied={edits[m.id]!.applied}
+                    failed={edits[m.id]!.failed}
+                    autoApply={autoApply}
+                    onAutoApplyChange={changeAutoApply}
                     onClose={() =>
                       setEdits((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))
                     }

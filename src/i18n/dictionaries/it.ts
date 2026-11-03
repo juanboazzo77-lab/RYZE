@@ -1447,6 +1447,9 @@ export const it: Dictionary = {
     editApplied: 'Fatto, è stato modificato',
     editNotFound: 'Non ho trovato questo esercizio nella tua routine attiva',
     editLastExercise: 'Non posso lasciare un giorno senza esercizi',
+    editAutoToggle: 'Applica le modifiche automaticamente',
+    editAutoHint: 'Ciò che chiedi al coach viene modificato subito, senza toccare “Modifica”.',
+    editAppliedAuto: 'Applicato automaticamente',
     send: 'Invia',
     sending: 'Sto pensando…',
     empty:
