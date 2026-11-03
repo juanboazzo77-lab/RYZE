@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { coachReplySchema, coachUndoSchema, isApplicableCoachEdit, type CoachEdit } from './reply-schema';
 
 const base: CoachEdit = {
@@ -136,18 +137,35 @@ describe('coachUndoSchema', () => {
   });
 });
 
+/** Un cambio en el formato que ve la IA: todos los campos, "" o 0 cuando no aplican. */
+const wire = (o: Record<string, unknown>) => ({
+  kind: 'remove_exercise',
+  summary: 'Cambio',
+  target: '',
+  newName: '',
+  day: '',
+  meal: 'NONE',
+  type: 'STRENGTH',
+  sets: 0,
+  repsMin: 0,
+  repsMax: 0,
+  amount: 0,
+  kcal: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+  ...o,
+});
+
 describe('coachReplySchema', () => {
   it('un cambio con valores fuera de rango se descarta sin romper la respuesta', () => {
     const parsed = coachReplySchema.parse({
       reply: 'Dale',
       food: null,
       exercise: null,
-      edits: [
-        { kind: 'nutrition_targets', summary: 'Subo las calorías', kcal: 99999, proteinG: 160, carbsG: 300, fatG: 70 },
-      ],
+      edits: [wire({ kind: 'nutrition_targets', summary: 'Subo las calorías', kcal: 99999, protein: 160, carbs: 300, fat: 70 })],
     });
     expect(parsed.reply).toBe('Dale');
-    // Un número fuera de rango queda en null: el cambio no es aplicable y se descarta.
     expect(parsed.edits).toEqual([]);
   });
 
@@ -156,27 +174,55 @@ describe('coachReplySchema', () => {
     expect(parsed.edits).toEqual([]);
   });
 
+  it('traduce los campos de la IA al cambio que se aplica', () => {
+    const parsed = coachReplySchema.parse({
+      reply: 'ok',
+      food: null,
+      exercise: null,
+      edits: [
+        wire({ kind: 'nutrition_targets', summary: 'Subo calorías', kcal: 2800, protein: 170, carbs: 330, fat: 80 }),
+        wire({ kind: 'add_food', summary: 'Sumo arroz', newName: 'Arroz cocido', amount: 150, meal: 'LUNCH', kcal: 130, protein: 2.7, carbs: 28, fat: 0.3 }),
+        wire({ kind: 'change_food', summary: 'Pollo a 250 g', target: 'Pollo a la plancha', amount: 250 }),
+        wire({ kind: 'replace_exercise', summary: 'Prensa por hack', target: 'Prensa de piernas', newName: 'Sentadilla hack', sets: 4, repsMin: 6, repsMax: 10, day: 'Lunes' }),
+      ],
+    });
+    const [targets, add, change, replace] = parsed.edits;
+    expect(targets).toMatchObject({ kind: 'nutrition_targets', kcal: 2800, proteinG: 170, carbsG: 330, fatG: 80, exercise: null });
+    expect(add).toMatchObject({ kind: 'add_food', newFoodName: 'Arroz cocido', amount: 150, meal: 'LUNCH', kcalPer100: 130, carbsPer100: 28 });
+    expect(change).toMatchObject({ kind: 'change_food', foodName: 'Pollo a la plancha', amount: 250, meal: null });
+    expect(replace).toMatchObject({ kind: 'replace_exercise', exercise: 'Prensa de piernas', newExercise: 'Sentadilla hack', sets: 4, repsMin: 6, repsMax: 10, day: 'Lunes' });
+  });
+
   it('conserva varios cambios válidos y descarta los incompletos', () => {
     const parsed = coachReplySchema.parse({
       reply: 'Te armo el día',
       food: null,
       exercise: null,
       edits: [
-        { kind: 'remove_exercise', summary: 'Saco el peso muerto', exercise: 'Peso muerto' },
-        { kind: 'add_exercise', summary: 'Sumo sentadilla búlgara', newExercise: 'Sentadilla búlgara', day: 'Pierna' },
-        { kind: 'replace_exercise', summary: 'Falta el nuevo', exercise: 'Prensa' },
-        { kind: 'cualquier_cosa', summary: 'inválido' },
+        wire({ kind: 'remove_exercise', summary: 'Saco el peso muerto', target: 'Peso muerto' }),
+        wire({ kind: 'add_exercise', summary: 'Sumo sentadilla búlgara', newName: 'Sentadilla búlgara', day: 'Pierna' }),
+        wire({ kind: 'replace_exercise', summary: 'Falta el nuevo', target: 'Prensa' }),
       ],
     });
     expect(parsed.edits.map((e) => e.kind)).toEqual(['remove_exercise', 'add_exercise']);
   });
 
   it('no deja pasar más de 12 cambios', () => {
-    const edits = Array.from({ length: 20 }, (_, i) => ({
-      kind: 'remove_exercise',
-      summary: `Saco ${i}`,
-      exercise: `Ejercicio ${i}`,
-    }));
+    const edits = Array.from({ length: 20 }, (_, i) => wire({ summary: `Saco ${i}`, target: `Ejercicio ${i}` }));
     expect(coachReplySchema.parse({ reply: 'x', food: null, exercise: null, edits }).edits).toHaveLength(12);
+  });
+});
+
+describe('formato para la IA', () => {
+  // Anthropic rechaza los esquemas con muchos campos opcionales o que pueden ser nulos (~16).
+  it('no supera los límites de campos opcionales ni nulos', () => {
+    const json = JSON.stringify(zodToJsonSchema(coachReplySchema, { target: 'jsonSchema7', $refStrategy: 'none' }));
+    const nullable = (json.match(/"type":["[a-z]+","null"]|"type":"null"/g) ?? []).length;
+    expect(nullable).toBeLessThanOrEqual(8);
+    const edit = (zodToJsonSchema(coachReplySchema, { target: 'jsonSchema7', $refStrategy: 'none' }) as {
+      properties: { edits: { items: { required: string[]; properties: Record<string, unknown> } } };
+    }).properties.edits.items;
+    // Todos los campos de un cambio son obligatorios.
+    expect(edit.required.sort()).toEqual(Object.keys(edit.properties).sort());
   });
 });

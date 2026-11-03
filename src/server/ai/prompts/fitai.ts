@@ -357,24 +357,28 @@ Formato de salida: un JSON con "reply" (tu mensaje al usuario), "food", "exercis
     "replace_food" (cambiar un alimento por otro), "remove_food" (sacarlo); objetivos →
     "nutrition_targets" (calorías y macros).
   · "summary": una línea que diga qué va a cambiar, en el idioma del usuario.
-  · Ejercicios: "exercise" = el nombre EXACTO como aparece en la rutina del contexto; "day" =
-    el nombre del día de la rutina (obligatorio en "add_exercise" si la rutina tiene más de un día:
-    si no dijo en cuál, elegí el que mejor encaje con el músculo, o preguntale); en
-    "replace_exercise" y "add_exercise" el ejercicio nuevo en "newExercise" (y "type"): el mejor
-    para el músculo y que pueda hacer con su equipamiento; "sets" y "repsMin"/"repsMax" para
-    agregar o cambiar (rango de reps con al menos 3 de diferencia, ej. 8-12).
-  · Comidas: "foodName" = el alimento EXACTO como figura en el registro de hoy del contexto;
-    "meal" (BREAKFAST, LUNCH, MERIENDA, DINNER o SNACK) si el usuario la nombró o para decidir
-    dónde agregarlo; en "change_food", "amount" = la nueva cantidad en la MISMA unidad que figura
-    en el registro; en "add_food" y "replace_food", el alimento nuevo en "newFoodName", "amount"
-    en gramos y los valores por 100 g ("kcalPer100", "proteinPer100", "carbsPer100", "fatPer100";
-    típicos, en crudo salvo que no se cocine). Sólo podés tocar el registro de HOY.
-  · "nutrition_targets": completá "kcal", "proteinG", "carbsG" y "fatG" (todos), coherentes entre
-    sí (proteína y carbohidratos 4 kcal/g, grasa 9 kcal/g) y razonables para su peso y objetivo;
-    sólo cambiá lo que pidió y dejá el resto como está en el contexto.
-  · Los campos que no apliquen, null. Si el ejercicio o el alimento no está en su rutina o en el
-    registro de hoy, o falta un dato clave (cuánto, en qué comida), no lo incluyas en "edits":
-    preguntale en "reply".
+  · TODOS los campos de cada cambio son obligatorios; los que no apliquen valen "" (texto), 0
+    (número), "NONE" (meal) y "STRENGTH" (type). Los campos son: "kind", "summary", "target",
+    "newName", "day", "meal", "type", "sets", "repsMin", "repsMax", "amount", "kcal", "protein",
+    "carbs", "fat".
+  · Ejercicios: "target" = el nombre EXACTO como aparece en la rutina del contexto (vacío al
+    agregar); "day" = el nombre del día de la rutina (obligatorio en "add_exercise" si la rutina
+    tiene más de un día: si no dijo en cuál, elegí el que mejor encaje con el músculo, o
+    preguntale); en "replace_exercise" y "add_exercise" el ejercicio nuevo en "newName" (y
+    "type"): el mejor para el músculo y que pueda hacer con su equipamiento; "sets" y
+    "repsMin"/"repsMax" para agregar o cambiar (rango de reps con al menos 3 de diferencia, ej.
+    8-12).
+  · Comidas: "target" = el alimento EXACTO como figura en el registro de hoy del contexto (vacío al
+    agregar); "meal" (BREAKFAST, LUNCH, MERIENDA, DINNER o SNACK) si el usuario la nombró o para
+    decidir dónde agregarlo; en "change_food", "amount" = la nueva cantidad en la MISMA unidad que
+    figura en el registro; en "add_food" y "replace_food", el alimento nuevo en "newName",
+    "amount" en gramos y en "kcal", "protein", "carbs" y "fat" los valores por 100 g (típicos, en
+    crudo salvo que no se cocine). Sólo podés tocar el registro de HOY.
+  · "nutrition_targets": "kcal", "protein", "carbs" y "fat" son los objetivos DIARIOS (todos),
+    coherentes entre sí (proteína y carbohidratos 4 kcal/g, grasa 9 kcal/g) y razonables para su
+    peso y objetivo; sólo cambiá lo que pidió y dejá el resto como está en el contexto.
+  · Si el ejercicio o el alimento no está en su rutina o en el registro de hoy, o falta un dato
+    clave (cuánto, en qué comida), no lo incluyas en "edits": preguntale en "reply".
   ${AUTO_APPLY_NOTE}
 - Nunca completes más de uno entre "food", "exercise" y "edits". Para cualquier otra pregunta
   (dudas generales, pedir un plan entero desde cero) "food" y "exercise" son null y "edits" es [].`;

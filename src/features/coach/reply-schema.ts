@@ -82,6 +82,68 @@ export const coachEditSchema = z.object({
 });
 export type CoachEdit = z.infer<typeof coachEditSchema>;
 
+/**
+ * Formato que se le pide a la IA. Anthropic rechaza los esquemas con demasiados campos opcionales
+ * o que pueden ser nulos (unos 16), así que acá TODOS los campos son obligatorios y valen "" o 0
+ * cuando no aplican. Se reducen a pocos campos que significan una cosa u otra según `kind`.
+ * Después `coachEditSchema` los ordena y descarta lo fuera de rango.
+ */
+const coachEditWireSchema = z
+  .object({
+    kind: z.enum(COACH_EDIT_KINDS),
+    summary: z.string().describe('Qué cambia, en una línea, en el idioma del usuario'),
+    target: z
+      .string()
+      .describe('Ejercicio o alimento que ya existe, con el nombre exacto del contexto ("" si no aplica)'),
+    newName: z.string().describe('Ejercicio o alimento nuevo ("" si no aplica)'),
+    day: z.string().describe('Día de la rutina ("" si no aplica)'),
+    meal: z.enum(['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK', 'NONE']),
+    type: z.enum(['STRENGTH', 'CARDIO']),
+    sets: z.number().describe('Series (0 si no aplica)'),
+    repsMin: z.number().describe('Repeticiones mínimas (0 si no aplica)'),
+    repsMax: z.number().describe('Repeticiones máximas (0 si no aplica)'),
+    amount: z.number().describe('Cantidad en gramos o en la unidad del registro (0 si no aplica)'),
+    kcal: z.number().describe('Calorías: objetivo diario, o por 100 g de un alimento nuevo'),
+    protein: z.number().describe('Proteína en g: objetivo diario, o por 100 g de un alimento nuevo'),
+    carbs: z.number().describe('Carbohidratos en g: objetivo diario, o por 100 g de un alimento nuevo'),
+    fat: z.number().describe('Grasa en g: objetivo diario, o por 100 g de un alimento nuevo'),
+  })
+  .transform((w): CoachEdit | null => {
+    const text = (s: string) => s.trim() || null;
+    const pos = (n: number) => (Number.isFinite(n) && n > 0 ? Math.round(n) : null);
+    const num = (n: number) => (Number.isFinite(n) ? n : null);
+    const exerciseKind = w.kind.endsWith('_exercise');
+    const foodKind = w.kind.endsWith('_food');
+    const targets = w.kind === 'nutrition_targets';
+    const hasTarget = w.kind !== 'add_exercise' && w.kind !== 'add_food';
+    const hasNew = w.kind === 'replace_exercise' || w.kind === 'add_exercise' || w.kind === 'add_food' || w.kind === 'replace_food';
+    const per100 = w.kind === 'add_food' || w.kind === 'replace_food';
+    const parsed = coachEditSchema.safeParse({
+      kind: w.kind,
+      summary: w.summary.slice(0, 240),
+      exercise: exerciseKind && hasTarget ? text(w.target) : null,
+      day: exerciseKind ? text(w.day) : null,
+      newExercise: exerciseKind && hasNew ? text(w.newName) : null,
+      type: w.type,
+      sets: exerciseKind ? pos(w.sets) : null,
+      repsMin: exerciseKind ? pos(w.repsMin) : null,
+      repsMax: exerciseKind ? pos(w.repsMax) : null,
+      kcal: targets ? pos(w.kcal) : null,
+      proteinG: targets ? pos(w.protein) : null,
+      carbsG: targets ? num(Math.round(w.carbs)) : null,
+      fatG: targets ? pos(w.fat) : null,
+      foodName: foodKind && hasTarget ? text(w.target) : null,
+      newFoodName: foodKind && hasNew ? text(w.newName) : null,
+      meal: foodKind && w.meal !== 'NONE' ? w.meal : null,
+      amount: foodKind ? (Number.isFinite(w.amount) && w.amount > 0 ? w.amount : null) : null,
+      kcalPer100: per100 ? num(w.kcal) : null,
+      proteinPer100: per100 ? num(w.protein) : null,
+      carbsPer100: per100 ? num(w.carbs) : null,
+      fatPer100: per100 ? num(w.fat) : null,
+    });
+    return parsed.success ? parsed.data : null;
+  });
+
 const intOrNull = z.number().int().nullable();
 const strOrNull = z.string().max(2000).nullable();
 
@@ -233,8 +295,8 @@ export const coachReplySchema = z.object({
   exercise: coachExerciseSchema.nullable().catch(null),
   /** Uno o varios cambios pedidos (por ejemplo, rehacer un día entero). Los inválidos se descartan. */
   edits: z
-    .array(coachEditSchema.nullable().catch(null))
-    .catch([])
+    .array(coachEditWireSchema)
+    .default([])
     .transform((list) => list.filter((e): e is CoachEdit => !!e && isApplicableCoachEdit(e)).slice(0, MAX_EDITS)),
 });
 export type CoachReply = z.infer<typeof coachReplySchema>;
