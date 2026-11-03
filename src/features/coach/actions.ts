@@ -15,8 +15,10 @@ import {
   coachEditSchema,
   coachExerciseSchema,
   coachFoodSchema,
+  coachUndoSchema,
   isApplicableCoachEdit,
   type CoachEdit,
+  type CoachUndo,
   type CoachExercise,
   type CoachFood,
 } from './reply-schema';
@@ -72,6 +74,7 @@ export async function sendCoachMessage(
     /** El cambio ya se aplicó solo (el cliente tiene activado "aplicar automáticamente"). */
     editApplied: boolean;
     editError: string | null;
+    editUndo: CoachUndo | null;
     planDays: Array<{ id: string; name: string }>;
   }>
 > {
@@ -149,16 +152,24 @@ export async function sendCoachMessage(
   // Si el cliente eligió aplicar los cambios solos, se aplica el pedido acá mismo.
   let editApplied = false;
   let editError: string | null = null;
+  let editUndo: CoachUndo | null = null;
   if (edit && profile.coachAutoApply) {
     const done = await performCoachEdit(userId, edit).catch((err) => {
       console.error('[coach] no se pudo aplicar el cambio solo', err instanceof Error ? err.message : err);
-      return { error: 'ERROR' } as Result<{ changed: number }>;
+      return { error: 'ERROR' } as Result<CoachEditDone>;
     });
     editApplied = !!done.ok;
+    editUndo = done.data?.undo ?? null;
     editError = done.ok ? null : (done.error ?? 'ERROR');
   }
 
-  return { ok: true, data: { reply, food, exercise, edit, editApplied, editError, planDays } };
+  return { ok: true, data: { reply, food, exercise, edit, editApplied, editError, editUndo, planDays } };
+}
+
+/** Lo que devuelve un cambio aplicado: cuántas filas tocó y cómo volver atrás. */
+export interface CoachEditDone {
+  changed: number;
+  undo: CoachUndo;
 }
 
 /** Busca un ejercicio por nombre dentro de la rutina: exacto o, si no, uno contiene al otro. */
@@ -175,7 +186,7 @@ function sameExercise(planName: string, asked: string): boolean {
  * Aplica el cambio que el usuario le pidió al coach y confirmó con el botón "Editar".
  * Toca sólo lo que dice el cambio, en la rutina activa o en los objetivos de nutrición.
  */
-export async function applyCoachEdit(raw: CoachEdit): Promise<Result<{ changed: number }>> {
+export async function applyCoachEdit(raw: CoachEdit): Promise<Result<CoachEditDone>> {
   const parsed = coachEditSchema.safeParse(raw);
   if (!parsed.success || !isApplicableCoachEdit(parsed.data)) return { error: 'INVALID' };
   const { userId } = await requireUser();
@@ -189,12 +200,17 @@ export async function setCoachAutoApply(enabled: boolean): Promise<Result> {
   return { ok: true };
 }
 
-async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ changed: number }>> {
+async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<CoachEditDone>> {
   const db = forUser(userId);
 
   if (e.kind === 'nutrition_targets') {
+    const previous = await db.nutritionTarget.findFirst({
+      where: { active: true },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
     await db.nutritionTarget.updateMany({ where: { active: true }, data: { active: false } });
-    await db.nutritionTarget.create({
+    const created = await db.nutritionTarget.create({
       data: {
         userId,
         effectiveFrom: new Date(),
@@ -205,10 +221,14 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ 
         source: 'AI',
         active: true,
       },
+      select: { id: true },
     });
     revalidatePath('/nutrition');
     revalidatePath('/dashboard');
-    return { ok: true, data: { changed: 1 } };
+    return {
+      ok: true,
+      data: { changed: 1, undo: { kind: 'nutrition', newId: created.id, previousId: previous?.id ?? null } },
+    };
   }
 
   const plan = await db.workoutPlan.findFirst({
@@ -220,7 +240,24 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ 
         select: {
           id: true,
           name: true,
-          exercises: { select: { id: true, exerciseId: true, exercise: { select: { name: true } } } },
+          exercises: {
+            select: {
+              id: true,
+              planDayId: true,
+              exerciseId: true,
+              orderIndex: true,
+              targetSets: true,
+              targetRepsMin: true,
+              targetRepsMax: true,
+              targetRir: true,
+              restSeconds: true,
+              targetDurationSec: true,
+              targetDistanceMeters: true,
+              notes: true,
+              rationale: true,
+              exercise: { select: { name: true } },
+            },
+          },
         },
       },
     },
@@ -239,19 +276,49 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ 
   );
   if (matches.length === 0) return { error: 'NOT_FOUND' };
 
+  type Row = (typeof matches)[number]['pe'];
+  const restoreRow = (pe: Row) => ({
+    id: pe.id,
+    exerciseId: pe.exerciseId,
+    targetSets: pe.targetSets,
+    targetRepsMin: pe.targetRepsMin,
+    targetRepsMax: pe.targetRepsMax,
+    rationale: pe.rationale,
+  });
+
   let changed = 0;
+  let undo: CoachUndo;
   if (e.kind === 'remove_exercise') {
     // Un día no puede quedar sin ejercicios.
     const removable = matches.filter((m) => m.day.exercises.length > 1);
     if (removable.length === 0) return { error: 'LAST_EXERCISE' };
     await prisma.planExercise.deleteMany({ where: { id: { in: removable.map((m) => m.pe.id) } } });
     changed = removable.length;
+    undo = {
+      kind: 'recreate_rows',
+      rows: removable.map(({ pe }) => ({
+        planDayId: pe.planDayId,
+        exerciseId: pe.exerciseId,
+        orderIndex: pe.orderIndex,
+        targetSets: pe.targetSets,
+        targetRepsMin: pe.targetRepsMin,
+        targetRepsMax: pe.targetRepsMax,
+        targetRir: pe.targetRir,
+        restSeconds: pe.restSeconds,
+        targetDurationSec: pe.targetDurationSec,
+        targetDistanceMeters: pe.targetDistanceMeters,
+        notes: pe.notes,
+        rationale: pe.rationale,
+      })),
+    };
   } else if (e.kind === 'replace_exercise') {
     const newId = await resolveExerciseId(e.newExercise!, userId, e.type);
     const { min, max } =
       e.repsMin != null && e.repsMax != null ? widenReps(e.repsMin, e.repsMax, e.type) : { min: null, max: null };
+    const before: Row[] = [];
     for (const { day, pe } of matches) {
       if (day.exercises.some((x) => x.exerciseId === newId)) continue;
+      before.push(pe);
       await prisma.planExercise.update({
         where: { id: pe.id },
         data: {
@@ -267,6 +334,7 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ 
       changed++;
     }
     if (changed === 0) return { error: 'ALREADY' };
+    undo = { kind: 'restore_rows', rows: before.map(restoreRow) };
   } else {
     const { min, max } =
       e.repsMin != null && e.repsMax != null ? widenReps(e.repsMin, e.repsMax, 'STRENGTH') : { min: null, max: null };
@@ -280,11 +348,71 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<{ 
       });
       changed++;
     }
+    undo = { kind: 'restore_rows', rows: matches.map(({ pe }) => restoreRow(pe)) };
   }
 
   revalidatePath(`/training/plans/${plan.id}`);
   revalidatePath('/training');
-  return { ok: true, data: { changed } };
+  return { ok: true, data: { changed, undo } };
+}
+
+/**
+ * Vuelve atrás un cambio que se aplicó con "Editar" (o solo). El cliente trae lo que anotó el
+ * servidor al aplicarlo; acá se vuelve a validar y se comprueba que todo sea del propio usuario.
+ */
+export async function undoCoachEdit(raw: CoachUndo): Promise<Result> {
+  const parsed = coachUndoSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const undo = parsed.data;
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+
+  if (undo.kind === 'nutrition') {
+    // Si el objetivo ya cambió de nuevo después, no se pisa lo más reciente.
+    const current = await db.nutritionTarget.findFirst({ where: { id: undo.newId, active: true }, select: { id: true } });
+    if (!current) return { error: 'CHANGED' };
+    await db.nutritionTarget.deleteMany({ where: { id: undo.newId } });
+    if (undo.previousId) {
+      await db.nutritionTarget.updateMany({ where: { id: undo.previousId }, data: { active: true } });
+    }
+    revalidatePath('/nutrition');
+    revalidatePath('/dashboard');
+    return { ok: true };
+  }
+
+  // Los ejercicios de la rutina tienen que existir y ser de la biblioteca o propios.
+  const exerciseIds = [...new Set(undo.rows.map((r) => r.exerciseId))];
+  const usable = await prisma.exercise.count({
+    where: { id: { in: exerciseIds }, OR: [{ isCustom: false }, { createdById: userId }] },
+  });
+  if (usable !== exerciseIds.length) return { error: 'INVALID' };
+
+  if (undo.kind === 'restore_rows') {
+    const ids = undo.rows.map((r) => r.id);
+    const owned = await prisma.planExercise.count({ where: { id: { in: ids }, planDay: { plan: { userId } } } });
+    if (owned !== ids.length) return { error: 'FORBIDDEN' };
+    for (const r of undo.rows) {
+      await prisma.planExercise.update({
+        where: { id: r.id },
+        data: {
+          exerciseId: r.exerciseId,
+          targetSets: r.targetSets,
+          targetRepsMin: r.targetRepsMin,
+          targetRepsMax: r.targetRepsMax,
+          rationale: r.rationale,
+        },
+      });
+    }
+    revalidatePath('/training');
+    return { ok: true };
+  }
+
+  const dayIds = [...new Set(undo.rows.map((r) => r.planDayId))];
+  const ownedDays = await prisma.planDay.count({ where: { id: { in: dayIds }, plan: { userId } } });
+  if (ownedDays !== dayIds.length) return { error: 'FORBIDDEN' };
+  await prisma.planExercise.createMany({ data: undo.rows });
+  revalidatePath('/training');
+  return { ok: true };
 }
 
 const addCoachExerciseSchema = coachExerciseSchema.extend({

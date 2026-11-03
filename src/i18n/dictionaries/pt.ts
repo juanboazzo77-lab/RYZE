@@ -1450,6 +1450,9 @@ export const pt: Dictionary = {
     editAutoToggle: 'Aplicar as mudanças automaticamente',
     editAutoHint: 'O que você pedir ao coach é editado na hora, sem tocar em “Editar”.',
     editAppliedAuto: 'Aplicado automaticamente',
+    editUndo: 'Desfazer',
+    editUndone: 'A mudança foi desfeita',
+    editUndoChanged: 'Não dá mais para desfazer: isso mudou de novo depois',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:

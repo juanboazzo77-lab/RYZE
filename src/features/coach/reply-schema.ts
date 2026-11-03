@@ -50,6 +50,63 @@ export const coachEditSchema = z.object({
 });
 export type CoachEdit = z.infer<typeof coachEditSchema>;
 
+const intOrNull = z.number().int().nullable();
+const strOrNull = z.string().max(2000).nullable();
+
+/**
+ * Cómo volver atrás un cambio que ya se aplicó. Lo arma el servidor al aplicarlo, lo guarda el
+ * cliente mientras la pantalla está abierta y vuelve a validarse al deshacer (ver `undoCoachEdit`).
+ */
+export const coachUndoSchema = z.discriminatedUnion('kind', [
+  /** Cambiar o reemplazar: se vuelven a poner los valores anteriores de esas filas. */
+  z.object({
+    kind: z.literal('restore_rows'),
+    rows: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          exerciseId: z.string().uuid(),
+          targetSets: z.number().int().min(1).max(20),
+          targetRepsMin: intOrNull,
+          targetRepsMax: intOrNull,
+          rationale: strOrNull,
+        }),
+      )
+      .min(1)
+      .max(40),
+  }),
+  /** Sacar: se vuelven a crear las filas que se borraron. */
+  z.object({
+    kind: z.literal('recreate_rows'),
+    rows: z
+      .array(
+        z.object({
+          planDayId: z.string().uuid(),
+          exerciseId: z.string().uuid(),
+          orderIndex: z.number().int().min(0).max(200),
+          targetSets: z.number().int().min(1).max(20),
+          targetRepsMin: intOrNull,
+          targetRepsMax: intOrNull,
+          targetRir: z.number().min(0).max(10).nullable(),
+          restSeconds: intOrNull,
+          targetDurationSec: intOrNull,
+          targetDistanceMeters: z.number().min(0).nullable(),
+          notes: strOrNull,
+          rationale: strOrNull,
+        }),
+      )
+      .min(1)
+      .max(40),
+  }),
+  /** Calorías y macros: se borra el objetivo nuevo y vuelve a estar activo el anterior. */
+  z.object({
+    kind: z.literal('nutrition'),
+    newId: z.string().uuid(),
+    previousId: z.string().uuid().nullable(),
+  }),
+]);
+export type CoachUndo = z.infer<typeof coachUndoSchema>;
+
 /** Un cambio sólo se ofrece si trae todo lo que hace falta para aplicarlo sin adivinar. */
 export function isApplicableCoachEdit(e: CoachEdit): boolean {
   switch (e.kind) {

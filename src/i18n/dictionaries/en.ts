@@ -1450,6 +1450,9 @@ export const en: Dictionary = {
     editAutoToggle: 'Apply changes automatically',
     editAutoHint: 'What you ask the coach to change is edited right away, without tapping “Edit”.',
     editAppliedAuto: 'Applied automatically',
+    editUndo: 'Undo',
+    editUndone: 'Change undone',
+    editUndoChanged: 'It can’t be undone anymore: that changed again afterwards',
     send: 'Send',
     sending: 'Thinking…',
     empty:

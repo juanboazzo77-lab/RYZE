@@ -1450,6 +1450,9 @@ export const fr: Dictionary = {
     editAutoToggle: 'Appliquer les changements automatiquement',
     editAutoHint: 'Ce que vous demandez au coach est modifié tout de suite, sans toucher « Modifier ».',
     editAppliedAuto: 'Appliqué automatiquement',
+    editUndo: 'Annuler',
+    editUndone: 'Changement annulé',
+    editUndoChanged: 'Impossible d’annuler : cela a encore changé depuis',
     send: 'Envoyer',
     sending: 'Réflexion…',
     empty:

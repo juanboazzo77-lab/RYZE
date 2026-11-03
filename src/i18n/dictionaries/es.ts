@@ -1448,6 +1448,9 @@ export const es = {
     editAutoToggle: 'Aplicar los cambios automáticamente',
     editAutoHint: 'Lo que le pidas al coach se edita solo, sin tocar “Editar”.',
     editAppliedAuto: 'Aplicado automáticamente',
+    editUndo: 'Deshacer',
+    editUndone: 'Se deshizo el cambio',
+    editUndoChanged: 'Ya no se puede deshacer: eso cambió de nuevo después',
     send: 'Enviar',
     sending: 'Pensando…',
     empty:

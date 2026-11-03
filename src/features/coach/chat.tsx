@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Check, Loader2, Pencil, RotateCcw, Send, Sparkles } from 'lucide-react';
+import { Check, Loader2, Pencil, RotateCcw, Send, Sparkles, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -20,8 +20,9 @@ import {
   resetCoachConversation,
   sendCoachMessage,
   setCoachAutoApply,
+  undoCoachEdit,
 } from './actions';
-import type { CoachEdit, CoachExercise, CoachFood } from './reply-schema';
+import type { CoachEdit, CoachExercise, CoachFood, CoachUndo } from './reply-schema';
 
 const MEALS = ['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const;
 type Meal = (typeof MEALS)[number];
@@ -231,6 +232,8 @@ function editErrorMessage(error: string | undefined, tc: ReturnType<typeof useT>
       return tc.editLastExercise;
     case 'ALREADY':
       return tc.exerciseAlready;
+    case 'CHANGED':
+      return tc.editUndoChanged;
     default:
       return tc.error;
   }
@@ -239,6 +242,7 @@ function editErrorMessage(error: string | undefined, tc: ReturnType<typeof useT>
 function EditSuggestion({
   edit,
   alreadyApplied,
+  initialUndo,
   failed,
   autoApply,
   onAutoApplyChange,
@@ -247,6 +251,8 @@ function EditSuggestion({
   edit: CoachEdit;
   /** Se aplicó solo, apenas respondió el coach. */
   alreadyApplied: boolean;
+  /** Cómo volver atrás ese cambio aplicado solo. */
+  initialUndo: CoachUndo | null;
   /** Se intentó aplicar solo y falló: queda el botón para reintentar. */
   failed: string | null;
   autoApply: boolean;
@@ -256,13 +262,15 @@ function EditSuggestion({
   const t = useT();
   const tc = t.coach;
   const [pending, start] = useTransition();
-  const [applied, setApplied] = useState(alreadyApplied);
+  const [state, setState] = useState<'pending' | 'applied' | 'undone'>(alreadyApplied ? 'applied' : 'pending');
+  const [undo, setUndo] = useState<CoachUndo | null>(initialUndo);
 
   function apply() {
     start(async () => {
       const res = await applyCoachEdit(edit);
       if (res.ok) {
-        setApplied(true);
+        setState('applied');
+        setUndo(res.data?.undo ?? null);
         toast.success(tc.editApplied);
         return;
       }
@@ -270,7 +278,33 @@ function EditSuggestion({
     });
   }
 
-  if (applied) {
+  function undoEdit() {
+    if (!undo) return;
+    start(async () => {
+      const res = await undoCoachEdit(undo);
+      if (res.ok) {
+        setState('undone');
+        setUndo(null);
+        toast.success(tc.editUndone);
+        return;
+      }
+      toast.error(editErrorMessage(res.error, tc));
+    });
+  }
+
+  if (state === 'undone') {
+    return (
+      <div className="max-w-[85%] space-y-1 pl-1">
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Undo2 className="size-3.5" />
+          {tc.editUndone}
+        </p>
+        <p className="text-xs text-muted-foreground line-through">{edit.summary}</p>
+      </div>
+    );
+  }
+
+  if (state === 'applied') {
     return (
       <div className="max-w-[85%] space-y-1 pl-1">
         <p className="flex items-center gap-1.5 text-xs text-success">
@@ -278,6 +312,12 @@ function EditSuggestion({
           {alreadyApplied ? tc.editAppliedAuto : tc.editApplied}
         </p>
         <p className="text-xs text-muted-foreground">{edit.summary}</p>
+        {undo ? (
+          <Button size="sm" variant="outline" onClick={undoEdit} disabled={pending}>
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
+            {tc.editUndo}
+          </Button>
+        ) : null}
       </div>
     );
   }
@@ -321,7 +361,7 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
     Record<string, { exercise: CoachExercise; planDays: PlanDayOption[] }>
   >({});
   const [edits, setEdits] = useState<
-    Record<string, { edit: CoachEdit; applied: boolean; failed: string | null }>
+    Record<string, { edit: CoachEdit; applied: boolean; undo: CoachUndo | null; failed: string | null }>
   >({});
   const [autoApply, setAutoApply] = useState(initialAutoApply);
   const [draft, setDraft] = useState('');
@@ -356,7 +396,12 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
         if (edit) {
           setEdits((x) => ({
             ...x,
-            [replyId]: { edit, applied: res.data!.editApplied, failed: res.data!.editError },
+            [replyId]: {
+              edit,
+              applied: res.data!.editApplied,
+              undo: res.data!.editUndo,
+              failed: res.data!.editError,
+            },
           }));
         }
         const exercise = res.data.exercise;
@@ -454,6 +499,7 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
                   <EditSuggestion
                     edit={edits[m.id]!.edit}
                     alreadyApplied={edits[m.id]!.applied}
+                    initialUndo={edits[m.id]!.undo}
                     failed={edits[m.id]!.failed}
                     autoApply={autoApply}
                     onAutoApplyChange={changeAutoApply}

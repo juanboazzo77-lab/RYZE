@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coachReplySchema, isApplicableCoachEdit, type CoachEdit } from './reply-schema';
+import { coachReplySchema, coachUndoSchema, isApplicableCoachEdit, type CoachEdit } from './reply-schema';
 
 const base: CoachEdit = {
   kind: 'replace_exercise',
@@ -41,6 +41,26 @@ describe('isApplicableCoachEdit', () => {
     const e = { ...base, kind: 'nutrition_targets' as const, kcal: 2500, proteinG: 160, carbsG: 300 };
     expect(isApplicableCoachEdit(e)).toBe(false);
     expect(isApplicableCoachEdit({ ...e, fatG: 70 })).toBe(true);
+  });
+});
+
+describe('coachUndoSchema', () => {
+  const id = '3f2a9c1e-5b7d-4e8a-9c21-7d4e5f6a8b90';
+
+  it('acepta cómo volver atrás cada tipo de cambio', () => {
+    expect(
+      coachUndoSchema.safeParse({
+        kind: 'restore_rows',
+        rows: [{ id, exerciseId: id, targetSets: 3, targetRepsMin: 8, targetRepsMax: 12, rationale: null }],
+      }).success,
+    ).toBe(true);
+    expect(coachUndoSchema.safeParse({ kind: 'nutrition', newId: id, previousId: null }).success).toBe(true);
+  });
+
+  it('rechaza ids inventados y listas vacías', () => {
+    expect(coachUndoSchema.safeParse({ kind: 'nutrition', newId: 'x', previousId: null }).success).toBe(false);
+    expect(coachUndoSchema.safeParse({ kind: 'restore_rows', rows: [] }).success).toBe(false);
+    expect(coachUndoSchema.safeParse({ kind: 'otra_cosa' }).success).toBe(false);
   });
 });
 
