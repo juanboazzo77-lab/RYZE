@@ -1453,6 +1453,9 @@ export const de: Dictionary = {
     editUndo: 'Rückgängig',
     editUndone: 'Änderung rückgängig gemacht',
     editUndoChanged: 'Nicht mehr rückgängig zu machen: das wurde danach erneut geändert',
+    editFoodNotFound: 'Ich habe dieses Lebensmittel in deinem heutigen Protokoll nicht gefunden',
+    editAmbiguous: 'Dieses Lebensmittel steht heute mehrmals drin: sag mir, welche Mahlzeit',
+    editDayNeeded: 'Sag mir, zu welchem Tag des Plans ich es hinzufügen soll',
     send: 'Senden',
     sending: 'Denkt nach…',
     empty:

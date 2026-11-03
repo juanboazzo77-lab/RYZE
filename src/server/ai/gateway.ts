@@ -85,7 +85,7 @@ export async function runCoachTurn(args: {
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
-  const system = coachSystemPrompt(profile.locale, contextBlock);
+  const system = coachSystemPrompt(profile.locale, contextBlock, profile.coachAutoApply);
   // Modelo liviano primero (barato); si falla o devuelve vacío, se reintenta con el grande.
   const models = [...new Set([modelFor('coach_chat'), modelFor('generate_plan')])];
 
@@ -104,7 +104,7 @@ export async function runCoachTurn(args: {
         messages,
         schema: coachReplySchema,
         schemaName: 'CoachReply',
-        maxOutputTokens: maxOutputTokensFor('coach_chat') + 400,
+        maxOutputTokens: maxOutputTokensFor('coach_chat') + 800,
         timeoutMs: COACH_TIMEOUT_MS,
         temperature: 0.7,
         thinking: false,

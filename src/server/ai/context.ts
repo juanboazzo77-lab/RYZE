@@ -39,7 +39,18 @@ export async function buildUserContextBlock(
     db.nutritionTarget.findFirst({ where: { active: true }, orderBy: { createdAt: 'desc' } }),
     db.foodEntry.findMany({
       where: { date: todayDate },
-      select: { kcal: true, proteinG: true, carbsG: true, fatG: true },
+      orderBy: [{ mealType: 'asc' }, { position: 'asc' }],
+      select: {
+        kcal: true,
+        proteinG: true,
+        carbsG: true,
+        fatG: true,
+        mealType: true,
+        quantity: true,
+        unit: true,
+        customName: true,
+        food: { select: { name: true } },
+      },
     }),
     db.weightEntry.findMany({
       where: { date: { gte: since30 } },
@@ -189,6 +200,13 @@ export async function buildUserContextBlock(
     `Consumido hoy: ${Math.round(consumed.kcal)} kcal · P ${Math.round(consumed.p)} g · ` +
       `C ${Math.round(consumed.c)} g · G ${Math.round(consumed.f)} g.`,
   );
+  if (todayEntries.length > 0) {
+    lines.push('Registro de comidas de hoy (comida · alimento · cantidad · kcal):');
+    for (const e of todayEntries.slice(0, 40)) {
+      const name = (e.customName ?? e.food?.name ?? 'sin nombre').slice(0, 60);
+      lines.push(`  - ${e.mealType} · ${name} · ${Math.round(e.quantity * 10) / 10} ${e.unit} · ${Math.round(e.kcal)} kcal`);
+    }
+  }
 
   if (plan) {
     lines.push(`Plan activo: "${plan.name}" (${plan.days.length} días).`);

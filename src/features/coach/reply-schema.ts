@@ -24,20 +24,36 @@ export type CoachExercise = z.infer<typeof coachExerciseSchema>;
 
 const nullableInt = (min: number, max: number) => z.number().int().min(min).max(max).nullable().catch(null);
 
+const MEALS = ['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const;
+
 /**
  * Cambio concreto que el usuario le pidió al coach sobre su rutina activa o sus objetivos de
  * nutrición. La app lo muestra con un botón "Editar" y lo aplica tal cual, sin que la IA toque
  * nada por su cuenta.
  */
+const nullableNum = (min: number, max: number) => z.number().min(min).max(max).nullable().catch(null);
+
+export const COACH_EDIT_KINDS = [
+  'replace_exercise',
+  'remove_exercise',
+  'change_exercise',
+  'add_exercise',
+  'nutrition_targets',
+  'add_food',
+  'change_food',
+  'replace_food',
+  'remove_food',
+] as const;
+
 export const coachEditSchema = z.object({
-  kind: z.enum(['replace_exercise', 'remove_exercise', 'change_exercise', 'nutrition_targets']),
+  kind: z.enum(COACH_EDIT_KINDS),
   /** Qué se va a cambiar, en una línea y en el idioma del usuario. */
   summary: z.string().trim().min(1).max(240),
   /** Nombre del ejercicio tal como figura hoy en la rutina. */
   exercise: z.string().trim().min(1).max(80).nullable().catch(null),
   /** Día de la rutina, sólo si el usuario lo aclaró. */
   day: z.string().trim().min(1).max(60).nullable().catch(null),
-  /** Ejercicio nuevo (sólo al reemplazar). */
+  /** Ejercicio nuevo (al reemplazar o al agregar uno a la rutina). */
   newExercise: z.string().trim().min(2).max(80).nullable().catch(null),
   type: z.enum(['STRENGTH', 'CARDIO']).catch('STRENGTH'),
   sets: nullableInt(1, 10),
@@ -47,6 +63,19 @@ export const coachEditSchema = z.object({
   proteinG: nullableInt(30, 400),
   carbsG: nullableInt(0, 800),
   fatG: nullableInt(10, 300),
+  /** Alimento tal como figura hoy en el registro de comidas de hoy. */
+  foodName: z.string().trim().min(1).max(80).nullable().catch(null),
+  /** Alimento nuevo (al agregar o reemplazar). */
+  newFoodName: z.string().trim().min(2).max(80).nullable().catch(null),
+  /** Comida del día; sirve para ubicar el alimento o para decidir dónde agregarlo. */
+  meal: z.enum(MEALS).nullable().catch(null),
+  /** Cantidad: la nueva (en la misma unidad del registro) al cambiar; en gramos al agregar o reemplazar. */
+  amount: nullableNum(0.1, 5000),
+  /** Valores por 100 g del alimento nuevo. */
+  kcalPer100: nullableNum(0, 1000),
+  proteinPer100: nullableNum(0, 100),
+  carbsPer100: nullableNum(0, 100),
+  fatPer100: nullableNum(0, 100),
 });
 export type CoachEdit = z.infer<typeof coachEditSchema>;
 
@@ -104,11 +133,67 @@ export const coachUndoSchema = z.discriminatedUnion('kind', [
     newId: z.string().uuid(),
     previousId: z.string().uuid().nullable(),
   }),
+  /** Agregar un ejercicio a la rutina: se borra el que se agregó. */
+  z.object({ kind: z.literal('delete_rows'), ids: z.array(z.string().uuid()).min(1).max(40) }),
+  /** Agregar comida: se borran los registros que se agregaron. */
+  z.object({ kind: z.literal('delete_food'), ids: z.array(z.string().uuid()).min(1).max(40) }),
+  /** Cambiar o reemplazar comida: se vuelven a poner los valores anteriores del registro. */
+  z.object({
+    kind: z.literal('restore_food'),
+    rows: z
+      .array(
+        z.object({
+          id: z.string().uuid(),
+          mealType: z.enum(MEALS),
+          foodId: z.string().uuid().nullable(),
+          customName: z.string().max(120).nullable(),
+          quantity: z.number().min(0).max(100000),
+          unit: z.string().min(1).max(20),
+          kcal: z.number().min(0).max(100000),
+          proteinG: z.number().min(0).max(10000),
+          carbsG: z.number().min(0).max(10000),
+          fatG: z.number().min(0).max(10000),
+          isEstimated: z.boolean(),
+        }),
+      )
+      .min(1)
+      .max(40),
+  }),
+  /** Sacar comida: se vuelve a crear el registro que se borró. */
+  z.object({
+    kind: z.literal('recreate_food'),
+    rows: z
+      .array(
+        z.object({
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          mealType: z.enum(MEALS),
+          foodId: z.string().uuid().nullable(),
+          customName: z.string().max(120).nullable(),
+          quantity: z.number().min(0).max(100000),
+          unit: z.string().min(1).max(20),
+          kcal: z.number().min(0).max(100000),
+          proteinG: z.number().min(0).max(10000),
+          carbsG: z.number().min(0).max(10000),
+          fatG: z.number().min(0).max(10000),
+          isEstimated: z.boolean(),
+          position: z.number().int().min(0).max(500),
+        }),
+      )
+      .min(1)
+      .max(40),
+  }),
 ]);
 export type CoachUndo = z.infer<typeof coachUndoSchema>;
 
 /** Un cambio sólo se ofrece si trae todo lo que hace falta para aplicarlo sin adivinar. */
 export function isApplicableCoachEdit(e: CoachEdit): boolean {
+  const newFood =
+    !!e.newFoodName &&
+    e.amount != null &&
+    e.kcalPer100 != null &&
+    e.proteinPer100 != null &&
+    e.carbsPer100 != null &&
+    e.fatPer100 != null;
   switch (e.kind) {
     case 'replace_exercise':
       return !!e.exercise && !!e.newExercise;
@@ -116,8 +201,18 @@ export function isApplicableCoachEdit(e: CoachEdit): boolean {
       return !!e.exercise;
     case 'change_exercise':
       return !!e.exercise && (e.sets != null || (e.repsMin != null && e.repsMax != null));
+    case 'add_exercise':
+      return !!e.newExercise;
     case 'nutrition_targets':
       return e.kcal != null && e.proteinG != null && e.carbsG != null && e.fatG != null;
+    case 'add_food':
+      return newFood;
+    case 'change_food':
+      return !!e.foodName && e.amount != null;
+    case 'replace_food':
+      return !!e.foodName && newFood;
+    case 'remove_food':
+      return !!e.foodName;
   }
 }
 

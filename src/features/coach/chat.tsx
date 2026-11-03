@@ -234,6 +234,12 @@ function editErrorMessage(error: string | undefined, tc: ReturnType<typeof useT>
       return tc.exerciseAlready;
     case 'CHANGED':
       return tc.editUndoChanged;
+    case 'FOOD_NOT_FOUND':
+      return tc.editFoodNotFound;
+    case 'AMBIGUOUS':
+      return tc.editAmbiguous;
+    case 'DAY_NEEDED':
+      return tc.editDayNeeded;
     default:
       return tc.error;
   }

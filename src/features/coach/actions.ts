@@ -10,7 +10,7 @@ import { prisma } from '@/server/db';
 import { AiError, AiRateLimitedError, AiPermissionError, AiNotConfiguredError } from '@/server/ai/errors';
 import { aiConfigured } from '@/server/ai/config';
 import { runCoachTurn, generateWorkoutPlanDraft } from '@/server/ai/gateway';
-import { localTodayISO } from '@/lib/date';
+import { isoToUtcDate, localTodayISO } from '@/lib/date';
 import {
   coachEditSchema,
   coachExerciseSchema,
@@ -154,7 +154,7 @@ export async function sendCoachMessage(
   let editError: string | null = null;
   let editUndo: CoachUndo | null = null;
   if (edit && profile.coachAutoApply) {
-    const done = await performCoachEdit(userId, edit).catch((err) => {
+    const done = await performCoachEdit(userId, profile.timezone, edit).catch((err) => {
       console.error('[coach] no se pudo aplicar el cambio solo', err instanceof Error ? err.message : err);
       return { error: 'ERROR' } as Result<CoachEditDone>;
     });
@@ -189,8 +189,8 @@ function sameExercise(planName: string, asked: string): boolean {
 export async function applyCoachEdit(raw: CoachEdit): Promise<Result<CoachEditDone>> {
   const parsed = coachEditSchema.safeParse(raw);
   if (!parsed.success || !isApplicableCoachEdit(parsed.data)) return { error: 'INVALID' };
-  const { userId } = await requireUser();
-  return performCoachEdit(userId, parsed.data);
+  const { userId, profile } = await requireUser();
+  return performCoachEdit(userId, profile.timezone, parsed.data);
 }
 
 /** Elige si los cambios que pide el cliente se aplican solos (sin tocar "Editar"). */
@@ -200,8 +200,160 @@ export async function setCoachAutoApply(enabled: boolean): Promise<Result> {
   return { ok: true };
 }
 
-async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<CoachEditDone>> {
+/** Comida del día que le toca a esta hora, para cuando el cliente no dijo en cuál agregar. */
+function mealForHour(timezone: string): 'BREAKFAST' | 'LUNCH' | 'MERIENDA' | 'DINNER' {
+  const h = DateTime.now().setZone(timezone).hour;
+  return h < 11 ? 'BREAKFAST' : h < 15 ? 'LUNCH' : h < 19 ? 'MERIENDA' : 'DINNER';
+}
+
+/** Cambios sobre el registro de comidas de HOY: agregar, cambiar la cantidad, reemplazar o sacar. */
+async function performFoodEdit(
+  userId: string,
+  timezone: string,
+  e: CoachEdit,
+): Promise<Result<CoachEditDone>> {
   const db = forUser(userId);
+  const todayISO = localTodayISO(timezone);
+  const date = isoToUtcDate(todayISO);
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+
+  const refresh = () => {
+    revalidatePath('/nutrition');
+    revalidatePath('/nutrition/history');
+    revalidatePath('/dashboard');
+  };
+
+  /** Macros de una porción en gramos a partir de los valores por 100 g. */
+  const fromPer100 = (grams: number) => {
+    const k = grams / 100;
+    return {
+      kcal: Math.round(e.kcalPer100! * k),
+      proteinG: round1(e.proteinPer100! * k),
+      carbsG: round1(e.carbsPer100! * k),
+      fatG: round1(e.fatPer100! * k),
+    };
+  };
+
+  if (e.kind === 'add_food') {
+    const mealType = e.meal ?? mealForHour(timezone);
+    const position = await db.foodEntry.count({ where: { date, mealType } });
+    const created = await db.foodEntry.create({
+      data: {
+        userId,
+        date,
+        mealType,
+        foodId: null,
+        customName: e.newFoodName!,
+        quantity: Math.round(e.amount!),
+        unit: 'g',
+        ...fromPer100(Math.round(e.amount!)),
+        isEstimated: true,
+        source: 'MANUAL',
+        position,
+      },
+      select: { id: true },
+    });
+    refresh();
+    return { ok: true, data: { changed: 1, undo: { kind: 'delete_food', ids: [created.id] } } };
+  }
+
+  const entries = await db.foodEntry.findMany({
+    where: { date },
+    select: {
+      id: true,
+      mealType: true,
+      foodId: true,
+      customName: true,
+      quantity: true,
+      unit: true,
+      kcal: true,
+      proteinG: true,
+      carbsG: true,
+      fatG: true,
+      isEstimated: true,
+      position: true,
+      food: { select: { name: true } },
+    },
+  });
+  let matches = entries.filter((x) => sameExercise(x.customName ?? x.food?.name ?? '', e.foodName!));
+  // Si nombró la comida, se limita a esa (si el alimento está ahí).
+  if (e.meal && matches.some((x) => x.mealType === e.meal)) matches = matches.filter((x) => x.mealType === e.meal);
+  if (matches.length === 0) return { error: 'FOOD_NOT_FOUND' };
+  // El mismo alimento en dos comidas: se pide que aclare en cuál, en vez de adivinar.
+  if (matches.length > 1) return { error: 'AMBIGUOUS' };
+  const entry = matches[0]!;
+
+  const snapshot = (x: typeof entry) => ({
+    id: x.id,
+    mealType: x.mealType,
+    foodId: x.foodId,
+    customName: x.customName,
+    quantity: x.quantity,
+    unit: x.unit,
+    kcal: x.kcal,
+    proteinG: x.proteinG,
+    carbsG: x.carbsG,
+    fatG: x.fatG,
+    isEstimated: x.isEstimated,
+  });
+
+  if (e.kind === 'remove_food') {
+    await db.foodEntry.deleteMany({ where: { id: entry.id } });
+    refresh();
+    const { id: _removed, ...row } = snapshot(entry);
+    return {
+      ok: true,
+      data: {
+        changed: 1,
+        undo: { kind: 'recreate_food', rows: [{ ...row, date: todayISO, position: entry.position }] },
+      },
+    };
+  }
+
+  if (e.kind === 'change_food') {
+    // Se escalan los macros en proporción a la cantidad: la misma unidad que ya tenía el registro.
+    const ratio = entry.quantity > 0 ? e.amount! / entry.quantity : 0;
+    await db.foodEntry.updateMany({
+      where: { id: entry.id },
+      data: {
+        quantity: round1(e.amount!),
+        kcal: Math.round(entry.kcal * ratio),
+        proteinG: round1(entry.proteinG * ratio),
+        carbsG: round1(entry.carbsG * ratio),
+        fatG: round1(entry.fatG * ratio),
+        isEstimated: true,
+      },
+    });
+    refresh();
+    return { ok: true, data: { changed: 1, undo: { kind: 'restore_food', rows: [snapshot(entry)] } } };
+  }
+
+  // replace_food: mismo lugar del registro, alimento y cantidad nuevos.
+  await db.foodEntry.updateMany({
+    where: { id: entry.id },
+    data: {
+      foodId: null,
+      customName: e.newFoodName!,
+      quantity: Math.round(e.amount!),
+      unit: 'g',
+      ...fromPer100(Math.round(e.amount!)),
+      isEstimated: true,
+    },
+  });
+  refresh();
+  return { ok: true, data: { changed: 1, undo: { kind: 'restore_food', rows: [snapshot(entry)] } } };
+}
+
+async function performCoachEdit(
+  userId: string,
+  timezone: string,
+  e: CoachEdit,
+): Promise<Result<CoachEditDone>> {
+  const db = forUser(userId);
+
+  if (e.kind === 'add_food' || e.kind === 'change_food' || e.kind === 'replace_food' || e.kind === 'remove_food') {
+    return performFoodEdit(userId, timezone, e);
+  }
 
   if (e.kind === 'nutrition_targets') {
     const previous = await db.nutritionTarget.findFirst({
@@ -263,6 +415,40 @@ async function performCoachEdit(userId: string, e: CoachEdit): Promise<Result<Co
     },
   });
   if (!plan) return { error: 'NO_PLAN' };
+
+  if (e.kind === 'add_exercise') {
+    // Sumar un ejercicio nuevo: va al día que nombró; con un solo día no hace falta nombrarlo.
+    const asked = e.day ? normalizeName(e.day) : null;
+    const target =
+      (asked
+        ? (plan.days.find((d) => normalizeName(d.name) === asked) ??
+          plan.days.find((d) => normalizeName(d.name).includes(asked) || asked.includes(normalizeName(d.name))))
+        : undefined) ?? (plan.days.length === 1 ? plan.days[0] : undefined);
+    if (!target) return { error: 'DAY_NEEDED' };
+
+    const exerciseId = await resolveExerciseId(e.newExercise!, userId, e.type);
+    if (target.exercises.some((x) => x.exerciseId === exerciseId)) return { error: 'ALREADY' };
+    const orderIndex = target.exercises.reduce((m, x) => Math.max(m, x.orderIndex), -1) + 1;
+    const { min, max } = widenReps(e.repsMin ?? 8, e.repsMax ?? 12, e.type);
+    const created = await prisma.planExercise.create({
+      data:
+        e.type === 'CARDIO'
+          ? { planDayId: target.id, exerciseId, orderIndex, targetSets: 1, targetDurationSec: 1800 }
+          : {
+              planDayId: target.id,
+              exerciseId,
+              orderIndex,
+              targetSets: e.sets ?? 3,
+              targetRepsMin: min,
+              targetRepsMax: max,
+              restSeconds: 90,
+            },
+      select: { id: true },
+    });
+    revalidatePath(`/training/plans/${plan.id}`);
+    revalidatePath('/training');
+    return { ok: true, data: { changed: 1, undo: { kind: 'delete_rows', ids: [created.id] } } };
+  }
 
   // Si nombró un día y existe en la rutina, se limita a ese; si no, se aplica a donde esté el ejercicio.
   const dayAsked = e.day ? normalizeName(e.day) : null;
@@ -377,6 +563,43 @@ export async function undoCoachEdit(raw: CoachUndo): Promise<Result> {
     }
     revalidatePath('/nutrition');
     revalidatePath('/dashboard');
+    return { ok: true };
+  }
+
+  if (undo.kind === 'delete_rows') {
+    // Sólo se borran filas de la rutina del propio usuario.
+    await prisma.planExercise.deleteMany({ where: { id: { in: undo.ids }, planDay: { plan: { userId } } } });
+    revalidatePath('/training');
+    return { ok: true };
+  }
+
+  if (undo.kind === 'delete_food' || undo.kind === 'restore_food' || undo.kind === 'recreate_food') {
+    const refresh = () => {
+      revalidatePath('/nutrition');
+      revalidatePath('/nutrition/history');
+      revalidatePath('/dashboard');
+    };
+    if (undo.kind === 'delete_food') {
+      await db.foodEntry.deleteMany({ where: { id: { in: undo.ids } } });
+      refresh();
+      return { ok: true };
+    }
+    // Un alimento de la base sólo se vuelve a vincular si existe.
+    const foodIds = [...new Set(undo.rows.map((r) => r.foodId).filter((x): x is string => !!x))];
+    if (foodIds.length > 0 && (await prisma.food.count({ where: { id: { in: foodIds } } })) !== foodIds.length) {
+      return { error: 'INVALID' };
+    }
+    if (undo.kind === 'restore_food') {
+      for (const { id, ...data } of undo.rows) {
+        await db.foodEntry.updateMany({ where: { id }, data });
+      }
+    } else {
+      for (const r of undo.rows) {
+        const { date, ...rest } = r;
+        await db.foodEntry.create({ data: { userId, ...rest, date: isoToUtcDate(date), source: 'MANUAL' } });
+      }
+    }
+    refresh();
     return { ok: true };
   }
 
