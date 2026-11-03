@@ -78,6 +78,8 @@ export async function sendCoachMessage(
     editError: string | null;
     editUndo: CoachUndo | null;
     editCounts: { applied: number; total: number } | null;
+    /** Qué camino tomó el servidor al responder (diagnóstico temporal, se muestra en letra chica). */
+    diag: string;
     planDays: Array<{ id: string; name: string }>;
   }>
 > {
@@ -106,6 +108,7 @@ export async function sendCoachMessage(
   let food: CoachFood | null = null;
   let exercise: CoachExercise | null = null;
   let edits: CoachEdit[] = [];
+  let diag = '';
   try {
     const res = await runCoachTurn({
       profile,
@@ -117,6 +120,7 @@ export async function sendCoachMessage(
     food = res.food;
     exercise = res.exercise;
     edits = res.edits;
+    diag = res.diag;
   } catch (e) {
     return { error: aiErrorMessage(e) };
   }
@@ -167,7 +171,7 @@ export async function sendCoachMessage(
 
   return {
     ok: true,
-    data: { reply, food, exercise, edits, editApplied, editError, editUndo, editCounts, planDays },
+    data: { reply, food, exercise, edits, editApplied, editError, editUndo, editCounts, planDays, diag },
   };
 }
 

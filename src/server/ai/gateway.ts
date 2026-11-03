@@ -92,6 +92,8 @@ export async function runCoachTurn(args: {
   food: CoachFood | null;
   exercise: CoachExercise | null;
   edits: CoachEdit[];
+  /** Qué camino tomó el servidor (para diagnosticar desde la pantalla). */
+  diag: string;
 }> {
   const { profile, entitlement, history, userMessage } = args;
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
@@ -111,6 +113,7 @@ export async function runCoachTurn(args: {
   ];
 
   let lastError: unknown = new AiError('INVALID_OUTPUT', 'sin respuesta del modelo');
+  let diag = '';
   for (const model of models) {
     try {
       // Primero salida estructurada (texto + alimento detectado); si el formato falla, texto simple.
@@ -131,15 +134,20 @@ export async function runCoachTurn(args: {
         .catch((err: unknown) => {
           if (err instanceof AiError && err.code === 'BAD_REQUEST') {
             console.error('[ai] coach: formato estructurado rechazado, sigo con texto', { model, error: err.message });
+            diag += `[${model}] formato rechazado: ${err.message.replace(/\s+/g, ' ').slice(0, 220)} `;
             return null;
           }
           throw err;
         });
       let answer = structured;
+      if (structured && !structured.data) {
+        diag += `[${model}] no se pudo leer la respuesta (stop=${structured.stopReason}): ${structured.rawText.replace(/\s+/g, ' ').slice(0, 160)} `;
+      }
       // Si se negó a editar (cree que no puede), se reintenta una vez diciéndole que sí puede.
       if (answer?.data?.reply.trim() && answer.data.edits.length === 0 && COACH_REFUSAL.test(answer.data.reply)) {
         await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, false);
         console.error('[ai] coach: se negó a editar, reintento', { model });
+        diag += `[${model}] se negó, reintento `;
         const retried = await activeProvider()
           .generateStructured({
             model,
@@ -163,6 +171,7 @@ export async function runCoachTurn(args: {
         const hasEdits = edits.length > 0;
         return {
           text: answer.data.reply.trim(),
+          diag: `${diag}[${model}] formato ok, cambios=${edits.length}`,
           edits,
           food: hasEdits ? null : food,
           exercise: hasEdits || food ? null : exercise,
@@ -198,7 +207,7 @@ export async function runCoachTurn(args: {
       }
 
       await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
-      return { text, food: null, exercise: null, edits: [] };
+      return { text, food: null, exercise: null, edits: [], diag: `${diag}[${model}] texto simple` };
     } catch (e) {
       console.error('[ai] coach falló', { model, error: e instanceof Error ? e.message : String(e) });
       // Sin crédito, sin clave o sin permiso: otro modelo no lo arregla.

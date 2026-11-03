@@ -404,6 +404,8 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
     >
   >({});
   const [autoApply, setAutoApply] = useState(initialAutoApply);
+  // Diagnóstico temporal: qué camino tomó el servidor en cada respuesta.
+  const [diags, setDiags] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState('');
   const [used, setUsed] = useState(usage.used);
   const [pending, start] = useTransition();
@@ -432,6 +434,7 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
         const replyId = `reply-${Date.now()}`;
         const food = res.data.food;
         if (food) setFoods((f) => ({ ...f, [replyId]: food }));
+        if (res.data.diag) setDiags((d) => ({ ...d, [replyId]: res.data!.diag }));
         const proposed = res.data.edits;
         if (proposed.length > 0) {
           setEdits((x) => ({
@@ -535,6 +538,11 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
                   {m.content}
                 </div>
               </div>
+              {diags[m.id] ? (
+                <p className="max-w-[85%] break-words pl-1 text-[10px] leading-snug text-muted-foreground/70">
+                  {diags[m.id]}
+                </p>
+              ) : null}
               {edits[m.id] ? (
                 <div className="flex justify-start">
                   <EditSuggestion
