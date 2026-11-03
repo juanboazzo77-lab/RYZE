@@ -1451,6 +1451,7 @@ export const es = {
     editUndo: 'Deshacer',
     editUndone: 'Se deshizo el cambio',
     editUndoChanged: 'Ya no se puede deshacer: eso cambió de nuevo después',
+    editPartial: 'Se aplicaron {done} de {total} cambios',
     editFoodNotFound: 'No encontré ese alimento en tu registro de hoy',
     editAmbiguous: 'Ese alimento está más de una vez hoy: decime en qué comida',
     editDayNeeded: 'Decime en qué día de la rutina lo agrego',

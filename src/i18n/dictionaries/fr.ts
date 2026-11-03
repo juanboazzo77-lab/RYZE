@@ -1453,6 +1453,7 @@ export const fr: Dictionary = {
     editUndo: 'Annuler',
     editUndone: 'Changement annulé',
     editUndoChanged: 'Impossible d’annuler : cela a encore changé depuis',
+    editPartial: '{done} changements sur {total} appliqués',
     editFoodNotFound: 'Je n’ai pas trouvé cet aliment dans votre journal d’aujourd’hui',
     editAmbiguous: 'Cet aliment apparaît plusieurs fois aujourd’hui : dites-moi quel repas',
     editDayNeeded: 'Dites-moi à quel jour du programme l’ajouter',

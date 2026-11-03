@@ -121,6 +121,19 @@ describe('coachUndoSchema', () => {
     expect(coachUndoSchema.safeParse({ kind: 'restore_rows', rows: [] }).success).toBe(false);
     expect(coachUndoSchema.safeParse({ kind: 'otra_cosa' }).success).toBe(false);
   });
+
+  it('acepta varios deshacer juntos', () => {
+    expect(
+      coachUndoSchema.safeParse({
+        kind: 'batch',
+        undos: [
+          { kind: 'delete_rows', ids: [id] },
+          { kind: 'nutrition', newId: id, previousId: null },
+        ],
+      }).success,
+    ).toBe(true);
+    expect(coachUndoSchema.safeParse({ kind: 'batch', undos: [] }).success).toBe(false);
+  });
 });
 
 describe('coachReplySchema', () => {
@@ -129,15 +142,41 @@ describe('coachReplySchema', () => {
       reply: 'Dale',
       food: null,
       exercise: null,
-      edit: { kind: 'nutrition_targets', summary: 'Subo las calorías', kcal: 99999, proteinG: 160, carbsG: 300, fatG: 70 },
+      edits: [
+        { kind: 'nutrition_targets', summary: 'Subo las calorías', kcal: 99999, proteinG: 160, carbsG: 300, fatG: 70 },
+      ],
     });
     expect(parsed.reply).toBe('Dale');
-    // Un número fuera de rango queda en null (y entonces el cambio no es aplicable).
-    expect(parsed.edit && isApplicableCoachEdit(parsed.edit)).toBeFalsy();
+    // Un número fuera de rango queda en null: el cambio no es aplicable y se descarta.
+    expect(parsed.edits).toEqual([]);
   });
 
-  it('acepta una respuesta sin el campo edit', () => {
+  it('acepta una respuesta sin el campo edits', () => {
     const parsed = coachReplySchema.parse({ reply: 'Hola', food: null, exercise: null });
-    expect(parsed.edit).toBeNull();
+    expect(parsed.edits).toEqual([]);
+  });
+
+  it('conserva varios cambios válidos y descarta los incompletos', () => {
+    const parsed = coachReplySchema.parse({
+      reply: 'Te armo el día',
+      food: null,
+      exercise: null,
+      edits: [
+        { kind: 'remove_exercise', summary: 'Saco el peso muerto', exercise: 'Peso muerto' },
+        { kind: 'add_exercise', summary: 'Sumo sentadilla búlgara', newExercise: 'Sentadilla búlgara', day: 'Pierna' },
+        { kind: 'replace_exercise', summary: 'Falta el nuevo', exercise: 'Prensa' },
+        { kind: 'cualquier_cosa', summary: 'inválido' },
+      ],
+    });
+    expect(parsed.edits.map((e) => e.kind)).toEqual(['remove_exercise', 'add_exercise']);
+  });
+
+  it('no deja pasar más de 12 cambios', () => {
+    const edits = Array.from({ length: 20 }, (_, i) => ({
+      kind: 'remove_exercise',
+      summary: `Saco ${i}`,
+      exercise: `Ejercicio ${i}`,
+    }));
+    expect(coachReplySchema.parse({ reply: 'x', food: null, exercise: null, edits }).edits).toHaveLength(12);
   });
 });

@@ -1453,6 +1453,7 @@ export const pt: Dictionary = {
     editUndo: 'Desfazer',
     editUndone: 'A mudança foi desfeita',
     editUndoChanged: 'Não dá mais para desfazer: isso mudou de novo depois',
+    editPartial: '{done} de {total} mudanças aplicadas',
     editFoodNotFound: 'Não encontrei esse alimento no seu registro de hoje',
     editAmbiguous: 'Esse alimento aparece mais de uma vez hoje: diga em qual refeição',
     editDayNeeded: 'Diga em qual dia da rotina devo adicionar',

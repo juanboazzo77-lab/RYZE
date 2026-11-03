@@ -22,7 +22,6 @@ import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-ad
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 import {
   coachReplySchema,
-  isApplicableCoachEdit,
   type CoachEdit,
   type CoachExercise,
   type CoachFood,
@@ -79,7 +78,7 @@ export async function runCoachTurn(args: {
   text: string;
   food: CoachFood | null;
   exercise: CoachExercise | null;
-  edit: CoachEdit | null;
+  edits: CoachEdit[];
 }> {
   const { profile, entitlement, history, userMessage } = args;
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
@@ -98,30 +97,40 @@ export async function runCoachTurn(args: {
   for (const model of models) {
     try {
       // Primero salida estructurada (texto + alimento detectado); si el formato falla, texto simple.
-      const structured = await activeProvider().generateStructured({
-        model,
-        system,
-        messages,
-        schema: coachReplySchema,
-        schemaName: 'CoachReply',
-        maxOutputTokens: maxOutputTokensFor('coach_chat') + 800,
-        timeoutMs: COACH_TIMEOUT_MS,
-        temperature: 0.7,
-        thinking: false,
-      });
-      if (structured.data?.reply.trim()) {
+      // Si el proveedor rechaza el formato estructurado (pedido inválido), el chat sigue andando
+      // con texto simple, sin botones, en vez de quedarse sin respuesta.
+      const structured = await activeProvider()
+        .generateStructured({
+          model,
+          system,
+          messages,
+          schema: coachReplySchema,
+          schemaName: 'CoachReply',
+          maxOutputTokens: maxOutputTokensFor('coach_chat') + 800,
+          timeoutMs: COACH_TIMEOUT_MS,
+          temperature: 0.7,
+          thinking: false,
+        })
+        .catch((err: unknown) => {
+          if (err instanceof AiError && err.code === 'BAD_REQUEST') {
+            console.error('[ai] coach: formato estructurado rechazado, sigo con texto', { model, error: err.message });
+            return null;
+          }
+          throw err;
+        });
+      if (structured?.data?.reply.trim()) {
         await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, true);
-        const { food, exercise } = structured.data;
-        const edit = structured.data.edit && isApplicableCoachEdit(structured.data.edit) ? structured.data.edit : null;
-        // Sólo una sugerencia por respuesta: el cambio pedido tiene prioridad.
+        const { food, exercise, edits } = structured.data;
+        // Sólo una sugerencia por respuesta: los cambios pedidos tienen prioridad.
+        const hasEdits = edits.length > 0;
         return {
           text: structured.data.reply.trim(),
-          edit,
-          food: edit ? null : food,
-          exercise: edit || food ? null : exercise,
+          edits,
+          food: hasEdits ? null : food,
+          exercise: hasEdits || food ? null : exercise,
         };
       }
-      await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, false);
+      if (structured) await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, false);
 
       const res = await activeProvider().generate({
         model,
@@ -133,7 +142,16 @@ export async function runCoachTurn(args: {
         thinking: false,
       });
 
-      const text = res.text.trim();
+      // El prompt pide un JSON: si el texto simple llega así, se muestra sólo el mensaje.
+      let text = res.text.trim();
+      if (text.startsWith('{')) {
+        try {
+          const maybe = (JSON.parse(text) as { reply?: unknown }).reply;
+          if (typeof maybe === 'string' && maybe.trim()) text = maybe.trim();
+        } catch {
+          // No era un JSON completo: se deja el texto como vino.
+        }
+      }
       if (!text) {
         console.error('[ai] coach: respuesta vacía', { model, stopReason: res.stopReason, usage: res.usage });
         await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, false);
@@ -142,7 +160,7 @@ export async function runCoachTurn(args: {
       }
 
       await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
-      return { text, food: null, exercise: null, edit: null };
+      return { text, food: null, exercise: null, edits: [] };
     } catch (e) {
       console.error('[ai] coach falló', { model, error: e instanceof Error ? e.message : String(e) });
       // Sin crédito, sin clave o sin permiso: otro modelo no lo arregla.

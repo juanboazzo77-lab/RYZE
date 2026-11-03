@@ -245,20 +245,37 @@ function editErrorMessage(error: string | undefined, tc: ReturnType<typeof useT>
   }
 }
 
+/** Lista de lo que se va a cambiar (o se cambió): una línea por cambio. */
+function EditSummary({ edits, strike }: { edits: CoachEdit[]; strike?: boolean }) {
+  return (
+    <ul className={cn('space-y-0.5 text-xs text-muted-foreground', strike && 'line-through')}>
+      {edits.map((e, i) => (
+        <li key={i} className={edits.length > 1 ? 'flex gap-1.5' : undefined}>
+          {edits.length > 1 ? <span aria-hidden>•</span> : null}
+          <span>{e.summary}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function EditSuggestion({
-  edit,
+  edits,
   alreadyApplied,
   initialUndo,
+  initialCounts,
   failed,
   autoApply,
   onAutoApplyChange,
   onClose,
 }: {
-  edit: CoachEdit;
+  edits: CoachEdit[];
   /** Se aplicó solo, apenas respondió el coach. */
   alreadyApplied: boolean;
-  /** Cómo volver atrás ese cambio aplicado solo. */
+  /** Cómo volver atrás los cambios aplicados solos. */
   initialUndo: CoachUndo | null;
+  /** Cuántos de los cambios pedidos se pudieron aplicar solos. */
+  initialCounts: { applied: number; total: number } | null;
   /** Se intentó aplicar solo y falló: queda el botón para reintentar. */
   failed: string | null;
   autoApply: boolean;
@@ -270,14 +287,18 @@ function EditSuggestion({
   const [pending, start] = useTransition();
   const [state, setState] = useState<'pending' | 'applied' | 'undone'>(alreadyApplied ? 'applied' : 'pending');
   const [undo, setUndo] = useState<CoachUndo | null>(initialUndo);
+  const [counts, setCounts] = useState(initialCounts);
 
   function apply() {
     start(async () => {
-      const res = await applyCoachEdit(edit);
+      const res = await applyCoachEdit(edits);
       if (res.ok) {
         setState('applied');
         setUndo(res.data?.undo ?? null);
-        toast.success(tc.editApplied);
+        const applied = res.data?.applied ?? edits.length;
+        const total = res.data?.total ?? edits.length;
+        setCounts({ applied, total });
+        toast.success(applied < total ? interpolate(tc.editPartial, { done: applied, total }) : tc.editApplied);
         return;
       }
       toast.error(editErrorMessage(res.error, tc));
@@ -305,7 +326,7 @@ function EditSuggestion({
           <Undo2 className="size-3.5" />
           {tc.editUndone}
         </p>
-        <p className="text-xs text-muted-foreground line-through">{edit.summary}</p>
+        <EditSummary edits={edits} strike />
       </div>
     );
   }
@@ -315,9 +336,13 @@ function EditSuggestion({
       <div className="max-w-[85%] space-y-1 pl-1">
         <p className="flex items-center gap-1.5 text-xs text-success">
           <Check className="size-3.5" />
-          {alreadyApplied ? tc.editAppliedAuto : tc.editApplied}
+          {counts && counts.applied < counts.total
+            ? interpolate(tc.editPartial, { done: counts.applied, total: counts.total })
+            : alreadyApplied
+              ? tc.editAppliedAuto
+              : tc.editApplied}
         </p>
-        <p className="text-xs text-muted-foreground">{edit.summary}</p>
+        <EditSummary edits={edits} />
         {undo ? (
           <Button size="sm" variant="outline" onClick={undoEdit} disabled={pending}>
             {pending ? <Loader2 className="size-4 animate-spin" /> : <Undo2 className="size-4" />}
@@ -331,7 +356,7 @@ function EditSuggestion({
   return (
     <div className="max-w-[85%] space-y-2 rounded-2xl border bg-card p-3 text-sm">
       <p className="font-medium">{tc.editAsk}</p>
-      <p className="text-xs text-muted-foreground">{edit.summary}</p>
+      <EditSummary edits={edits} />
       {failed ? <p className="text-xs text-destructive">{editErrorMessage(failed, tc)}</p> : null}
       <div className="flex gap-2">
         <Button size="sm" onClick={apply} disabled={pending}>
@@ -367,7 +392,16 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
     Record<string, { exercise: CoachExercise; planDays: PlanDayOption[] }>
   >({});
   const [edits, setEdits] = useState<
-    Record<string, { edit: CoachEdit; applied: boolean; undo: CoachUndo | null; failed: string | null }>
+    Record<
+      string,
+      {
+        edits: CoachEdit[];
+        applied: boolean;
+        undo: CoachUndo | null;
+        counts: { applied: number; total: number } | null;
+        failed: string | null;
+      }
+    >
   >({});
   const [autoApply, setAutoApply] = useState(initialAutoApply);
   const [draft, setDraft] = useState('');
@@ -398,14 +432,15 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
         const replyId = `reply-${Date.now()}`;
         const food = res.data.food;
         if (food) setFoods((f) => ({ ...f, [replyId]: food }));
-        const edit = res.data.edit;
-        if (edit) {
+        const proposed = res.data.edits;
+        if (proposed.length > 0) {
           setEdits((x) => ({
             ...x,
             [replyId]: {
-              edit,
+              edits: proposed,
               applied: res.data!.editApplied,
               undo: res.data!.editUndo,
+              counts: res.data!.editCounts,
               failed: res.data!.editError,
             },
           }));
@@ -503,9 +538,10 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
               {edits[m.id] ? (
                 <div className="flex justify-start">
                   <EditSuggestion
-                    edit={edits[m.id]!.edit}
+                    edits={edits[m.id]!.edits}
                     alreadyApplied={edits[m.id]!.applied}
                     initialUndo={edits[m.id]!.undo}
+                    initialCounts={edits[m.id]!.counts}
                     failed={edits[m.id]!.failed}
                     autoApply={autoApply}
                     onAutoApplyChange={changeAutoApply}

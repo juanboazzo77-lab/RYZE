@@ -1453,6 +1453,7 @@ export const en: Dictionary = {
     editUndo: 'Undo',
     editUndone: 'Change undone',
     editUndoChanged: 'It can’t be undone anymore: that changed again afterwards',
+    editPartial: '{done} of {total} changes applied',
     editFoodNotFound: 'I couldn’t find that food in today’s log',
     editAmbiguous: 'That food appears more than once today: tell me which meal',
     editDayNeeded: 'Tell me which day of the routine to add it to',

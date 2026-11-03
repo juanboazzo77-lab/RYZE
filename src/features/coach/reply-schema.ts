@@ -26,6 +26,9 @@ const nullableInt = (min: number, max: number) => z.number().int().min(min).max(
 
 const MEALS = ['BREAKFAST', 'LUNCH', 'MERIENDA', 'DINNER', 'SNACK'] as const;
 
+/** Tope de cambios que el coach puede proponer juntos en un mensaje. */
+export const MAX_EDITS = 12;
+
 /**
  * Cambio concreto que el usuario le pidió al coach sobre su rutina activa o sus objetivos de
  * nutrición. La app lo muestra con un botón "Editar" y lo aplica tal cual, sin que la IA toque
@@ -86,7 +89,7 @@ const strOrNull = z.string().max(2000).nullable();
  * Cómo volver atrás un cambio que ya se aplicó. Lo arma el servidor al aplicarlo, lo guarda el
  * cliente mientras la pantalla está abierta y vuelve a validarse al deshacer (ver `undoCoachEdit`).
  */
-export const coachUndoSchema = z.discriminatedUnion('kind', [
+const baseUndoSchema = z.discriminatedUnion('kind', [
   /** Cambiar o reemplazar: se vuelven a poner los valores anteriores de esas filas. */
   z.object({
     kind: z.literal('restore_rows'),
@@ -183,6 +186,13 @@ export const coachUndoSchema = z.discriminatedUnion('kind', [
       .max(40),
   }),
 ]);
+export type BaseCoachUndo = z.infer<typeof baseUndoSchema>;
+
+/** Varios cambios juntos: se deshacen todos, del último al primero. */
+export const coachUndoSchema = z.union([
+  baseUndoSchema,
+  z.object({ kind: z.literal('batch'), undos: z.array(baseUndoSchema).min(1).max(MAX_EDITS) }),
+]);
 export type CoachUndo = z.infer<typeof coachUndoSchema>;
 
 /** Un cambio sólo se ofrece si trae todo lo que hace falta para aplicarlo sin adivinar. */
@@ -221,6 +231,10 @@ export const coachReplySchema = z.object({
   reply: z.string().min(1),
   food: coachFoodSchema.nullable().catch(null),
   exercise: coachExerciseSchema.nullable().catch(null),
-  edit: coachEditSchema.nullable().catch(null),
+  /** Uno o varios cambios pedidos (por ejemplo, rehacer un día entero). Los inválidos se descartan. */
+  edits: z
+    .array(coachEditSchema.nullable().catch(null))
+    .catch([])
+    .transform((list) => list.filter((e): e is CoachEdit => !!e && isApplicableCoachEdit(e)).slice(0, MAX_EDITS)),
 });
 export type CoachReply = z.infer<typeof coachReplySchema>;

@@ -17,6 +17,8 @@ import {
   coachFoodSchema,
   coachUndoSchema,
   isApplicableCoachEdit,
+  MAX_EDITS,
+  type BaseCoachUndo,
   type CoachEdit,
   type CoachUndo,
   type CoachExercise,
@@ -70,11 +72,12 @@ export async function sendCoachMessage(
     reply: string;
     food: CoachFood | null;
     exercise: CoachExercise | null;
-    edit: CoachEdit | null;
-    /** El cambio ya se aplicó solo (el cliente tiene activado "aplicar automáticamente"). */
+    edits: CoachEdit[];
+    /** Los cambios ya se aplicaron solos (el cliente tiene activado "aplicar automáticamente"). */
     editApplied: boolean;
     editError: string | null;
     editUndo: CoachUndo | null;
+    editCounts: { applied: number; total: number } | null;
     planDays: Array<{ id: string; name: string }>;
   }>
 > {
@@ -102,7 +105,7 @@ export async function sendCoachMessage(
   let reply: string;
   let food: CoachFood | null = null;
   let exercise: CoachExercise | null = null;
-  let edit: CoachEdit | null = null;
+  let edits: CoachEdit[] = [];
   try {
     const res = await runCoachTurn({
       profile,
@@ -113,7 +116,7 @@ export async function sendCoachMessage(
     reply = res.text;
     food = res.food;
     exercise = res.exercise;
-    edit = res.edit;
+    edits = res.edits;
   } catch (e) {
     return { error: aiErrorMessage(e) };
   }
@@ -153,23 +156,28 @@ export async function sendCoachMessage(
   let editApplied = false;
   let editError: string | null = null;
   let editUndo: CoachUndo | null = null;
-  if (edit && profile.coachAutoApply) {
-    const done = await performCoachEdit(userId, profile.timezone, edit).catch((err) => {
-      console.error('[coach] no se pudo aplicar el cambio solo', err instanceof Error ? err.message : err);
-      return { error: 'ERROR' } as Result<CoachEditDone>;
-    });
+  let editCounts: { applied: number; total: number } | null = null;
+  if (edits.length > 0 && profile.coachAutoApply) {
+    const done = await performCoachEdits(userId, profile.timezone, edits);
     editApplied = !!done.ok;
     editUndo = done.data?.undo ?? null;
     editError = done.ok ? null : (done.error ?? 'ERROR');
+    if (done.data) editCounts = { applied: done.data.applied ?? 1, total: done.data.total ?? 1 };
   }
 
-  return { ok: true, data: { reply, food, exercise, edit, editApplied, editError, editUndo, planDays } };
+  return {
+    ok: true,
+    data: { reply, food, exercise, edits, editApplied, editError, editUndo, editCounts, planDays },
+  };
 }
 
 /** Lo que devuelve un cambio aplicado: cuántas filas tocó y cómo volver atrás. */
 export interface CoachEditDone {
   changed: number;
-  undo: CoachUndo;
+  undo: BaseCoachUndo | CoachUndo;
+  /** Cuántos de los cambios pedidos se pudieron aplicar, y cuántos eran. */
+  applied?: number;
+  total?: number;
 }
 
 /** Busca un ejercicio por nombre dentro de la rutina: exacto o, si no, uno contiene al otro. */
@@ -183,14 +191,50 @@ function sameExercise(planName: string, asked: string): boolean {
 }
 
 /**
- * Aplica el cambio que el usuario le pidió al coach y confirmó con el botón "Editar".
- * Toca sólo lo que dice el cambio, en la rutina activa o en los objetivos de nutrición.
+ * Aplica los cambios que el usuario le pidió al coach y confirmó con el botón "Editar".
+ * Toca sólo lo que dicen los cambios, en la rutina activa, el registro de hoy o los objetivos.
  */
-export async function applyCoachEdit(raw: CoachEdit): Promise<Result<CoachEditDone>> {
-  const parsed = coachEditSchema.safeParse(raw);
-  if (!parsed.success || !isApplicableCoachEdit(parsed.data)) return { error: 'INVALID' };
+export async function applyCoachEdit(raw: CoachEdit[]): Promise<Result<CoachEditDone>> {
+  const parsed = z.array(coachEditSchema).min(1).max(MAX_EDITS).safeParse(raw);
+  if (!parsed.success || !parsed.data.every(isApplicableCoachEdit)) return { error: 'INVALID' };
   const { userId, profile } = await requireUser();
-  return performCoachEdit(userId, profile.timezone, parsed.data);
+  return performCoachEdits(userId, profile.timezone, parsed.data);
+}
+
+/**
+ * Aplica los cambios uno por uno, en orden. Si alguno no se puede (por ejemplo, un ejercicio que
+ * ya no está), se sigue con el resto y se cuenta; sólo falla del todo si no se pudo ninguno.
+ */
+async function performCoachEdits(
+  userId: string,
+  timezone: string,
+  edits: CoachEdit[],
+): Promise<Result<CoachEditDone>> {
+  const undos: BaseCoachUndo[] = [];
+  let changed = 0;
+  let firstError: string | null = null;
+  for (const edit of edits) {
+    const res = await performCoachEdit(userId, timezone, edit).catch((err) => {
+      console.error('[coach] no se pudo aplicar un cambio', err instanceof Error ? err.message : err);
+      return { error: 'ERROR' } as Result<CoachEditDone>;
+    });
+    if (!res.ok || !res.data) {
+      firstError = firstError ?? res.error ?? 'ERROR';
+      continue;
+    }
+    changed += res.data.changed;
+    undos.push(res.data.undo as BaseCoachUndo);
+  }
+  if (undos.length === 0) return { error: firstError ?? 'ERROR' };
+  return {
+    ok: true,
+    data: {
+      changed,
+      applied: undos.length,
+      total: edits.length,
+      undo: undos.length === 1 ? undos[0]! : { kind: 'batch', undos },
+    },
+  };
 }
 
 /** Elige si los cambios que pide el cliente se aplican solos (sin tocar "Editar"). */
@@ -473,7 +517,7 @@ async function performCoachEdit(
   });
 
   let changed = 0;
-  let undo: CoachUndo;
+  let undo: BaseCoachUndo;
   if (e.kind === 'remove_exercise') {
     // Un día no puede quedar sin ejercicios.
     const removable = matches.filter((m) => m.day.exercises.length > 1);
@@ -549,8 +593,18 @@ async function performCoachEdit(
 export async function undoCoachEdit(raw: CoachUndo): Promise<Result> {
   const parsed = coachUndoSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const undo = parsed.data;
   const { userId } = await requireUser();
+  // Varios cambios juntos se deshacen del último al primero; si uno ya no se puede, se sigue con el resto.
+  const list = parsed.data.kind === 'batch' ? [...parsed.data.undos].reverse() : [parsed.data];
+  let failed: string | null = null;
+  for (const u of list) {
+    const res = await undoOne(userId, u);
+    if (!res.ok) failed = failed ?? res.error ?? 'ERROR';
+  }
+  return failed ? { error: failed } : { ok: true };
+}
+
+async function undoOne(userId: string, undo: BaseCoachUndo): Promise<Result> {
   const db = forUser(userId);
 
   if (undo.kind === 'nutrition') {
