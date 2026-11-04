@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
   }
 
   const users = await prisma.profile.findMany({
-    where: { onboardingCompletedAt: { not: null }, accountType: 'CLIENT' },
+    where: { onboardingCompletedAt: { not: null } },
     select: {
       id: true,
       timezone: true,

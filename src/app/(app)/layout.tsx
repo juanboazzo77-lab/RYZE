@@ -12,26 +12,11 @@ import { NativePush } from '@/features/notifications/native-push';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { RevenueCatInit } from '@/features/billing/revenuecat-init';
 import { WidgetSync } from '@/features/widgets/widget-sync';
-import { TrainerRouteGuard } from '@/features/trainer/route-guard';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, { t }] = await Promise.all([getUserContext(), getT()]);
   if (!ctx) redirect('/login');
   if (ctx.needsOnboarding) redirect('/onboarding');
-
-  // Cuenta de entrenador: otro menú y sin avisos, widgets ni anuncios de cliente.
-  if (ctx.profile.accountType === 'TRAINER') {
-    return (
-      <AppShell email={ctx.email} showAds={false} adCopy={t.ads} trainer>
-        <TrainerRouteGuard />
-        <NativePush />
-        <NavTracker />
-        <RegisterSW />
-        <OfflineIndicator />
-        {children}
-      </AppShell>
-    );
-  }
 
   return (
     <AppShell email={ctx.email} showAds={showAds(ctx.entitlement)} adCopy={t.ads}>

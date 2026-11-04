@@ -5,8 +5,6 @@ import { prisma } from './db';
 import { forUser } from './user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { listCoachMemories, type CoachMemoryItem } from '@/features/coach-memory/queries';
-import { pathsOf, purgeClientCheckinPhotos, signedPhotoUrls } from './storage/checkin-photos';
-import { TRIAL_DAYS } from './entitlements';
 import {
   asTrainerStatus,
   attentionLevel,
@@ -85,74 +83,6 @@ export async function createTrainerProfile(
   throw new Error('[trainers] no se pudo generar un código de invitación único');
 }
 
-/**
- * Elige "soy entrenador" al crear la cuenta: la cuenta pasa a ser de entrenador (sin el cuestionario
- * de cliente) y queda pendiente de aprobación. Las cuentas son separadas: una cuenta de cliente que
- * ya completó su alta no se puede convertir.
- */
-export async function becomeTrainerAccount(
-  userId: string,
-  input: { displayName: string; bio: string | null; credential: string | null },
-): Promise<{ ok: true } | { error: 'ALREADY_CLIENT' | 'NOT_FOUND' }> {
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { accountType: true, onboardingCompletedAt: true, name: true },
-  });
-  if (!profile) return { error: 'NOT_FOUND' };
-  if (profile.accountType !== 'TRAINER' && profile.onboardingCompletedAt) return { error: 'ALREADY_CLIENT' };
-
-  await prisma.profile.update({
-    where: { id: userId },
-    data: {
-      accountType: 'TRAINER',
-      // Sin cuestionario de cliente: el alta queda completa.
-      onboardingCompletedAt: profile.onboardingCompletedAt ?? new Date(),
-      name: profile.name ?? input.displayName,
-    },
-  });
-  await createTrainerProfile(userId, input);
-  return { ok: true };
-}
-
-/**
- * El entrenador deja de serlo y su cuenta vuelve a ser de cliente. Se terminan todos sus vínculos
- * (cada cliente deja de estar "manejado" y se borran las fotos de sus revisiones), se borran su perfil
- * de entrenador, sus notas y su chat con clientes, y se le vuelve a pedir el cuestionario de cliente
- * que se había salteado. Las rutinas y dietas que armó siguen en la cuenta de cada cliente.
- *
- * Si la cuenta YA tenía su panel de cliente (usó la app como cliente antes de ser entrenador), vuelve a
- * ese panel con todos sus datos y NO se le vuelve a pedir el cuestionario.
- */
-export async function cancelTrainerAccount(
-  userId: string,
-): Promise<{ ok: true; needsOnboarding: boolean } | { error: 'NOT_TRAINER' }> {
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { accountType: true, primaryGoal: true, heightCm: true, onboardingCompletedAt: true },
-  });
-  if (profile?.accountType !== 'TRAINER') return { error: 'NOT_TRAINER' };
-  // Tiene panel de cliente si ya cargó sus datos (objetivo o altura): no hay nada que volver a preguntar.
-  const hadClientPanel = profile.primaryGoal !== null || profile.heightCm !== null;
-
-  const links = await prisma.trainerClient.findMany({
-    where: { trainerId: userId, status: 'ACTIVE' },
-    select: { clientId: true },
-  });
-  for (const l of links) await endClientLink({ clientId: l.clientId, trainerId: userId, by: 'TRAINER' });
-
-  // Borra el perfil y, en cascada, los vínculos, los mensajes, las notas y los intentos bloqueados.
-  await prisma.trainerProfile.deleteMany({ where: { userId } });
-  await prisma.profile.update({
-    where: { id: userId },
-    data: {
-      accountType: 'CLIENT',
-      // Con panel de cliente previo se conserva la marca de cuestionario completo; si nunca lo hizo, lo hace ahora.
-      onboardingCompletedAt: hadClientPanel ? (profile.onboardingCompletedAt ?? new Date()) : null,
-    },
-  });
-  return { ok: true, needsOnboarding: !hadClientPanel };
-}
-
 /** El entrenador cambia su código (por ejemplo, si se lo pasó a alguien que no corresponde). */
 export async function regenerateInviteCode(userId: string): Promise<string | null> {
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -178,33 +108,11 @@ export interface ClientLinkView {
 export async function getClientLink(clientId: string): Promise<ClientLinkView | null> {
   const link = await prisma.trainerClient.findFirst({
     where: { clientId, status: 'ACTIVE' },
-    select: {
-      id: true,
-      trainerId: true,
-      consentAt: true,
-      trainer: { select: { displayName: true } },
-    },
+    select: { id: true, trainerId: true, consentAt: true, trainer: { select: { displayName: true } } },
   });
   return link
-    ? {
-        id: link.id,
-        trainerId: link.trainerId,
-        trainerName: link.trainer.displayName,
-        consentAt: link.consentAt.toISOString(),
-      }
+    ? { id: link.id, trainerId: link.trainerId, trainerName: link.trainer.displayName, consentAt: link.consentAt.toISOString() }
     : null;
-}
-
-/**
- * ¿Este cliente está "manejado" por un entrenador? (vínculo activo con el entrenador aprobado). Un cliente
- * manejado no paga ningún plan y no puede usar la IA: de eso se encarga su entrenador.
- */
-export async function isManagedClient(clientId: string): Promise<boolean> {
-  const link = await prisma.trainerClient.findFirst({
-    where: { clientId, status: 'ACTIVE', trainer: { status: 'ACTIVE' } },
-    select: { id: true },
-  });
-  return !!link;
 }
 
 /** Quién es el entrenador de un código (para mostrárselo al cliente antes de que acepte). */
@@ -218,7 +126,7 @@ export async function previewInviteCode(rawCode: string): Promise<{ displayName:
   return t && t.status === 'ACTIVE' ? { displayName: t.displayName, credential: t.credential } : null;
 }
 
-export type RedeemError = 'INVALID_CODE' | 'SELF' | 'ALREADY_LINKED' | 'TRAINER_FULL' | 'TRAINER_ACCOUNT';
+export type RedeemError = 'INVALID_CODE' | 'SELF' | 'ALREADY_LINKED' | 'TRAINER_FULL';
 
 /** El cliente acepta compartir sus datos con el entrenador del código. El consentimiento queda registrado. */
 export async function redeemInviteCode(clientId: string, rawCode: string): Promise<{ ok: true } | { error: RedeemError }> {
@@ -227,9 +135,6 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
   const trainer = await prisma.trainerProfile.findUnique({ where: { inviteCode: code } });
   if (!trainer || trainer.status !== 'ACTIVE') return { error: 'INVALID_CODE' };
   if (trainer.userId === clientId) return { error: 'SELF' };
-  // Las cuentas de entrenador son aparte: no se conectan a otro entrenador como clientes.
-  const me = await prisma.profile.findUnique({ where: { id: clientId }, select: { accountType: true } });
-  if (me?.accountType === 'TRAINER') return { error: 'TRAINER_ACCOUNT' };
 
   const active = await prisma.trainerClient.findFirst({ where: { clientId, status: 'ACTIVE' }, select: { id: true } });
   if (active) return { error: 'ALREADY_LINKED' };
@@ -240,17 +145,8 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
   try {
     await prisma.trainerClient.upsert({
       where: { trainerId_clientId: { trainerId: trainer.userId, clientId } },
-      // Al conectarse, el cliente acepta que el entrenador vea sus datos Y maneje su rutina y su dieta
-      // (el texto del consentimiento lo dice). Para cortarlo se desconecta del entrenador.
-      create: { trainerId: trainer.userId, clientId, status: 'ACTIVE', consentAt: now, editConsentAt: now },
-      update: {
-        status: 'ACTIVE',
-        consentAt: now,
-        editConsentAt: now,
-        editRequestedAt: null,
-        endedAt: null,
-        endedBy: null,
-      },
+      create: { trainerId: trainer.userId, clientId, status: 'ACTIVE', consentAt: now },
+      update: { status: 'ACTIVE', consentAt: now, endedAt: null, endedBy: null },
     });
   } catch (e) {
     // Dos pedidos a la vez: el índice único deja un solo entrenador activo por cliente.
@@ -260,57 +156,12 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
   return { ok: true };
 }
 
-/**
- * ¿Puede este entrenador crear y editar la rutina y la dieta de este cliente? Sí, apenas hay un vínculo
- * activo con el entrenador aprobado: el cliente lo autorizó al ingresar el código y aceptar el
- * consentimiento (que dice que el entrenador maneja su rutina y su dieta). No hay que pedir permiso.
- */
-export async function trainerEditAccess(trainerId: string, clientId: string): Promise<boolean> {
-  if (trainerId === clientId) return false;
-  const link = await prisma.trainerClient.findFirst({
-    where: { trainerId, clientId, status: 'ACTIVE', trainer: { status: 'ACTIVE' } },
-    select: { id: true },
-  });
-  return !!link;
-}
-
-/**
- * Un cliente que deja de estar manejado por un entrenador (se desconectó, lo dio de baja el entrenador o
- * se suspendió al entrenador) tiene 3 días gratis desde ese momento y después paga como cualquiera. Se
- * da una sola vez por cuenta, y sólo a quien no tiene un plan pago.
- */
-async function grantTrialAfterTrainer(clientId: string): Promise<void> {
-  const ent = await prisma.entitlement.findUnique({
-    where: { userId: clientId },
-    select: { tier: true, bonusUntil: true, managedTrialGrantedAt: true },
-  });
-  if (!ent || ent.tier !== 'FREE' || ent.managedTrialGrantedAt) return;
-  const until = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  await prisma.entitlement.updateMany({
-    where: { userId: clientId, managedTrialGrantedAt: null },
-    data: {
-      // No se le achica un regalo mayor que ya tuviera (por ejemplo, por invitar).
-      bonusUntil: ent.bonusUntil && ent.bonusUntil > until ? ent.bonusUntil : until,
-      managedTrialGrantedAt: new Date(),
-    },
-  });
-}
-
 /** Termina el vínculo: el entrenador deja de ver al cliente en el mismo momento. */
 export async function endClientLink(args: { clientId: string; trainerId?: string; by: 'CLIENT' | 'TRAINER' | 'ADMIN' }): Promise<number> {
   const res = await prisma.trainerClient.updateMany({
     where: { clientId: args.clientId, status: 'ACTIVE', ...(args.trainerId ? { trainerId: args.trainerId } : {}) },
     data: { status: 'ENDED', endedAt: new Date(), endedBy: args.by },
   });
-  // Las fotos de las revisiones eran para su entrenador: se borran al dejar de compartir.
-  if (res.count > 0) {
-    await grantTrialAfterTrainer(args.clientId).catch((e) =>
-      console.error('[trainers] no se pudieron dar los días gratis', e instanceof Error ? e.message : e),
-    );
-    await purgeClientCheckinPhotos(args.clientId).catch((e) =>
-      console.error('[trainers] no se pudieron borrar las fotos', e instanceof Error ? e.message : e),
-    );
-  }
   return res.count;
 }
 
@@ -334,8 +185,6 @@ export interface TrainerClientRow {
   weightKg: number | null;
   weightChange30Kg: number | null;
   attention: Attention;
-  /** El cliente mandó su revisión semanal y el entrenador todavía no le dio feedback. */
-  pendingReview: boolean;
 }
 
 /** Lista de clientes del entrenador con lo justo para ver quién necesita atención. */
@@ -356,11 +205,6 @@ export async function listTrainerClients(trainerId: string, timezone: string): P
     _max: { finishedAt: true },
   });
   const food = await prisma.foodEntry.groupBy({ by: ['userId'], where: { userId: { in: ids } }, _max: { date: true } });
-  const pending = await prisma.weeklyCheckin.findMany({
-    where: { userId: { in: ids }, status: 'SUBMITTED' },
-    select: { userId: true },
-    distinct: ['userId'],
-  });
   const weights = await prisma.weightEntry.findMany({
     where: { userId: { in: ids }, date: { gte: since } },
     orderBy: { date: 'asc' },
@@ -383,18 +227,12 @@ export async function listTrainerClients(trainerId: string, timezone: string): P
       weightKg: mine.at(-1)?.weightKg ?? null,
       weightChange30Kg: weightChangeKg(mine),
       attention: attentionLevel(lastActivityISO, todayISO),
-      pendingReview: pending.some((p) => p.userId === id),
     };
   });
 
   // Primero los que más atención necesitan.
   const order: Record<Attention, number> = { INACTIVE: 0, LATE: 1, NEW: 2, OK: 3 };
-  return rows.sort(
-    (a, b) =>
-      Number(b.pendingReview) - Number(a.pendingReview) ||
-      order[a.attention] - order[b.attention] ||
-      a.name.localeCompare(b.name),
-  );
+  return rows.sort((a, b) => order[a.attention] - order[b.attention] || a.name.localeCompare(b.name));
 }
 
 export interface ClientDetail {
@@ -415,28 +253,7 @@ export interface ClientDetail {
   workouts: Array<{ name: string; finishedAt: string; minutes: number | null; effort: number | null }>;
   nutritionDays: Array<{ date: string; kcal: number; proteinG: number }>;
   plan: { name: string; days: Array<{ name: string; exercises: Array<{ name: string; sets: number; reps: string }> }> } | null;
-  checkins: Array<{
-    id: string;
-    weekStart: string;
-    periodStart: string | null;
-    periodEnd: string | null;
-    status: string;
-    summary: string | null;
-    stats: {
-      avgWeightKg: number | null;
-      weightChangeKg: number | null;
-      kcalAdherencePct: number | null;
-      proteinAdherencePct: number | null;
-      workoutsCompleted: number;
-      workoutsPlanned: number;
-    };
-    /** Cómo se sintió, de 1 a 5. */
-    scores: Array<{ label: string; value: number }>;
-    adherenceNote: string | null;
-    notes: string | null;
-    /** Enlaces (vencen en una hora) a las fotos que subió el cliente en esa revisión. */
-    photoUrls: string[];
-  }>;
+  checkins: Array<{ weekStart: string; status: string; summary: string | null }>;
   memories: CoachMemoryItem[];
   attention: Attention;
   lastActivityISO: string | null;
@@ -511,36 +328,8 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
   const checkins = await db.weeklyCheckin.findMany({
     orderBy: { weekStart: 'desc' },
     take: 4,
-    select: {
-      id: true,
-      weekStart: true,
-      periodStart: true,
-      periodEnd: true,
-      status: true,
-      aiSummary: true,
-      avgWeightKg: true,
-      weightChangeKg: true,
-      kcalAdherencePct: true,
-      proteinAdherencePct: true,
-      workoutsCompleted: true,
-      workoutsPlanned: true,
-      hunger: true,
-      energy: true,
-      sleep: true,
-      trainingFeel: true,
-      dietAdherence: true,
-      stress: true,
-      outsideActivity: true,
-      adherenceNote: true,
-      notes: true,
-      photoPaths: true,
-    },
+    select: { weekStart: true, status: true, aiSummary: true },
   });
-  // Fotos: enlaces firmados que vencen (sólo las ve el entrenador con vínculo activo).
-  const photoUrlsById = new Map<string, string[]>();
-  for (const c of checkins) {
-    photoUrlsById.set(c.id, await signedPhotoUrls(pathsOf(c.photoPaths)));
-  }
   const memories = await listCoachMemories(clientId);
 
   const byDay = new Map<string, { kcal: number; proteinG: number }>();
@@ -600,38 +389,7 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
           })),
         }
       : null,
-    checkins: checkins.map((c) => ({
-      id: c.id,
-      weekStart: isoOf(c.weekStart),
-      periodStart: c.periodStart ? isoOf(c.periodStart) : null,
-      periodEnd: c.periodEnd ? isoOf(c.periodEnd) : null,
-      status: c.status,
-      summary: c.aiSummary ?? null,
-      stats: {
-        avgWeightKg: c.avgWeightKg,
-        weightChangeKg: c.weightChangeKg,
-        kcalAdherencePct: c.kcalAdherencePct,
-        proteinAdherencePct: c.proteinAdherencePct,
-        workoutsCompleted: c.workoutsCompleted,
-        workoutsPlanned: c.workoutsPlanned,
-      },
-      scores: (
-        [
-          ['Hambre', c.hunger],
-          ['Energía', c.energy],
-          ['Sueño', c.sleep],
-          ['Sensación de entrenamiento', c.trainingFeel],
-          ['Adherencia a la dieta', c.dietAdherence],
-          ['Estrés', c.stress],
-          ['Actividad fuera del gym', c.outsideActivity],
-        ] as Array<[string, number | null]>
-      )
-        .filter((x): x is [string, number] => x[1] != null)
-        .map(([label, value]) => ({ label, value })),
-      adherenceNote: c.adherenceNote,
-      notes: c.notes,
-      photoUrls: photoUrlsById.get(c.id) ?? [],
-    })),
+    checkins: checkins.map((c) => ({ weekStart: isoOf(c.weekStart), status: c.status, summary: c.aiSummary ?? null })),
     memories,
     attention: attentionLevel(lastActivityISO, todayISO),
     lastActivityISO,
@@ -674,12 +432,6 @@ export async function listTrainersForAdmin(): Promise<AdminTrainerRow[]> {
 export async function setTrainerStatus(userId: string, status: TrainerStatus): Promise<boolean> {
   // Un entrenador que no está ACTIVO deja de ver a sus clientes de inmediato (activeClientIds y
   // getClientDetail lo exigen), y si se lo vuelve a activar recupera sus vínculos.
-  const wasActive = (await prisma.trainerProfile.findUnique({ where: { userId }, select: { status: true } }))?.status === 'ACTIVE';
   const res = await prisma.trainerProfile.updateMany({ where: { userId }, data: { status } });
-  // Al dejar de estar activo, sus clientes dejan de estar manejados: tienen sus 3 días gratis.
-  if (res.count > 0 && wasActive && status !== 'ACTIVE') {
-    const links = await prisma.trainerClient.findMany({ where: { trainerId: userId, status: 'ACTIVE' }, select: { clientId: true } });
-    for (const l of links) await grantTrialAfterTrainer(l.clientId).catch(() => {});
-  }
   return res.count > 0;
 }

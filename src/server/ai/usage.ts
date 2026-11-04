@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import { prisma } from '@/server/db';
 import { limitsFor } from '@/server/entitlements';
 import { estimateCostUsd } from './pricing';
-import { AiPermissionError, AiRateLimitedError } from './errors';
+import { AiRateLimitedError } from './errors';
 import type { AiUsageRaw } from './providers/types';
 import type { AiTask } from './config';
 
@@ -23,18 +23,6 @@ export async function assertWithinLimits(
   task: AiTask,
   timezone: string,
 ): Promise<void> {
-  // Un cliente conectado con un entrenador no usa la IA: se encarga el entrenador.
-  const managed = await prisma.trainerClient.findFirst({
-    where: { clientId: userId, status: 'ACTIVE', trainer: { status: 'ACTIVE' } },
-    select: { id: true },
-  });
-  if (managed) {
-    throw new AiPermissionError(
-      task,
-      'Tu entrenador maneja tu plan, así que la IA no está disponible mientras estés conectado con él. Podés escribirle por el chat.',
-    );
-  }
-
   const limits = limitsFor(entitlement);
   const now = DateTime.now().setZone(timezone);
 

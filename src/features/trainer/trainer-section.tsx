@@ -7,7 +7,7 @@ import { Copy, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { chooseTrainerAccount, renewInviteCode } from './actions';
+import { applyAsTrainer, renewInviteCode } from './actions';
 import { TC } from './copy';
 
 /** El entrenador pide acceso: nombre, presentación y título o certificado. */
@@ -23,13 +23,11 @@ export function ApplyAsTrainerForm() {
   function submit() {
     if (!valid) return;
     start(async () => {
-      const res = await chooseTrainerAccount({ displayName, bio, credential });
+      const res = await applyAsTrainer({ displayName, bio, credential });
       if (res.ok) {
         toast.success(TC.applied);
-        // La cuenta ya es de entrenador: va directo a su panel (queda pendiente hasta aprobarse).
-        router.replace('/trainer');
         router.refresh();
-      } else toast.error(res.error === 'ALREADY_CLIENT' ? TC.alreadyClient : TC.error);
+      } else toast.error(TC.error);
     });
   }
 

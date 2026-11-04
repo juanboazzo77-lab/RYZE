@@ -13,22 +13,19 @@ export function AppShell({
   email,
   showAds,
   adCopy,
-  trainer = false,
   children,
 }: {
   email: string;
   showAds: boolean;
   adCopy: Dictionary['ads'];
-  /** Cuenta de entrenador: otro menú y sin las funciones de cliente. */
-  trainer?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex min-h-screen">
-      <SideNav trainer={trainer} />
+      <SideNav />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-[calc(3.5rem+env(safe-area-inset-top))] items-center pt-[env(safe-area-inset-top)] justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur">
-          <Link href={trainer ? '/trainer' : '/dashboard'} className="flex items-center gap-2 md:hidden">
+          <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
             <span className="grid size-8 place-items-center rounded-lg border bg-white p-1 shadow-sm">
               <Image src="/brand/logo.png" alt="" width={24} height={24} priority />
             </span>
@@ -38,13 +35,11 @@ export function AppShell({
             <span className="hidden max-w-[16rem] truncate text-sm text-muted-foreground sm:inline">
               {email}
             </span>
-            {trainer ? null : (
-              <Button variant="ghost" size="icon" aria-label="Calendario" asChild>
-                <Link href="/calendar">
-                  <CalendarDays className="size-4" />
-                </Link>
-              </Button>
-            )}
+            <Button variant="ghost" size="icon" aria-label="Calendario" asChild>
+              <Link href="/calendar">
+                <CalendarDays className="size-4" />
+              </Link>
+            </Button>
             <ThemeToggle />
             <Button variant="ghost" size="icon" aria-label="Ajustes" asChild>
               <Link href="/settings">
@@ -64,7 +59,7 @@ export function AppShell({
           {children}
         </main>
       </div>
-      <BottomNav trainer={trainer} />
+      <BottomNav />
     </div>
   );
 }

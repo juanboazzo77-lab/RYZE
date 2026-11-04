@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { redirect } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { aiConfigured } from '@/server/ai/config';
@@ -19,8 +18,6 @@ export default async function NewPlanPage({
   searchParams: Promise<{ auto?: string }>;
 }) {
   const [{ t }, ctx, sp] = await Promise.all([getT(), requireUser(), searchParams]);
-  // Un cliente conectado con un entrenador no usa la IA para armar planes: los arma su entrenador.
-  if (ctx.managedByTrainer) redirect('/coach');
 
   const back = (
     <Link

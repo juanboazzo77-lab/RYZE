@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { NAV_ITEMS, TRAINER_NAV_ITEMS } from './nav-items';
+import { NAV_ITEMS } from './nav-items';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
-export function SideNav({ trainer = false }: { trainer?: boolean }) {
+export function SideNav() {
   const pathname = usePathname();
   const t = useT();
 
@@ -20,10 +20,7 @@ export function SideNav({ trainer = false }: { trainer?: boolean }) {
         {t.common.appName}
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {(trainer
-          ? TRAINER_NAV_ITEMS.map((i) => ({ href: i.href, label: i.label, icon: i.icon }))
-          : NAV_ITEMS.map((i) => ({ href: i.href, label: t.nav[i.labelKey], icon: i.icon }))
-        ).map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -37,7 +34,7 @@ export function SideNav({ trainer = false }: { trainer?: boolean }) {
               )}
             >
               <Icon className="size-4" />
-              {label}
+              {t.nav[labelKey]}
             </Link>
           );
         })}

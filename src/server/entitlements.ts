@@ -217,14 +217,6 @@ export function withFullAccess<T extends { tier: EntitlementTier }>(
   return hasFullAccess(email) ? { ...entitlement, tier: 'COACH' as EntitlementTier } : entitlement;
 }
 
-/**
- * Un cliente que está conectado con un entrenador no paga ningún plan: usa la app con todo lo que no
- * es IA desbloqueado (la IA la maneja el entrenador y está apagada para él, ver assertWithinLimits).
- */
-export function withManagedAccess<T extends { tier: EntitlementTier }>(entitlement: T): T {
-  return { ...entitlement, tier: 'COACH' as EntitlementTier };
-}
-
 /** Sólo FREE ve publicidad (BASIC/PRO/COACH la sacan, sin importar la prueba). */
 export function showAds(entitlement: Pick<Entitlement, 'tier'>): boolean {
   return entitlement.tier === 'FREE';

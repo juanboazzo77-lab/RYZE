@@ -12,7 +12,6 @@ import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 import type { WeeklyCheckin } from '@prisma/client';
 import { submitCheckin } from './actions';
-import { MANAGED } from '@/features/trainer/copy';
 
 function ScaleField({
   label,
@@ -53,7 +52,7 @@ function ScaleField({
   );
 }
 
-export function CheckinForm({ existing, managed = false }: { existing: WeeklyCheckin | null; managed?: boolean }) {
+export function CheckinForm({ existing }: { existing: WeeklyCheckin | null }) {
   const t = useT();
   const tc = t.checkin;
   const [hunger, setHunger] = useState<number | null>(existing?.hunger ?? null);
@@ -163,7 +162,7 @@ export function CheckinForm({ existing, managed = false }: { existing: WeeklyChe
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <p className="text-sm font-medium">{tc.photos.title}</p>
-          <p className="text-xs text-muted-foreground">{managed ? MANAGED.photosNote : tc.photos.privacyNote}</p>
+          <p className="text-xs text-muted-foreground">{tc.photos.privacyNote}</p>
           <PhotoPicker
             value={photos}
             onChange={setPhotos}

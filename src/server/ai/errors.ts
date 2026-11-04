@@ -44,11 +44,11 @@ export class AiRateLimitedError extends AiError {
 }
 
 export class AiPermissionError extends AiError {
-  constructor(feature: string, userMessage?: string) {
+  constructor(feature: string) {
     super(
       'PERMISSION_DENIED',
       `La feature "${feature}" no está disponible en el plan actual`,
-      userMessage ?? 'Esta función es parte de FORZA AI PRO.',
+      'Esta función es parte de FORZA AI PRO.',
     );
     this.name = 'AiPermissionError';
   }

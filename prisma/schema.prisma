@@ -234,8 +234,6 @@ model Profile {
   email                  String
   /// Los cambios que el cliente le pide al coach (rutina, calorías) se aplican solos, sin tocar "Editar".
   coachAutoApply         Boolean          @default(false) @map("coach_auto_apply")
-  /// CLIENT (usa la app para entrenar) o TRAINER (usa el panel de entrenador). Son cuentas separadas.
-  accountType            String           @default("CLIENT") @map("account_type")
   name                   String?
   sex                    Sex?
   birthdate              DateTime?        @db.Date
@@ -355,8 +353,6 @@ model Entitlement {
   currentPeriodEnd     DateTime?         @map("current_period_end")
   /// Días de acceso completo regalados (invitaciones): se suman a la prueba gratis.
   bonusUntil           DateTime?         @map("bonus_until")
-  /// Cuándo se le dieron los 3 días gratis por dejar de estar manejado por un entrenador (una sola vez por cuenta).
-  managedTrialGrantedAt DateTime?        @map("managed_trial_granted_at")
   lemonSqueezyCustomerId     String?     @map("lemon_squeezy_customer_id")
   lemonSqueezySubscriptionId String?     @map("lemon_squeezy_subscription_id")
   createdAt            DateTime          @default(now()) @map("created_at")
@@ -763,13 +759,6 @@ model TrainerClient {
   createdAt DateTime       @default(now()) @map("created_at")
   messages  TrainerMessage[]
   blocks    TrainerMessageBlock[]
-  notes     TrainerNote[]
-  /// El cliente aceptó que el entrenador cree y edite su rutina y su dieta (null = sólo puede mirar).
-  editConsentAt DateTime? @map("edit_consent_at")
-  /// El entrenador pidió el permiso de edición y el cliente todavía no respondió.
-  editRequestedAt DateTime? @map("edit_requested_at")
-  /// Próximo seguimiento 1 a 1 que se propuso el entrenador.
-  nextFollowUp DateTime? @db.Date @map("next_follow_up")
 
   @@unique([trainerId, clientId])
   @@index([clientId])
@@ -806,24 +795,6 @@ model TrainerMessageBlock {
   @@index([senderId, createdAt])
   @@index([linkId])
   @@map("trainer_message_block")
-}
-
-/// Seguimiento 1 a 1: notas privadas del entrenador sobre un cliente (NOTE) y el feedback que le
-/// dio a una revisión semanal (FEEDBACK). Las notas las ve sólo el entrenador.
-model TrainerNote {
-  id        String        @id @default(uuid()) @db.Uuid
-  linkId    String        @db.Uuid @map("link_id")
-  link      TrainerClient @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  authorId  String        @db.Uuid @map("author_id")
-  /// NOTE | FEEDBACK
-  kind      String        @default("NOTE")
-  /// Revisión semanal a la que se refiere el feedback.
-  checkinId String?       @db.Uuid @map("checkin_id")
-  body      String
-  createdAt DateTime      @default(now()) @map("created_at")
-
-  @@index([linkId, createdAt])
-  @@map("trainer_note")
 }
 
 /// Memoria del coach: hechos duraderos que el usuario contó (lesiones, gustos, horarios, restricciones).
@@ -1010,8 +981,6 @@ model WeeklyCheckin {
   aiProposal          Json?         @map("ai_proposal")
   /** Propuesta de progresión de entrenamiento (call + resumen + ajustes por ejercicio). */
   aiTrainingProposal  Json?         @map("ai_training_proposal")
-  /// Fotos de la revisión de un cliente conectado con un entrenador (rutas en un bucket PRIVADO; sólo las ve su entrenador).
-  photoPaths          Json?         @map("photo_paths")
   status              CheckinStatus @default(DRAFT)
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")

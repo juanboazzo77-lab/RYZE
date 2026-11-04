@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { isAdmin } from '@/server/admin';
 import {
-  becomeTrainerAccount,
-  cancelTrainerAccount,
+  createTrainerProfile,
   endClientLink,
   getActiveTrainer,
   previewInviteCode,
@@ -28,21 +27,16 @@ const applySchema = z.object({
   credential: z.string().trim().min(3).max(200),
 });
 
-/**
- * Elige "soy entrenador" al crear la cuenta: pasa a ser una cuenta de entrenador (sin el cuestionario
- * de cliente) y queda pendiente hasta que se apruebe a mano.
- */
-export async function chooseTrainerAccount(raw: z.input<typeof applySchema>): Promise<Result> {
+/** Pide acceso como entrenador: queda pendiente hasta que se apruebe a mano. */
+export async function applyAsTrainer(raw: z.input<typeof applySchema>): Promise<Result> {
   const parsed = applySchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const res = await becomeTrainerAccount(userId, {
+  await createTrainerProfile(userId, {
     displayName: parsed.data.displayName,
     bio: parsed.data.bio || null,
     credential: parsed.data.credential,
   });
-  if ('error' in res) return { error: res.error };
-  revalidatePath('/trainer');
   revalidatePath('/settings/trainer');
   return { ok: true };
 }
@@ -104,13 +98,4 @@ export async function adminSetTrainerStatus(raw: { userId: string; status: strin
   const ok = await setTrainerStatus(input.data.userId, input.data.status);
   revalidatePath('/admin/trainers');
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
-}
-
-/** El entrenador deja de serlo: su cuenta vuelve a ser de cliente (y hace el cuestionario de cliente). */
-export async function cancelTrainerRole(): Promise<Result<{ needsOnboarding: boolean }>> {
-  const { userId } = await requireUser();
-  const res = await cancelTrainerAccount(userId);
-  if ('error' in res) return { error: res.error };
-  revalidatePath('/', 'layout');
-  return { ok: true, data: { needsOnboarding: res.needsOnboarding } };
 }
