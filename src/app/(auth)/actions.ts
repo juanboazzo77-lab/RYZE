@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/server/supabase/server';
+import { prisma } from '@/server/db';
 import { getDictionary } from '@/i18n';
 import { getLocale } from '@/i18n/server';
 
@@ -105,6 +106,13 @@ export async function updatePasswordAction(
 
 export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
+  // Este teléfono deja de recibir avisos de la cuenta que se cierra (se vuelve a registrar al iniciar sesión).
+  try {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) await prisma.deviceToken.deleteMany({ where: { userId: data.user.id } });
+  } catch {
+    /* cerrar sesión no depende de esto */
+  }
   await supabase.auth.signOut();
   redirect('/login');
 }

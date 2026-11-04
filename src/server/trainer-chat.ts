@@ -2,6 +2,7 @@ import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
 import { sendPushToUser } from './push';
+import { sendApnsToUser } from './apns';
 import { checkContactInfo, type ContactReason } from '@/features/trainer/contact-filter';
 
 /**
@@ -154,12 +155,9 @@ async function notifyNewMessage(link: ChatLink, senderId: string, messageId: str
       name = c?.name?.trim() || 'Tu cliente';
       url = `/trainer/clients/${senderId}/chat`;
     }
-    await sendPushToUser(recipientId, {
-      title: name,
-      body: 'Te escribió un mensaje',
-      url,
-      tag: `trainer-chat-${link.id}`,
-    });
+    const push = { title: name, body: 'Te escribió un mensaje', url, tag: `trainer-chat-${link.id}` };
+    // Navegador/PWA (Web Push) y app de iPhone (APNs): cada uno llega sólo si esa persona lo tiene.
+    await Promise.allSettled([sendPushToUser(recipientId, push), sendApnsToUser(recipientId, push)]);
   } catch (e) {
     console.error('[trainer-chat] no se pudo enviar el aviso', e instanceof Error ? e.message : e);
   }

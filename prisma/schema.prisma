@@ -291,6 +291,7 @@ model Profile {
   notificationPreferences NotificationPreference[]
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
+  deviceTokens            DeviceToken[]
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
   physiqueAnalyses        PhysiqueAnalysis[]
@@ -1087,6 +1088,21 @@ model Notification {
   @@index([userId, readAt])
   @@index([sentAt])
   @@map("notification")
+}
+
+/// Token de notificaciones remotas de la app nativa (APNs en iPhone). Un token pertenece a un solo
+/// usuario: si otra cuenta inicia sesión en el mismo teléfono, la fila pasa a ella.
+model DeviceToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   @default("ios")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("device_token")
 }
 
 /// Suscripción Web Push de un navegador. Se envía el aviso a cada endpoint;

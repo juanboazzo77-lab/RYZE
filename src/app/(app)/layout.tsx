@@ -8,6 +8,7 @@ import { NavTracker } from '@/components/nav-tracker';
 import { NotificationPrompt } from '@/features/notifications/notification-prompt';
 import { WeighInReminder } from '@/features/notifications/weigh-in-reminder';
 import { DeviceReminders } from '@/features/notifications/device-reminders';
+import { NativePush } from '@/features/notifications/native-push';
 import { OfflineIndicator } from '@/components/pwa/offline-indicator';
 import { RevenueCatInit } from '@/features/billing/revenuecat-init';
 import { WidgetSync } from '@/features/widgets/widget-sync';
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return (
       <AppShell email={ctx.email} showAds={false} adCopy={t.ads} trainer>
         <TrainerRouteGuard />
+        <NativePush />
         <NavTracker />
         <RegisterSW />
         <OfflineIndicator />
@@ -37,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NotificationPrompt />
       <WeighInReminder />
       <DeviceReminders />
+      <NativePush />
       <RegisterSW />
       <OfflineIndicator />
       <RevenueCatInit userId={ctx.userId} />
