@@ -159,3 +159,42 @@ export async function sendApnsToUser(userId: string, push: NativePush): Promise<
   );
   return { sent, removed };
 }
+
+/** Prueba de diagnóstico (sólo admin): manda un aviso y devuelve lo que contestó Apple, sin borrar nada. */
+export async function diagnoseApns(userId: string): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {
+    configured: apnsConfigured(),
+    keyIdLength: (process.env.APNS_KEY_ID ?? '').trim().length,
+    teamIdLength: (process.env.APNS_TEAM_ID ?? '').trim().length,
+    bundle: process.env.APNS_BUNDLE_ID || DEFAULT_BUNDLE,
+  };
+  if (!apnsConfigured()) return out;
+  let jwt: string;
+  try {
+    jwt = providerToken();
+    out.keyOk = true;
+  } catch (e) {
+    out.keyOk = false;
+    out.keyError = e instanceof Error ? e.message.slice(0, 120) : 'error';
+    return out;
+  }
+  const tokens = await prisma.deviceToken.findMany({ where: { userId, platform: 'ios' } });
+  out.tokens = tokens.length;
+  const topic = process.env.APNS_BUNDLE_ID || DEFAULT_BUNDLE;
+  const payload = JSON.stringify({
+    aps: { alert: { title: 'Forza AI', body: 'Prueba de aviso' }, sound: 'default' },
+    url: '/dashboard',
+  });
+  const results: Array<Record<string, unknown>> = [];
+  for (const t of tokens) {
+    const prod = await post('api.push.apple.com', t.token, payload, jwt, topic);
+    const entry: Record<string, unknown> = { token: `${t.token.slice(0, 6)}…`, production: `${prod.status} ${prod.reason ?? 'ok'}` };
+    if (prod.status !== 200) {
+      const sb = await post('api.sandbox.push.apple.com', t.token, payload, jwt, topic);
+      entry.sandbox = `${sb.status} ${sb.reason ?? 'ok'}`;
+    }
+    results.push(entry);
+  }
+  out.results = results;
+  return out;
+}
