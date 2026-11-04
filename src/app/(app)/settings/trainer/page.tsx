@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { LinkWithTrainer, StopSharingButton } from '@/features/trainer/client-section';
 import { ApplyAsTrainerForm, InviteCodeCard } from '@/features/trainer/trainer-section';
 import { CHAT, fill, TC } from '@/features/trainer/copy';
+import { EditPermissionCard } from '@/features/trainer/edit-permission-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle } from 'lucide-react';
@@ -63,6 +64,7 @@ export default async function TrainerSettingsPage() {
         <section className="space-y-3">
           <h2 className="text-base font-semibold">{TC.clientTitle}</h2>
           {link ? (
+            <div className="space-y-3">
             <Card className="space-y-3 p-4">
               <p className="text-sm">
                 {fill(TC.linked, {
@@ -81,6 +83,8 @@ export default async function TrainerSettingsPage() {
                 <StopSharingButton />
               </div>
             </Card>
+              <EditPermissionCard canEdit={link.canEdit} requested={link.editRequested} />
+            </div>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">{TC.clientIntro}</p>

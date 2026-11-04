@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { getActiveTrainer, getClientDetail } from '@/server/trainers';
+import { getFollowUp, listClientPlans } from '@/server/trainer-followup';
 import { localTodayISO } from '@/lib/date';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +19,9 @@ import {
   TC,
 } from '@/features/trainer/copy';
 import { RemoveClientButton } from '@/features/trainer/remove-client-button';
-import { CHAT } from '@/features/trainer/copy';
+import { CheckinFeedbackForm, FollowUpPanel } from '@/features/trainer/follow-up-panel';
+import { RoutineDietPanel } from '@/features/trainer/routine-diet-panel';
+import { CHAT, FU } from '@/features/trainer/copy';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 
@@ -40,6 +43,8 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
   const d = await getClientDetail(ctx.userId, id.data, ctx.profile.timezone);
   if (!d) notFound();
   const todayISO = localTodayISO(ctx.profile.timezone);
+  const followUp = await getFollowUp(ctx.userId, id.data);
+  const plans = d.canEdit ? ((await listClientPlans(ctx.userId, id.data)) ?? []) : [];
 
   const weightMin = Math.min(...d.weights.map((w) => w.weightKg));
   const weightMax = Math.max(...d.weights.map((w) => w.weightKg));
@@ -59,7 +64,7 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          {TC.lastActivity}: {relativeDay(d.lastActivityISO, todayISO)} · {TC.readOnly}
+          {TC.lastActivity}: {relativeDay(d.lastActivityISO, todayISO)} · {d.canEdit ? 'Podés editar su rutina y su dieta.' : TC.readOnly}
         </p>
       </div>
 
@@ -69,6 +74,35 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           {CHAT.button}
         </Link>
       </Button>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{FU.followTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FollowUpPanel
+            clientId={id.data}
+            nextFollowUp={followUp?.nextFollowUp ?? null}
+            notes={followUp?.notes ?? []}
+            todayISO={todayISO}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">{FU.planTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <RoutineDietPanel
+            clientId={id.data}
+            canEdit={d.canEdit}
+            editRequested={d.editRequested}
+            plans={plans}
+            target={d.target}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-2">
@@ -214,6 +248,11 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
                 <li key={c.weekStart} className="space-y-1">
                   <p className="text-xs font-semibold text-muted-foreground">Semana del {fmtDate(c.weekStart)}</p>
                   {c.summary ? <p className="whitespace-pre-wrap">{c.summary}</p> : null}
+                  <CheckinFeedbackForm
+                    clientId={id.data}
+                    checkinId={c.id}
+                    existing={followUp?.feedbackByCheckin[c.id] ?? null}
+                  />
                 </li>
               ))}
             </ul>

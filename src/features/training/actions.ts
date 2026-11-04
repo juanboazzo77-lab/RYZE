@@ -6,6 +6,7 @@ import type { Locale, MuscleGroup } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
+import { planOwnerFor } from '@/server/plan-owner';
 import {
   addDaySchema,
   addPlanExerciseSchema,
@@ -102,7 +103,8 @@ export async function updatePlan(raw: UpdatePlanInput): Promise<Result> {
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  // Si quien edita es el entrenador de la dueña (con su permiso), se edita su rutina.
+  const db = forUser(await planOwnerFor(userId, { planId: d.id }));
   if (!(await ownsPlan(db, d.id))) return { error: 'FORBIDDEN' };
 
   const ops = [];
@@ -129,12 +131,18 @@ export async function deletePlan(raw: { id: string }): Promise<never | Result> {
   const parsed = idSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId, profile } = await requireUser();
-  const db = forUser(userId);
+  const owner = await planOwnerFor(userId, { planId: parsed.data.id });
+  const db = forUser(owner);
   const plan = await db.workoutPlan.findFirst({
     where: { id: parsed.data.id },
     select: { source: true },
   });
   await db.workoutPlan.deleteMany({ where: { id: parsed.data.id } });
+  // Si la borró el entrenador, vuelve a la ficha del cliente.
+  if (owner !== userId) {
+    revalidatePath(`/trainer/clients/${owner}`);
+    redirect(`/trainer/clients/${owner}`);
+  }
   if (plan?.source === 'AI') {
     // Le devolvemos el lugar en el cupo mensual: si borra una rutina de IA
     // que no le sirvió, puede generar otra en su lugar sin esperar al mes que viene.
@@ -149,7 +157,7 @@ export async function addPlanDay(raw: AddDayInput): Promise<Result> {
   const parsed = addDaySchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { planId: parsed.data.planId }));
   if (!(await ownsPlan(db, parsed.data.planId))) return { error: 'FORBIDDEN' };
   const count = await db.planDay.count({ where: { planId: parsed.data.planId } });
   await db.planDay.create({
@@ -164,7 +172,7 @@ export async function updatePlanDay(raw: UpdateDayInput): Promise<Result> {
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { dayId: d.id }));
   const planId = await ownsPlanViaDay(db, d.id);
   if (!planId) return { error: 'FORBIDDEN' };
   await db.planDay.updateMany({
@@ -216,7 +224,7 @@ export async function deletePlanDay(raw: { id: string }): Promise<Result> {
   const parsed = idSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { dayId: parsed.data.id }));
   const planId = await ownsPlanViaDay(db, parsed.data.id);
   if (!planId) return { error: 'FORBIDDEN' };
   await db.planDay.deleteMany({ where: { id: parsed.data.id } });
@@ -228,12 +236,14 @@ export async function addPlanExercise(raw: AddPlanExerciseInput): Promise<Result
   const parsed = addPlanExerciseSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const owner = await planOwnerFor(userId, { dayId: parsed.data.planDayId });
+  const db = forUser(owner);
   const planId = await ownsPlanViaDay(db, parsed.data.planDayId);
   if (!planId) return { error: 'FORBIDDEN' };
 
   const exercise = await prisma.exercise.findUnique({ where: { id: parsed.data.exerciseId } });
-  if (!exercise || (exercise.isCustom && exercise.createdById !== userId)) {
+  // Un ejercicio propio lo puede usar quien lo creó (el cliente o su entrenador) o la dueña de la rutina.
+  if (!exercise || (exercise.isCustom && exercise.createdById !== userId && exercise.createdById !== owner)) {
     return { error: 'EXERCISE_NOT_FOUND' };
   }
   const count = await db.planExercise.count({ where: { planDayId: parsed.data.planDayId } });
@@ -266,7 +276,7 @@ export async function updatePlanExercise(raw: UpdatePlanExerciseInput): Promise<
   if (!parsed.success) return { error: 'INVALID' };
   const d = parsed.data;
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { exerciseId: d.id }));
   if (!(await ownsPlanViaExercise(db, d.id))) return { error: 'FORBIDDEN' };
 
   const { id, ...rest } = d;
@@ -279,7 +289,7 @@ export async function deletePlanExercise(raw: { id: string }): Promise<Result> {
   const parsed = idSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { exerciseId: parsed.data.id }));
   if (!(await ownsPlanViaExercise(db, parsed.data.id))) return { error: 'FORBIDDEN' };
   await db.planExercise.deleteMany({ where: { id: parsed.data.id } });
   revalidatePath('/training/plans/[planId]', 'page');
@@ -293,7 +303,7 @@ export async function reorderPlanExercises(
   const dayId = idSchema.shape.id.safeParse((raw as { planDayId?: string }).planDayId);
   if (!parsed.success || !dayId.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  const db = forUser(userId);
+  const db = forUser(await planOwnerFor(userId, { dayId: dayId.data }));
   const planId = await ownsPlanViaDay(db, dayId.data);
   if (!planId) return { error: 'FORBIDDEN' };
   await db.$transaction(

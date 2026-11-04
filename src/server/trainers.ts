@@ -131,16 +131,34 @@ export interface ClientLinkView {
   trainerId: string;
   trainerName: string;
   consentAt: string;
+  /** El cliente dejó que el entrenador cree y edite su rutina y su dieta. */
+  canEdit: boolean;
+  /** El entrenador pidió ese permiso y el cliente todavía no respondió. */
+  editRequested: boolean;
 }
 
 /** El entrenador que tiene hoy el cliente, si lo tiene. */
 export async function getClientLink(clientId: string): Promise<ClientLinkView | null> {
   const link = await prisma.trainerClient.findFirst({
     where: { clientId, status: 'ACTIVE' },
-    select: { id: true, trainerId: true, consentAt: true, trainer: { select: { displayName: true } } },
+    select: {
+      id: true,
+      trainerId: true,
+      consentAt: true,
+      editConsentAt: true,
+      editRequestedAt: true,
+      trainer: { select: { displayName: true } },
+    },
   });
   return link
-    ? { id: link.id, trainerId: link.trainerId, trainerName: link.trainer.displayName, consentAt: link.consentAt.toISOString() }
+    ? {
+        id: link.id,
+        trainerId: link.trainerId,
+        trainerName: link.trainer.displayName,
+        consentAt: link.consentAt.toISOString(),
+        canEdit: !!link.editConsentAt,
+        editRequested: !link.editConsentAt && !!link.editRequestedAt,
+      }
     : null;
 }
 
@@ -177,8 +195,17 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
   try {
     await prisma.trainerClient.upsert({
       where: { trainerId_clientId: { trainerId: trainer.userId, clientId } },
-      create: { trainerId: trainer.userId, clientId, status: 'ACTIVE', consentAt: now },
-      update: { status: 'ACTIVE', consentAt: now, endedAt: null, endedBy: null },
+      // Al conectarse, el cliente acepta que el entrenador vea sus datos Y arme su rutina y su dieta
+      // (el texto del consentimiento lo dice). Puede quitar el permiso de edición cuando quiera.
+      create: { trainerId: trainer.userId, clientId, status: 'ACTIVE', consentAt: now, editConsentAt: now },
+      update: {
+        status: 'ACTIVE',
+        consentAt: now,
+        editConsentAt: now,
+        editRequestedAt: null,
+        endedAt: null,
+        endedBy: null,
+      },
     });
   } catch (e) {
     // Dos pedidos a la vez: el índice único deja un solo entrenador activo por cliente.
@@ -186,6 +213,46 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
     throw e;
   }
   return { ok: true };
+}
+
+/**
+ * ¿Puede este entrenador crear y editar la rutina y la dieta de este cliente? Sólo con un vínculo
+ * activo, el entrenador aprobado y el permiso de edición que dio el cliente.
+ */
+export async function trainerEditAccess(trainerId: string, clientId: string): Promise<boolean> {
+  if (trainerId === clientId) return false;
+  const link = await prisma.trainerClient.findFirst({
+    where: { trainerId, clientId, status: 'ACTIVE', editConsentAt: { not: null }, trainer: { status: 'ACTIVE' } },
+    select: { id: true },
+  });
+  return !!link;
+}
+
+/** El entrenador pide permiso para editar (el cliente lo ve en Ajustes y decide). */
+export async function requestEditPermission(trainerId: string, clientId: string): Promise<boolean> {
+  const res = await prisma.trainerClient.updateMany({
+    where: { trainerId, clientId, status: 'ACTIVE', editConsentAt: null, trainer: { status: 'ACTIVE' } },
+    data: { editRequestedAt: new Date() },
+  });
+  return res.count > 0;
+}
+
+/** El cliente acepta o rechaza el pedido de permiso de edición. */
+export async function respondEditPermission(clientId: string, allow: boolean): Promise<boolean> {
+  const res = await prisma.trainerClient.updateMany({
+    where: { clientId, status: 'ACTIVE', editConsentAt: null },
+    data: allow ? { editConsentAt: new Date(), editRequestedAt: null } : { editRequestedAt: null },
+  });
+  return res.count > 0;
+}
+
+/** El cliente le saca el permiso de edición al entrenador (sigue pudiendo ver sus datos). */
+export async function revokeEditPermission(clientId: string): Promise<boolean> {
+  const res = await prisma.trainerClient.updateMany({
+    where: { clientId, status: 'ACTIVE' },
+    data: { editConsentAt: null, editRequestedAt: null },
+  });
+  return res.count > 0;
 }
 
 /** Termina el vínculo: el entrenador deja de ver al cliente en el mismo momento. */
@@ -285,7 +352,10 @@ export interface ClientDetail {
   workouts: Array<{ name: string; finishedAt: string; minutes: number | null; effort: number | null }>;
   nutritionDays: Array<{ date: string; kcal: number; proteinG: number }>;
   plan: { name: string; days: Array<{ name: string; exercises: Array<{ name: string; sets: number; reps: string }> }> } | null;
-  checkins: Array<{ weekStart: string; status: string; summary: string | null }>;
+  checkins: Array<{ id: string; weekStart: string; status: string; summary: string | null }>;
+  /** El cliente dejó que el entrenador cree y edite su rutina y su dieta. */
+  canEdit: boolean;
+  editRequested: boolean;
   memories: CoachMemoryItem[];
   attention: Attention;
   lastActivityISO: string | null;
@@ -298,7 +368,7 @@ export interface ClientDetail {
 export async function getClientDetail(trainerId: string, clientId: string, timezone: string): Promise<ClientDetail | null> {
   const link = await prisma.trainerClient.findFirst({
     where: { trainerId, clientId, status: 'ACTIVE', trainer: { status: 'ACTIVE' } },
-    select: { id: true },
+    select: { id: true, editConsentAt: true, editRequestedAt: true },
   });
   if (!link) return null;
 
@@ -360,7 +430,7 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
   const checkins = await db.weeklyCheckin.findMany({
     orderBy: { weekStart: 'desc' },
     take: 4,
-    select: { weekStart: true, status: true, aiSummary: true },
+    select: { id: true, weekStart: true, status: true, aiSummary: true },
   });
   const memories = await listCoachMemories(clientId);
 
@@ -421,7 +491,9 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
           })),
         }
       : null,
-    checkins: checkins.map((c) => ({ weekStart: isoOf(c.weekStart), status: c.status, summary: c.aiSummary ?? null })),
+    checkins: checkins.map((c) => ({ id: c.id, weekStart: isoOf(c.weekStart), status: c.status, summary: c.aiSummary ?? null })),
+    canEdit: !!link.editConsentAt,
+    editRequested: !link.editConsentAt && !!link.editRequestedAt,
     memories,
     attention: attentionLevel(lastActivityISO, todayISO),
     lastActivityISO,

@@ -760,6 +760,13 @@ model TrainerClient {
   createdAt DateTime       @default(now()) @map("created_at")
   messages  TrainerMessage[]
   blocks    TrainerMessageBlock[]
+  notes     TrainerNote[]
+  /// El cliente aceptó que el entrenador cree y edite su rutina y su dieta (null = sólo puede mirar).
+  editConsentAt DateTime? @map("edit_consent_at")
+  /// El entrenador pidió el permiso de edición y el cliente todavía no respondió.
+  editRequestedAt DateTime? @map("edit_requested_at")
+  /// Próximo seguimiento 1 a 1 que se propuso el entrenador.
+  nextFollowUp DateTime? @db.Date @map("next_follow_up")
 
   @@unique([trainerId, clientId])
   @@index([clientId])
@@ -796,6 +803,24 @@ model TrainerMessageBlock {
   @@index([senderId, createdAt])
   @@index([linkId])
   @@map("trainer_message_block")
+}
+
+/// Seguimiento 1 a 1: notas privadas del entrenador sobre un cliente (NOTE) y el feedback que le
+/// dio a una revisión semanal (FEEDBACK). Las notas las ve sólo el entrenador.
+model TrainerNote {
+  id        String        @id @default(uuid()) @db.Uuid
+  linkId    String        @db.Uuid @map("link_id")
+  link      TrainerClient @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  authorId  String        @db.Uuid @map("author_id")
+  /// NOTE | FEEDBACK
+  kind      String        @default("NOTE")
+  /// Revisión semanal a la que se refiere el feedback.
+  checkinId String?       @db.Uuid @map("checkin_id")
+  body      String
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([linkId, createdAt])
+  @@map("trainer_note")
 }
 
 /// Memoria del coach: hechos duraderos que el usuario contó (lesiones, gustos, horarios, restricciones).
