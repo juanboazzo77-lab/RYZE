@@ -19,6 +19,7 @@ export default async function TrainerSettingsPage() {
   const ctx = await requireUser();
   const link = await getClientLink(ctx.userId);
   const trainer = await getTrainerProfile(ctx.userId);
+  const isTrainer = ctx.profile.accountType === 'TRAINER';
   const unread = link ? await clientUnreadCount(ctx.userId) : 0;
 
   return (
@@ -31,58 +32,65 @@ export default async function TrainerSettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">{TC.pageTitle}</h1>
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">{TC.clientTitle}</h2>
-        {link ? (
-          <Card className="space-y-3 p-4">
-            <p className="text-sm">
-              {fill(TC.linked, {
-                name: link.trainerName,
-                date: new Date(link.consentAt).toLocaleDateString('es-AR'),
-              })}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild>
-                <Link href="/settings/trainer/chat">
-                  <MessageCircle className="size-4" />
-                  {fill(CHAT.buttonWithName, { name: link.trainerName })}
-                </Link>
-              </Button>
-              {unread > 0 ? <Badge>{fill(CHAT.unread, { n: unread })}</Badge> : null}
-              <StopSharingButton />
+      {isTrainer ? (
+        <>
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">{TC.trainerTitle}</h2>
+          {!trainer ? (
+            <>
+              <p className="text-sm text-muted-foreground">{TC.trainerIntro}</p>
+              <ApplyAsTrainerForm />
+            </>
+          ) : trainer.status === 'PENDING' ? (
+            <Card className="p-4 text-sm">{TC.pending}</Card>
+          ) : trainer.status === 'SUSPENDED' ? (
+            <Card className="p-4 text-sm text-destructive">{TC.suspended}</Card>
+          ) : (
+            <div className="space-y-3">
+              <InviteCodeCard code={trainer.inviteCode} />
+              <Link href="/trainer" className="block">
+                <Card className="flex items-center justify-between p-4 text-sm font-medium hover:bg-secondary/50">
+                  {TC.panelLink}
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                </Card>
+              </Link>
             </div>
-          </Card>
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">{TC.clientIntro}</p>
-            <LinkWithTrainer />
-          </>
-        )}
-      </section>
+          )}
+        </section>
+        </>
+      ) : (
+        <>
+        <section className="space-y-3">
+          <h2 className="text-base font-semibold">{TC.clientTitle}</h2>
+          {link ? (
+            <Card className="space-y-3 p-4">
+              <p className="text-sm">
+                {fill(TC.linked, {
+                  name: link.trainerName,
+                  date: new Date(link.consentAt).toLocaleDateString('es-AR'),
+                })}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild>
+                  <Link href="/settings/trainer/chat">
+                    <MessageCircle className="size-4" />
+                    {fill(CHAT.buttonWithName, { name: link.trainerName })}
+                  </Link>
+                </Button>
+                {unread > 0 ? <Badge>{fill(CHAT.unread, { n: unread })}</Badge> : null}
+                <StopSharingButton />
+              </div>
+            </Card>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground">{TC.clientIntro}</p>
+              <LinkWithTrainer />
+            </>
+          )}
+        </section>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">{TC.trainerTitle}</h2>
-        {!trainer ? (
-          <>
-            <p className="text-sm text-muted-foreground">{TC.trainerIntro}</p>
-            <ApplyAsTrainerForm />
-          </>
-        ) : trainer.status === 'PENDING' ? (
-          <Card className="p-4 text-sm">{TC.pending}</Card>
-        ) : trainer.status === 'SUSPENDED' ? (
-          <Card className="p-4 text-sm text-destructive">{TC.suspended}</Card>
-        ) : (
-          <div className="space-y-3">
-            <InviteCodeCard code={trainer.inviteCode} />
-            <Link href="/trainer" className="block">
-              <Card className="flex items-center justify-between p-4 text-sm font-medium hover:bg-secondary/50">
-                {TC.panelLink}
-                <ChevronRight className="size-4 text-muted-foreground" />
-              </Card>
-            </Link>
-          </div>
-        )}
-      </section>
+        </>
+      )}
     </div>
   );
 }

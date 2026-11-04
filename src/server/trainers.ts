@@ -83,6 +83,35 @@ export async function createTrainerProfile(
   throw new Error('[trainers] no se pudo generar un código de invitación único');
 }
 
+/**
+ * Elige "soy entrenador" al crear la cuenta: la cuenta pasa a ser de entrenador (sin el cuestionario
+ * de cliente) y queda pendiente de aprobación. Las cuentas son separadas: una cuenta de cliente que
+ * ya completó su alta no se puede convertir.
+ */
+export async function becomeTrainerAccount(
+  userId: string,
+  input: { displayName: string; bio: string | null; credential: string | null },
+): Promise<{ ok: true } | { error: 'ALREADY_CLIENT' | 'NOT_FOUND' }> {
+  const profile = await prisma.profile.findUnique({
+    where: { id: userId },
+    select: { accountType: true, onboardingCompletedAt: true, name: true },
+  });
+  if (!profile) return { error: 'NOT_FOUND' };
+  if (profile.accountType !== 'TRAINER' && profile.onboardingCompletedAt) return { error: 'ALREADY_CLIENT' };
+
+  await prisma.profile.update({
+    where: { id: userId },
+    data: {
+      accountType: 'TRAINER',
+      // Sin cuestionario de cliente: el alta queda completa.
+      onboardingCompletedAt: profile.onboardingCompletedAt ?? new Date(),
+      name: profile.name ?? input.displayName,
+    },
+  });
+  await createTrainerProfile(userId, input);
+  return { ok: true };
+}
+
 /** El entrenador cambia su código (por ejemplo, si se lo pasó a alguien que no corresponde). */
 export async function regenerateInviteCode(userId: string): Promise<string | null> {
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -126,7 +155,7 @@ export async function previewInviteCode(rawCode: string): Promise<{ displayName:
   return t && t.status === 'ACTIVE' ? { displayName: t.displayName, credential: t.credential } : null;
 }
 
-export type RedeemError = 'INVALID_CODE' | 'SELF' | 'ALREADY_LINKED' | 'TRAINER_FULL';
+export type RedeemError = 'INVALID_CODE' | 'SELF' | 'ALREADY_LINKED' | 'TRAINER_FULL' | 'TRAINER_ACCOUNT';
 
 /** El cliente acepta compartir sus datos con el entrenador del código. El consentimiento queda registrado. */
 export async function redeemInviteCode(clientId: string, rawCode: string): Promise<{ ok: true } | { error: RedeemError }> {
@@ -135,6 +164,9 @@ export async function redeemInviteCode(clientId: string, rawCode: string): Promi
   const trainer = await prisma.trainerProfile.findUnique({ where: { inviteCode: code } });
   if (!trainer || trainer.status !== 'ACTIVE') return { error: 'INVALID_CODE' };
   if (trainer.userId === clientId) return { error: 'SELF' };
+  // Las cuentas de entrenador son aparte: no se conectan a otro entrenador como clientes.
+  const me = await prisma.profile.findUnique({ where: { id: clientId }, select: { accountType: true } });
+  if (me?.accountType === 'TRAINER') return { error: 'TRAINER_ACCOUNT' };
 
   const active = await prisma.trainerClient.findFirst({ where: { clientId, status: 'ACTIVE' }, select: { id: true } });
   if (active) return { error: 'ALREADY_LINKED' };

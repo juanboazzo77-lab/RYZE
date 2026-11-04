@@ -234,6 +234,8 @@ model Profile {
   email                  String
   /// Los cambios que el cliente le pide al coach (rutina, calorías) se aplican solos, sin tocar "Editar".
   coachAutoApply         Boolean          @default(false) @map("coach_auto_apply")
+  /// CLIENT (usa la app para entrenar) o TRAINER (usa el panel de entrenador). Son cuentas separadas.
+  accountType            String           @default("CLIENT") @map("account_type")
   name                   String?
   sex                    Sex?
   birthdate              DateTime?        @db.Date

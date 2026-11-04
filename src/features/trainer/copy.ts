@@ -16,6 +16,8 @@ export const TC = {
   codeSelf: 'Ese es tu propio código.',
   codeAlready: 'Ya tenés un entrenador. Dejá de compartir con el actual para conectar con otro.',
   codeFull: 'Ese entrenador no tiene lugar por ahora.',
+  codeTrainerAccount: 'Tu cuenta es de entrenador y no se puede conectar con otro entrenador.',
+  alreadyClient: 'Esta cuenta ya es de cliente. Para ser entrenador, creá otra cuenta con otro mail.',
   consentTitle: 'Vas a compartir tus datos con {name}',
   consentShare:
     'Tu entrenador va a poder ver: tu perfil y objetivo, tu peso, tus entrenamientos, tus comidas, tus revisiones semanales y lo que el coach recuerda de vos (incluye lesiones o molestias).',
@@ -172,4 +174,19 @@ export const CHAT = {
     OFF_PLATFORM: 'La conversación tiene que mantenerse dentro de Forza AI. Reformulá el mensaje sin pedir contacto por afuera.',
   },
   blockedAttempts: '{n} intentos bloqueados (30 días)',
+} as const;
+
+/** Elección de tipo de cuenta al crear la cuenta (cliente o entrenador). */
+export const ACCOUNT = {
+  title: '¿Cómo vas a usar Forza AI?',
+  subtitle: 'Elegí una. Son cuentas separadas: si sos las dos cosas, usá un mail para cada una.',
+  clientTitle: 'Soy cliente',
+  clientDesc: 'Quiero entrenar, llevar mi alimentación y mi progreso.',
+  trainerTitle: 'Soy entrenador',
+  trainerDesc: 'Quiero seguir a mis clientes, armarles el plan y chatear con ellos.',
+  trainerFormTitle: 'Tu cuenta de entrenador',
+  trainerFormIntro:
+    'Contanos quién sos. Revisamos tu título o certificado y, cuando esté aprobado, se activa tu panel. No vas a tener que completar el cuestionario de cliente.',
+  back: 'Volver',
+  pendingTitle: 'Tu cuenta está en revisión',
 } as const;

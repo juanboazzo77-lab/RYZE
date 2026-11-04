@@ -14,6 +14,7 @@ const ERRORS: Record<string, string> = {
   SELF: TC.codeSelf,
   ALREADY_LINKED: TC.codeAlready,
   TRAINER_FULL: TC.codeFull,
+  TRAINER_ACCOUNT: TC.codeTrainerAccount,
 };
 
 /** El cliente ingresa el código, ve de quién es y acepta compartir sus datos. */

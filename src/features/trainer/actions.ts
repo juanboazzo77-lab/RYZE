@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { isAdmin } from '@/server/admin';
 import {
-  createTrainerProfile,
+  becomeTrainerAccount,
   endClientLink,
   getActiveTrainer,
   previewInviteCode,
@@ -27,16 +27,21 @@ const applySchema = z.object({
   credential: z.string().trim().min(3).max(200),
 });
 
-/** Pide acceso como entrenador: queda pendiente hasta que se apruebe a mano. */
-export async function applyAsTrainer(raw: z.input<typeof applySchema>): Promise<Result> {
+/**
+ * Elige "soy entrenador" al crear la cuenta: pasa a ser una cuenta de entrenador (sin el cuestionario
+ * de cliente) y queda pendiente hasta que se apruebe a mano.
+ */
+export async function chooseTrainerAccount(raw: z.input<typeof applySchema>): Promise<Result> {
   const parsed = applySchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
-  await createTrainerProfile(userId, {
+  const res = await becomeTrainerAccount(userId, {
     displayName: parsed.data.displayName,
     bio: parsed.data.bio || null,
     credential: parsed.data.credential,
   });
+  if ('error' in res) return { error: res.error };
+  revalidatePath('/trainer');
   revalidatePath('/settings/trainer');
   return { ok: true };
 }

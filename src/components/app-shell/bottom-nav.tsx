@@ -2,21 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NAV_ITEMS } from './nav-items';
+import { NAV_ITEMS, TRAINER_NAV_ITEMS } from './nav-items';
 import { useT } from '@/i18n/provider';
 import { cn } from '@/lib/utils';
 
-export function BottomNav() {
+export function BottomNav({ trainer = false }: { trainer?: boolean }) {
   const pathname = usePathname();
   const t = useT();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
       <ul
-        className="mx-auto grid max-w-lg grid-cols-5"
+        className={cn('mx-auto grid max-w-lg', trainer ? 'grid-cols-2' : 'grid-cols-5')}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {NAV_ITEMS.map(({ href, labelKey, icon: Icon }) => {
+        {(trainer
+          ? TRAINER_NAV_ITEMS.map((i) => ({ href: i.href, label: i.label, icon: i.icon }))
+          : NAV_ITEMS.map((i) => ({ href: i.href, label: t.nav[i.labelKey], icon: i.icon }))
+        ).map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <li key={href}>
@@ -28,7 +31,7 @@ export function BottomNav() {
                 )}
               >
                 <Icon className={cn('size-5', active && 'stroke-[2.5]')} />
-                {t.nav[labelKey]}
+                {label}
               </Link>
             </li>
           );

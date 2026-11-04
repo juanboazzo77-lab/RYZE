@@ -1,4 +1,4 @@
-import { Dumbbell, Home, LineChart, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { Dumbbell, Home, LineChart, Settings, Sparkles, UserCheck, UtensilsCrossed } from 'lucide-react';
 import type { Dictionary } from '@/i18n';
 
 export interface NavItem {
@@ -13,4 +13,10 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/training', labelKey: 'train', icon: Dumbbell },
   { href: '/progress', labelKey: 'progress', icon: LineChart },
   { href: '/coach', labelKey: 'coach', icon: Sparkles },
+];
+
+/** Menú de una cuenta de entrenador: sólo sus clientes y los ajustes (piloto, en español). */
+export const TRAINER_NAV_ITEMS: Array<{ href: string; label: string; icon: typeof Home }> = [
+  { href: '/trainer', label: 'Clientes', icon: UserCheck },
+  { href: '/settings', label: 'Ajustes', icon: Settings },
 ];

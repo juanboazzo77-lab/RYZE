@@ -54,12 +54,18 @@ export default async function SettingsPage() {
     { href: '/settings/account', icon: ShieldCheck, title: t.settings.account, desc: t.settings.accountDesc },
   ];
 
+  // Una cuenta de entrenador sólo ve lo suyo y la cuenta: no tiene perfil físico, metas ni planes de cliente.
+  const visibleRows =
+    ctx.profile.accountType === 'TRAINER'
+      ? rows.filter((r) => r.href === '/settings/trainer' || r.href === '/settings/account')
+      : rows;
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">{t.settings.title}</h1>
 
       <Card className="divide-y">
-        {rows.map((r) => {
+        {visibleRows.map((r) => {
           const inner = (
             <div className="flex items-center gap-3 px-4 py-3.5">
               <r.icon className="size-5 shrink-0 text-muted-foreground" />
