@@ -145,3 +145,31 @@ export const ATTENTION_BADGE: Record<
   INACTIVE: { variant: 'outline', className: 'border-destructive/60 text-destructive' },
   NEW: { variant: 'secondary' },
 };
+
+/** Textos del chat entre entrenador y cliente (piloto, sólo en español). */
+export const CHAT = {
+  button: 'Chat',
+  buttonWithName: 'Chatear con {name}',
+  title: 'Chat con {name}',
+  back: 'Volver',
+  notice:
+    'Por seguridad, los mensajes se revisan de forma automática para que la conversación se mantenga dentro de Forza AI. No se pueden enviar teléfonos, correos, enlaces ni usuarios de redes.',
+  placeholder: 'Escribí un mensaje…',
+  send: 'Enviar',
+  empty: 'Todavía no hay mensajes. Escribí el primero.',
+  seen: 'Visto',
+  unread: '{n} sin leer',
+  rate: 'Estás escribiendo muy rápido. Esperá un momento.',
+  notLinked: 'Esta conversación ya no está disponible.',
+  error: 'No se pudo enviar. Probá de nuevo.',
+  tooLong: 'El mensaje es muy largo.',
+  blocked: {
+    PHONE: 'No se pueden enviar teléfonos. Por tu seguridad, la conversación se mantiene dentro de Forza AI.',
+    EMAIL: 'No se pueden enviar correos. Por tu seguridad, la conversación se mantiene dentro de Forza AI.',
+    LINK: 'No se pueden enviar enlaces. Por tu seguridad, la conversación se mantiene dentro de Forza AI.',
+    HANDLE: 'No se pueden enviar usuarios de redes. Por tu seguridad, la conversación se mantiene dentro de Forza AI.',
+    APP: 'No se pueden nombrar otras apps de mensajes. Por tu seguridad, la conversación se mantiene dentro de Forza AI.',
+    OFF_PLATFORM: 'La conversación tiene que mantenerse dentro de Forza AI. Reformulá el mensaje sin pedir contacto por afuera.',
+  },
+  blockedAttempts: '{n} intentos bloqueados (30 días)',
+} as const;

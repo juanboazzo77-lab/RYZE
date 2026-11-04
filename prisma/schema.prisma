@@ -756,10 +756,44 @@ model TrainerClient {
   /// CLIENT | TRAINER | ADMIN
   endedBy   String?        @map("ended_by")
   createdAt DateTime       @default(now()) @map("created_at")
+  messages  TrainerMessage[]
+  blocks    TrainerMessageBlock[]
 
   @@unique([trainerId, clientId])
   @@index([clientId])
   @@map("trainer_client")
+}
+
+/// Mensaje del chat entre un entrenador y su cliente. Cuelga del vínculo (trainer_client): sólo lo leen
+/// las dos personas y sólo mientras el vínculo está activo. Se accede desde src/server/trainer-chat.ts.
+model TrainerMessage {
+  id        String        @id @default(uuid()) @db.Uuid
+  linkId    String        @db.Uuid @map("link_id")
+  link      TrainerClient @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  /// Quién lo escribió: el entrenador o el cliente del vínculo (se valida al enviar).
+  senderId  String        @db.Uuid @map("sender_id")
+  body      String
+  createdAt DateTime      @default(now()) @map("created_at")
+  /// Cuándo lo vio la otra persona.
+  readAt    DateTime?     @map("read_at")
+
+  @@index([linkId, createdAt])
+  @@map("trainer_message")
+}
+
+/// Intentos de mandar datos de contacto (teléfono, redes) que el filtro frenó. No guarda el texto,
+/// sólo el motivo, para ver si alguien insiste.
+model TrainerMessageBlock {
+  id        String        @id @default(uuid()) @db.Uuid
+  linkId    String        @db.Uuid @map("link_id")
+  link      TrainerClient @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  senderId  String        @db.Uuid @map("sender_id")
+  reason    String
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@index([senderId, createdAt])
+  @@index([linkId])
+  @@map("trainer_message_block")
 }
 
 /// Memoria del coach: hechos duraderos que el usuario contó (lesiones, gustos, horarios, restricciones).

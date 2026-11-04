@@ -3,10 +3,14 @@ import Link from 'next/link';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getClientLink, getTrainerProfile } from '@/server/trainers';
+import { clientUnreadCount } from '@/server/trainer-chat';
 import { Card } from '@/components/ui/card';
 import { LinkWithTrainer, StopSharingButton } from '@/features/trainer/client-section';
 import { ApplyAsTrainerForm, InviteCodeCard } from '@/features/trainer/trainer-section';
-import { fill, TC } from '@/features/trainer/copy';
+import { CHAT, fill, TC } from '@/features/trainer/copy';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { MessageCircle } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Entrenador' };
 export const dynamic = 'force-dynamic';
@@ -15,6 +19,7 @@ export default async function TrainerSettingsPage() {
   const ctx = await requireUser();
   const link = await getClientLink(ctx.userId);
   const trainer = await getTrainerProfile(ctx.userId);
+  const unread = link ? await clientUnreadCount(ctx.userId) : 0;
 
   return (
     <div className="space-y-6">
@@ -36,7 +41,16 @@ export default async function TrainerSettingsPage() {
                 date: new Date(link.consentAt).toLocaleDateString('es-AR'),
               })}
             </p>
-            <StopSharingButton />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button asChild>
+                <Link href="/settings/trainer/chat">
+                  <MessageCircle className="size-4" />
+                  {fill(CHAT.buttonWithName, { name: link.trainerName })}
+                </Link>
+              </Button>
+              {unread > 0 ? <Badge>{fill(CHAT.unread, { n: unread })}</Badge> : null}
+              <StopSharingButton />
+            </div>
           </Card>
         ) : (
           <>

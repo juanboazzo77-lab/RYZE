@@ -18,6 +18,9 @@ import {
   TC,
 } from '@/features/trainer/copy';
 import { RemoveClientButton } from '@/features/trainer/remove-client-button';
+import { CHAT } from '@/features/trainer/copy';
+import { Button } from '@/components/ui/button';
+import { MessageCircle } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Cliente', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -59,6 +62,13 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           {TC.lastActivity}: {relativeDay(d.lastActivityISO, todayISO)} · {TC.readOnly}
         </p>
       </div>
+
+      <Button asChild className="w-full">
+        <Link href={`/trainer/clients/${id.data}/chat`}>
+          <MessageCircle className="size-4" />
+          {CHAT.button}
+        </Link>
+      </Button>
 
       <Card>
         <CardHeader className="pb-2">

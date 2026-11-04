@@ -4,10 +4,11 @@ import { redirect } from 'next/navigation';
 import { ChevronRight } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getActiveTrainer, listTrainerClients } from '@/server/trainers';
+import { trainerUnreadByClient } from '@/server/trainer-chat';
 import { localTodayISO } from '@/lib/date';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { ATTENTION_BADGE, fill, GOAL_LABEL, relativeDay, TC } from '@/features/trainer/copy';
+import { ATTENTION_BADGE, CHAT, fill, GOAL_LABEL, relativeDay, TC } from '@/features/trainer/copy';
 
 export const metadata: Metadata = { title: 'Mis clientes', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ export default async function TrainerPanelPage() {
   if (!trainer) redirect('/settings/trainer');
 
   const clients = await listTrainerClients(ctx.userId, ctx.profile.timezone);
+  const unread = await trainerUnreadByClient(ctx.userId);
   const todayISO = localTodayISO(ctx.profile.timezone);
 
   return (
@@ -46,6 +48,9 @@ export default async function TrainerPanelPage() {
                     <Badge variant={ATTENTION_BADGE[c.attention].variant} className={`text-[10px] ${ATTENTION_BADGE[c.attention].className ?? ''}`}>
                       {TC.attention[c.attention]}
                     </Badge>
+                    {unread.get(c.clientId) ? (
+                      <Badge className="text-[10px]">{fill(CHAT.unread, { n: unread.get(c.clientId) ?? 0 })}</Badge>
+                    ) : null}
                   </div>
                   <p className="truncate text-xs text-muted-foreground">
                     {c.goal ? `${GOAL_LABEL[c.goal] ?? c.goal} · ` : ''}

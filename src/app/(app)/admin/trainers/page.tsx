@@ -5,9 +5,10 @@ import { ArrowLeft } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { isAdmin } from '@/server/admin';
 import { listTrainersForAdmin } from '@/server/trainers';
+import { blockedAttemptsBySender } from '@/server/trainer-chat';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { TC } from '@/features/trainer/copy';
+import { CHAT, fill, TC } from '@/features/trainer/copy';
 import { AdminTrainerActions } from '@/features/trainer/admin-trainer-actions';
 
 export const metadata: Metadata = { title: 'Entrenadores', robots: { index: false, follow: false } };
@@ -18,6 +19,7 @@ export default async function AdminTrainersPage() {
   // Sin ADMIN_EMAILS definido, o con otro mail, la página directamente no existe.
   if (!isAdmin(ctx.email)) notFound();
   const trainers = await listTrainersForAdmin();
+  const blocked = await blockedAttemptsBySender(trainers.map((t) => t.userId));
 
   return (
     <div className="space-y-4">
@@ -57,6 +59,7 @@ export default async function AdminTrainersPage() {
                 ) : null}
                 <div className="text-xs text-muted-foreground">
                   {t.clients} clientes · pidió acceso el {new Date(t.createdAt).toLocaleDateString('es-AR')}
+                  {blocked.get(t.userId) ? ` · ${fill(CHAT.blockedAttempts, { n: blocked.get(t.userId) ?? 0 })}` : ''}
                 </div>
               </dl>
               <AdminTrainerActions userId={t.userId} status={t.status} />
