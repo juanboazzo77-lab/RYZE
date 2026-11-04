@@ -22,7 +22,7 @@ export const TC = {
   consentShare:
     'Tu entrenador va a poder ver: tu perfil y objetivo, tu peso, tus entrenamientos, tus comidas, tus revisiones semanales y lo que el coach recuerda de vos (incluye lesiones o molestias). También va a poder crear y editar tu rutina y tus objetivos de nutrición, y chatear con vos.',
   consentNot:
-    'No ve tu email ni tu teléfono, y tus fotos no se comparten. Fuera de tu rutina y tu dieta, no puede cambiar nada de tu cuenta.',
+    'No ve tu email ni tu teléfono, y tus fotos no se comparten. Fuera de tu rutina y tu dieta, no puede cambiar nada de tu cuenta. Tu entrenador puede usar la IA de Forza AI para analizar tus datos y prepararte planes: esos datos se procesan con un proveedor de IA externo.',
   consentStop:
     'Podés quitarle el permiso de edición o dejar de compartir cuando quieras, y desde ese momento deja de ver tus datos.',
   consentCheck: 'Entiendo y acepto compartir estos datos con mi entrenador',
@@ -252,4 +252,43 @@ export const FU = {
     'Quiere poder crear y editar tu rutina y tu dieta. Lo que arme se va a ver en tu cuenta. No ve tu email ni tu teléfono. Podés quitarle el permiso cuando quieras.',
   permAllow: 'Permitir',
   permDeny: 'No por ahora',
+} as const;
+
+/** IA del entrenador (piloto, sólo en español). */
+export const AIC = {
+  navLabel: 'Asistente',
+  title: 'Asistente de IA',
+  subtitle: 'Preguntale por tus clientes: quién necesita atención, cómo viene cada uno y qué ajustar.',
+  allClients: 'Todos mis clientes',
+  clientLabel: 'Hablar sobre',
+  placeholder: 'Escribí tu pregunta…',
+  send: 'Enviar',
+  thinking: 'Pensando…',
+  empty: 'Probá con una de estas preguntas:',
+  examples: [
+    '¿A quién tengo que escribirle hoy?',
+    'Resumime cómo viene cada cliente',
+    '¿Quién se está estancando?',
+  ],
+  exampleForClient: ['Resumime cómo viene este cliente', '¿Qué ajustarías en su rutina?', '¿Cómo viene con la alimentación?'],
+  limit: 'Llegaste al tope de mensajes de IA de hoy. Mañana se renueva.',
+  error: 'No se pudo obtener una respuesta. Probá de nuevo.',
+  noClient: 'No encontré a ese cliente entre los tuyos.',
+  disclaimer: 'La IA puede equivocarse: revisá los datos. No reemplaza tu criterio profesional.',
+  reset: 'Nueva conversación',
+  askAboutClient: 'Preguntar a la IA sobre este cliente',
+
+  draftTitle: 'Crear rutina con IA',
+  draftHelp:
+    'La IA arma un borrador con el perfil de tu cliente. Queda sin activar y con el nombre "Borrador": lo revisás y lo ajustás antes de activarlo.',
+  draftBrief: 'Indicaciones (opcional)',
+  draftBriefPlaceholder: 'Ej: 4 días, énfasis en espalda, sin sentadilla por la rodilla.',
+  draftButton: 'Crear borrador con IA',
+  drafting: 'Armando el borrador… (puede tardar hasta un minuto)',
+  draftLimit: 'Llegaste al tope de borradores de hoy. Mañana se renueva.',
+  draftError: 'No se pudo armar el borrador. Probá de nuevo.',
+
+  suggestDiet: 'Sugerir objetivos',
+  suggestMissing: 'Faltan datos del cliente (peso, altura, objetivo o actividad) para calcular.',
+  suggested: 'Sugerencia cargada: revisala y ajustala antes de guardar.',
 } as const;

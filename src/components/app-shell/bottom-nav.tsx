@@ -13,7 +13,7 @@ export function BottomNav({ trainer = false }: { trainer?: boolean }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 backdrop-blur md:hidden">
       <ul
-        className={cn('mx-auto grid max-w-lg', trainer ? 'grid-cols-2' : 'grid-cols-5')}
+        className={cn('mx-auto grid max-w-lg', trainer ? 'grid-cols-3' : 'grid-cols-5')}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {(trainer

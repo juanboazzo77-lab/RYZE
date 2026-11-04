@@ -21,9 +21,9 @@ import {
 import { RemoveClientButton } from '@/features/trainer/remove-client-button';
 import { CheckinFeedbackForm, FollowUpPanel } from '@/features/trainer/follow-up-panel';
 import { RoutineDietPanel } from '@/features/trainer/routine-diet-panel';
-import { CHAT, FU } from '@/features/trainer/copy';
+import { AIC, CHAT, FU } from '@/features/trainer/copy';
 import { Button } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Cliente', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -68,12 +68,20 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
         </p>
       </div>
 
-      <Button asChild className="w-full">
-        <Link href={`/trainer/clients/${id.data}/chat`}>
-          <MessageCircle className="size-4" />
-          {CHAT.button}
-        </Link>
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button asChild>
+          <Link href={`/trainer/clients/${id.data}/chat`}>
+            <MessageCircle className="size-4" />
+            {CHAT.button}
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href={`/trainer/assistant?client=${id.data}`}>
+            <Sparkles className="size-4" />
+            {AIC.askAboutClient}
+          </Link>
+        </Button>
+      </div>
 
       <Card>
         <CardHeader className="pb-2">
@@ -296,3 +304,6 @@ function Row({ label, value }: { label: string; value: string | null }) {
     </div>
   );
 }
+
+/** Crear un borrador de rutina con IA tarda; necesita más que los 10 s por defecto. */
+export const maxDuration = 60;

@@ -301,9 +301,16 @@ export async function generateWorkoutPlanDraft(args: {
   brief: string;
   /** Días de entrenamiento que eligió el usuario: el plan tiene que tener exactamente esos. */
   expectedDays?: number;
+  /**
+   * Un entrenador arma el borrador para un cliente: no se usa el cupo del cliente, y el uso se anota a
+   * nombre del entrenador (que tiene su propio tope).
+   */
+  forTrainer?: { trainerId: string; timezone: string };
 }): Promise<{ draft: PlanDraft; raw: string }> {
-  const { profile, entitlement, brief, expectedDays } = args;
-  await assertWithinLimits(profile.id, entitlement, 'generate_plan', profile.timezone);
+  const { profile, entitlement, brief, expectedDays, forTrainer } = args;
+  if (!forTrainer) await assertWithinLimits(profile.id, entitlement, 'generate_plan', profile.timezone);
+  const usageUserId = forTrainer?.trainerId ?? profile.id;
+  const usageTimezone = forTrainer?.timezone ?? profile.timezone;
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
   const system = planSystemPrompt(profile.locale, contextBlock);
@@ -366,7 +373,7 @@ export async function generateWorkoutPlanDraft(args: {
   const chosen = good ?? mismatched;
   // Sólo el plan elegido consume la cuota; el resto sólo registra el costo.
   for (const r of all) {
-    await recordUsage(profile.id, 'generate_plan', model, r.usage, profile.timezone, r === chosen);
+    await recordUsage(usageUserId, 'generate_plan', model, r.usage, usageTimezone, r === chosen);
   }
   if (!chosen || !chosen.data) {
     const last = all[all.length - 1];

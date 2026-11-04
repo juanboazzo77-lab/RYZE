@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { askEditPermission, saveClientDiet, startClientRoutine, tellClientUpdated } from './followup-actions';
-import { fill, FU } from './copy';
+import { createRoutineWithAi, suggestClientDiet } from './ai-actions';
+import { AIC, fill, FU } from './copy';
 import type { ClientPlanRow } from '@/server/trainer-followup';
 
 interface Props {
@@ -25,6 +26,8 @@ interface Props {
 export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, target }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [drafting, startDraft] = useTransition();
+  const [brief, setBrief] = useState('');
   const [routineName, setRoutineName] = useState('');
   const [kcal, setKcal] = useState(String(target?.kcal ?? ''));
   const [protein, setProtein] = useState(String(target?.proteinG ?? ''));
@@ -48,6 +51,28 @@ export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, targ
       const res = await startClientRoutine({ clientId, name: routineName });
       if (res.ok && res.data) router.push(`/trainer/clients/${clientId}/routine/${res.data.planId}`);
       else toast.error(FU.error);
+    });
+  }
+
+  function draftWithAi() {
+    startDraft(async () => {
+      const res = await createRoutineWithAi({ clientId, brief: brief || undefined });
+      if (res.ok && res.data) router.push(`/trainer/clients/${clientId}/routine/${res.data.planId}`);
+      else toast.error(res.error === 'LIMIT' ? AIC.draftLimit : `${AIC.draftError}${res.detail ? ` (${res.detail})` : ''}`);
+    });
+  }
+
+  function suggestDiet() {
+    start(async () => {
+      const res = await suggestClientDiet({ clientId });
+      if (res.ok && res.data) {
+        setKcal(String(res.data.kcal));
+        setProtein(String(res.data.proteinG));
+        setCarbs(String(res.data.carbsG));
+        setFat(String(res.data.fatG));
+        setNote(res.data.rationale.slice(0, 300));
+        toast.success(AIC.suggested);
+      } else toast.error(res.error === 'MISSING_DATA' ? AIC.suggestMissing : FU.error);
     });
   }
 
@@ -133,10 +158,35 @@ export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, targ
         <Button variant="ghost" size="sm" onClick={() => tell('routine')} disabled={pending}>
           {FU.tellRoutine}
         </Button>
+
+        <div className="space-y-2 rounded-xl border border-dashed p-3">
+          <p className="text-sm font-medium">{AIC.draftTitle}</p>
+          <p className="text-xs text-muted-foreground">{AIC.draftHelp}</p>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted-foreground">{AIC.draftBrief}</span>
+            <Textarea
+              value={brief}
+              onChange={(e) => setBrief(e.target.value)}
+              placeholder={AIC.draftBriefPlaceholder}
+              rows={2}
+              maxLength={500}
+              disabled={drafting}
+            />
+          </label>
+          <Button variant="outline" onClick={draftWithAi} disabled={drafting || pending}>
+            {drafting ? <Loader2 className="size-4 animate-spin" /> : null}
+            {drafting ? AIC.drafting : AIC.draftButton}
+          </Button>
+        </div>
       </section>
 
       <section className="space-y-2">
-        <p className="text-sm font-medium">{FU.dietTitle}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">{FU.dietTitle}</p>
+          <Button variant="outline" size="sm" onClick={suggestDiet} disabled={pending}>
+            {AIC.suggestDiet}
+          </Button>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <label className="space-y-1">
             <span className="text-xs text-muted-foreground">{FU.kcal}</span>
