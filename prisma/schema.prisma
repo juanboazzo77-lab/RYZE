@@ -1007,6 +1007,8 @@ model WeeklyCheckin {
   aiProposal          Json?         @map("ai_proposal")
   /** Propuesta de progresión de entrenamiento (call + resumen + ajustes por ejercicio). */
   aiTrainingProposal  Json?         @map("ai_training_proposal")
+  /// Fotos de la revisión de un cliente conectado con un entrenador (rutas en un bucket PRIVADO; sólo las ve su entrenador).
+  photoPaths          Json?         @map("photo_paths")
   status              CheckinStatus @default(DRAFT)
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")

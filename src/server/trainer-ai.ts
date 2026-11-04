@@ -4,7 +4,7 @@ import { localTodayISO } from '@/lib/date';
 import { prisma } from './db';
 import { activeProvider, modelFor } from './ai/config';
 import { maxOutputTokensFor } from './ai/config';
-import { trainerAssistantSystemPrompt } from './ai/prompts/fitai';
+import { checkinFeedbackSystemPrompt, trainerAssistantSystemPrompt } from './ai/prompts/fitai';
 import { generateWorkoutPlanDraft } from './ai/gateway';
 import { recordUsage } from './ai/usage';
 import { AiError } from './ai/errors';
@@ -131,6 +131,65 @@ export async function trainerAssistantReply(args: {
   } catch (e) {
     console.error('[trainer-ai] asistente falló', e instanceof Error ? e.message : e);
     if (e instanceof AiError) return { error: 'AI_ERROR', detail: `${e.code}: ${e.message}`.slice(0, 160) };
+    return { error: 'AI_ERROR', detail: e instanceof Error ? e.message.slice(0, 160) : 'desconocido' };
+  }
+}
+
+export type FeedbackDraftResult =
+  | { ok: true; text: string }
+  | { error: 'LIMIT' | 'NO_CLIENT' | 'NOT_FOUND' | 'AI_ERROR'; detail?: string };
+
+/**
+ * Borrador del feedback a una revisión semanal. La IA redacta; el entrenador corrige y envía. Cuenta
+ * contra el tope de mensajes de IA del entrenador.
+ */
+export async function draftCheckinFeedback(args: {
+  trainerId: string;
+  trainerName: string;
+  clientId: string;
+  checkinId: string;
+  timezone: string;
+}): Promise<FeedbackDraftResult> {
+  const { trainerId, trainerName, clientId, checkinId, timezone } = args;
+  if ((await usedToday(trainerId, timezone, 'coach_chat')) >= MAX_ASSISTANT_PER_DAY) return { error: 'LIMIT' };
+
+  const detail = await getClientDetail(trainerId, clientId, timezone);
+  if (!detail) return { error: 'NO_CLIENT' };
+  const c = detail.checkins.find((x) => x.id === checkinId);
+  if (!c) return { error: 'NOT_FOUND' };
+
+  const follow = await getFollowUp(trainerId, clientId);
+  const first = detail.name.split(' ')[0] ?? detail.name;
+  const lines = [
+    describeClient(detail, follow?.notes.map((n) => n.body) ?? []),
+    '',
+    `REVISIÓN A COMENTAR (semana del ${isoDay(c.weekStart)}; el cliente se llama ${first}):`,
+    `Peso promedio: ${c.stats.avgWeightKg ?? '—'} kg; cambio: ${c.stats.weightChangeKg ?? '—'} kg`,
+    `Adherencia a calorías: ${c.stats.kcalAdherencePct ?? '—'}%; a proteína: ${c.stats.proteinAdherencePct ?? '—'}%`,
+    `Entrenamientos: ${c.stats.workoutsCompleted} de ${c.stats.workoutsPlanned} planificados`,
+    c.scores.length > 0 ? 'Cómo se sintió (1 a 5): ' + c.scores.map((s) => `${s.label} ${s.value}`).join(', ') : 'No completó las preguntas de cómo se sintió.',
+    c.adherenceNote ? `Nota sobre la dieta: ${c.adherenceNote}` : '',
+    c.notes ? `Notas del cliente: ${c.notes}` : '',
+    c.photoUrls.length > 0 ? `Subió ${c.photoUrls.length} fotos (vos no las ves).` : 'No subió fotos.',
+  ].filter((l) => l !== '');
+
+  const model = modelFor('coach_chat');
+  try {
+    const res = await activeProvider().generate({
+      model,
+      system: checkinFeedbackSystemPrompt(trainerName),
+      messages: [{ role: 'user', content: lines.join('\n') }],
+      maxOutputTokens: 700,
+      timeoutMs: 45_000,
+      temperature: 0.6,
+      thinking: false,
+    });
+    const text = res.text.trim().replace(/^["“]|["”]$/g, '');
+    await recordUsage(trainerId, 'coach_chat', model, res.usage, timezone, !!text);
+    if (!text) return { error: 'AI_ERROR', detail: 'respuesta vacía' };
+    return { ok: true, text: text.slice(0, 850) };
+  } catch (e) {
+    console.error('[trainer-ai] borrador de feedback falló', e instanceof Error ? e.message : e);
     return { error: 'AI_ERROR', detail: e instanceof Error ? e.message.slice(0, 160) : 'desconocido' };
   }
 }

@@ -3,7 +3,8 @@ import { cache } from 'react';
 import type { Entitlement, Profile } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase/server';
 import { prisma } from './db';
-import { withFullAccess } from './entitlements';
+import { withFullAccess, withManagedAccess } from './entitlements';
+import { isManagedClient } from './trainers';
 
 export interface UserContext {
   userId: string;
@@ -12,6 +13,8 @@ export interface UserContext {
   entitlement: Entitlement;
   /** true hasta que el usuario termina el onboarding. */
   needsOnboarding: boolean;
+  /** Está conectado con un entrenador: no paga plan y la IA no está disponible para él. */
+  managedByTrainer: boolean;
 }
 
 /** Usuario autenticado en Supabase (o null). Memoizado por request. */
@@ -36,9 +39,10 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
 
   // Lectura en paralelo; sólo se escribe si la fila falta o el email cambió
   // (antes eran 2 upserts secuenciales en CADA request).
-  const [existingProfile, existingEntitlement] = await Promise.all([
+  const [existingProfile, existingEntitlement, managedByTrainer] = await Promise.all([
     prisma.profile.findUnique({ where: { id: user.id } }),
     prisma.entitlement.findUnique({ where: { userId: user.id } }),
+    isManagedClient(user.id),
   ]);
 
   const profile =
@@ -66,8 +70,11 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
     userId: profile.id,
     email: profile.email,
     profile,
-    entitlement: withFullAccess(profile.email, entitlement),
+    entitlement: managedByTrainer
+      ? withManagedAccess(entitlement)
+      : withFullAccess(profile.email, entitlement),
     needsOnboarding: profile.onboardingCompletedAt === null,
+    managedByTrainer,
   };
 });
 

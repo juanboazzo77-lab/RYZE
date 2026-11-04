@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { getActiveTrainer } from '@/server/trainers';
 import {
+  draftCheckinFeedback,
   generateRoutineForClient,
   suggestDietForClient,
   trainerAssistantReply,
@@ -79,4 +80,22 @@ export async function suggestClientDiet(raw: { clientId: string }): Promise<Resu
   if (!trainer) return { error: 'FORBIDDEN' };
   const suggestion = await suggestDietForClient(userId, id.data);
   return suggestion ? { ok: true, data: suggestion } : { error: 'MISSING_DATA' };
+}
+
+/** Borrador de feedback para una revisión semanal: el entrenador lo corrige y lo envía. */
+export async function suggestCheckinFeedback(raw: { clientId: string; checkinId: string }): Promise<Result<{ text: string }>> {
+  const client = z.string().uuid().safeParse(raw.clientId);
+  const checkin = z.string().uuid().safeParse(raw.checkinId);
+  if (!client.success || !checkin.success) return { error: 'INVALID' };
+  const { userId, profile } = await requireUser();
+  const trainer = await getActiveTrainer(userId);
+  if (!trainer) return { error: 'FORBIDDEN' };
+  const res = await draftCheckinFeedback({
+    trainerId: userId,
+    trainerName: trainer.displayName,
+    clientId: client.data,
+    checkinId: checkin.data,
+    timezone: profile.timezone,
+  });
+  return 'ok' in res ? { ok: true, data: { text: res.text } } : { error: res.error, detail: res.detail };
 }

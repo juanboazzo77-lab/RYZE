@@ -58,7 +58,9 @@ export default async function SettingsPage() {
   const visibleRows =
     ctx.profile.accountType === 'TRAINER'
       ? rows.filter((r) => r.href === '/settings/trainer' || r.href === '/settings/account')
-      : rows;
+      : ctx.managedByTrainer
+        ? rows.filter((r) => r.href !== '/settings/plans')
+        : rows;
 
   return (
     <div className="space-y-4">

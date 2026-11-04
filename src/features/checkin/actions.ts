@@ -6,6 +6,7 @@ import type { Profile } from '@prisma/client';
 import { requireUser } from '@/server/context';
 import { forUser, type UserDb } from '@/server/user-db';
 import { prisma } from '@/server/db';
+import { deleteCheckinPhotos, pathsOf, saveCheckinPhotos } from '@/server/storage/checkin-photos';
 import { can, limitsFor } from '@/server/entitlements';
 import { isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { buildCheckinSummary } from '@/lib/checkin/summary';
@@ -181,7 +182,7 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
   // Privacidad: las fotos viven SÓLO en esta variable local. No entran en
   // `baseData` ni en ninguna escritura a la DB; sólo se pasan a la IA.
   const photos = unpackPhotos(d.photos);
-  const { userId, profile, entitlement } = await requireUser();
+  const { userId, profile, entitlement, managedByTrainer } = await requireUser();
 
   if (!can(entitlement, 'weekly_checkin')) return { error: 'FORBIDDEN_TIER' };
   // La cadencia depende del plan (COACH cada semana, PRO cada dos).
@@ -235,8 +236,25 @@ export async function submitCheckin(raw: SubmitCheckinInput): Promise<Result> {
     });
   }
 
-  // 2) Revisión con IA (best-effort).
-  if (aiConfigured()) {
+  // 2) Cliente conectado con un entrenador: la revisión la hace él, sin IA. Las fotos que sube van a un
+  //    lugar privado y sólo las ve su entrenador (se borran si deja de compartir).
+  if (managedByTrainer) {
+    if (photos.length > 0) {
+      const row = await db.weeklyCheckin.findFirst({
+        where: { weekStart: weekStartDate },
+        select: { id: true, photoPaths: true },
+      });
+      if (row) {
+        const previous = pathsOf(row.photoPaths);
+        const paths = await saveCheckinPhotos(userId, row.id, photos);
+        if (paths.length > 0) {
+          await db.weeklyCheckin.updateMany({ where: { id: row.id }, data: { photoPaths: paths } });
+          await deleteCheckinPhotos(previous);
+        }
+      }
+    }
+  } else if (aiConfigured()) {
+    // Revisión con IA (best-effort).
     try {
       const [currentTarget, past] = await db.$transaction([
         db.nutritionTarget.findFirst({

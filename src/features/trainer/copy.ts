@@ -22,7 +22,7 @@ export const TC = {
   consentShare:
     'Tu entrenador va a poder ver: tu perfil y objetivo, tu peso, tus entrenamientos, tus comidas, tus revisiones semanales y lo que el coach recuerda de vos (incluye lesiones o molestias). También va a poder crear y editar tu rutina y tus objetivos de nutrición, y chatear con vos.',
   consentNot:
-    'No ve tu email ni tu teléfono, y tus fotos no se comparten. Fuera de tu rutina y tu dieta, no puede cambiar nada de tu cuenta. Tu entrenador puede usar la IA de Forza AI para analizar tus datos y prepararte planes: esos datos se procesan con un proveedor de IA externo.',
+    'No ve tu email ni tu teléfono. Solo ve las fotos que subas en tu revisión semanal (las demás no se comparten, y se borran si dejás de compartir). Fuera de tu rutina y tu dieta, no puede cambiar nada de tu cuenta. Tu entrenador puede usar la IA de Forza AI para analizar tus datos y prepararte planes: esos datos se procesan con un proveedor de IA externo.',
   consentStop:
     'Podés quitarle el permiso de edición o dejar de compartir cuando quieras, y desde ese momento deja de ver tus datos.',
   consentCheck: 'Entiendo y acepto compartir estos datos con mi entrenador',
@@ -291,4 +291,48 @@ export const AIC = {
   suggestDiet: 'Sugerir objetivos',
   suggestMissing: 'Faltan datos del cliente (peso, altura, objetivo o actividad) para calcular.',
   suggested: 'Sugerencia cargada: revisala y ajustala antes de guardar.',
+} as const;
+
+/** Lo que ve un cliente conectado con un entrenador (piloto, sólo en español). */
+export const MANAGED = {
+  coachTitle: 'Tu entrenador maneja tu seguimiento',
+  coachText:
+    'Mientras estés conectado con {name}, tu rutina, tu dieta y tus revisiones las maneja él o ella. Por eso el Coach con IA no está disponible. Escribile por el chat para consultarle lo que necesites.',
+  coachCta: 'Chatear con mi entrenador',
+  plansTitle: 'No necesitás ningún plan',
+  plansText:
+    'Estás conectado con tu entrenador, que maneja tu seguimiento. Mientras sigas conectado, usás la app sin pagar ningún plan.',
+  plansBack: 'Volver a Ajustes',
+  checkinNotice:
+    'Tu entrenador va a revisar esta revisión y te manda su feedback por el chat. Las fotos que subas las ve solo tu entrenador.',
+  photosNote:
+    'Las fotos que subas las ve solo tu entrenador y se guardan de forma privada. Se borran si dejás de compartir con él.',
+  checkinSent: 'Revisión enviada. Tu entrenador la va a mirar y te escribe por el chat.',
+  checkinFeedback: 'Feedback de tu entrenador',
+  checkinWaiting: 'Todavía no te dio su feedback.',
+} as const;
+
+/** Revisión semanal que hace el entrenador (piloto, sólo en español). */
+export const REV = {
+  pending: 'Revisión pendiente',
+  reviewed: 'Revisada',
+  period: 'Del {from} al {to}',
+  weekOf: 'Semana del {date}',
+  stats: 'Números de la revisión',
+  avgWeight: 'Peso promedio',
+  change: 'Cambio de peso',
+  kcal: 'Adherencia a calorías',
+  protein: 'Adherencia a proteína',
+  workouts: 'Entrenamientos',
+  feel: 'Cómo se sintió (1 a 5)',
+  dietNote: 'Sobre la dieta',
+  clientNotes: 'Notas del cliente',
+  photos: 'Fotos de la revisión',
+  photosHelp: 'Solo las ves vos. Los enlaces vencen en una hora; recargá la página para verlas de nuevo.',
+  noPhotos: 'No subió fotos en esta revisión.',
+  suggest: 'Sugerir feedback con IA',
+  suggesting: 'Redactando…',
+  suggested: 'Borrador cargado: revisalo y corregilo antes de enviarlo.',
+  suggestError: 'No se pudo redactar el borrador. Escribilo vos o probá de nuevo.',
+  suggestLimit: 'Llegaste al tope de mensajes de IA de hoy.',
 } as const;

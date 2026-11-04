@@ -21,7 +21,7 @@ import {
 import { RemoveClientButton } from '@/features/trainer/remove-client-button';
 import { CheckinFeedbackForm, FollowUpPanel } from '@/features/trainer/follow-up-panel';
 import { RoutineDietPanel } from '@/features/trainer/routine-diet-panel';
-import { AIC, CHAT, FU } from '@/features/trainer/copy';
+import { AIC, CHAT, FU, REV, fill } from '@/features/trainer/copy';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Sparkles } from 'lucide-react';
 
@@ -253,9 +253,61 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           ) : (
             <ul className="space-y-3 text-sm">
               {d.checkins.map((c) => (
-                <li key={c.weekStart} className="space-y-1">
-                  <p className="text-xs font-semibold text-muted-foreground">Semana del {fmtDate(c.weekStart)}</p>
-                  {c.summary ? <p className="whitespace-pre-wrap">{c.summary}</p> : null}
+                <li key={c.id} className="space-y-2 rounded-xl border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-muted-foreground">
+                      {c.periodStart && c.periodEnd
+                        ? fill(REV.period, { from: fmtDate(c.periodStart), to: fmtDate(c.periodEnd) })
+                        : fill(REV.weekOf, { date: fmtDate(c.weekStart) })}
+                    </p>
+                    <Badge variant={c.status === 'SUBMITTED' ? 'warning' : 'success'} className="text-[10px]">
+                      {c.status === 'SUBMITTED' ? REV.pending : REV.reviewed}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <MiniStat label={REV.avgWeight} value={c.stats.avgWeightKg != null ? `${c.stats.avgWeightKg} kg` : '—'} />
+                    <MiniStat
+                      label={REV.change}
+                      value={c.stats.weightChangeKg != null ? `${c.stats.weightChangeKg > 0 ? '+' : ''}${c.stats.weightChangeKg} kg` : '—'}
+                    />
+                    <MiniStat label={REV.workouts} value={`${c.stats.workoutsCompleted}/${c.stats.workoutsPlanned}`} />
+                    <MiniStat label={REV.kcal} value={c.stats.kcalAdherencePct != null ? `${c.stats.kcalAdherencePct}%` : '—'} />
+                    <MiniStat label={REV.protein} value={c.stats.proteinAdherencePct != null ? `${c.stats.proteinAdherencePct}%` : '—'} />
+                  </div>
+                  {c.scores.length > 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{REV.feel}: </span>
+                      {c.scores.map((s) => `${s.label} ${s.value}`).join(' · ')}
+                    </p>
+                  ) : null}
+                  {c.adherenceNote ? (
+                    <p className="text-sm">
+                      <span className="font-medium">{REV.dietNote}: </span>
+                      {c.adherenceNote}
+                    </p>
+                  ) : null}
+                  {c.notes ? (
+                    <p className="whitespace-pre-wrap text-sm">
+                      <span className="font-medium">{REV.clientNotes}: </span>
+                      {c.notes}
+                    </p>
+                  ) : null}
+                  {c.photoUrls.length > 0 ? (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium">{REV.photos}</p>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {c.photoUrls.map((url, i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                            <img src={url} alt="" className="aspect-[3/4] w-full rounded-lg border object-cover" loading="lazy" />
+                          </a>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{REV.photosHelp}</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{REV.noPhotos}</p>
+                  )}
                   <CheckinFeedbackForm
                     clientId={id.data}
                     checkinId={c.id}
@@ -307,3 +359,12 @@ function Row({ label, value }: { label: string; value: string | null }) {
 
 /** Crear un borrador de rutina con IA tarda; necesita más que los 10 s por defecto. */
 export const maxDuration = 60;
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border p-1.5">
+      <p className="font-semibold tabular-nums">{value}</p>
+      <p className="text-[10px] leading-tight text-muted-foreground">{label}</p>
+    </div>
+  );
+}

@@ -13,7 +13,8 @@ import {
   removeTrainerNote,
   updateNextFollowUp,
 } from './followup-actions';
-import { CHAT, FU } from './copy';
+import { suggestCheckinFeedback } from './ai-actions';
+import { CHAT, FU, REV } from './copy';
 import type { FollowUpNote } from '@/server/trainer-followup';
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -154,6 +155,18 @@ export function CheckinFeedbackForm({
   const [text, setText] = useState('');
   const [problem, setProblem] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const [suggesting, startSuggest] = useTransition();
+
+  function suggest() {
+    setProblem(null);
+    startSuggest(async () => {
+      const res = await suggestCheckinFeedback({ clientId, checkinId });
+      if (res.ok && res.data) {
+        setText(res.data.text);
+        toast.success(REV.suggested);
+      } else toast.error(res.error === 'LIMIT' ? REV.suggestLimit : REV.suggestError);
+    });
+  }
 
   function send() {
     const body = text.trim();
@@ -192,10 +205,16 @@ export function CheckinFeedbackForm({
         maxLength={850}
       />
       {problem ? <p className="text-xs text-destructive">{problem}</p> : null}
-      <Button size="sm" variant="outline" onClick={send} disabled={pending || !text.trim()}>
-        {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-        {FU.feedbackSend}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" onClick={send} disabled={pending || suggesting || !text.trim()}>
+          {pending ? <Loader2 className="size-4 animate-spin" /> : null}
+          {FU.feedbackSend}
+        </Button>
+        <Button size="sm" variant="outline" onClick={suggest} disabled={pending || suggesting}>
+          {suggesting ? <Loader2 className="size-4 animate-spin" /> : null}
+          {suggesting ? REV.suggesting : REV.suggest}
+        </Button>
+      </div>
     </div>
   );
 }

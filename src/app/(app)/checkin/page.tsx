@@ -14,6 +14,8 @@ import { UpsellCard } from '@/components/upsell-card';
 import { listPhysiqueAnalyses } from '@/features/physique/queries';
 import { PhysiqueReport } from '@/features/physique/physique-report';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getFeedbackForClient } from '@/server/trainer-followup';
+import { MANAGED } from '@/features/trainer/copy';
 
 export const metadata: Metadata = { title: 'Revisión semanal' };
 
@@ -40,7 +42,12 @@ export default async function CheckinPage() {
   const reportThisWeek =
     latestReport && latestReport.createdAt.slice(0, 10) >= data.currentWeekStart ? latestReport : null;
   const blocked = await checkinBlockedByCadence(ctx.profile, limitsFor(ctx.entitlement).checkinEveryWeeks);
-  const doneThisWeek = data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED';
+  // Conectado con un entrenador: la revisión la hace él (sin IA). Queda "enviada" hasta que le dé su feedback.
+  const managed = ctx.managedByTrainer;
+  const doneThisWeek = managed
+    ? data.existing?.status === 'SUBMITTED' || data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED'
+    : data.existing?.status === 'REVIEWED' || data.existing?.status === 'APPLIED';
+  const trainerFeedback = managed && data.existing ? await getFeedbackForClient(ctx.userId, data.existing.id) : null;
   const s = data.currentStats;
   const na = t.checkin.stats.noData;
 
@@ -93,7 +100,22 @@ export default async function CheckinPage() {
         </CardContent>
       </Card>
 
-      {data.existing?.aiSummary ? (
+      {managed && data.existing ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{MANAGED.checkinFeedback}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {trainerFeedback ? (
+              <p className="whitespace-pre-wrap">{trainerFeedback.body}</p>
+            ) : (
+              <p className="text-muted-foreground">{MANAGED.checkinWaiting}</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {!managed && data.existing?.aiSummary ? (
         <CheckinReview
           summary={data.existing.aiSummary}
           proposal={nutritionProposal}
@@ -102,16 +124,16 @@ export default async function CheckinPage() {
         />
       ) : null}
 
-      {data.existing?.aiTrainingProposal ? (
+      {!managed && data.existing?.aiTrainingProposal ? (
         <CheckinTraining
           proposal={data.existing.aiTrainingProposal as unknown as TrainingProposal}
           applied={adjustmentsApplied}
         />
       ) : null}
 
-      {hasAdjustments && doneThisWeek ? <ApplyAdjustments applied={adjustmentsApplied} /> : null}
+      {!managed && hasAdjustments && doneThisWeek ? <ApplyAdjustments applied={adjustmentsApplied} /> : null}
 
-      {latestReport ? (
+      {!managed && latestReport ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
@@ -125,7 +147,7 @@ export default async function CheckinPage() {
         </Card>
       ) : null}
 
-      {data.existing?.aiPhotoNote && !reportThisWeek ? (
+      {!managed && data.existing?.aiPhotoNote && !reportThisWeek ? (
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t.checkin.photos.analysisTitle}</CardTitle>
@@ -140,11 +162,16 @@ export default async function CheckinPage() {
       {blocked || doneThisWeek ? (
         <Card>
           <CardContent className="py-4 text-sm text-muted-foreground">
-            {blocked ? t.checkin.cadenceNote : t.checkin.alreadyDone}
+            {blocked ? t.checkin.cadenceNote : managed ? MANAGED.checkinSent : t.checkin.alreadyDone}
           </CardContent>
         </Card>
       ) : (
-        <CheckinForm existing={data.existing} />
+        <>
+          {managed ? (
+            <p className="rounded-lg bg-secondary/60 px-3 py-2 text-xs text-muted-foreground">{MANAGED.checkinNotice}</p>
+          ) : null}
+          <CheckinForm existing={data.existing} managed={managed} />
+        </>
       )}
 
       <p className="text-center text-xs text-muted-foreground">{t.checkin.recommendation}</p>

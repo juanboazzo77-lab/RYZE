@@ -5,6 +5,7 @@ import { prisma } from './db';
 import { forUser } from './user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { listCoachMemories, type CoachMemoryItem } from '@/features/coach-memory/queries';
+import { pathsOf, purgeClientCheckinPhotos, signedPhotoUrls } from './storage/checkin-photos';
 import {
   asTrainerStatus,
   attentionLevel,
@@ -162,6 +163,18 @@ export async function getClientLink(clientId: string): Promise<ClientLinkView | 
     : null;
 }
 
+/**
+ * ¿Este cliente está "manejado" por un entrenador? (vínculo activo con el entrenador aprobado). Un cliente
+ * manejado no paga ningún plan y no puede usar la IA: de eso se encarga su entrenador.
+ */
+export async function isManagedClient(clientId: string): Promise<boolean> {
+  const link = await prisma.trainerClient.findFirst({
+    where: { clientId, status: 'ACTIVE', trainer: { status: 'ACTIVE' } },
+    select: { id: true },
+  });
+  return !!link;
+}
+
 /** Quién es el entrenador de un código (para mostrárselo al cliente antes de que acepte). */
 export async function previewInviteCode(rawCode: string): Promise<{ displayName: string; credential: string | null } | null> {
   const code = normalizeInviteCode(rawCode);
@@ -261,6 +274,12 @@ export async function endClientLink(args: { clientId: string; trainerId?: string
     where: { clientId: args.clientId, status: 'ACTIVE', ...(args.trainerId ? { trainerId: args.trainerId } : {}) },
     data: { status: 'ENDED', endedAt: new Date(), endedBy: args.by },
   });
+  // Las fotos de las revisiones eran para su entrenador: se borran al dejar de compartir.
+  if (res.count > 0) {
+    await purgeClientCheckinPhotos(args.clientId).catch((e) =>
+      console.error('[trainers] no se pudieron borrar las fotos', e instanceof Error ? e.message : e),
+    );
+  }
   return res.count;
 }
 
@@ -284,6 +303,8 @@ export interface TrainerClientRow {
   weightKg: number | null;
   weightChange30Kg: number | null;
   attention: Attention;
+  /** El cliente mandó su revisión semanal y el entrenador todavía no le dio feedback. */
+  pendingReview: boolean;
 }
 
 /** Lista de clientes del entrenador con lo justo para ver quién necesita atención. */
@@ -304,6 +325,11 @@ export async function listTrainerClients(trainerId: string, timezone: string): P
     _max: { finishedAt: true },
   });
   const food = await prisma.foodEntry.groupBy({ by: ['userId'], where: { userId: { in: ids } }, _max: { date: true } });
+  const pending = await prisma.weeklyCheckin.findMany({
+    where: { userId: { in: ids }, status: 'SUBMITTED' },
+    select: { userId: true },
+    distinct: ['userId'],
+  });
   const weights = await prisma.weightEntry.findMany({
     where: { userId: { in: ids }, date: { gte: since } },
     orderBy: { date: 'asc' },
@@ -326,12 +352,18 @@ export async function listTrainerClients(trainerId: string, timezone: string): P
       weightKg: mine.at(-1)?.weightKg ?? null,
       weightChange30Kg: weightChangeKg(mine),
       attention: attentionLevel(lastActivityISO, todayISO),
+      pendingReview: pending.some((p) => p.userId === id),
     };
   });
 
   // Primero los que más atención necesitan.
   const order: Record<Attention, number> = { INACTIVE: 0, LATE: 1, NEW: 2, OK: 3 };
-  return rows.sort((a, b) => order[a.attention] - order[b.attention] || a.name.localeCompare(b.name));
+  return rows.sort(
+    (a, b) =>
+      Number(b.pendingReview) - Number(a.pendingReview) ||
+      order[a.attention] - order[b.attention] ||
+      a.name.localeCompare(b.name),
+  );
 }
 
 export interface ClientDetail {
@@ -352,7 +384,28 @@ export interface ClientDetail {
   workouts: Array<{ name: string; finishedAt: string; minutes: number | null; effort: number | null }>;
   nutritionDays: Array<{ date: string; kcal: number; proteinG: number }>;
   plan: { name: string; days: Array<{ name: string; exercises: Array<{ name: string; sets: number; reps: string }> }> } | null;
-  checkins: Array<{ id: string; weekStart: string; status: string; summary: string | null }>;
+  checkins: Array<{
+    id: string;
+    weekStart: string;
+    periodStart: string | null;
+    periodEnd: string | null;
+    status: string;
+    summary: string | null;
+    stats: {
+      avgWeightKg: number | null;
+      weightChangeKg: number | null;
+      kcalAdherencePct: number | null;
+      proteinAdherencePct: number | null;
+      workoutsCompleted: number;
+      workoutsPlanned: number;
+    };
+    /** Cómo se sintió, de 1 a 5. */
+    scores: Array<{ label: string; value: number }>;
+    adherenceNote: string | null;
+    notes: string | null;
+    /** Enlaces (vencen en una hora) a las fotos que subió el cliente en esa revisión. */
+    photoUrls: string[];
+  }>;
   /** El cliente dejó que el entrenador cree y edite su rutina y su dieta. */
   canEdit: boolean;
   editRequested: boolean;
@@ -430,8 +483,36 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
   const checkins = await db.weeklyCheckin.findMany({
     orderBy: { weekStart: 'desc' },
     take: 4,
-    select: { id: true, weekStart: true, status: true, aiSummary: true },
+    select: {
+      id: true,
+      weekStart: true,
+      periodStart: true,
+      periodEnd: true,
+      status: true,
+      aiSummary: true,
+      avgWeightKg: true,
+      weightChangeKg: true,
+      kcalAdherencePct: true,
+      proteinAdherencePct: true,
+      workoutsCompleted: true,
+      workoutsPlanned: true,
+      hunger: true,
+      energy: true,
+      sleep: true,
+      trainingFeel: true,
+      dietAdherence: true,
+      stress: true,
+      outsideActivity: true,
+      adherenceNote: true,
+      notes: true,
+      photoPaths: true,
+    },
   });
+  // Fotos: enlaces firmados que vencen (sólo las ve el entrenador con vínculo activo).
+  const photoUrlsById = new Map<string, string[]>();
+  for (const c of checkins) {
+    photoUrlsById.set(c.id, await signedPhotoUrls(pathsOf(c.photoPaths)));
+  }
   const memories = await listCoachMemories(clientId);
 
   const byDay = new Map<string, { kcal: number; proteinG: number }>();
@@ -491,7 +572,38 @@ export async function getClientDetail(trainerId: string, clientId: string, timez
           })),
         }
       : null,
-    checkins: checkins.map((c) => ({ id: c.id, weekStart: isoOf(c.weekStart), status: c.status, summary: c.aiSummary ?? null })),
+    checkins: checkins.map((c) => ({
+      id: c.id,
+      weekStart: isoOf(c.weekStart),
+      periodStart: c.periodStart ? isoOf(c.periodStart) : null,
+      periodEnd: c.periodEnd ? isoOf(c.periodEnd) : null,
+      status: c.status,
+      summary: c.aiSummary ?? null,
+      stats: {
+        avgWeightKg: c.avgWeightKg,
+        weightChangeKg: c.weightChangeKg,
+        kcalAdherencePct: c.kcalAdherencePct,
+        proteinAdherencePct: c.proteinAdherencePct,
+        workoutsCompleted: c.workoutsCompleted,
+        workoutsPlanned: c.workoutsPlanned,
+      },
+      scores: (
+        [
+          ['Hambre', c.hunger],
+          ['Energía', c.energy],
+          ['Sueño', c.sleep],
+          ['Sensación de entrenamiento', c.trainingFeel],
+          ['Adherencia a la dieta', c.dietAdherence],
+          ['Estrés', c.stress],
+          ['Actividad fuera del gym', c.outsideActivity],
+        ] as Array<[string, number | null]>
+      )
+        .filter((x): x is [string, number] => x[1] != null)
+        .map(([label, value]) => ({ label, value })),
+      adherenceNote: c.adherenceNote,
+      notes: c.notes,
+      photoUrls: photoUrlsById.get(c.id) ?? [],
+    })),
     canEdit: !!link.editConsentAt,
     editRequested: !link.editConsentAt && !!link.editRequestedAt,
     memories,

@@ -126,6 +126,8 @@ export async function sendCheckinFeedback(
   await prisma.trainerNote.create({
     data: { linkId: link.id, authorId: trainerId, kind: 'FEEDBACK', checkinId, body },
   });
+  // Con el feedback la revisión queda hecha: el cliente la ve como revisada.
+  await prisma.weeklyCheckin.updateMany({ where: { id: checkinId, userId: clientId, status: 'SUBMITTED' }, data: { status: 'REVIEWED' } });
   return { ok: true };
 }
 
@@ -216,4 +218,14 @@ export async function setClientNutritionTarget(
     },
   });
   return true;
+}
+
+/** El feedback que el entrenador le dio al cliente por una revisión (lo ve el propio cliente). */
+export async function getFeedbackForClient(clientId: string, checkinId: string): Promise<{ body: string; createdAt: string } | null> {
+  const row = await prisma.trainerNote.findFirst({
+    where: { kind: 'FEEDBACK', checkinId, link: { clientId, status: 'ACTIVE' } },
+    orderBy: { createdAt: 'desc' },
+    select: { body: true, createdAt: true },
+  });
+  return row ? { body: row.body, createdAt: row.createdAt.toISOString() } : null;
 }

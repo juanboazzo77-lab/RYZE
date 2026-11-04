@@ -8,7 +8,7 @@ import { trainerUnreadByClient } from '@/server/trainer-chat';
 import { localTodayISO } from '@/lib/date';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { ATTENTION_BADGE, CHAT, fill, GOAL_LABEL, relativeDay, TC } from '@/features/trainer/copy';
+import { ATTENTION_BADGE, CHAT, REV, fill, GOAL_LABEL, relativeDay, TC } from '@/features/trainer/copy';
 
 export const metadata: Metadata = { title: 'Mis clientes', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -48,6 +48,11 @@ export default async function TrainerPanelPage() {
                     <Badge variant={ATTENTION_BADGE[c.attention].variant} className={`text-[10px] ${ATTENTION_BADGE[c.attention].className ?? ''}`}>
                       {TC.attention[c.attention]}
                     </Badge>
+                    {c.pendingReview ? (
+                      <Badge variant="warning" className="text-[10px]">
+                        {REV.pending}
+                      </Badge>
+                    ) : null}
                     {unread.get(c.clientId) ? (
                       <Badge className="text-[10px]">{fill(CHAT.unread, { n: unread.get(c.clientId) ?? 0 })}</Badge>
                     ) : null}
