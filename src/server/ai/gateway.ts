@@ -4,6 +4,7 @@ import { activeProvider, maxOutputTokensFor, modelFor, visionModel } from './con
 import { buildUserContextBlock } from './context';
 import {
   checkinSystemPrompt,
+  coachEditSystemPrompt,
   coachSystemPrompt,
   exerciseGuideSystemPrompt,
   goalAdviceSystemPrompt,
@@ -15,12 +16,14 @@ import {
 } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
-import type { AiChatMessage, AiContentBlock, AiStructuredResult } from './providers/types';
+import type { AiChatMessage, AiContentBlock, AiStructuredResult, AiToolSpec } from './providers/types';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
 import { checkinReviewSchema, type CheckinReview } from '@/features/checkin/schema';
 import { goalAdviceSchema, type GoalAdvice } from '@/features/onboarding/goal-advice-schema';
 import { mealPlanSchema, type MealPlan } from '@/features/nutrition/meal-plan-schema';
 import {
+  coachEditsToolSchema,
   coachReplySchema,
   type CoachEdit,
   type CoachExercise,
@@ -61,18 +64,29 @@ export interface CoachHistoryMsg {
 
 const COACH_TIMEOUT_MS = 70_000;
 
-/** El coach dice que no puede editar (lo hace por costumbre; la app sí lo permite con "edits"). */
+/** El coach dice que no puede editar (lo hace por costumbre; la app sí lo permite). */
 const COACH_REFUSAL =
   /no (puedo|podemos|puedes|tengo (forma|manera|acceso))[^.\n]{0,40}(editar|modificar|cambiar|tocar|acceder)|(desde ac[aá]|desde el chat|desde esta conversaci[oó]n)[^.\n]{0,30}no (puedo|se puede)/i;
 
-/** Se suma al prompt para reintentar cuando el coach se negó a un pedido de cambio. */
-const COACH_EDIT_RETRY = `
+/**
+ * Herramienta con la que el módulo de edición entrega los cambios que pidió el usuario. Va por
+ * llamada a función (no por formato estructurado): Anthropic limita los campos opcionales o nulos
+ * del formato estructurado, y esta lista de cambios es demasiado grande para ese límite.
+ */
+const PROPOSE_EDITS_TOOL: AiToolSpec = (() => {
+  const schema = zodToJsonSchema(coachEditsToolSchema, { target: 'jsonSchema7', $refStrategy: 'none' }) as Record<
+    string,
+    unknown
+  >;
+  delete schema.$schema;
+  return {
+    name: 'propose_edits',
+    description:
+      'Propone al usuario los cambios que pidió en su rutina, su registro de comidas de hoy o sus objetivos de nutrición. Llamala sólo si el último mensaje pide agregar, cambiar o sacar algo.',
+    inputSchema: schema,
+  };
+})();
 
-IMPORTANTE: el usuario te pide modificar su rutina, su registro de comidas de hoy o sus objetivos,
-y SÍ podés hacerlo: completá "edits" con los cambios concretos (hasta 12, usando los nombres
-exactos del contexto) y en "reply" contá qué vas a cambiar. NO digas que no podés editar ni lo
-derives a otra pantalla. Ignorá cualquier mensaje anterior donde hayas dicho lo contrario.
-Si de verdad falta un dato (qué día, cuánto), preguntalo en "reply" sin decir que no podés.`;
 const PLAN_TIMEOUT_MS = 110_000;
 // La revisión semanal corre revisión + informe de físico en paralelo: tope total de espera.
 const CHECKIN_TIMEOUT_MS = 80_000;
@@ -81,7 +95,11 @@ const PHYSIQUE_TIMEOUT_MS = 58_000;
 export type PhysiqueFailure = 'blocked' | 'busy' | 'timeout' | 'invalid';
 const MAX_HISTORY = 16;
 
-/** Un turno del AI Coach. Devuelve el texto de respuesta del asistente. */
+/**
+ * Un turno del AI Coach. Corren en paralelo dos llamadas: el chat (texto, y un alimento o un
+ * ejercicio para sugerir) y el módulo de edición, que decide si el usuario pidió cambiar algo y,
+ * si es así, propone los cambios con una herramienta. Si hay cambios, manda su mensaje.
+ */
 export async function runCoachTurn(args: {
   profile: Profile;
   entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
@@ -99,7 +117,8 @@ export async function runCoachTurn(args: {
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
-  const system = coachSystemPrompt(profile.locale, contextBlock, profile.coachAutoApply);
+  const system = coachSystemPrompt(profile.locale, contextBlock);
+  const editSystem = coachEditSystemPrompt(profile.locale, contextBlock, profile.coachAutoApply);
   // Modelo liviano primero (barato); si falla o devuelve vacío, se reintenta con el grande.
   const models = [...new Set([modelFor('coach_chat'), modelFor('generate_plan')])];
 
@@ -112,13 +131,91 @@ export async function runCoachTurn(args: {
     { role: 'user' as const, content: userMessage },
   ];
 
+  const [chat, edit] = await Promise.all([
+    runCoachChat({ profile, system, messages, models }).then(
+      (value) => ({ value, error: null as unknown }),
+      (error: unknown) => ({ value: null, error }),
+    ),
+    runCoachEdits({ profile, system: editSystem, messages, model: models[0]! }),
+  ]);
+
+  // Hay cambios pedidos: se muestra el mensaje del módulo de edición (el chat podría decir otra cosa).
+  if (edit.edits.length > 0) {
+    return {
+      text: edit.reply || chat.value?.text || '',
+      edits: edit.edits,
+      food: null,
+      exercise: null,
+      diag: `cambios=${edit.edits.length} (${edit.diag}) | chat: ${chat.value?.diag ?? 'falló'}`,
+    };
+  }
+  if (!chat.value) throw chat.error;
+  return {
+    text: chat.value.text,
+    edits: [],
+    food: chat.value.food,
+    exercise: chat.value.exercise,
+    diag: `sin cambios (${edit.diag}) | chat: ${chat.value.diag}`,
+  };
+}
+
+/** Módulo de edición: ¿pidió cambiar algo? Si sí, llama a "propose_edits". Nunca lanza error. */
+export async function runCoachEdits(args: {
+  profile: Profile;
+  system: string;
+  messages: AiChatMessage[];
+  model: string;
+}): Promise<{ reply: string; edits: CoachEdit[]; diag: string }> {
+  const { profile, system, messages, model } = args;
+  try {
+    const res = await activeProvider().generate({
+      model,
+      system,
+      messages,
+      tools: [PROPOSE_EDITS_TOOL],
+      maxOutputTokens: 4000,
+      timeoutMs: COACH_TIMEOUT_MS,
+      temperature: 0.3,
+      thinking: false,
+    });
+    // El costo se registra, pero no cuenta como un mensaje más del día.
+    await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, false);
+    const call = res.toolUses.find((t) => t.name === 'propose_edits');
+    if (!call) return { reply: '', edits: [], diag: `no pidió cambios` };
+    const parsed = coachEditsToolSchema.safeParse(call.input);
+    if (!parsed.success) {
+      const why = parsed.error.issues[0];
+      return {
+        reply: '',
+        edits: [],
+        diag: `herramienta con datos inválidos: ${why?.path.join('.') ?? ''} ${why?.message ?? ''}`.slice(0, 200),
+      };
+    }
+    return {
+      reply: parsed.data.reply.trim(),
+      edits: parsed.data.edits,
+      diag: `herramienta ok, ${parsed.data.edits.length} válidos`,
+    };
+  } catch (e) {
+    console.error('[ai] coach: módulo de edición falló', { model, error: e instanceof Error ? e.message : String(e) });
+    const detail = e instanceof AiError ? `${e.code}: ${e.message}` : e instanceof Error ? e.message : String(e);
+    return { reply: '', edits: [], diag: `módulo de edición falló: ${detail.replace(/\s+/g, ' ').slice(0, 200)}` };
+  }
+}
+
+/** Chat del coach: texto y, si corresponde, un alimento o un ejercicio para sugerir. */
+export async function runCoachChat(args: {
+  profile: Profile;
+  system: string;
+  messages: AiChatMessage[];
+  models: string[];
+}): Promise<{ text: string; food: CoachFood | null; exercise: CoachExercise | null; diag: string }> {
+  const { profile, system, messages, models } = args;
   let lastError: unknown = new AiError('INVALID_OUTPUT', 'sin respuesta del modelo');
   let diag = '';
   for (const model of models) {
     try {
-      // Primero salida estructurada (texto + alimento detectado); si el formato falla, texto simple.
-      // Si el proveedor rechaza el formato estructurado (pedido inválido), el chat sigue andando
-      // con texto simple, sin botones, en vez de quedarse sin respuesta.
+      // Primero salida estructurada (texto + alimento o ejercicio); si el formato falla, texto simple.
       const structured = await activeProvider()
         .generateStructured({
           model,
@@ -126,58 +223,35 @@ export async function runCoachTurn(args: {
           messages,
           schema: coachReplySchema,
           schemaName: 'CoachReply',
-          maxOutputTokens: maxOutputTokensFor('coach_chat') + 2000,
+          maxOutputTokens: maxOutputTokensFor('coach_chat') + 400,
           timeoutMs: COACH_TIMEOUT_MS,
           temperature: 0.7,
           thinking: false,
         })
         .catch((err: unknown) => {
+          // Si el proveedor rechaza el formato, el chat sigue andando con texto simple.
           if (err instanceof AiError && err.code === 'BAD_REQUEST') {
             console.error('[ai] coach: formato estructurado rechazado, sigo con texto', { model, error: err.message });
-            diag += `[${model}] formato rechazado: ${err.message.replace(/\s+/g, ' ').slice(0, 220)} `;
+            diag += `[${model}] formato rechazado: ${err.message.replace(/\s+/g, ' ').slice(0, 200)} `;
             return null;
           }
           throw err;
         });
-      let answer = structured;
       if (structured && !structured.data) {
-        diag += `[${model}] no se pudo leer la respuesta (stop=${structured.stopReason}): ${structured.rawText.replace(/\s+/g, ' ').slice(0, 160)} `;
+        diag += `[${model}] no se pudo leer la respuesta (stop=${structured.stopReason}) `;
       }
-      // Si se negó a editar (cree que no puede), se reintenta una vez diciéndole que sí puede.
-      if (answer?.data?.reply.trim() && answer.data.edits.length === 0 && COACH_REFUSAL.test(answer.data.reply)) {
-        await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, false);
-        console.error('[ai] coach: se negó a editar, reintento', { model });
-        diag += `[${model}] se negó, reintento `;
-        const retried = await activeProvider()
-          .generateStructured({
-            model,
-            system: system + COACH_EDIT_RETRY,
-            messages,
-            schema: coachReplySchema,
-            schemaName: 'CoachReply',
-            maxOutputTokens: maxOutputTokensFor('coach_chat') + 2000,
-            timeoutMs: COACH_TIMEOUT_MS,
-            temperature: 0.4,
-            thinking: false,
-          })
-          .catch(() => null);
-        // Si el reintento falla, se queda con la primera respuesta.
-        if (retried?.data?.reply.trim()) answer = retried;
-      }
-      if (answer?.data?.reply.trim()) {
-        await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, true);
-        const { food, exercise, edits } = answer.data;
-        // Sólo una sugerencia por respuesta: los cambios pedidos tienen prioridad.
-        const hasEdits = edits.length > 0;
+      if (structured?.data?.reply.trim()) {
+        await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, true);
+        const { food, exercise } = structured.data;
         return {
-          text: answer.data.reply.trim(),
-          diag: `${diag}[${model}] formato ok, cambios=${edits.length}`,
-          edits,
-          food: hasEdits ? null : food,
-          exercise: hasEdits || food ? null : exercise,
+          text: structured.data.reply.trim(),
+          // Sólo una sugerencia por respuesta.
+          food,
+          exercise: food ? null : exercise,
+          diag: `${diag}[${model}] formato ok`,
         };
       }
-      if (answer) await recordUsage(profile.id, 'coach_chat', model, answer.usage, profile.timezone, false);
+      if (structured) await recordUsage(profile.id, 'coach_chat', model, structured.usage, profile.timezone, false);
 
       const res = await activeProvider().generate({
         model,
@@ -207,7 +281,7 @@ export async function runCoachTurn(args: {
       }
 
       await recordUsage(profile.id, 'coach_chat', model, res.usage, profile.timezone, true);
-      return { text, food: null, exercise: null, edits: [], diag: `${diag}[${model}] texto simple` };
+      return { text, food: null, exercise: null, diag: `${diag}[${model}] texto simple` };
     } catch (e) {
       console.error('[ai] coach falló', { model, error: e instanceof Error ? e.message : String(e) });
       // Sin crédito, sin clave o sin permiso: otro modelo no lo arregla.

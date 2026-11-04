@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { coachReplySchema, coachUndoSchema, isApplicableCoachEdit, type CoachEdit } from './reply-schema';
+import { coachEditsToolSchema, coachReplySchema, coachUndoSchema, isApplicableCoachEdit, type CoachEdit } from './reply-schema';
 
 const base: CoachEdit = {
   kind: 'replace_exercise',
@@ -157,9 +157,9 @@ const wire = (o: Record<string, unknown>) => ({
   ...o,
 });
 
-describe('coachReplySchema', () => {
+describe('coachEditsToolSchema', () => {
   it('un cambio con valores fuera de rango se descarta sin romper la respuesta', () => {
-    const parsed = coachReplySchema.parse({
+    const parsed = coachEditsToolSchema.parse({
       reply: 'Dale',
       food: null,
       exercise: null,
@@ -169,13 +169,8 @@ describe('coachReplySchema', () => {
     expect(parsed.edits).toEqual([]);
   });
 
-  it('acepta una respuesta sin el campo edits', () => {
-    const parsed = coachReplySchema.parse({ reply: 'Hola', food: null, exercise: null });
-    expect(parsed.edits).toEqual([]);
-  });
-
   it('traduce los campos de la IA al cambio que se aplica', () => {
-    const parsed = coachReplySchema.parse({
+    const parsed = coachEditsToolSchema.parse({
       reply: 'ok',
       food: null,
       exercise: null,
@@ -194,7 +189,7 @@ describe('coachReplySchema', () => {
   });
 
   it('conserva varios cambios válidos y descarta los incompletos', () => {
-    const parsed = coachReplySchema.parse({
+    const parsed = coachEditsToolSchema.parse({
       reply: 'Te armo el día',
       food: null,
       exercise: null,
@@ -209,20 +204,27 @@ describe('coachReplySchema', () => {
 
   it('no deja pasar más de 12 cambios', () => {
     const edits = Array.from({ length: 20 }, (_, i) => wire({ summary: `Saco ${i}`, target: `Ejercicio ${i}` }));
-    expect(coachReplySchema.parse({ reply: 'x', food: null, exercise: null, edits }).edits).toHaveLength(12);
+    expect(coachEditsToolSchema.parse({ reply: 'x', food: null, exercise: null, edits }).edits).toHaveLength(12);
   });
 });
 
 describe('formato para la IA', () => {
-  // Anthropic rechaza los esquemas con muchos campos opcionales o que pueden ser nulos (~16).
-  it('no supera los límites de campos opcionales ni nulos', () => {
-    const json = JSON.stringify(zodToJsonSchema(coachReplySchema, { target: 'jsonSchema7', $refStrategy: 'none' }));
-    const nullable = (json.match(/"type":["[a-z]+","null"]|"type":"null"/g) ?? []).length;
+  const json = (schema: Parameters<typeof zodToJsonSchema>[0]) =>
+    zodToJsonSchema(schema, { target: 'jsonSchema7', $refStrategy: 'none' }) as {
+      properties: Record<string, { items?: { required: string[]; properties: Record<string, unknown> } }>;
+    };
+
+  // Anthropic rechaza los esquemas con muchos campos opcionales o que pueden ser nulos (~16):
+  // el chat estructurado tiene que quedar chico.
+  it('el chat estructurado no supera los límites de campos opcionales ni nulos', () => {
+    const text = JSON.stringify(json(coachReplySchema));
+    const nullable = (text.match(/"type":\["[a-z]+","null"\]|"type":"null"/g) ?? []).length;
     expect(nullable).toBeLessThanOrEqual(8);
-    const edit = (zodToJsonSchema(coachReplySchema, { target: 'jsonSchema7', $refStrategy: 'none' }) as {
-      properties: { edits: { items: { required: string[]; properties: Record<string, unknown> } } };
-    }).properties.edits.items;
-    // Todos los campos de un cambio son obligatorios.
-    expect(edit.required.sort()).toEqual(Object.keys(edit.properties).sort());
+    expect(Object.keys(json(coachReplySchema).properties)).toEqual(['reply', 'food', 'exercise']);
+  });
+
+  it('la herramienta de cambios pide todos los campos de cada cambio', () => {
+    const item = json(coachEditsToolSchema).properties.edits!.items!;
+    expect([...item.required].sort()).toEqual(Object.keys(item.properties).sort());
   });
 });

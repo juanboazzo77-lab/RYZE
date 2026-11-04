@@ -293,10 +293,18 @@ export const coachReplySchema = z.object({
   reply: z.string().min(1),
   food: coachFoodSchema.nullable().catch(null),
   exercise: coachExerciseSchema.nullable().catch(null),
-  /** Uno o varios cambios pedidos (por ejemplo, rehacer un día entero). Los inválidos se descartan. */
-  edits: z
-    .array(coachEditWireSchema)
-    .default([])
-    .transform((list) => list.filter((e): e is CoachEdit => !!e && isApplicableCoachEdit(e)).slice(0, MAX_EDITS)),
 });
 export type CoachReply = z.infer<typeof coachReplySchema>;
+
+/**
+ * Lo que el módulo de edición manda al llamar a la herramienta "propose_edits": el mensaje para
+ * el usuario y uno o varios cambios (por ejemplo, rehacer un día entero). Los inválidos se
+ * descartan. Va por llamada a función, que no tiene los límites del formato estructurado.
+ */
+export const coachEditsToolSchema = z.object({
+  reply: z.string().describe('Mensaje para el usuario, en su idioma'),
+  edits: z
+    .array(coachEditWireSchema)
+    .describe('Los cambios a aplicar (hasta 12)')
+    .transform((list) => list.filter((e): e is CoachEdit => !!e && isApplicableCoachEdit(e)).slice(0, MAX_EDITS)),
+});
