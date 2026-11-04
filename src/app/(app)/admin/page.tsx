@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getAdminStats, isAdmin } from '@/server/admin';
@@ -38,10 +37,7 @@ export default async function AdminPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Panel interno</h1>
         <p className="text-xs text-muted-foreground">
-          Actualizado {new Date(s.generatedAt).toLocaleString('es-AR')} ·{' '}
-          <Link href="/admin/trainers" className="underline">
-            Entrenadores
-          </Link>
+          Actualizado {new Date(s.generatedAt).toLocaleString('es-AR')}
         </p>
       </div>
 

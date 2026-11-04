@@ -10,9 +10,7 @@ import {
   Target,
   Trophy,
   User,
-  UserCheck,
 } from 'lucide-react';
-import { TC } from '@/features/trainer/copy';
 import { getT } from '@/i18n/server';
 import { requireUser } from '@/server/context';
 import { can } from '@/server/entitlements';
@@ -38,7 +36,6 @@ export default async function SettingsPage() {
       desc: t.coachProfile.settingsRowDesc,
       badge: can(ctx.entitlement, 'coach_profile') ? undefined : t.pro.coachTierBadge,
     },
-    { href: '/settings/trainer', icon: UserCheck, title: TC.settingsRow, desc: TC.settingsRowDesc },
     {
       href: '/settings/plans',
       icon: CreditCard,
