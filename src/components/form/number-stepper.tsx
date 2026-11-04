@@ -12,6 +12,7 @@ export function NumberStepper({
   step = 1,
   suffix,
   className,
+  compact = false,
 }: {
   value: number;
   onChange: (value: number) => void;
@@ -20,6 +21,8 @@ export function NumberStepper({
   step?: number;
   suffix?: string;
   className?: string;
+  /** Botones y número más chicos, para filas con varios campos en pantallas angostas. */
+  compact?: boolean;
 }) {
   const clamp = (n: number) => Math.min(max, Math.max(min, n));
   return (
@@ -29,11 +32,11 @@ export function NumberStepper({
         aria-label="Restar"
         onClick={() => onChange(clamp(Math.round((value - step) * 100) / 100))}
         disabled={value <= min}
-        className="grid size-10 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40"
+        className={cn('grid shrink-0 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40', compact ? 'size-9' : 'size-10')}
       >
         <Minus className="size-4" />
       </button>
-      <span className="min-w-16 text-center text-sm font-semibold tabular-nums">
+      <span className={cn('text-center text-sm font-semibold tabular-nums', compact ? 'min-w-9' : 'min-w-16')}>
         {value}
         {suffix ? <span className="ml-0.5 text-xs font-normal text-muted-foreground">{suffix}</span> : null}
       </span>
@@ -42,7 +45,7 @@ export function NumberStepper({
         aria-label="Sumar"
         onClick={() => onChange(clamp(Math.round((value + step) * 100) / 100))}
         disabled={value >= max}
-        className="grid size-10 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40"
+        className={cn('grid shrink-0 place-items-center text-muted-foreground hover:text-foreground disabled:opacity-40', compact ? 'size-9' : 'size-10')}
       >
         <Plus className="size-4" />
       </button>

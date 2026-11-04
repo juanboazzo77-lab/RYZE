@@ -72,7 +72,7 @@ export function PlanEditorView({ plan }: { plan: PlanEditor }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <InlineText
           value={plan.name}
           className="text-2xl font-bold tracking-tight"
@@ -176,7 +176,7 @@ function DayCard({ day, onChanged }: { day: EditorDay; onChanged: () => void }) 
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between gap-2 pb-2">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 pb-2">
         <InlineText
           value={day.name}
           className="font-semibold"
@@ -304,9 +304,9 @@ function ExerciseRow({
 
   return (
     <div className="rounded-lg border p-3">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{ex.name}</p>
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium leading-snug">{ex.name}</p>
           <Badge variant="secondary" className="mt-0.5">
             {ex.type === 'CARDIO' ? t.training.fields.cardio : t.training.muscles[ex.primaryMuscle]}
           </Badge>
@@ -314,7 +314,7 @@ function ExerciseRow({
             <p className="mt-1 text-xs text-primary/80">{ex.rationale}</p>
           ) : null}
         </div>
-        <div className="flex items-center">
+        <div className="flex shrink-0 items-center">
           <Button variant="ghost" size="icon" className="size-8" disabled={first} onClick={() => onMove(-1)}>
             <ArrowUp className="size-3.5" />
           </Button>
@@ -333,12 +333,12 @@ function ExerciseRow({
         </div>
       </div>
       {ex.type === 'CARDIO' ? (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-xs">
           <Metric label={t.training.fields.sets}>
-            <NumberStepper value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
+            <NumberStepper compact value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
           </Metric>
           <Metric label={t.training.fields.durationMin}>
-            <NumberStepper
+            <NumberStepper compact
               value={v.durationMin}
               min={0}
               max={180}
@@ -347,7 +347,7 @@ function ExerciseRow({
             />
           </Metric>
           <Metric label={t.training.fields.distanceKm}>
-            <NumberStepper
+            <NumberStepper compact
               value={v.distanceKm}
               min={0}
               max={100}
@@ -357,19 +357,19 @@ function ExerciseRow({
           </Metric>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3 text-xs">
           <Metric label={t.training.fields.sets}>
-            <NumberStepper value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
+            <NumberStepper compact value={v.targetSets} min={1} max={12} onChange={(x) => push({ ...v, targetSets: x })} />
           </Metric>
-          <Metric label={t.training.fields.reps}>
-            <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center">
-              <NumberStepper value={v.repsMin} min={1} max={100} onChange={(x) => push({ ...v, repsMin: x })} />
+          <Metric label={t.training.fields.reps} className="col-span-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <NumberStepper compact value={v.repsMin} min={1} max={100} onChange={(x) => push({ ...v, repsMin: x })} />
               <span className="text-muted-foreground">–</span>
-              <NumberStepper value={v.repsMax} min={1} max={100} onChange={(x) => push({ ...v, repsMax: x })} />
+              <NumberStepper compact value={v.repsMax} min={1} max={100} onChange={(x) => push({ ...v, repsMax: x })} />
             </div>
           </Metric>
           <Metric label={t.training.fields.rir}>
-            <NumberStepper
+            <NumberStepper compact
               value={v.rir ?? 0}
               min={0}
               max={10}
@@ -377,7 +377,7 @@ function ExerciseRow({
             />
           </Metric>
           <Metric label={t.training.fields.rest}>
-            <NumberStepper value={v.rest} min={0} max={600} step={15} onChange={(x) => push({ ...v, rest: x })} />
+            <NumberStepper compact value={v.rest} min={0} max={600} step={15} onChange={(x) => push({ ...v, rest: x })} />
           </Metric>
         </div>
       )}
@@ -385,9 +385,9 @@ function ExerciseRow({
   );
 }
 
-function Metric({ label, children }: { label: string; children: React.ReactNode }) {
+function Metric({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('space-y-1')}>
+    <div className={cn('min-w-0 space-y-1', className)}>
       <span className="text-muted-foreground">{label}</span>
       <div>{children}</div>
     </div>
