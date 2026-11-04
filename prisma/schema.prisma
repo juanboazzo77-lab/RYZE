@@ -293,6 +293,8 @@ model Profile {
   sportProfiles           SportProfile[]
   physiqueAnalyses        PhysiqueAnalysis[]
   coachMemories           CoachMemory[]
+  trainerProfile          TrainerProfile?   @relation("TrainerProfileUser")
+  trainerLinks            TrainerClient[]   @relation("TrainerClientClient")
   competitions            Competition[]
   coachProfile            CoachProfile?
   friendshipsSent         Friendship[]             @relation("FriendshipRequester")
@@ -718,6 +720,48 @@ model SportProfile {
 
 /// Análisis de físico por foto (IA). Se guarda sólo el informe en texto; las fotos
 /// nunca se almacenan.
+/// Perfil de entrenador (modo entrenador, piloto). Se aprueba a mano antes de poder usar el panel.
+/// No es un modelo "del usuario" para forUser: se accede desde src/server/trainers.ts.
+model TrainerProfile {
+  userId      String          @id @db.Uuid @map("user_id")
+  user        Profile         @relation("TrainerProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  displayName String          @map("display_name")
+  bio         String?
+  /// Título o certificado que declara (la verificación es manual).
+  credential  String?
+  /// PENDING | ACTIVE | SUSPENDED (se valida en la capa de features).
+  status      String          @default("PENDING")
+  /// Código que el entrenador le da a sus clientes para vincularse.
+  inviteCode  String          @unique @map("invite_code")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  clients     TrainerClient[]
+
+  @@map("trainer_profile")
+}
+
+/// Vínculo entre un entrenador y un cliente. Existe sólo si el cliente dio su consentimiento
+/// (consent_at) y deja de valer apenas pasa a ENDED. Datos de DOS personas: se accede con el
+/// cliente global desde src/server/trainers.ts, acotando siempre por el vínculo activo.
+model TrainerClient {
+  id        String         @id @default(uuid()) @db.Uuid
+  trainerId String         @db.Uuid @map("trainer_id")
+  trainer   TrainerProfile @relation(fields: [trainerId], references: [userId], onDelete: Cascade)
+  clientId  String         @db.Uuid @map("client_id")
+  client    Profile        @relation("TrainerClientClient", fields: [clientId], references: [id], onDelete: Cascade)
+  /// ACTIVE | ENDED
+  status    String         @default("ACTIVE")
+  consentAt DateTime       @map("consent_at")
+  endedAt   DateTime?      @map("ended_at")
+  /// CLIENT | TRAINER | ADMIN
+  endedBy   String?        @map("ended_by")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@unique([trainerId, clientId])
+  @@index([clientId])
+  @@map("trainer_client")
+}
+
 /// Memoria del coach: hechos duraderos que el usuario contó (lesiones, gustos, horarios, restricciones).
 /// Los anota el coach a partir del chat o los agrega el propio usuario; se pueden borrar.
 model CoachMemory {
