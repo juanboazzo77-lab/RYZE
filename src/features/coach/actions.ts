@@ -1,6 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
+import { learnFromChat } from '@/features/coach-memory/learn';
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import type { MuscleGroup, PrimaryGoal } from '@prisma/client';
@@ -146,6 +148,15 @@ export async function sendCoachMessage(
   });
 
   revalidatePath('/coach');
+  // Después de responder, el coach anota en su memoria lo duradero que contó la persona (sin demorar la respuesta).
+  after(() =>
+    learnFromChat({
+      userId,
+      timezone: profile.timezone,
+      userMessage: parsed.data.text,
+      assistantReply: reply,
+    }),
+  );
   // Si propone un ejercicio, se devuelven los días de la rutina activa para elegir dónde agregarlo.
   let planDays: Array<{ id: string; name: string }> = [];
   if (exercise) {

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Check, Loader2, Pencil, RotateCcw, Send, Sparkles, Undo2 } from 'lucide-react';
+import { Brain, Check, Loader2, Pencil, RotateCcw, Send, Sparkles, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -492,6 +492,12 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
           {interpolate(tc.usageToday, { used, limit: usage.limit })}
         </p>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/coach/memory">
+              <Brain className="size-4" />
+              {tc.memory.link}
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/coach/new-plan">
               <Sparkles className="size-4" />

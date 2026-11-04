@@ -7,6 +7,7 @@ import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/compute';
 import { buildSportContextLines } from '@/features/sports/queries';
 import { buildCoachProfileLines } from '@/features/coach-profile/queries';
+import { MAX_MEMORIES } from '@/features/coach-memory/schema';
 
 /** Edad en años a partir de la fecha de nacimiento. */
 function ageFrom(birthdate: Date | null): number | null {
@@ -175,6 +176,19 @@ export async function buildUserContextBlock(
   if (can(entitlement, 'coach_profile')) {
     const coachProfileLines = await buildCoachProfileLines(profile);
     if (coachProfileLines.length > 0) lines.push(...coachProfileLines);
+  }
+
+  // Memoria del coach: lo que la persona le contó antes (lesiones, gustos, horarios...).
+  const memories = await db.coachMemory.findMany({
+    orderBy: { createdAt: 'asc' },
+    take: MAX_MEMORIES,
+    select: { category: true, content: true },
+  });
+  if (memories.length > 0) {
+    lines.push(
+      'Memoria del coach (cosas que el usuario te contó antes: tenelas en cuenta siempre y no se las vuelvas a preguntar):',
+    );
+    for (const m of memories) lines.push(`  - [${m.category}] ${m.content}`);
   }
 
   if (goal) {

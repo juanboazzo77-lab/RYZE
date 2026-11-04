@@ -292,6 +292,7 @@ model Profile {
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
   physiqueAnalyses        PhysiqueAnalysis[]
+  coachMemories           CoachMemory[]
   competitions            Competition[]
   coachProfile            CoachProfile?
   friendshipsSent         Friendship[]             @relation("FriendshipRequester")
@@ -717,6 +718,24 @@ model SportProfile {
 
 /// Análisis de físico por foto (IA). Se guarda sólo el informe en texto; las fotos
 /// nunca se almacenan.
+/// Memoria del coach: hechos duraderos que el usuario contó (lesiones, gustos, horarios, restricciones).
+/// Los anota el coach a partir del chat o los agrega el propio usuario; se pueden borrar.
+model CoachMemory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// HEALTH | PREFERENCE | SCHEDULE | GOAL | OTHER (se valida en la capa de features).
+  category  String   @default("OTHER")
+  content   String
+  /// CHAT (lo aprendió el coach) o USER (lo escribió la persona).
+  source    String   @default("CHAT")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@map("coach_memory")
+}
+
 model PhysiqueAnalysis {
   id         String   @id @default(uuid()) @db.Uuid
   userId     String   @db.Uuid @map("user_id")
