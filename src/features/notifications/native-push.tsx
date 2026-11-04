@@ -7,7 +7,7 @@ import { saveDeviceToken } from './device-token-actions';
 
 /**
  * Avisos remotos (APNs) en la app de iPhone: pide permiso, registra el teléfono en el servidor y abre
- * la pantalla correcta al tocar un aviso (por ejemplo, el chat con el entrenador). Sin UI; sólo actúa
+ * la pantalla correcta al tocar un aviso. Sin UI; sólo actúa
  * dentro de la app nativa. Los recordatorios del coach siguen siendo locales (device-reminders).
  */
 export function NativePush() {
