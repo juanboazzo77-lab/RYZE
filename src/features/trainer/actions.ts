@@ -107,10 +107,10 @@ export async function adminSetTrainerStatus(raw: { userId: string; status: strin
 }
 
 /** El entrenador deja de serlo: su cuenta vuelve a ser de cliente (y hace el cuestionario de cliente). */
-export async function cancelTrainerRole(): Promise<Result> {
+export async function cancelTrainerRole(): Promise<Result<{ needsOnboarding: boolean }>> {
   const { userId } = await requireUser();
   const res = await cancelTrainerAccount(userId);
   if ('error' in res) return { error: res.error };
   revalidatePath('/', 'layout');
-  return { ok: true };
+  return { ok: true, data: { needsOnboarding: res.needsOnboarding } };
 }

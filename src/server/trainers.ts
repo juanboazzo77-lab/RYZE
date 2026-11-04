@@ -118,10 +118,20 @@ export async function becomeTrainerAccount(
  * (cada cliente deja de estar "manejado" y se borran las fotos de sus revisiones), se borran su perfil
  * de entrenador, sus notas y su chat con clientes, y se le vuelve a pedir el cuestionario de cliente
  * que se había salteado. Las rutinas y dietas que armó siguen en la cuenta de cada cliente.
+ *
+ * Si la cuenta YA tenía su panel de cliente (usó la app como cliente antes de ser entrenador), vuelve a
+ * ese panel con todos sus datos y NO se le vuelve a pedir el cuestionario.
  */
-export async function cancelTrainerAccount(userId: string): Promise<{ ok: true } | { error: 'NOT_TRAINER' }> {
-  const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { accountType: true } });
+export async function cancelTrainerAccount(
+  userId: string,
+): Promise<{ ok: true; needsOnboarding: boolean } | { error: 'NOT_TRAINER' }> {
+  const profile = await prisma.profile.findUnique({
+    where: { id: userId },
+    select: { accountType: true, primaryGoal: true, heightCm: true, onboardingCompletedAt: true },
+  });
   if (profile?.accountType !== 'TRAINER') return { error: 'NOT_TRAINER' };
+  // Tiene panel de cliente si ya cargó sus datos (objetivo o altura): no hay nada que volver a preguntar.
+  const hadClientPanel = profile.primaryGoal !== null || profile.heightCm !== null;
 
   const links = await prisma.trainerClient.findMany({
     where: { trainerId: userId, status: 'ACTIVE' },
@@ -133,9 +143,13 @@ export async function cancelTrainerAccount(userId: string): Promise<{ ok: true }
   await prisma.trainerProfile.deleteMany({ where: { userId } });
   await prisma.profile.update({
     where: { id: userId },
-    data: { accountType: 'CLIENT', onboardingCompletedAt: null },
+    data: {
+      accountType: 'CLIENT',
+      // Con panel de cliente previo se conserva la marca de cuestionario completo; si nunca lo hizo, lo hace ahora.
+      onboardingCompletedAt: hadClientPanel ? (profile.onboardingCompletedAt ?? new Date()) : null,
+    },
   });
-  return { ok: true };
+  return { ok: true, needsOnboarding: !hadClientPanel };
 }
 
 /** El entrenador cambia su código (por ejemplo, si se lo pasó a alguien que no corresponde). */

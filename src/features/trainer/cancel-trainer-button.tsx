@@ -18,8 +18,8 @@ export function CancelTrainerButton() {
     start(async () => {
       const res = await cancelTrainerRole();
       if (res.ok) {
-        // Ahora es cliente: va al cuestionario de cliente (sin volver a preguntar qué tipo de cuenta es).
-        router.replace('/onboarding?client=1');
+        // Vuelve a su panel de cliente de siempre; sólo una cuenta que nunca lo tuvo hace el cuestionario.
+        router.replace(res.data?.needsOnboarding ? '/onboarding?client=1' : '/dashboard');
         router.refresh();
       } else toast.error(TC.error);
     });
