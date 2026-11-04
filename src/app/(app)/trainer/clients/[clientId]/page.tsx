@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { getActiveTrainer, getClientDetail } from '@/server/trainers';
 import { getFollowUp, listClientPlans } from '@/server/trainer-followup';
+import { getClientExtras } from '@/server/trainer-client-extras';
+import { ClientFullDetail } from '@/features/trainer/client-full-detail';
 import { localTodayISO } from '@/lib/date';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +46,8 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
   if (!d) notFound();
   const todayISO = localTodayISO(ctx.profile.timezone);
   const followUp = await getFollowUp(ctx.userId, id.data);
-  const plans = d.canEdit ? ((await listClientPlans(ctx.userId, id.data)) ?? []) : [];
+  const plans = (await listClientPlans(ctx.userId, id.data)) ?? [];
+  const extras = await getClientExtras(ctx.userId, id.data, ctx.profile.timezone);
 
   const weightMin = Math.min(...d.weights.map((w) => w.weightKg));
   const weightMax = Math.max(...d.weights.map((w) => w.weightKg));
@@ -64,7 +67,7 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           </Badge>
         </div>
         <p className="text-xs text-muted-foreground">
-          {TC.lastActivity}: {relativeDay(d.lastActivityISO, todayISO)} · {d.canEdit ? 'Podés editar su rutina y su dieta.' : TC.readOnly}
+          {TC.lastActivity}: {relativeDay(d.lastActivityISO, todayISO)} · Manejás su rutina y su dieta.
         </p>
       </div>
 
@@ -104,8 +107,6 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
         <CardContent>
           <RoutineDietPanel
             clientId={id.data}
-            canEdit={d.canEdit}
-            editRequested={d.editRequested}
             plans={plans}
             target={d.target}
           />
@@ -341,6 +342,13 @@ export default async function TrainerClientPage({ params }: { params: Promise<{ 
           )}
         </CardContent>
       </Card>
+
+      {extras ? (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold tracking-tight">Todo sobre {d.name}</h2>
+          <ClientFullDetail x={extras} />
+        </div>
+      ) : null}
 
       <RemoveClientButton clientId={id.data} />
     </div>

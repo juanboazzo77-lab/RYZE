@@ -11,6 +11,7 @@ import { AiError } from './ai/errors';
 import { resolveExerciseId } from './training/resolve-exercise';
 import { getClientDetail, listTrainerClients, trainerEditAccess, type ClientDetail } from './trainers';
 import { getFollowUp } from './trainer-followup';
+import { getClientExtras, type ClientExtras } from './trainer-client-extras';
 import { forUser } from './user-db';
 import { widenReps } from '@/features/coach/plan-schema';
 import { GOAL_LABEL } from '@/features/trainer/copy';
@@ -46,7 +47,28 @@ async function usedToday(userId: string, timezone: string, task: 'coach_chat' | 
 const isoDay = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : 'nunca');
 
 /** Resumen de un cliente en texto, para que la IA pueda hablar de él. */
-function describeClient(d: ClientDetail, notes: string[]): string {
+/** Lo que el cliente cargó de sí mismo y su historial detallado, en texto para la IA del entrenador. */
+function describeExtras(x: ClientExtras | null): string[] {
+  if (!x) return [];
+  const out: string[] = [];
+  for (const s of x.facts) out.push(`${s.title}: ` + s.rows.map((r) => `${r.label} ${r.value}`).join('; '));
+  if (x.coachingLines.length > 0) out.push('Cuestionario de coaching: ' + x.coachingLines.join(' | ').slice(0, 1500));
+  if (x.sportLines.length > 0) out.push('Deportes: ' + x.sportLines.join(' | ').slice(0, 600));
+  if (x.records.length > 0) out.push('Récords: ' + x.records.slice(0, 8).map((r) => `${r.exercise} ${r.value} ${r.unit} (${r.type})`).join('; '));
+  if (x.workouts.length > 0) {
+    out.push('Detalle de entrenamientos recientes:');
+    for (const w of x.workouts.slice(0, 5)) {
+      out.push(`  - ${w.date} ${w.name}: ` + w.exercises.map((e) => `${e.name} ${e.sets} series${e.best ? ` (mejor ${e.best})` : ''}`).join(', '));
+    }
+  }
+  if (x.steps.length > 0) {
+    const avg = Math.round(x.steps.reduce((a, b) => a + b.steps, 0) / x.steps.length);
+    out.push(`Pasos: promedio ${avg}/día en los últimos ${x.steps.length} días registrados.`);
+  }
+  return out;
+}
+
+function describeClient(d: ClientDetail, notes: string[], extras: ClientExtras | null = null): string {
   const lines: string[] = [];
   const b = d.basics;
   lines.push(`CLIENTE: ${d.name} (estado: ${d.attention}, última actividad: ${isoDay(d.lastActivityISO)})`);
@@ -78,6 +100,7 @@ function describeClient(d: ClientDetail, notes: string[]): string {
   }
   if (d.memories.length > 0) lines.push('Lo que el coach recuerda: ' + d.memories.map((m) => `[${m.category}] ${m.content}`).join('; '));
   if (notes.length > 0) lines.push('Notas privadas del entrenador: ' + notes.slice(0, 6).map((n) => n.slice(0, 200)).join(' | '));
+  lines.push(...describeExtras(extras));
   return lines.join('\n');
 }
 
@@ -110,7 +133,8 @@ export async function trainerAssistantReply(args: {
     const detail = await getClientDetail(trainerId, clientId, timezone);
     if (!detail) return { error: 'NO_CLIENT' };
     const follow = await getFollowUp(trainerId, clientId);
-    context.push('', 'FICHA DEL CLIENTE ELEGIDO:', describeClient(detail, follow?.notes.map((n) => n.body) ?? []));
+    const extras = await getClientExtras(trainerId, clientId, timezone);
+    context.push('', 'FICHA DEL CLIENTE ELEGIDO:', describeClient(detail, follow?.notes.map((n) => n.body) ?? [], extras));
   }
 
   const model = modelFor('coach_chat');
@@ -159,9 +183,10 @@ export async function draftCheckinFeedback(args: {
   if (!c) return { error: 'NOT_FOUND' };
 
   const follow = await getFollowUp(trainerId, clientId);
+  const extras = await getClientExtras(trainerId, clientId, timezone);
   const first = detail.name.split(' ')[0] ?? detail.name;
   const lines = [
-    describeClient(detail, follow?.notes.map((n) => n.body) ?? []),
+    describeClient(detail, follow?.notes.map((n) => n.body) ?? [], extras),
     '',
     `REVISIÓN A COMENTAR (semana del ${isoDay(c.weekStart)}; el cliente se llama ${first}):`,
     `Peso promedio: ${c.stats.avgWeightKg ?? '—'} kg; cambio: ${c.stats.weightChangeKg ?? '—'} kg`,

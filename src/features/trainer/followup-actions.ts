@@ -4,11 +4,6 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import {
-  requestEditPermission,
-  respondEditPermission,
-  revokeEditPermission,
-} from '@/server/trainers';
-import {
   addNote,
   createClientPlan,
   deleteNote,
@@ -32,34 +27,6 @@ const uuid = z.string().uuid();
 
 function refreshClient(clientId: string) {
   revalidatePath(`/trainer/clients/${clientId}`);
-}
-
-/* --- Permiso de edición --- */
-
-/** El entrenador pide permiso para crear y editar la rutina y la dieta de su cliente. */
-export async function askEditPermission(raw: { clientId: string }): Promise<Result> {
-  const id = uuid.safeParse(raw.clientId);
-  if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
-  const ok = await requestEditPermission(userId, id.data);
-  refreshClient(id.data);
-  return ok ? { ok: true } : { error: 'NOT_AVAILABLE' };
-}
-
-/** El cliente acepta o rechaza ese pedido. */
-export async function answerEditPermission(raw: { allow: boolean }): Promise<Result> {
-  const { userId } = await requireUser();
-  const ok = await respondEditPermission(userId, raw.allow === true);
-  revalidatePath('/settings/trainer');
-  return ok ? { ok: true } : { error: 'NOT_AVAILABLE' };
-}
-
-/** El cliente le saca al entrenador el permiso de edición. */
-export async function removeEditPermission(): Promise<Result> {
-  const { userId } = await requireUser();
-  await revokeEditPermission(userId);
-  revalidatePath('/settings/trainer');
-  return { ok: true };
 }
 
 /* --- Seguimiento 1 a 1 --- */

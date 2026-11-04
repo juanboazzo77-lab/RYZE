@@ -20,11 +20,11 @@ export const TC = {
   alreadyClient: 'Esta cuenta ya es de cliente. Para ser entrenador, creá otra cuenta con otro mail.',
   consentTitle: 'Vas a compartir tus datos con {name}',
   consentShare:
-    'Tu entrenador va a poder ver: tu perfil y objetivo, tu peso, tus entrenamientos, tus comidas, tus revisiones semanales y lo que el coach recuerda de vos (incluye lesiones o molestias). También va a poder crear y editar tu rutina y tus objetivos de nutrición, y chatear con vos.',
+    'Tu entrenador va a poder ver todo sobre vos: tu perfil completo, tu objetivo, tu peso, tus entrenamientos, tus comidas, tus pasos, tus récords, tus revisiones semanales y lo que el coach recuerda de vos (incluye lesiones o molestias). Desde que ingresás su código, también maneja tu rutina y tus objetivos de nutrición (los crea y los edita) y chatea con vos, sin pedirte permiso cada vez.',
   consentNot:
     'No ve tu email ni tu teléfono. Solo ve las fotos que subas en tu revisión semanal (las demás no se comparten, y se borran si dejás de compartir). Fuera de tu rutina y tu dieta, no puede cambiar nada de tu cuenta. Tu entrenador puede usar la IA de Forza AI para analizar tus datos y prepararte planes: esos datos se procesan con un proveedor de IA externo.',
   consentStop:
-    'Podés quitarle el permiso de edición o dejar de compartir cuando quieras, y desde ese momento deja de ver tus datos.',
+    'Podés dejar de compartir cuando quieras, y desde ese momento deja de ver tus datos y de manejar tu rutina y tu dieta.',
   consentCheck: 'Entiendo y acepto compartir estos datos con mi entrenador',
   consentAccept: 'Aceptar y compartir',
   consentCancel: 'Cancelar',
@@ -94,7 +94,6 @@ export const TC = {
   noMemory: 'El coach todavía no anotó nada.',
   removeClient: 'Quitar cliente',
   removeConfirm: '¿Quitar a este cliente? Dejás de ver sus datos.',
-  readOnly: 'Por ahora solo podés mirar: para editar su rutina y su dieta necesitás su permiso.',
 
   adminTitle: 'Entrenadores',
   adminEmpty: 'Todavía nadie pidió acceso como entrenador.',
@@ -221,11 +220,6 @@ export const FU = {
   error: 'No se pudo completar. Probá de nuevo.',
 
   planTitle: 'Rutina y dieta',
-  noPermission:
-    'Para crear o editar su rutina y su dieta, tu cliente tiene que darte permiso. Pedíselo y lo va a ver en Ajustes → Entrenador.',
-  askPermission: 'Pedir permiso para editar',
-  permissionAsked: 'Pedido enviado. Tu cliente lo ve en Ajustes → Entrenador.',
-  permissionPending: 'Ya pediste el permiso. Esperando que tu cliente lo acepte.',
   routinesTitle: 'Rutinas',
   noRoutines: 'Todavía no tiene rutinas.',
   activeBadge: 'Activa',
@@ -247,17 +241,6 @@ export const FU = {
   dietInvalid: 'Revisá los números: calorías entre 1000 y 6000, proteína entre 30 y 400 g.',
   backToClient: 'Volver al cliente',
   routineEditorTitle: 'Rutina de {name}',
-
-  permTitle: 'Permiso para editar',
-  permCan: 'Tu entrenador puede crear y editar tu rutina y tu dieta.',
-  permCannot: 'Tu entrenador solo puede ver tus datos: no puede cambiar tu rutina ni tu dieta.',
-  permRevoke: 'Quitar permiso de edición',
-  permRevokeConfirm: '¿Quitarle a tu entrenador el permiso para editar tu rutina y tu dieta? Sigue pudiendo ver tus datos.',
-  permRequestedTitle: 'Tu entrenador pide permiso para editar',
-  permRequestedText:
-    'Quiere poder crear y editar tu rutina y tu dieta. Lo que arme se va a ver en tu cuenta. No ve tu email ni tu teléfono. Podés quitarle el permiso cuando quieras.',
-  permAllow: 'Permitir',
-  permDeny: 'No por ahora',
 } as const;
 
 /** IA del entrenador (piloto, sólo en español). */

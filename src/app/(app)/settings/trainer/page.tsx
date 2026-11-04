@@ -9,7 +9,6 @@ import { LinkWithTrainer, StopSharingButton } from '@/features/trainer/client-se
 import { ApplyAsTrainerForm, InviteCodeCard } from '@/features/trainer/trainer-section';
 import { CancelTrainerButton } from '@/features/trainer/cancel-trainer-button';
 import { CHAT, fill, TC } from '@/features/trainer/copy';
-import { EditPermissionCard } from '@/features/trainer/edit-permission-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle } from 'lucide-react';
@@ -90,7 +89,6 @@ export default async function TrainerSettingsPage() {
                 <StopSharingButton />
               </div>
             </Card>
-              <EditPermissionCard canEdit={link.canEdit} requested={link.editRequested} />
             </div>
           ) : (
             <>

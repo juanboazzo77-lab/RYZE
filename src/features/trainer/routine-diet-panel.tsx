@@ -9,21 +9,22 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { askEditPermission, saveClientDiet, startClientRoutine, tellClientUpdated } from './followup-actions';
+import { saveClientDiet, startClientRoutine, tellClientUpdated } from './followup-actions';
 import { createRoutineWithAi, suggestClientDiet } from './ai-actions';
 import { AIC, fill, FU } from './copy';
 import type { ClientPlanRow } from '@/server/trainer-followup';
 
 interface Props {
   clientId: string;
-  canEdit: boolean;
-  editRequested: boolean;
   plans: ClientPlanRow[];
   target: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
 }
 
-/** Rutina y dieta del cliente: crear y editar (con su permiso), y avisarle por el chat. */
-export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, target }: Props) {
+/**
+ * Rutina y dieta del cliente: las arma el entrenador (es lo principal) y avisa por el chat. La IA es una
+ * ayuda opcional: un borrador de rutina y una sugerencia de objetivos que el entrenador revisa y cambia.
+ */
+export function RoutineDietPanel({ clientId, plans, target }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [drafting, startDraft] = useTransition();
@@ -34,16 +35,6 @@ export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, targ
   const [carbs, setCarbs] = useState(String(target?.carbsG ?? ''));
   const [fat, setFat] = useState(String(target?.fatG ?? ''));
   const [note, setNote] = useState('');
-
-  function ask() {
-    start(async () => {
-      const res = await askEditPermission({ clientId });
-      if (res.ok) {
-        toast.success(FU.permissionAsked);
-        router.refresh();
-      } else toast.error(FU.error);
-    });
-  }
 
   function createRoutine() {
     if (routineName.trim().length < 2) return;
@@ -97,22 +88,6 @@ export function RoutineDietPanel({ clientId, canEdit, editRequested, plans, targ
       if (res.ok) toast.success(FU.told);
       else toast.error(FU.error);
     });
-  }
-
-  if (!canEdit) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">{FU.noPermission}</p>
-        {editRequested ? (
-          <p className="text-sm font-medium">{FU.permissionPending}</p>
-        ) : (
-          <Button onClick={ask} disabled={pending}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-            {FU.askPermission}
-          </Button>
-        )}
-      </div>
-    );
   }
 
   return (
