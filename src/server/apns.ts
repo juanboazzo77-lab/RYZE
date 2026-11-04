@@ -115,9 +115,15 @@ export interface NativePush {
 
 /** Manda el aviso a todos los iPhones del usuario. Borra los tokens que Apple dice que ya no sirven. */
 export async function sendApnsToUser(userId: string, push: NativePush): Promise<{ sent: number; removed: number }> {
-  if (!apnsConfigured()) return { sent: 0, removed: 0 };
+  if (!apnsConfigured()) {
+    console.warn('[apns] faltan variables APNS_*: no se envía');
+    return { sent: 0, removed: 0 };
+  }
   const tokens = await prisma.deviceToken.findMany({ where: { userId, platform: 'ios' } });
-  if (tokens.length === 0) return { sent: 0, removed: 0 };
+  if (tokens.length === 0) {
+    console.log('[apns] el destinatario no tiene iPhone registrado');
+    return { sent: 0, removed: 0 };
+  }
 
   let jwt: string;
   try {
@@ -141,6 +147,7 @@ export async function sendApnsToUser(userId: string, push: NativePush): Promise<
       if (res.status === 400 && res.reason === 'BadDeviceToken') {
         res = await post('api.sandbox.push.apple.com', t.token, payload, jwt, topic, push.tag);
       }
+      console.log('[apns] respuesta de Apple', res.status, res.reason ?? 'ok');
       if (res.status === 200) sent++;
       else if (res.status === 410 || res.reason === 'BadDeviceToken' || res.reason === 'Unregistered' || res.reason === 'DeviceTokenNotForTopic') {
         await prisma.deviceToken.deleteMany({ where: { token: t.token } });
