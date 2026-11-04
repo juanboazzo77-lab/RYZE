@@ -354,6 +354,8 @@ model Entitlement {
   currentPeriodEnd     DateTime?         @map("current_period_end")
   /// Días de acceso completo regalados (invitaciones): se suman a la prueba gratis.
   bonusUntil           DateTime?         @map("bonus_until")
+  /// Cuándo se le dieron los 3 días gratis por dejar de estar manejado por un entrenador (una sola vez por cuenta).
+  managedTrialGrantedAt DateTime?        @map("managed_trial_granted_at")
   lemonSqueezyCustomerId     String?     @map("lemon_squeezy_customer_id")
   lemonSqueezySubscriptionId String?     @map("lemon_squeezy_subscription_id")
   createdAt            DateTime          @default(now()) @map("created_at")

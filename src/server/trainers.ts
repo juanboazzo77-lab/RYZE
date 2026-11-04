@@ -6,6 +6,7 @@ import { forUser } from './user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { listCoachMemories, type CoachMemoryItem } from '@/features/coach-memory/queries';
 import { pathsOf, purgeClientCheckinPhotos, signedPhotoUrls } from './storage/checkin-photos';
+import { TRIAL_DAYS } from './entitlements';
 import {
   asTrainerStatus,
   attentionLevel,
@@ -307,6 +308,28 @@ export async function revokeEditPermission(clientId: string): Promise<boolean> {
   return res.count > 0;
 }
 
+/**
+ * Un cliente que deja de estar manejado por un entrenador (se desconectó, lo dio de baja el entrenador o
+ * se suspendió al entrenador) tiene 3 días gratis desde ese momento y después paga como cualquiera. Se
+ * da una sola vez por cuenta, y sólo a quien no tiene un plan pago.
+ */
+async function grantTrialAfterTrainer(clientId: string): Promise<void> {
+  const ent = await prisma.entitlement.findUnique({
+    where: { userId: clientId },
+    select: { tier: true, bonusUntil: true, managedTrialGrantedAt: true },
+  });
+  if (!ent || ent.tier !== 'FREE' || ent.managedTrialGrantedAt) return;
+  const until = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.entitlement.updateMany({
+    where: { userId: clientId, managedTrialGrantedAt: null },
+    data: {
+      // No se le achica un regalo mayor que ya tuviera (por ejemplo, por invitar).
+      bonusUntil: ent.bonusUntil && ent.bonusUntil > until ? ent.bonusUntil : until,
+      managedTrialGrantedAt: new Date(),
+    },
+  });
+}
+
 /** Termina el vínculo: el entrenador deja de ver al cliente en el mismo momento. */
 export async function endClientLink(args: { clientId: string; trainerId?: string; by: 'CLIENT' | 'TRAINER' | 'ADMIN' }): Promise<number> {
   const res = await prisma.trainerClient.updateMany({
@@ -315,6 +338,9 @@ export async function endClientLink(args: { clientId: string; trainerId?: string
   });
   // Las fotos de las revisiones eran para su entrenador: se borran al dejar de compartir.
   if (res.count > 0) {
+    await grantTrialAfterTrainer(args.clientId).catch((e) =>
+      console.error('[trainers] no se pudieron dar los días gratis', e instanceof Error ? e.message : e),
+    );
     await purgeClientCheckinPhotos(args.clientId).catch((e) =>
       console.error('[trainers] no se pudieron borrar las fotos', e instanceof Error ? e.message : e),
     );
@@ -687,6 +713,12 @@ export async function listTrainersForAdmin(): Promise<AdminTrainerRow[]> {
 export async function setTrainerStatus(userId: string, status: TrainerStatus): Promise<boolean> {
   // Un entrenador que no está ACTIVO deja de ver a sus clientes de inmediato (activeClientIds y
   // getClientDetail lo exigen), y si se lo vuelve a activar recupera sus vínculos.
+  const wasActive = (await prisma.trainerProfile.findUnique({ where: { userId }, select: { status: true } }))?.status === 'ACTIVE';
   const res = await prisma.trainerProfile.updateMany({ where: { userId }, data: { status } });
+  // Al dejar de estar activo, sus clientes dejan de estar manejados: tienen sus 3 días gratis.
+  if (res.count > 0 && wasActive && status !== 'ACTIVE') {
+    const links = await prisma.trainerClient.findMany({ where: { trainerId: userId, status: 'ACTIVE' }, select: { clientId: true } });
+    for (const l of links) await grantTrialAfterTrainer(l.clientId).catch(() => {});
+  }
   return res.count > 0;
 }
