@@ -1,5 +1,7 @@
 import 'server-only';
+import { after } from 'next/server';
 import { prisma } from './db';
+import { sendPushToUser } from './push';
 import { checkContactInfo, type ContactReason } from '@/features/trainer/contact-filter';
 
 /**
@@ -112,8 +114,55 @@ export async function sendMessage(
     return { error: 'BLOCKED', reason: check.reason };
   }
 
-  await prisma.trainerMessage.create({ data: { linkId, senderId: userId, body } });
+  const created = await prisma.trainerMessage.create({ data: { linkId, senderId: userId, body } });
+  // Aviso fuera de la app a la otra persona (sin el texto del mensaje). No frena ni rompe el envío.
+  try {
+    after(() => notifyNewMessage(link, userId, created.id));
+  } catch {
+    void notifyNewMessage(link, userId, created.id);
+  }
   return { ok: true };
+}
+
+/**
+ * Push a la otra persona del chat. Si ya tiene mensajes sin leer de esta misma persona de los últimos
+ * minutos no se vuelve a avisar (así una ráfaga de mensajes no la llena de avisos). El texto no viaja
+ * en el aviso: sólo quién escribió.
+ */
+async function notifyNewMessage(link: ChatLink, senderId: string, messageId: string): Promise<void> {
+  try {
+    const fromTrainer = link.trainerId === senderId;
+    const recipientId = fromTrainer ? link.clientId : link.trainerId;
+    const recentUnread = await prisma.trainerMessage.count({
+      where: {
+        linkId: link.id,
+        senderId,
+        readAt: null,
+        id: { not: messageId },
+        createdAt: { gte: new Date(Date.now() - 3 * 60_000) },
+      },
+    });
+    if (recentUnread > 0) return;
+
+    let name = 'Tu entrenador';
+    let url = '/settings/trainer/chat';
+    if (fromTrainer) {
+      const t = await prisma.trainerProfile.findUnique({ where: { userId: senderId }, select: { displayName: true } });
+      if (t?.displayName) name = t.displayName;
+    } else {
+      const c = await prisma.profile.findUnique({ where: { id: senderId }, select: { name: true } });
+      name = c?.name?.trim() || 'Tu cliente';
+      url = `/trainer/clients/${senderId}/chat`;
+    }
+    await sendPushToUser(recipientId, {
+      title: name,
+      body: 'Te escribió un mensaje',
+      url,
+      tag: `trainer-chat-${link.id}`,
+    });
+  } catch (e) {
+    console.error('[trainer-chat] no se pudo enviar el aviso', e instanceof Error ? e.message : e);
+  }
 }
 
 /** Mensajes sin leer del entrenador, por cliente. */
