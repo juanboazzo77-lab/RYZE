@@ -6,13 +6,17 @@ import { AccountTypeChooser } from '@/features/trainer/account-type-chooser';
 
 export const metadata: Metadata = { title: 'Onboarding' };
 
-export default async function OnboardingPage() {
-  const { profile } = await requireUser();
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>;
+}) {
+  const [{ profile }, sp] = await Promise.all([requireUser(), searchParams]);
   // Una cuenta de entrenador no hace el cuestionario de cliente.
   if (profile.accountType === 'TRAINER') redirect('/trainer');
 
   return (
-    <AccountTypeChooser>
+    <AccountTypeChooser skip={sp.client === '1'}>
       <OnboardingWizard
         initial={{
           name: profile.name ?? '',

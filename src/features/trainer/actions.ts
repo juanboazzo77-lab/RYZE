@@ -6,6 +6,7 @@ import { requireUser } from '@/server/context';
 import { isAdmin } from '@/server/admin';
 import {
   becomeTrainerAccount,
+  cancelTrainerAccount,
   endClientLink,
   getActiveTrainer,
   previewInviteCode,
@@ -103,4 +104,13 @@ export async function adminSetTrainerStatus(raw: { userId: string; status: strin
   const ok = await setTrainerStatus(input.data.userId, input.data.status);
   revalidatePath('/admin/trainers');
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
+}
+
+/** El entrenador deja de serlo: su cuenta vuelve a ser de cliente (y hace el cuestionario de cliente). */
+export async function cancelTrainerRole(): Promise<Result> {
+  const { userId } = await requireUser();
+  const res = await cancelTrainerAccount(userId);
+  if ('error' in res) return { error: res.error };
+  revalidatePath('/', 'layout');
+  return { ok: true };
 }

@@ -33,6 +33,12 @@ export const TC = {
   stopConfirm: '¿Dejar de compartir tus datos con tu entrenador? Va a dejar de verlos ahora mismo.',
   stopped: 'Listo, tu entrenador ya no ve tus datos.',
 
+  cancelTitle: 'Dejar de ser entrenador',
+  cancelHelp:
+    'Tu cuenta vuelve a ser de cliente y vas a completar el cuestionario de cliente. Tus clientes dejan de estar conectados con vos, y se borran tu perfil de entrenador, tus notas y tus chats con clientes. Las rutinas y dietas que armaste siguen en la cuenta de cada cliente.',
+  cancelButton: 'Dejar de ser entrenador',
+  cancelConfirm:
+    '¿Dejar de ser entrenador? Tus clientes se desconectan y se borran tus notas y tus chats con ellos. Tu cuenta vuelve a ser de cliente. Esto no se puede deshacer.',
   trainerTitle: 'Soy entrenador',
   trainerIntro:
     'Si sos entrenador, pedí acceso. Revisamos tu título o certificado y, si está todo bien, te activamos el panel para seguir a tus clientes.',

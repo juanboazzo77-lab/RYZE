@@ -113,6 +113,31 @@ export async function becomeTrainerAccount(
   return { ok: true };
 }
 
+/**
+ * El entrenador deja de serlo y su cuenta vuelve a ser de cliente. Se terminan todos sus vínculos
+ * (cada cliente deja de estar "manejado" y se borran las fotos de sus revisiones), se borran su perfil
+ * de entrenador, sus notas y su chat con clientes, y se le vuelve a pedir el cuestionario de cliente
+ * que se había salteado. Las rutinas y dietas que armó siguen en la cuenta de cada cliente.
+ */
+export async function cancelTrainerAccount(userId: string): Promise<{ ok: true } | { error: 'NOT_TRAINER' }> {
+  const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { accountType: true } });
+  if (profile?.accountType !== 'TRAINER') return { error: 'NOT_TRAINER' };
+
+  const links = await prisma.trainerClient.findMany({
+    where: { trainerId: userId, status: 'ACTIVE' },
+    select: { clientId: true },
+  });
+  for (const l of links) await endClientLink({ clientId: l.clientId, trainerId: userId, by: 'TRAINER' });
+
+  // Borra el perfil y, en cascada, los vínculos, los mensajes, las notas y los intentos bloqueados.
+  await prisma.trainerProfile.deleteMany({ where: { userId } });
+  await prisma.profile.update({
+    where: { id: userId },
+    data: { accountType: 'CLIENT', onboardingCompletedAt: null },
+  });
+  return { ok: true };
+}
+
 /** El entrenador cambia su código (por ejemplo, si se lo pasó a alguien que no corresponde). */
 export async function regenerateInviteCode(userId: string): Promise<string | null> {
   for (let attempt = 0; attempt < 8; attempt++) {

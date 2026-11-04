@@ -11,8 +11,9 @@ import { ACCOUNT } from './copy';
  * Primera pantalla de una cuenta nueva: cliente o entrenador. Cliente sigue con el cuestionario de
  * siempre (`children`); entrenador sólo pide nombre y título y va directo a su panel.
  */
-export function AccountTypeChooser({ children }: { children: React.ReactNode }) {
-  const [choice, setChoice] = useState<'CHOOSE' | 'CLIENT' | 'TRAINER'>('CHOOSE');
+export function AccountTypeChooser({ children, skip = false }: { children: React.ReactNode; skip?: boolean }) {
+  // `skip`: ya eligió ser cliente (por ejemplo, un entrenador que dejó de serlo): va directo al cuestionario.
+  const [choice, setChoice] = useState<'CHOOSE' | 'CLIENT' | 'TRAINER'>(skip ? 'CLIENT' : 'CHOOSE');
 
   if (choice === 'CLIENT') return <>{children}</>;
 

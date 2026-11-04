@@ -7,6 +7,7 @@ import { clientUnreadCount } from '@/server/trainer-chat';
 import { Card } from '@/components/ui/card';
 import { LinkWithTrainer, StopSharingButton } from '@/features/trainer/client-section';
 import { ApplyAsTrainerForm, InviteCodeCard } from '@/features/trainer/trainer-section';
+import { CancelTrainerButton } from '@/features/trainer/cancel-trainer-button';
 import { CHAT, fill, TC } from '@/features/trainer/copy';
 import { EditPermissionCard } from '@/features/trainer/edit-permission-card';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,12 @@ export default async function TrainerSettingsPage() {
               </Link>
             </div>
           )}
+        </section>
+
+        <section className="space-y-2 border-t pt-4">
+          <h2 className="text-base font-semibold">{TC.cancelTitle}</h2>
+          <p className="text-sm text-muted-foreground">{TC.cancelHelp}</p>
+          <CancelTrainerButton />
         </section>
         </>
       ) : (
