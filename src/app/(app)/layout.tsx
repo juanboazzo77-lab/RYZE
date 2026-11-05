@@ -1,5 +1,7 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUserContext } from '@/server/context';
+import { getOwnedGym } from '@/server/gyms';
 import { showAds } from '@/server/entitlements';
 import { getT } from '@/i18n/server';
 import { AppShell } from '@/components/app-shell/app-shell';
@@ -16,7 +18,14 @@ import { WidgetSync } from '@/features/widgets/widget-sync';
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [ctx, { t }] = await Promise.all([getUserContext(), getT()]);
   if (!ctx) redirect('/login');
-  if (ctx.needsOnboarding) redirect('/onboarding');
+  if (ctx.needsOnboarding) {
+    // Un dueño de gimnasio que todavía no completó el cuestionario de socio no está obligado a hacerlo: entra a
+    // "Mi gimnasio" y, si quiere usar la app para entrenar, lo completa después.
+    const owned = await getOwnedGym(ctx.userId);
+    if (!owned) redirect('/onboarding');
+    const path = (await headers()).get('x-pathname') ?? '';
+    if (!path.startsWith('/settings/my-gym')) redirect('/settings/my-gym');
+  }
 
   return (
     <AppShell email={ctx.email} showAds={showAds(ctx.entitlement)} adCopy={t.ads}>

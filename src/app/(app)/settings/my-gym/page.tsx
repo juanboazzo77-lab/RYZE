@@ -7,6 +7,8 @@ import { getOwnedGym, getOwnerView, INACTIVE_DAYS } from '@/server/gyms';
 import { OwnerProfileEditor } from '@/features/gym/owner-profile-editor';
 import { formatGymCode, usedPercent } from '@/features/gym/logic';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { signOutAction } from '@/app/(auth)/actions';
 
 export const metadata: Metadata = { title: 'Mi gimnasio' };
 export const dynamic = 'force-dynamic';
@@ -109,6 +111,25 @@ export default async function MyGymPage() {
       </section>
 
       <OwnerProfileEditor specialty={view.specialty} profile={view.profile} />
+
+      {ctx.needsOnboarding ? (
+        <section className="space-y-3 rounded-xl border p-4">
+          <p className="font-semibold">¿Querés usar Forza AI también para entrenar?</p>
+          <p className="text-sm text-muted-foreground">
+            Tu cuenta es la de dueño de gimnasio. Si además querés tu rutina, tu plan de comidas y el coach, completá tu perfil. Es opcional.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href="/onboarding">Completar mi perfil</Link>
+            </Button>
+            <form action={signOutAction}>
+              <Button type="submit" variant="outline">
+                Cerrar sesión
+              </Button>
+            </form>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

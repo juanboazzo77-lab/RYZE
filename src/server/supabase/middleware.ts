@@ -28,7 +28,14 @@ const AUTH_PATHS = ['/login', '/register', '/forgot-password'];
  * Se llama desde src/middleware.ts.
  */
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // El layout necesita saber en qué ruta está (por ejemplo, para el dueño de gimnasio que todavía no completó el
+  // cuestionario): se la pasamos en un encabezado del pedido.
+  const forward = () => {
+    const headers = new Headers(request.headers);
+    headers.set('x-pathname', request.nextUrl.pathname);
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = forward();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +47,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = forward();
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options),
           );

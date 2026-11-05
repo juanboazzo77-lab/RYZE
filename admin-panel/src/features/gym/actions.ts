@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin';
+import { inviteGymOwner } from '@/server/owner-invite';
 import { approveGym, regenerateGymCode, rejectGym, saveGymProfile, setGymOwner, setGymSuspended, setMemberLimit } from '@/server/gyms';
 
 interface Result<T = void> {
@@ -92,4 +93,17 @@ export async function adminSetGymOwner(raw: { gymId: string; email: string }): P
   const res = await setGymOwner(id.data, email.data);
   refresh();
   return 'ok' in res ? { ok: true } : { error: res.error };
+}
+
+export async function adminInviteGymOwner(raw: { gymId: string; email: string; resend?: boolean }): Promise<
+  Result & { created?: boolean; emailSent?: boolean; link?: string; error?: string }
+> {
+  await requireAdmin();
+  const id = uuid.safeParse(raw.gymId);
+  const email = z.string().max(200).safeParse(raw.email);
+  if (!id.success || !email.success) return { error: 'INVALID' };
+  const res = await inviteGymOwner(id.data, email.data, { resend: raw.resend === true });
+  refresh();
+  if ('error' in res) return { error: res.error };
+  return { ok: true, created: res.created, emailSent: res.emailSent, link: res.link };
 }
