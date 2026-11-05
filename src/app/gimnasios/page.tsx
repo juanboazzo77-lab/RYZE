@@ -16,6 +16,9 @@ export default function GymsLandingPage() {
       <h1 className="mt-4 text-2xl font-bold tracking-tight">{GYM.applyTitle}</h1>
       <p className="mt-2 mb-6 text-sm leading-relaxed text-muted-foreground">{GYM.applyIntro}</p>
       <GymApplyForm />
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        ¿Preferís escribirnos? <a className="underline hover:text-foreground" href="mailto:gimnasios@forzaai.app">gimnasios@forzaai.app</a>
+      </p>
     </div>
   );
 }
