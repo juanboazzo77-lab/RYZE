@@ -36,6 +36,9 @@ export const GYM = {
   leave: 'Salir del gimnasio',
   leaveConfirm: '¿Salir de este gimnasio? Vas a volver a tu plan normal.',
   left: 'Saliste del gimnasio.',
+  shareTitle: 'Que mi gimnasio vea mi nombre y mi actividad',
+  shareText:
+    'Si lo activás, el dueño ve tu nombre y hace cuántos días entrenaste por última vez, para poder ayudarte si te alejás. Tu peso, tus fotos y tus comidas nunca se comparten. Podés apagarlo cuando quieras.',
   rowDesc: 'Ingresá el código de tu gimnasio',
   rowDescIn: 'Estás en {name}',
 

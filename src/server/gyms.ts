@@ -2,7 +2,7 @@ import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
 import { sendAlert } from './alerts';
-import { gymContextLines, parseGymProfile } from '@/features/gym/catalog';
+import { gymContextLines, parseGymProfile, specialtyByKey, type GymProfile } from '@/features/gym/catalog';
 import { asGymStatus, canJoin, MAX_MEMBER_ESTIMATE, normalizeGymCode, type JoinError } from '@/features/gym/logic';
 
 /**
@@ -148,4 +148,123 @@ export async function getMemberGymContext(userId: string): Promise<string[] | nu
   });
   if (!m) return null;
   return gymContextLines({ name: m.gym.name, specialty: m.gym.specialty, profile: parseGymProfile(m.gym.equipment) });
+}
+
+/* ---------- Dueño del gimnasio ---------- */
+
+/** El gimnasio del que esta cuenta es dueña (el más reciente si hubiera más de uno), o null. */
+export async function getOwnedGym(userId: string): Promise<{ id: string; name: string } | null> {
+  const g = await prisma.gym.findFirst({
+    where: { ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED'] } },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, name: true },
+  });
+  return g ?? null;
+}
+
+/** Días sin entrenar a partir de los cuales un socio cuenta como "en riesgo de irse". */
+export const INACTIVE_DAYS = 10;
+
+export interface OwnerView {
+  gymId: string;
+  name: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  inviteCode: string | null;
+  memberLimit: number;
+  activeMembers: number;
+  /** Socios que completaron un entrenamiento en los últimos 7 días. */
+  trainedThisWeek: number;
+  /** Socios que llevan 10 días o más sin entrenar (sólo el número: nunca quiénes, salvo los que lo permiten). */
+  inactiveCount: number;
+  /** Sólo los socios que aceptaron compartir su nombre y su actividad. */
+  sharedMembers: Array<{ name: string; daysSinceLastWorkout: number | null; joinedDaysAgo: number }>;
+  hiddenMembers: number;
+  specialty: string | null;
+  profile: GymProfile;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Lo que ve el dueño de su gimnasio. Devuelve null si esa cuenta no es la dueña de ese gimnasio. */
+export async function getOwnerView(userId: string, gymId: string): Promise<OwnerView | null> {
+  const gym = await prisma.gym.findFirst({
+    where: { id: gymId, ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED'] } },
+  });
+  if (!gym) return null;
+  const members = await prisma.gymMember.findMany({
+    where: { gymId, status: 'ACTIVE' },
+    select: { userId: true, shareActivity: true, joinedAt: true, user: { select: { name: true } } },
+  });
+  const now = Date.now();
+  const last = members.length
+    ? await prisma.workout.groupBy({
+        by: ['userId'],
+        where: { userId: { in: members.map((m) => m.userId) }, status: 'COMPLETED', finishedAt: { not: null } },
+        _max: { finishedAt: true },
+      })
+    : [];
+  const lastById = new Map(last.map((l) => [l.userId, l._max.finishedAt]));
+  const daysSince = (d: Date | null | undefined) => (d ? Math.floor((now - d.getTime()) / DAY_MS) : null);
+
+  let trainedThisWeek = 0;
+  let inactiveCount = 0;
+  for (const m of members) {
+    const d = daysSince(lastById.get(m.userId));
+    if (d !== null && d < 7) trainedThisWeek += 1;
+    // Sin ningún entrenamiento cuenta como inactivo recién pasados los 10 días desde que entró.
+    const idle = d !== null ? d : Math.floor((now - m.joinedAt.getTime()) / DAY_MS);
+    if (idle >= INACTIVE_DAYS) inactiveCount += 1;
+  }
+  const shared = members
+    .filter((m) => m.shareActivity)
+    .map((m) => ({
+      name: m.user.name?.trim() || 'Socio',
+      daysSinceLastWorkout: daysSince(lastById.get(m.userId)),
+      joinedDaysAgo: Math.floor((now - m.joinedAt.getTime()) / DAY_MS),
+    }))
+    // Primero los que llevan más sin entrenar (los que hay que llamar).
+    .sort((a, b) => (b.daysSinceLastWorkout ?? 9999) - (a.daysSinceLastWorkout ?? 9999));
+
+  return {
+    gymId: gym.id,
+    name: gym.name,
+    status: gym.status === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE',
+    inviteCode: gym.inviteCode,
+    memberLimit: gym.memberLimit,
+    activeMembers: members.length,
+    trainedThisWeek,
+    inactiveCount,
+    sharedMembers: shared,
+    hiddenMembers: members.length - shared.length,
+    specialty: gym.specialty,
+    profile: parseGymProfile(gym.equipment),
+  };
+}
+
+/** El dueño guarda las máquinas y la especialidad de SU gimnasio. */
+export async function saveOwnGymProfile(
+  userId: string,
+  gymId: string,
+  input: { specialty: string | null; specialtyDetail: string; items: string[]; notes: string },
+): Promise<boolean> {
+  const specialty = input.specialty && specialtyByKey(input.specialty) ? input.specialty : null;
+  const profile = parseGymProfile({ items: input.items, notes: input.notes, specialtyDetail: input.specialtyDetail });
+  const res = await prisma.gym.updateMany({
+    where: { id: gymId, ownerUserId: userId },
+    data: { specialty, equipment: { ...profile } },
+  });
+  return res.count > 0;
+}
+
+/* ---------- Permiso del socio ---------- */
+
+/** El socio decide si su gimnasio puede ver su nombre y cuándo entrenó por última vez. */
+export async function setShareActivity(userId: string, share: boolean): Promise<boolean> {
+  const res = await prisma.gymMember.updateMany({ where: { userId, status: 'ACTIVE' }, data: { shareActivity: share } });
+  return res.count > 0;
+}
+
+export async function getShareActivity(userId: string): Promise<boolean> {
+  const m = await prisma.gymMember.findFirst({ where: { userId, status: 'ACTIVE' }, select: { shareActivity: true } });
+  return m?.shareActivity ?? false;
 }

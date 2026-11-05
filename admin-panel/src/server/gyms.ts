@@ -38,10 +38,12 @@ export interface GymRow {
   trainedThisWeek: number;
   specialty: string | null;
   profile: GymProfile;
+  /** Mail de la cuenta de Forza AI que es dueña del gimnasio, si ya la vinculaste. */
+  ownerEmail: string | null;
 }
 
 export async function listGymsForAdmin(): Promise<GymRow[]> {
-  const gyms = await prisma.gym.findMany({ orderBy: { createdAt: 'desc' } });
+  const gyms = await prisma.gym.findMany({ orderBy: { createdAt: 'desc' }, include: { owner: { select: { email: true } } } });
   if (gyms.length === 0) return [];
   const members = await prisma.gymMember.findMany({
     where: { status: 'ACTIVE' },
@@ -76,6 +78,7 @@ export async function listGymsForAdmin(): Promise<GymRow[]> {
       trainedThisWeek: mine.filter((m) => trainedIds.has(m.userId)).length,
       specialty: g.specialty,
       profile: parseGymProfile(g.equipment),
+      ownerEmail: g.owner?.email ?? null,
     };
   });
   // Pendientes primero: son los que esperan una decisión.
@@ -123,6 +126,22 @@ export async function saveGymProfile(
   const profile = parseGymProfile({ items: input.items, notes: input.notes, specialtyDetail: input.specialtyDetail });
   const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { specialty, equipment: { ...profile } } });
   return res.count > 0;
+}
+
+/**
+ * Vincula un gimnasio con la cuenta de Forza AI de su dueño, por mail. Mail vacío = desvincular. Sólo se
+ * puede con una cuenta que ya exista: la persona tiene que haberse registrado antes en la app.
+ */
+export async function setGymOwner(gymId: string, email: string): Promise<{ ok: true } | { error: 'NO_ACCOUNT' | 'NOT_FOUND' }> {
+  const clean = email.trim().toLowerCase();
+  if (clean === '') {
+    const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { ownerUserId: null } });
+    return res.count > 0 ? { ok: true } : { error: 'NOT_FOUND' };
+  }
+  const profile = await prisma.profile.findFirst({ where: { email: { equals: clean, mode: 'insensitive' } }, select: { id: true } });
+  if (!profile) return { error: 'NO_ACCOUNT' };
+  const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { ownerUserId: profile.id } });
+  return res.count > 0 ? { ok: true } : { error: 'NOT_FOUND' };
 }
 
 export async function rejectGym(gymId: string): Promise<boolean> {

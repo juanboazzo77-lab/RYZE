@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { adminApproveGym, adminRegenerateCode, adminRejectGym, adminSetLimit, adminSetSuspended } from './actions';
 import { GYM } from './copy';
 import { GymProfileEditor } from './gym-profile-editor';
+import { OwnerLink } from './owner-link';
 import { formatGymCode, usedPercent } from './logic';
 import type { GymRow } from '@/server/gyms';
 
@@ -81,6 +82,7 @@ export function GymAdminCard({ g }: { g: GymRow }) {
         </div>
       ) : null}
 
+      {g.status !== 'REJECTED' ? <OwnerLink gymId={g.id} ownerEmail={g.ownerEmail} suggestedEmail={g.contactEmail} /> : null}
       {g.status !== 'REJECTED' ? <GymProfileEditor gymId={g.id} specialty={g.specialty} profile={g.profile} /> : null}
 
       <div className="flex flex-wrap items-end gap-2">

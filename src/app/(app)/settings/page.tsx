@@ -18,6 +18,7 @@ import { can } from '@/server/entitlements';
 import { signOutAction } from '@/app/(auth)/actions';
 import { AppearancePanel } from '@/features/settings/appearance-panel';
 import { fill, GYM } from '@/features/gym/copy';
+import { getOwnedGym } from '@/server/gyms';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -26,11 +27,13 @@ export const metadata: Metadata = { title: 'Ajustes' };
 
 export default async function SettingsPage() {
   const [{ t }, ctx] = await Promise.all([getT(), requireUser()]);
+  const ownedGym = await getOwnedGym(ctx.userId);
 
   const rows: Array<{ href?: string; icon: typeof User; title: string; desc: string; badge?: string }> = [
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
     { href: '/settings/sports', icon: Trophy, title: t.settings.sports, desc: t.settings.sportsDesc },
+    ...(ownedGym ? [{ href: '/settings/my-gym', icon: Dumbbell, title: 'Mi gimnasio', desc: ownedGym.name }] : []),
     {
       href: '/settings/gym',
       icon: Dumbbell,

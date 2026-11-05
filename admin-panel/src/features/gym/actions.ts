@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin';
-import { approveGym, regenerateGymCode, rejectGym, saveGymProfile, setGymSuspended, setMemberLimit } from '@/server/gyms';
+import { approveGym, regenerateGymCode, rejectGym, saveGymProfile, setGymOwner, setGymSuspended, setMemberLimit } from '@/server/gyms';
 
 interface Result<T = void> {
   ok?: boolean;
@@ -82,4 +82,14 @@ export async function adminSaveGymProfile(raw: z.input<typeof profileSchema>): P
   const ok = await saveGymProfile(gymId, rest);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
+}
+
+export async function adminSetGymOwner(raw: { gymId: string; email: string }): Promise<Result & { error?: 'INVALID' | 'NO_ACCOUNT' | 'NOT_FOUND' }> {
+  await requireAdmin();
+  const id = uuid.safeParse(raw.gymId);
+  const email = z.string().max(200).safeParse(raw.email);
+  if (!id.success || !email.success) return { error: 'INVALID' };
+  const res = await setGymOwner(id.data, email.data);
+  refresh();
+  return 'ok' in res ? { ok: true } : { error: res.error };
 }

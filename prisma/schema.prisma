@@ -291,6 +291,7 @@ model Profile {
   pushSubscriptions       PushSubscription[]
   deviceTokens            DeviceToken[]
   gymMembership           GymMember?
+  ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
   physiqueAnalyses        PhysiqueAnalysis[]
@@ -1007,10 +1008,15 @@ model Gym {
   approvedAt          DateTime?   @map("approved_at")
   /// Lo que paga el gimnasio por cada socio que entró con su código, por mes (US$).
   pricePerMemberUsd   Decimal     @default(1.50) @db.Decimal(8, 2) @map("price_per_member_usd")
+  /// Cuenta de Forza AI del dueño del gimnasio (la fija el admin). Una misma cuenta puede ser socia de un
+  /// gimnasio y dueña de otro: son dos roles aparte.
+  ownerUserId         String?     @db.Uuid @map("owner_user_id")
+  owner               Profile?    @relation("GymOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   members             GymMember[]
   payments            GymPayment[]
 
   @@index([status])
+  @@index([ownerUserId])
   @@map("gym")
 }
 
@@ -1023,6 +1029,8 @@ model GymMember {
   user      Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// ACTIVE | ENDED
   status    String    @default("ACTIVE")
+  /// El socio dejó que su gimnasio vea su nombre y cuándo entrenó por última vez (apagado por defecto).
+  shareActivity Boolean @default(false) @map("share_activity")
   joinedAt  DateTime  @default(now()) @map("joined_at")
   endedAt   DateTime? @map("ended_at")
 
