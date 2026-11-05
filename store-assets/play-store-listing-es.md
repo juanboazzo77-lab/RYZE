@@ -47,6 +47,6 @@ Probá todo gratis los primeros 7 días, sin restricciones. Después elegí el p
 - Gráfico de funciones: store-assets/feature-graphic-1024x500.png (1024×500)
 - Política de privacidad: https://forzaai.app/privacy
 - Sitio web: https://forzaai.app
-- Email de contacto: gymoia3@gmail.com
+- Email de contacto: soporte@forzaai.app
 - Clasificación de contenido: sin violencia, sin contenido sexual, sin lenguaje fuerte — debería calificar como PEGI 3 / Todos
 - Cuenta de prueba para el equipo de revisión de Google (si la piden): demo@fitai.app / FitaiDemo2026

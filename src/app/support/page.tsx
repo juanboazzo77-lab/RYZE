@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Soporte · FORZA AI' };
 
-const CONTACT_EMAIL = 'gymoia3@gmail.com';
+const CONTACT_EMAIL = 'soporte@forzaai.app';
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-8 text-lg font-semibold tracking-tight">{children}</h2>;
