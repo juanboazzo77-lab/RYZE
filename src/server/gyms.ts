@@ -2,6 +2,7 @@ import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
 import { sendAlert } from './alerts';
+import { gymContextLines, parseGymProfile } from '@/features/gym/catalog';
 import { asGymStatus, canJoin, MAX_MEMBER_ESTIMATE, normalizeGymCode, type JoinError } from '@/features/gym/logic';
 
 /**
@@ -137,4 +138,14 @@ export async function leaveGym(userId: string): Promise<boolean> {
     data: { status: 'ENDED', endedAt: new Date() },
   });
   return res.count > 0;
+}
+
+/** Lo que la IA tiene que saber del gimnasio del socio (máquinas y especialidad), o null si no es socio de uno activo. */
+export async function getMemberGymContext(userId: string): Promise<string[] | null> {
+  const m = await prisma.gymMember.findFirst({
+    where: { userId, status: 'ACTIVE', gym: { status: 'ACTIVE' } },
+    select: { gym: { select: { name: true, specialty: true, equipment: true } } },
+  });
+  if (!m) return null;
+  return gymContextLines({ name: m.gym.name, specialty: m.gym.specialty, profile: parseGymProfile(m.gym.equipment) });
 }

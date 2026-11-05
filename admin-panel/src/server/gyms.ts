@@ -1,4 +1,5 @@
 import 'server-only';
+import { parseGymProfile, specialtyByKey, type GymProfile } from '@/features/gym/catalog';
 import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import {
@@ -35,6 +36,8 @@ export interface GymRow {
   activeMembers: number;
   /** Socios que completaron un entrenamiento en los últimos 7 días. */
   trainedThisWeek: number;
+  specialty: string | null;
+  profile: GymProfile;
 }
 
 export async function listGymsForAdmin(): Promise<GymRow[]> {
@@ -71,6 +74,8 @@ export async function listGymsForAdmin(): Promise<GymRow[]> {
       createdAt: g.createdAt.toISOString(),
       activeMembers: mine.length,
       trainedThisWeek: mine.filter((m) => trainedIds.has(m.userId)).length,
+      specialty: g.specialty,
+      profile: parseGymProfile(g.equipment),
     };
   });
   // Pendientes primero: son los que esperan una decisión.
@@ -106,6 +111,18 @@ export async function approveGym(gymId: string, memberLimit: number): Promise<{ 
     return c;
   });
   return { ok: true, code };
+}
+
+/** Guarda las máquinas y la especialidad del gimnasio (lo que la IA usa para armar rutinas de sus socios). */
+export async function saveGymProfile(
+  gymId: string,
+  input: { specialty: string | null; specialtyDetail: string; items: string[]; notes: string },
+): Promise<boolean> {
+  const specialty = input.specialty && specialtyByKey(input.specialty) ? input.specialty : null;
+  // Pasa por parseGymProfile: sólo quedan claves que existen y textos recortados.
+  const profile = parseGymProfile({ items: input.items, notes: input.notes, specialtyDetail: input.specialtyDetail });
+  const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { specialty, equipment: { ...profile } } });
+  return res.count > 0;
 }
 
 export async function rejectGym(gymId: string): Promise<boolean> {

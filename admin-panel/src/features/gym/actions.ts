@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin';
-import { approveGym, regenerateGymCode, rejectGym, setGymSuspended, setMemberLimit } from '@/server/gyms';
+import { approveGym, regenerateGymCode, rejectGym, saveGymProfile, setGymSuspended, setMemberLimit } from '@/server/gyms';
 
 interface Result<T = void> {
   ok?: boolean;
@@ -64,4 +64,22 @@ export async function adminRegenerateCode(raw: { gymId: string }): Promise<Resul
   const code = await regenerateGymCode(id.data);
   refresh();
   return code ? { ok: true, data: { code } } : { error: 'NOT_AVAILABLE' };
+}
+
+const profileSchema = z.object({
+  gymId: z.string().uuid(),
+  specialty: z.string().max(40).nullable(),
+  specialtyDetail: z.string().max(200),
+  items: z.array(z.string().max(40)).max(120),
+  notes: z.string().max(600),
+});
+
+export async function adminSaveGymProfile(raw: z.input<typeof profileSchema>): Promise<Result> {
+  await requireAdmin();
+  const parsed = profileSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { gymId, ...rest } = parsed.data;
+  const ok = await saveGymProfile(gymId, rest);
+  refresh();
+  return ok ? { ok: true } : { error: 'NOT_FOUND' };
 }

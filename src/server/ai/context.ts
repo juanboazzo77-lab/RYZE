@@ -8,6 +8,7 @@ import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/com
 import { buildSportContextLines } from '@/features/sports/queries';
 import { buildCoachProfileLines } from '@/features/coach-profile/queries';
 import { MAX_MEMORIES } from '@/features/coach-memory/schema';
+import { getMemberGymContext } from '@/server/gyms';
 
 /** Edad en años a partir de la fecha de nacimiento. */
 function ageFrom(birthdate: Date | null): number | null {
@@ -147,6 +148,9 @@ export async function buildUserContextBlock(
   lines.push(`Minutos disponibles por sesión: ${profile.sessionMinutes ?? '—'}`);
   lines.push(`Lugar de entrenamiento: ${profile.trainingPlace ?? '—'}`);
   lines.push(`Equipo disponible: ${asList(profile.equipment)}`);
+  // Si es socio de un gimnasio activo, la IA arma sus rutinas con las máquinas y la especialidad de ese gimnasio.
+  const gym = await getMemberGymContext(profile.id);
+  if (gym) lines.push(...gym);
   if (Array.isArray(profile.musclePriorities) && profile.musclePriorities.length > 0) {
     lines.push(`Grupos musculares prioritarios: ${asList(profile.musclePriorities)}`);
   }
