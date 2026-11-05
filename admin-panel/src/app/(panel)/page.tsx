@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTodaySummary } from '@/server/admin-hub';
 import { Kpi, Section, ago, usd } from '@/features/admin/ui';
+import { DigestButton } from '@/features/admin/digest-button';
 
 export const metadata: Metadata = { title: 'Gestión', robots: { index: false, follow: false } };
 export const dynamic = 'force-dynamic';
@@ -122,6 +123,8 @@ export default async function AdminTodayPage() {
           </ul>
         )}
       </Section>
+
+      <DigestButton />
 
       <p className="text-xs text-muted-foreground">
         Números de negocio, costos de IA y retención en{' '}

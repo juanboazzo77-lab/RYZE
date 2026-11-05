@@ -1,5 +1,7 @@
 import 'server-only';
+import { after } from 'next/server';
 import { prisma } from './db';
+import { sendAlert } from './alerts';
 import { asGymStatus, canJoin, MAX_MEMBER_ESTIMATE, normalizeGymCode, type JoinError } from '@/features/gym/logic';
 
 /**
@@ -53,6 +55,24 @@ export async function submitGymApplication(input: GymApplicationInput): Promise<
       message: clip(input.message, 600) || null,
     },
   });
+  // Aviso por mail al equipo (no frena ni rompe el alta si falla).
+  const text = [
+    `Un gimnasio pidió sumarse a Forza AI.`,
+    '',
+    `Gimnasio: ${name}${clip(input.city, 80) ? ` (${clip(input.city, 80)})` : ''}`,
+    `Contacto: ${contactName} · ${contactEmail}${clip(input.contactPhone, 40) ? ` · ${clip(input.contactPhone, 40)}` : ''}`,
+    estimate ? `Dice tener unos ${estimate} socios.` : '',
+    clip(input.message, 600) ? `Mensaje: ${clip(input.message, 600)}` : '',
+    '',
+    'Aprobalo o rechazalo en el panel de gestión, en Gimnasios.',
+  ]
+    .filter((l, i, a) => l !== '' || a[i - 1] !== '')
+    .join('\n');
+  try {
+    after(() => sendAlert({ subject: `Gimnasio nuevo: ${name}`, text }));
+  } catch {
+    void sendAlert({ subject: `Gimnasio nuevo: ${name}`, text });
+  }
   return { ok: true };
 }
 

@@ -1,6 +1,7 @@
 import 'server-only';
 import { createHash } from 'node:crypto';
 import { prisma } from './db';
+import { sendAlert } from './alerts';
 
 /**
  * Registro de errores propio, para verlos y trabajarlos en /admin/errores. Un error "igual" (mismo
@@ -46,6 +47,7 @@ export async function recordError(r: ErrorReport): Promise<void> {
     if (isNoise(message)) return;
     const fingerprint = fingerprintOf({ source: r.source, message, path: r.path });
     const now = new Date();
+    const known = await prisma.appError.findUnique({ where: { fingerprint }, select: { id: true } });
     await prisma.appError.upsert({
       where: { fingerprint },
       create: {
@@ -69,6 +71,23 @@ export async function recordError(r: ErrorReport): Promise<void> {
         userAgent: clip(r.userAgent, 300) ?? undefined,
       },
     });
+    // Un error que nunca se había visto avisa por mail; con freno para que una tormenta de errores no llene la casilla.
+    if (!known) {
+      const recentNew = await prisma.appError.count({ where: { firstSeen: { gte: new Date(Date.now() - 10 * 60 * 1000) } } });
+      if (recentNew <= 5) {
+        await sendAlert({
+          subject: `Error nuevo en Forza AI: ${message.slice(0, 80)}`,
+          text: [
+            `Apareció un error que no se había visto.`,
+            '',
+            `Dónde: ${r.source === 'server' ? 'servidor' : 'pantalla'} · ${r.path ?? 'sin ruta'}`,
+            `Mensaje: ${message}`,
+            '',
+            'Mirá el detalle y marcalo como resuelto en el panel de gestión, en Errores.',
+          ].join('\n'),
+        });
+      }
+    }
   } catch (e) {
     console.error('[app-errors] no se pudo registrar', e instanceof Error ? e.message : e);
   }

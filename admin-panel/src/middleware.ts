@@ -2,7 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 /** Rutas sin sesión: el login y el regreso del enlace que llega por mail. */
-const PUBLIC_PATHS = ['/login', '/auth'];
+// /api/cron lo llama Vercel con su propio secreto (CRON_SECRET), sin sesión.
+const PUBLIC_PATHS = ['/login', '/auth', '/api/cron'];
 
 function adminEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? '')
