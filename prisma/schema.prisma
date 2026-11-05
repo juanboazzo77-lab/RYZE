@@ -290,6 +290,7 @@ model Profile {
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
   deviceTokens            DeviceToken[]
+  gymMembership           GymMember?
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
   physiqueAnalyses        PhysiqueAnalysis[]
@@ -979,6 +980,51 @@ model Notification {
   @@index([userId, readAt])
   @@index([sentAt])
   @@map("notification")
+}
+
+/// Gimnasio que quiere usar Forza AI para sus socios. Se anota solo (PENDING); el admin lo aprueba,
+/// le fija el cupo de socios y se genera su código. SUSPENDED o REJECTED = sus socios pierden el acceso.
+model Gym {
+  id                  String      @id @default(uuid()) @db.Uuid
+  name                String
+  city                String?
+  contactName         String      @map("contact_name")
+  contactEmail        String      @map("contact_email")
+  contactPhone        String?     @map("contact_phone")
+  /// Cuántos socios dice tener (dato del formulario, sólo orientativo).
+  memberEstimate      Int?        @map("member_estimate")
+  message             String?
+  /// PENDING | ACTIVE | SUSPENDED | REJECTED
+  status              String      @default("PENDING")
+  /// Máximo de socios activos. 0 hasta que el admin lo fija al aprobar.
+  memberLimit         Int         @default(0) @map("member_limit")
+  inviteCode          String?     @unique @map("invite_code")
+  /// Máquinas y equipamiento que el gimnasio dice tener (para armar rutinas con eso).
+  equipment           Json?
+  /// Especialidad: crossfit, hipertrofia, funcional, deportes...
+  specialty           String?
+  createdAt           DateTime    @default(now()) @map("created_at")
+  approvedAt          DateTime?   @map("approved_at")
+  members             GymMember[]
+
+  @@index([status])
+  @@map("gym")
+}
+
+/// Un socio dentro de un gimnasio. Una persona está en un solo gimnasio a la vez.
+model GymMember {
+  id        String    @id @default(uuid()) @db.Uuid
+  gymId     String    @db.Uuid @map("gym_id")
+  gym       Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  userId    String    @unique @db.Uuid @map("user_id")
+  user      Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// ACTIVE | ENDED
+  status    String    @default("ACTIVE")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  endedAt   DateTime? @map("ended_at")
+
+  @@index([gymId, status])
+  @@map("gym_member")
 }
 
 /// Token de notificaciones remotas de la app nativa (APNs en iPhone). Un token pertenece a un solo

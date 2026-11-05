@@ -217,6 +217,14 @@ export function withFullAccess<T extends { tier: EntitlementTier }>(
   return hasFullAccess(email) ? { ...entitlement, tier: 'COACH' as EntitlementTier } : entitlement;
 }
 
+/**
+ * Un socio de un gimnasio activo usa Forza AI con todo desbloqueado (plan COACH) sin pagar: el gimnasio
+ * paga por él, por fuera de la tienda. Si ya tiene un plan pago igual o mayor, no se toca.
+ */
+export function withGymAccess<T extends { tier: EntitlementTier }>(entitlement: T): T {
+  return entitlement.tier === 'COACH' ? entitlement : { ...entitlement, tier: 'COACH' as EntitlementTier };
+}
+
 /** Sólo FREE ve publicidad (BASIC/PRO/COACH la sacan, sin importar la prueba). */
 export function showAds(entitlement: Pick<Entitlement, 'tier'>): boolean {
   return entitlement.tier === 'FREE';

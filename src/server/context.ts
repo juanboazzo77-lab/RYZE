@@ -3,13 +3,16 @@ import { cache } from 'react';
 import type { Entitlement, Profile } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase/server';
 import { prisma } from './db';
-import { withFullAccess } from './entitlements';
+import { withFullAccess, withGymAccess } from './entitlements';
+import { getMemberGym, type MemberGym } from './gyms';
 
 export interface UserContext {
   userId: string;
   email: string;
   profile: Profile;
   entitlement: Entitlement;
+  /** Gimnasio activo del que es socio (si tiene uno): usa la app sin pagar. */
+  gym: MemberGym | null;
   /** true hasta que el usuario termina el onboarding. */
   needsOnboarding: boolean;
 }
@@ -36,9 +39,10 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
 
   // Lectura en paralelo; sólo se escribe si la fila falta o el email cambió
   // (antes eran 2 upserts secuenciales en CADA request).
-  const [existingProfile, existingEntitlement] = await Promise.all([
+  const [existingProfile, existingEntitlement, gym] = await Promise.all([
     prisma.profile.findUnique({ where: { id: user.id } }),
     prisma.entitlement.findUnique({ where: { userId: user.id } }),
+    getMemberGym(user.id),
   ]);
 
   const profile =
@@ -66,7 +70,8 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
     userId: profile.id,
     email: profile.email,
     profile,
-    entitlement: withFullAccess(profile.email, entitlement),
+    entitlement: withFullAccess(profile.email, gym ? withGymAccess(entitlement) : entitlement),
+    gym,
     needsOnboarding: profile.onboardingCompletedAt === null,
   };
 });

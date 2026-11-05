@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronRight,
   CreditCard,
+  Dumbbell,
   LogOut,
   ShieldCheck,
   Sparkles,
@@ -16,6 +17,7 @@ import { requireUser } from '@/server/context';
 import { can } from '@/server/entitlements';
 import { signOutAction } from '@/app/(auth)/actions';
 import { AppearancePanel } from '@/features/settings/appearance-panel';
+import { fill, GYM } from '@/features/gym/copy';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -29,6 +31,12 @@ export default async function SettingsPage() {
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
     { href: '/settings/sports', icon: Trophy, title: t.settings.sports, desc: t.settings.sportsDesc },
+    {
+      href: '/settings/gym',
+      icon: Dumbbell,
+      title: GYM.memberTitle,
+      desc: ctx.gym ? fill(GYM.rowDescIn, { name: ctx.gym.name }) : GYM.rowDesc,
+    },
     {
       href: '/settings/about',
       icon: Sparkles,

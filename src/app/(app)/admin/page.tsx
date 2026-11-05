@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getAdminStats, isAdmin } from '@/server/admin';
@@ -39,6 +40,9 @@ export default async function AdminPage() {
         <p className="text-xs text-muted-foreground">
           Actualizado {new Date(s.generatedAt).toLocaleString('es-AR')}
         </p>
+        <Link href="/admin/gyms" className="mt-1 inline-block text-xs underline hover:text-foreground">
+          Gimnasios (solicitudes, cupos y códigos)
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

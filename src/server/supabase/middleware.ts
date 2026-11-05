@@ -12,6 +12,7 @@ const PUBLIC_PATHS = [
   '/offline',
   '/privacy',
   '/terms',
+  '/gimnasios',
   // Vista de prueba para capturas: sólo existe fuera de producción.
   ...(process.env.NODE_ENV !== 'production' ? ['/dev-preview'] : []),
 ];
