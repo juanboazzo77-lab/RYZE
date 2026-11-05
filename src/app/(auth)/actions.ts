@@ -100,8 +100,9 @@ export async function updatePasswordAction(
   const { error } = await supabase.auth.updateUser({ password });
   if (error) return { error: error.message };
 
-  await supabase.auth.signOut();
-  redirect('/login?reset=1');
+  // La persona ya entró con el enlace del mail: con la contraseña nueva se la deja adentro, sin pedirle que
+  // vuelva a iniciar sesión. (Un dueño de gimnasio cae directo en "Mi gimnasio": lo resuelve el layout.)
+  redirect('/dashboard');
 }
 
 export async function signOutAction() {
