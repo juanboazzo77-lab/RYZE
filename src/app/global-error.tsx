@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import { reportClientError } from '@/lib/report-error';
 
 // Sin i18n ni Tailwind a propósito: puede renderizarse si el layout raíz
 // (que carga los providers y estilos) es lo que falló.
@@ -14,6 +15,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     Sentry.captureException(error);
+    reportClientError(error);
   }, [error]);
 
   return (

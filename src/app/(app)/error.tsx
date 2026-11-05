@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
+import { reportClientError } from '@/lib/report-error';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +16,7 @@ export default function AppError({
   useEffect(() => {
     console.error(error);
     Sentry.captureException(error);
+    reportClientError(error);
   }, [error]);
 
   // Sin i18n a propósito: este límite de error puede renderizarse por encima

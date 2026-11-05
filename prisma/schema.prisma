@@ -1005,7 +1005,10 @@ model Gym {
   specialty           String?
   createdAt           DateTime    @default(now()) @map("created_at")
   approvedAt          DateTime?   @map("approved_at")
+  /// Lo que paga el gimnasio por cada socio que entró con su código, por mes (US$).
+  pricePerMemberUsd   Decimal     @default(1.50) @db.Decimal(8, 2) @map("price_per_member_usd")
   members             GymMember[]
+  payments            GymPayment[]
 
   @@index([status])
   @@map("gym")
@@ -1025,6 +1028,54 @@ model GymMember {
 
   @@index([gymId, status])
   @@map("gym_member")
+}
+
+/// Cobro mensual a un gimnasio (se arma solo al abrir el panel de cobros, un registro por gimnasio y mes).
+/// Mientras está PENDING el monto sigue la cantidad de socios; al marcarlo PAID queda fijo.
+model GymPayment {
+  id                 String    @id @default(uuid()) @db.Uuid
+  gymId              String    @db.Uuid @map("gym_id")
+  gym                Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  /// Mes que se cobra, "2026-11".
+  period             String
+  members            Int
+  pricePerMemberUsd  Decimal   @db.Decimal(8, 2) @map("price_per_member_usd")
+  amountUsd          Decimal   @db.Decimal(10, 2) @map("amount_usd")
+  dueDate            DateTime  @db.Date @map("due_date")
+  /// PENDING | PAID
+  status             String    @default("PENDING")
+  paidAt             DateTime? @map("paid_at")
+  note               String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  @@unique([gymId, period])
+  @@index([status, dueDate])
+  @@map("gym_payment")
+}
+
+/// Errores que ve la gente (de la app y del servidor), agrupados: un registro por error distinto,
+/// con cuántas veces pasó. Se ven y se marcan como resueltos en /admin/errores.
+model AppError {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// Huella para agrupar el mismo error (origen + mensaje + ruta sin ids).
+  fingerprint String    @unique
+  /// server | client
+  source      String
+  message     String
+  stack       String?
+  path        String?
+  digest      String?
+  userId      String?   @db.Uuid @map("user_id")
+  userAgent   String?   @map("user_agent")
+  count       Int       @default(1)
+  firstSeen   DateTime  @default(now()) @map("first_seen")
+  lastSeen    DateTime  @default(now()) @map("last_seen")
+  /// OPEN | RESOLVED
+  status      String    @default("OPEN")
+  resolvedAt  DateTime? @map("resolved_at")
+
+  @@index([status, lastSeen])
+  @@map("app_error")
 }
 
 /// Token de notificaciones remotas de la app nativa (APNs en iPhone). Un token pertenece a un solo
