@@ -1,0 +1,7 @@
+prisma/
+.next/
+node_modules/
+.env
+.env.local
+tsconfig.tsbuildinfo
+next-env.d.ts

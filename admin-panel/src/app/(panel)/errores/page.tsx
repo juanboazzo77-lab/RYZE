@@ -25,8 +25,8 @@ export default async function AdminErrorsPage({ searchParams }: { searchParams: 
 
       <div className="flex gap-1">
         {[
-          { href: '/admin/errores', label: 'Abiertos', active: !resolved },
-          { href: '/admin/errores?ver=resueltos', label: 'Resueltos', active: resolved },
+          { href: '/errores', label: 'Abiertos', active: !resolved },
+          { href: '/errores?ver=resueltos', label: 'Resueltos', active: resolved },
         ].map((t) => (
           <Link
             key={t.label}

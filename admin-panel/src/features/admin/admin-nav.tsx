@@ -5,12 +5,12 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const ITEMS = [
-  { href: '/admin', label: 'Hoy' },
-  { href: '/admin/errores', label: 'Errores' },
-  { href: '/admin/suscriptores', label: 'Suscriptores' },
-  { href: '/admin/gyms', label: 'Gimnasios' },
-  { href: '/admin/cobros', label: 'Cobros' },
-  { href: '/admin/numeros', label: 'Números' },
+  { href: '/', label: 'Hoy' },
+  { href: '/errores', label: 'Errores' },
+  { href: '/suscriptores', label: 'Suscriptores' },
+  { href: '/gimnasios', label: 'Gimnasios' },
+  { href: '/cobros', label: 'Cobros' },
+  { href: '/numeros', label: 'Números' },
 ] as const;
 
 /** Menú del centro de gestión: se desliza de costado en el celular. */
@@ -19,7 +19,7 @@ export function AdminNav() {
   return (
     <nav className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 pb-2" aria-label="Centro de gestión">
       {ITEMS.map((i) => {
-        const active = i.href === '/admin' ? pathname === '/admin' : pathname.startsWith(i.href);
+        const active = i.href === '/' ? pathname === '/' : pathname.startsWith(i.href);
         return (
           <Link
             key={i.href}

@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { requireUser } from '@/server/context';
-import { getAdminStats, isAdmin } from '@/server/admin';
+import { getAdminStats } from '@/server/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -13,9 +11,6 @@ const usd = (n: number) => `US$ ${n.toLocaleString('es-AR', { minimumFractionDig
 const usd4 = (n: number) => `US$ ${n.toFixed(4)}`;
 
 export default async function AdminPage() {
-  const ctx = await requireUser();
-  // Sin ADMIN_EMAILS definido, o con otro mail, la página directamente no existe.
-  if (!isAdmin(ctx.email)) notFound();
   let s: Awaited<ReturnType<typeof getAdminStats>>;
   try {
     s = await getAdminStats();
@@ -40,7 +35,7 @@ export default async function AdminPage() {
         <p className="text-xs text-muted-foreground">
           Actualizado {new Date(s.generatedAt).toLocaleString('es-AR')}
         </p>
-        <Link href="/admin/gyms" className="mt-1 inline-block text-xs underline hover:text-foreground">
+        <Link href="/gimnasios" className="mt-1 inline-block text-xs underline hover:text-foreground">
           Gimnasios (solicitudes, cupos y códigos)
         </Link>
       </div>

@@ -37,45 +37,45 @@ export default async function AdminTodayPage() {
           value={s.errors.last24h}
           sub={`${s.errors.open} abiertos en total`}
           tone={s.errors.last24h > 0 ? 'alert' : 'good'}
-          href="/admin/errores"
+          href="/errores"
         />
         <Kpi
           label="Gimnasios pendientes"
           value={s.gyms.pending.length}
           sub={`${s.gyms.active} activos · ${s.gyms.members} socios`}
           tone={s.gyms.pending.length > 0 ? 'alert' : 'normal'}
-          href="/admin/gyms"
+          href="/gimnasios"
         />
         <Kpi
           label="Cobros vencidos"
           value={s.billing.overdueCount}
           sub={s.billing.overdueCount ? `${usd(s.billing.overdueUsd)} por cobrar` : 'Todo al día'}
           tone={s.billing.overdueCount > 0 ? 'alert' : 'good'}
-          href="/admin/cobros"
+          href="/cobros"
         />
         <Kpi
           label="Pagos fallidos (suscriptores)"
           value={s.subscribers.pastDue}
           sub={`${s.subscribers.total} suscriptores en total`}
           tone={s.subscribers.pastDue > 0 ? 'alert' : 'normal'}
-          href="/admin/suscriptores"
+          href="/suscriptores"
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Usuarios nuevos (24 h)" value={s.users.new24h} sub={`${s.users.new7d} en 7 días`} />
-        <Kpi label="Suscriptores nuevos (7 días)" value={s.subscribers.new7d} href="/admin/suscriptores" />
+        <Kpi label="Suscriptores nuevos (7 días)" value={s.subscribers.new7d} href="/suscriptores" />
         <Kpi label="Usuarios en total" value={s.users.total} />
         <Kpi
           label="Por cobrar a gimnasios"
           value={usd(s.billing.pendingUsd)}
           sub={`Cobrado este mes: ${usd(s.billing.collectedThisMonthUsd)}`}
-          href="/admin/cobros"
+          href="/cobros"
         />
       </div>
 
       {s.gyms.pending.length > 0 ? (
-        <Section title="Gimnasios esperando tu decisión" href="/admin/gyms" linkText="Revisar">
+        <Section title="Gimnasios esperando tu decisión" href="/gimnasios" linkText="Revisar">
           <ul className="divide-y rounded-xl border">
             {s.gyms.pending.map((g) => (
               <li key={g.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
@@ -91,7 +91,7 @@ export default async function AdminTodayPage() {
       ) : null}
 
       {s.overdue.length > 0 ? (
-        <Section title="Cobros vencidos" href="/admin/cobros" linkText="Ir a cobros">
+        <Section title="Cobros vencidos" href="/cobros" linkText="Ir a cobros">
           <ul className="divide-y rounded-xl border">
             {s.overdue.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
@@ -106,7 +106,7 @@ export default async function AdminTodayPage() {
         </Section>
       ) : null}
 
-      <Section title="Errores recientes" href="/admin/errores">
+      <Section title="Errores recientes" href="/errores">
         {s.errors.recent.length === 0 ? (
           <p className="rounded-xl border p-3 text-sm text-muted-foreground">No hay errores abiertos.</p>
         ) : (
@@ -125,7 +125,7 @@ export default async function AdminTodayPage() {
 
       <p className="text-xs text-muted-foreground">
         Números de negocio, costos de IA y retención en{' '}
-        <Link href="/admin/numeros" className="underline hover:text-foreground">
+        <Link href="/numeros" className="underline hover:text-foreground">
           Números
         </Link>
         .
