@@ -3,6 +3,7 @@ import { getTodaySummary } from '@/server/admin-hub';
 import { buildDigest } from '@/server/digest';
 import { sendAlert } from '@/server/alerts';
 import { runDailyFees } from '@/server/gym-fees';
+import { runMonthlySummaries } from '@/server/gym-summary';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,5 +24,10 @@ export async function GET(req: Request) {
     console.error('[cron] control de cuotas fallo', e instanceof Error ? e.message : e);
     return null;
   });
-  return NextResponse.json({ ok: true, sent, urgent: digest.urgent, fees });
+  // El día 1 de cada mes, el resumen del mes anterior para cada dueño.
+  const summaries = await runMonthlySummaries(undefined, process.env.PANEL_URL?.trim() || new URL(req.url).origin).catch((e) => {
+    console.error('[cron] resumen mensual fallo', e instanceof Error ? e.message : e);
+    return null;
+  });
+  return NextResponse.json({ ok: true, sent, urgent: digest.urgent, fees, summaries });
 }

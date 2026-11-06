@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 const ITEMS = [
   { href: '/gym', label: 'Resumen' },
   { href: '/gym/clientes', label: 'Clientes' },
+  { href: '/gym/cobros', label: 'Cobros' },
   { href: '/gym/socios', label: 'Con Forza AI' },
   { href: '/gym/invitaciones', label: 'Invitar' },
   { href: '/gym/equipamiento', label: 'Equipamiento' },
