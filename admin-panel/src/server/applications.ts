@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { prisma } from './db';
 import { sendAlert } from './alerts';
 import { MAX_MEMBER_ESTIMATE } from '@/features/gym/logic';
+import { TERMS_VERSION } from '@/features/legal/gym-terms';
 
 /** Alta de un gimnasio nuevo (formulario público): queda pendiente hasta que el administrador lo aprueba. */
 
@@ -14,12 +15,15 @@ export interface GymApplicationInput {
   contactPhone?: string;
   memberEstimate?: number;
   message?: string;
+  /** Aceptó los términos para gimnasios (obligatorio). */
+  acceptedTerms?: boolean;
 }
 
 const clip = (v: string | undefined, max: number) => (v ?? '').trim().slice(0, max);
 
 /** Guarda la solicitud. Si ya hay una pendiente con ese mail no se duplica (devuelve ok igual). */
-export async function submitGymApplication(input: GymApplicationInput): Promise<{ ok: true } | { error: 'INVALID' | 'TOO_MANY' }> {
+export async function submitGymApplication(input: GymApplicationInput): Promise<{ ok: true } | { error: 'INVALID' | 'TOO_MANY' | 'TERMS' }> {
+  if (input.acceptedTerms !== true) return { error: 'TERMS' };
   const name = clip(input.name, 120);
   const contactName = clip(input.contactName, 120);
   const contactEmail = clip(input.contactEmail, 200).toLowerCase();
@@ -46,6 +50,8 @@ export async function submitGymApplication(input: GymApplicationInput): Promise<
       contactPhone: clip(input.contactPhone, 40) || null,
       memberEstimate: estimate,
       message: clip(input.message, 600) || null,
+      termsAcceptedAt: new Date(),
+      termsVersion: TERMS_VERSION,
     },
   });
   // Aviso por mail al equipo (no frena ni rompe el alta si falla).

@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 /** Rutas sin sesión: el login y el regreso de los enlaces que llegan por mail. */
 // /api/cron lo llama Vercel con su propio secreto (CRON_SECRET), sin sesión.
 // /solicitar es el formulario público para que un gimnasio nuevo pida autorización.
-const PUBLIC_PATHS = ['/login', '/auth', '/api/cron', '/solicitar'];
+const PUBLIC_PATHS = ['/login', '/auth', '/api/cron', '/solicitar', '/terminos-gimnasios'];
 /** Rutas para cualquier cuenta con sesión (cada pantalla vuelve a comprobar si es dueña de un gimnasio). */
 const SIGNED_IN_PATHS = ['/gym', '/reset-password'];
 

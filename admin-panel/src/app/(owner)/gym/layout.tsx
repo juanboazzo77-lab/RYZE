@@ -5,6 +5,8 @@ import { signOutAction } from '@/features/auth/actions';
 import { GymNav } from '@/features/owner/gym-nav';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand';
+import { hasAcceptedTerms } from '@/server/gym-terms';
+import { TermsGate } from '@/features/legal/terms-gate';
 
 /**
  * Panel del gimnasio: lo que ve el dueño. Vive en el mismo sitio que la gestión, pero cada uno ve solo lo suyo:
@@ -33,6 +35,9 @@ export default async function GymLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  // Hasta que no acepte la versión vigente de los términos, no ve el panel.
+  if (!(await hasAcceptedTerms(ctx.gym.id))) return <TermsGate gymName={ctx.gym.name} />;
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl space-y-4 px-4 py-4 lg:space-y-6 lg:px-8 lg:py-6">

@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Política de Privacidad · FORZA AI' };
 
-const LAST_UPDATED = '14 de septiembre de 2026';
+const LAST_UPDATED = '7 de noviembre de 2026';
 const CONTACT_EMAIL = 'soporte@forzaai.app';
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -109,6 +109,13 @@ export default function PrivacyPage() {
           esa consulta puntual; las fotos nunca quedan guardadas del lado de FORZA AI.
         </Li>
         <Li>
+          <strong className="text-foreground">Resend:</strong> envía por email las invitaciones de tu gimnasio y
+          otros avisos de la cuenta. Recibe tu email y el texto del mensaje.
+        </Li>
+        <Li>
+          <strong className="text-foreground">Vercel:</strong> aloja el sitio y la aplicación web.
+        </Li>
+        <Li>
           <strong className="text-foreground">Open Food Facts:</strong> buscador de alimentos por
           código de barras (base de datos pública, no le mandamos datos tuyos, sólo el código que
           escaneás).
@@ -117,6 +124,47 @@ export default function PrivacyPage() {
       <P>
         Podríamos compartir información si la ley lo exige, o para proteger derechos, seguridad o
         propiedad de FORZA AI o de terceros.
+      </P>
+
+      <H2>Si usás FORZA AI a través de un gimnasio</H2>
+      <P>
+        Cuando tu gimnasio te invita, ya tiene tu email (se lo diste vos, y es el que usa para la invitación) y
+        puede tener otros datos que vos le diste a él, como tu teléfono o tu cuota. Esos datos son del gimnasio:
+        él decide para qué los usa y es el responsable de cuidarlos. FORZA AI los guarda por cuenta del
+        gimnasio solo para darle su panel, y no los usa para otra cosa.
+      </P>
+      <P>
+        <strong className="text-foreground">Qué ve tu gimnasio de lo que hacés en la app:</strong>
+      </P>
+      <ul className="list-disc space-y-1 pl-5">
+        <Li>
+          Siempre, solo en números: cuántos socios hay, cuántos entrenaron esta semana y cuántos llevan 10 días
+          o más sin entrenar. Sin saber quiénes son, salvo lo que sigue.
+        </Li>
+        <Li>
+          Tu <strong className="text-foreground">nombre y cuándo entrenaste por última vez</strong>, solo si lo
+          permitís. Lo elegís al aceptar la invitación y lo cambiás cuando quieras en Ajustes → Gimnasio (está
+          apagado por defecto).
+        </Li>
+        <Li>
+          Si te sumás a un <strong className="text-foreground">reto</strong>: tu nombre con la inicial del apellido
+          y tus puntos, en el ranking. Si te bajás, desaparecés del ranking.
+        </Li>
+        <Li>
+          Si reservás una <strong className="text-foreground">clase</strong>: tu nombre aparece en la lista de
+          esa clase, para el gimnasio.
+        </Li>
+      </ul>
+      <P>
+        <strong className="text-foreground">Lo que tu gimnasio nunca ve:</strong> tu peso, tus fotos, tus comidas,
+        tus condiciones de salud, tus conversaciones con el AI Coach ni tus planes. Tampoco le damos tu cuenta
+        ni tu contraseña.
+      </P>
+      <P>
+        El gimnasio también puede mostrar su logo y su color dentro de la app mientras seas su socio. Si dejás
+        el gimnasio, todo esto deja de aplicarse y tu gimnasio deja de ver tus datos. Si tenés dudas sobre los
+        datos que tu gimnasio tiene de vos, pedíselos a él; si es sobre la app, escribinos a{' '}
+        <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
       </P>
 
       <H2>Cookies y almacenamiento local</H2>

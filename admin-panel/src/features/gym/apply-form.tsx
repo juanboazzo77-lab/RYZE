@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { applyAsGym } from './public-actions';
+import Link from 'next/link';
 import { GYM } from './copy';
 
 /** Formulario público para que un gimnasio pida sumarse. */
@@ -28,9 +29,10 @@ export function GymApplyForm() {
         memberEstimate: Number.isFinite(estimate) && estimate > 0 ? estimate : undefined,
         message: String(f.get('message') ?? ''),
         website: String(f.get('website') ?? ''),
+        acceptedTerms: f.get('acceptedTerms') === 'on',
       });
       if (res.ok) setSent(true);
-      else setError(res.error === 'INVALID' ? GYM.errInvalid : res.error === 'TOO_MANY' ? GYM.errTooMany : GYM.errGeneric);
+      else setError(res.error === 'INVALID' ? GYM.errInvalid : res.error === 'TOO_MANY' ? GYM.errTooMany : res.error === 'TERMS' ? 'Para pedir el alta tenés que aceptar los términos.' : GYM.errGeneric);
     });
   }
 
@@ -73,6 +75,16 @@ export function GymApplyForm() {
           <input name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" name="acceptedTerms" required className="mt-1 size-4 shrink-0" />
+        <span className="text-muted-foreground">
+          Leí y acepto los{' '}
+          <Link href="/terminos-gimnasios" target="_blank" className="underline hover:text-foreground">
+            términos y condiciones para gimnasios
+          </Link>
+          .
+        </span>
+      </label>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? <Loader2 className="size-4 animate-spin" /> : null}

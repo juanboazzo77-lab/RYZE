@@ -5,7 +5,7 @@ import { submitGymApplication } from '@/server/applications';
 
 interface Result {
   ok?: boolean;
-  error?: 'INVALID' | 'TOO_MANY' | 'ERROR';
+  error?: 'INVALID' | 'TOO_MANY' | 'TERMS' | 'ERROR';
 }
 
 const schema = z.object({
@@ -16,6 +16,7 @@ const schema = z.object({
   contactPhone: z.string().max(100).optional(),
   memberEstimate: z.number().finite().optional(),
   message: z.string().max(2000).optional(),
+  acceptedTerms: z.boolean().optional(),
   /** Trampa para robots: una persona no lo ve ni lo completa. */
   website: z.string().max(200).optional(),
 });

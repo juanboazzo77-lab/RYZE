@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Términos de Servicio · FORZA AI' };
 
-const LAST_UPDATED = '14 de septiembre de 2026';
+const LAST_UPDATED = '7 de noviembre de 2026';
 const CONTACT_EMAIL = 'soporte@forzaai.app';
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -70,6 +70,40 @@ export default function TermsPage() {
         <Li>
           Podemos suspender o eliminar cuentas que violen estos términos, usen la app de forma
           abusiva, o intenten vulnerar la seguridad del servicio.
+        </Li>
+      </ul>
+
+      <H2>Si usás FORZA AI a través de tu gimnasio</H2>
+      <P>
+        Algunos gimnasios invitan a sus clientes a usar FORZA AI. Si aceptás la invitación de tu gimnasio,
+        usás la app con las condiciones que el gimnasio acordó con nosotros (por ejemplo, un plan de
+        entrenamiento y uno de dieta por mes y una cantidad diaria de mensajes con el AI Coach). Eso no te
+        cuesta nada a vos: lo cubre el gimnasio.
+      </P>
+      <ul className="list-disc space-y-1 pl-5">
+        <Li>
+          <strong className="text-foreground">Podés irte cuando quieras</strong> desde Ajustes → Gimnasio. Tu
+          cuenta sigue siendo tuya y pasa a las condiciones del plan gratuito.
+        </Li>
+        <Li>
+          El acceso depende de que tu gimnasio esté activo y al día con nosotros. Si el gimnasio deja de
+          estarlo, o te da de baja, o su cuota no está paga, podés perder el acceso que te daba el gimnasio.
+          No perdés tus datos.
+        </Li>
+        <Li>
+          Tu gimnasio es un tercero independiente: lo que enseña, sus clases, sus rutinas, sus horarios, sus
+          premios y la atención en el local son responsabilidad del gimnasio, no de FORZA AI.
+        </Li>
+        <Li>
+          <strong className="text-foreground">Clases:</strong> si tu gimnasio habilita reservas, podés reservar
+          hasta con 7 días de anticipación y cancelar hasta 2 horas antes. Después de ese plazo la reserva
+          no se puede cancelar desde la app; hablá con tu gimnasio.
+        </Li>
+        <Li>
+          <strong className="text-foreground">Retos:</strong> sumarte a un reto es optativo. Al hacerlo aceptás
+          aparecer en el ranking con tu nombre y la inicial de tu apellido, visible para los demás socios
+          que se sumaron y para tu gimnasio. Podés bajarte del reto cuando quieras. Los premios los entrega y
+          los define el gimnasio.
         </Li>
       </ul>
 
