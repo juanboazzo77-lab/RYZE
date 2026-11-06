@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isCbu, normalizePaymentAlias, normalizePaymentLink } from './payment';
+import { isCbu, normalizeAmount, normalizePaymentAlias, normalizePaymentLink } from './payment';
 
 describe('link de pago', () => {
   it('acepta links https', () => {
@@ -32,5 +32,25 @@ describe('alias o CBU', () => {
     expect(normalizePaymentAlias('123456')).toBeNull();
     expect(normalizePaymentAlias('hola que tal <b>')).toBeNull();
     expect(normalizePaymentAlias('')).toBeNull();
+  });
+});
+
+describe('valor en pesos', () => {
+  it('entiende los formatos que escribe la gente', () => {
+    expect(normalizeAmount('5000')).toBe(5000);
+    expect(normalizeAmount('5.000')).toBe(5000);
+    expect(normalizeAmount('12.500,50')).toBe(12500.5);
+    expect(normalizeAmount('5000,5')).toBe(5000.5);
+    expect(normalizeAmount(' 7500 ')).toBe(7500);
+    expect(normalizeAmount(8000)).toBe(8000);
+  });
+  it('rechaza vacíos, negativos, letras y cifras absurdas', () => {
+    expect(normalizeAmount('')).toBeNull();
+    expect(normalizeAmount(null)).toBeNull();
+    expect(normalizeAmount('0')).toBeNull();
+    expect(normalizeAmount('-5')).toBeNull();
+    expect(normalizeAmount('cinco mil')).toBeNull();
+    expect(normalizeAmount('$5000')).toBeNull();
+    expect(normalizeAmount('999999999')).toBeNull();
   });
 });

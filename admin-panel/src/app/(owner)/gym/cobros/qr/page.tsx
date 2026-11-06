@@ -4,18 +4,26 @@ import { ChevronLeft } from 'lucide-react';
 import { requireOwnerPage } from '@/lib/owner';
 import { getPaymentInfo } from '@/server/gym-payment';
 import { PaymentForm } from '@/features/owner/payment-form';
-import { PaymentPoster } from '@/features/owner/payment-poster';
+import { PaymentPoster, type PosterKind } from '@/features/owner/payment-poster';
 import { PrintButton } from '@/features/owner/print-button';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'QR de cobro' };
 export const dynamic = 'force-dynamic';
 
-/** El QR para que los clientes paguen la cuota: se carga el link de pago, se imprime el cartel y se pone en el mostrador. */
-export default async function PaymentQrPage() {
+/** Los QR para que los clientes paguen: la cuota y, aparte, el plan de rutina con IA. Se cargan los links, se imprime el cartel y se pone en el mostrador. */
+export default async function PaymentQrPage({ searchParams }: { searchParams: Promise<{ cartel?: string }> }) {
   const owner = await requireOwnerPage();
+  const { cartel } = await searchParams;
   const info = await getPaymentInfo(owner.userId, owner.gym.id);
   if (!info) return null;
-  const ready = Boolean(info.link || info.alias);
+
+  const kind: PosterKind = cartel === 'plan' ? 'PLAN' : 'FEE';
+  const ready = kind === 'PLAN' ? Boolean(info.planLink) : Boolean(info.link || info.alias);
+  const tabs: Array<{ key: PosterKind; label: string; href: string }> = [
+    { key: 'FEE', label: 'Cuota', href: '/gym/cobros/qr' },
+    { key: 'PLAN', label: 'Plan de rutina con IA', href: '/gym/cobros/qr?cartel=plan' },
+  ];
 
   return (
     <div className="space-y-4">
@@ -26,24 +34,40 @@ export default async function PaymentQrPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold tracking-tight">QR para que te paguen</h1>
         <p className="text-sm text-muted-foreground">
-          Cargá tu link de pago, imprimí el cartel y pegalo en el mostrador. El cliente escanea y paga; cuando te llega el pago, tocás <strong>Pagó</strong> en Clientes.
+          Cargá tus links de pago, imprimí el cartel y pegalo en el mostrador. El cliente escanea y paga; cuando te llega el pago, tocás <strong>Pagó</strong> en Clientes. Si cobrás el plan de rutina aparte, cuando pague cargá su mail en <strong>Invitar</strong>.
         </p>
       </div>
 
       <div className="print:hidden">
-        <PaymentForm link={info.link} alias={info.alias} />
+        <PaymentForm link={info.link} alias={info.alias} planLink={info.planLink} planAmount={info.planAmount} />
       </div>
 
-      {ready ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-2 print:hidden">
-            <h2 className="text-base font-semibold">Tu cartel</h2>
-            <PrintButton />
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
+          <div className="flex gap-1">
+            {tabs.map((t) => (
+              <Link
+                key={t.key}
+                href={t.href}
+                className={cn('rounded-full px-3 py-1.5 text-sm transition-colors', t.key === kind ? 'bg-secondary font-medium' : 'text-muted-foreground hover:bg-secondary/60')}
+              >
+                {t.label}
+              </Link>
+            ))}
           </div>
-          <PaymentPoster info={info} />
-          {!info.link ? <p className="text-xs text-muted-foreground print:hidden">Para que aparezca el código QR, cargá un link de pago arriba. Por ahora el cartel muestra solo el alias.</p> : null}
-        </section>
-      ) : null}
+          {ready ? <PrintButton /> : null}
+        </div>
+        {ready ? (
+          <>
+            <PaymentPoster info={info} kind={kind} />
+            {kind === 'FEE' && !info.link ? <p className="text-xs text-muted-foreground print:hidden">Para que aparezca el código QR, cargá un link de pago arriba. Por ahora el cartel muestra solo el alias.</p> : null}
+          </>
+        ) : (
+          <p className="rounded-xl border p-4 text-sm text-muted-foreground print:hidden">
+            {kind === 'PLAN' ? 'Cargá el link de pago del plan arriba y acá aparece el cartel con su QR.' : 'Cargá tu link de pago o tu alias arriba y acá aparece el cartel.'}
+          </p>
+        )}
+      </section>
     </div>
   );
 }

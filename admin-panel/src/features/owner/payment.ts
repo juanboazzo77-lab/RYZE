@@ -1,5 +1,5 @@
 /**
- * Datos de cobro de un gimnasio para su QR. Función pura: valida lo que escribe el dueño antes de guardarlo y
+ * Datos de cobro de un gimnasio para sus QR. Función pura: valida lo que escribe el dueño antes de guardarlo y
  * antes de convertirlo en un QR que sus clientes van a escanear.
  */
 
@@ -25,3 +25,16 @@ export function normalizePaymentAlias(raw: string | null | undefined): string | 
 }
 
 export const isCbu = (v: string): boolean => /^\d{22}$/.test(v);
+
+/** Un valor en pesos ("5000", "5.000", "5000,50"): número entre 1 y 100 millones, o null si no sirve. */
+export function normalizeAmount(raw: string | number | null | undefined): number | null {
+  if (raw === null || raw === undefined) return null;
+  let v = typeof raw === 'number' ? String(raw) : raw.trim();
+  if (v === '') return null;
+  // "5.000" o "5.000,50" (formato argentino) → 5000 / 5000.50; "5000.5" (con un solo punto y decimales) se respeta.
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(v)) v = v.replace(/\./g, '').replace(',', '.');
+  else v = v.replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(v)) return null;
+  const n = Number(v);
+  return n >= 1 && n <= 100_000_000 ? n : null;
+}

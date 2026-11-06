@@ -1029,6 +1029,9 @@ model Gym {
   /// Cómo le pagan sus clientes: un link de pago (se vuelve QR) y un alias o CBU para transferir.
   paymentLink         String?     @map("payment_link")
   paymentAlias        String?     @map("payment_alias")
+  /// Segundo cobro del gimnasio: el plan de rutina con IA que sus clientes pagan aparte (link de pago y valor).
+  paymentPlanLink     String?     @map("payment_plan_link")
+  paymentPlanAmount   Decimal?    @db.Decimal(12, 2) @map("payment_plan_amount")
   /// Cuándo aceptó los términos para gimnasios y cuál versión.
   termsAcceptedAt     DateTime?   @map("terms_accepted_at")
   termsVersion        String?     @map("terms_version")
