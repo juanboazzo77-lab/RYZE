@@ -17,6 +17,18 @@ export default async function PaymentQrPage({ searchParams }: { searchParams: Pr
   const { cartel } = await searchParams;
   const info = await getPaymentInfo(owner.userId, owner.gym.id);
   if (!info) return null;
+  if (info.currency !== 'ARS') {
+    return (
+      <div className="space-y-3">
+        <Link href="/gym/cobros" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="size-4" />
+          Cobros
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">QR para que te paguen</h1>
+        <p className="rounded-xl border p-4 text-sm text-muted-foreground">Los QR de cobro están disponibles por ahora solo para gimnasios de Argentina.</p>
+      </div>
+    );
+  }
 
   const kind: PosterKind = cartel === 'plan' ? 'PLAN' : 'FEE';
   const ready = kind === 'PLAN' ? Boolean(info.planLink) : Boolean(info.link || info.alias);

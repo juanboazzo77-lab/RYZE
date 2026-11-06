@@ -8,6 +8,7 @@ const ITEMS = [
   { href: '/gym', label: 'Resumen' },
   { href: '/gym/clientes', label: 'Clientes' },
   { href: '/gym/cobros', label: 'Cobros' },
+  { href: '/gym/facturacion', label: 'Facturación' },
   { href: '/gym/socios', label: 'Con Forza AI' },
   { href: '/gym/invitaciones', label: 'Invitar' },
   { href: '/gym/rutinas', label: 'Rutinas' },

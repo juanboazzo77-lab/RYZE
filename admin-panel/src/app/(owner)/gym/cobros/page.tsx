@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Download, QrCode } from 'lucide-react';
 import { requireOwnerPage } from '@/lib/owner';
 import { getFinance } from '@/server/gym-finance';
+import { getPaymentInfo } from '@/server/gym-payment';
 import { money, monthLabel } from '@/features/owner/finance';
 
 export const metadata: Metadata = { title: 'Cobros' };
@@ -24,6 +25,8 @@ const fmtDay = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString(
 export default async function GymFinancePage() {
   const owner = await requireOwnerPage();
   const f = await getFinance(owner.userId, owner.gym.id);
+  // Los QR de cobro son solo para gimnasios de Argentina (links de Mercado Pago y similares, en pesos).
+  const qrAvailable = (await getPaymentInfo(owner.userId, owner.gym.id))?.currency === 'ARS';
   if (!f) return null;
   const max = Math.max(1, ...f.history.map((h) => h.collected));
   const delta = f.deltaPct === null ? undefined : `${f.deltaPct >= 0 ? '+' : ''}${f.deltaPct}% contra ${monthLabel(f.history[4]!.month)}`;
@@ -36,13 +39,15 @@ export default async function GymFinancePage() {
           <p className="text-xs text-muted-foreground">Con los pagos que anotás en Clientes con el botón Pagó.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-        <Link
-          href="/gym/cobros/qr"
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
-        >
-          <QrCode className="size-4" />
-          QR de cobro
-        </Link>
+        {qrAvailable ? (
+          <Link
+            href="/gym/cobros/qr"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
+          >
+            <QrCode className="size-4" />
+            QR de cobro
+          </Link>
+        ) : null}
         <a
           href="/gym/cobros/export"
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
