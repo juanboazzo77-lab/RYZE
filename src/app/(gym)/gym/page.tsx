@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getOwnerView, INACTIVE_DAYS } from '@/server/gyms';
+import { countClients, listClients } from '@/server/gym-clients';
 import { usedPercent } from '@/features/gym/logic';
 import { Badge } from '@/components/ui/badge';
 
@@ -24,6 +25,9 @@ export default async function GymHomePage() {
   if (!ctx.ownedGym) redirect('/dashboard');
   const view = await getOwnerView(ctx.userId, ctx.ownedGym.id);
   if (!view) redirect('/dashboard');
+  const clients = (await listClients(ctx.userId, ctx.ownedGym.id)) ?? [];
+  const fees = countClients(clients);
+  const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
   const pct = usedPercent(view.activeMembers, view.memberLimit);
   const full = view.memberLimit > 0 && view.activeMembers >= view.memberLimit;
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
@@ -41,6 +45,20 @@ export default async function GymHomePage() {
           Tu gimnasio está suspendido: tus socios no tienen acceso gratis por ahora. Escribinos a gimnasios@forzaai.app.
         </p>
       ) : null}
+
+      {fees.total > 0 ? (
+        <Link href="/gym/clientes" className={`block rounded-xl border p-4 ${toCollect > 0 ? 'border-warning/50 bg-warning/10' : ''}`}>
+          <p className="font-semibold">{toCollect > 0 ? `Hoy tenés ${toCollect} ${toCollect === 1 ? 'cuota' : 'cuotas'} para cobrar` : 'Cuotas al día'}</p>
+          <p className="text-sm text-muted-foreground">
+            {fees.dueToday} vencen hoy · {fees.overdue + fees.lapsed} vencidas · {fees.soon} esta semana · {fees.total} clientes
+          </p>
+        </Link>
+      ) : (
+        <Link href="/gym/clientes" className="block rounded-xl border p-4">
+          <p className="font-semibold">Controlá las cuotas de tus clientes</p>
+          <p className="text-sm text-muted-foreground">Cargá tu lista y te avisamos cada día a quién le toca pagar.</p>
+        </Link>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Socios" value={view.activeMembers} sub={`de ${view.memberLimit} del cupo`} />

@@ -1014,6 +1014,7 @@ model Gym {
   owner               Profile?    @relation("GymOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   members             GymMember[]
   invites             GymInvite[]
+  clients             GymClient[]
   payments            GymPayment[]
 
   @@index([status])
@@ -1028,7 +1029,7 @@ model GymMember {
   gym       Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
   userId    String    @unique @db.Uuid @map("user_id")
   user      Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// ACTIVE | ENDED
+  /// ACTIVE | ENDED | LAPSED (cuota del gimnasio vencida: sin acceso hasta que pague)
   status    String    @default("ACTIVE")
   /// El socio dejó que su gimnasio vea su nombre y cuándo entrenó por última vez (apagado por defecto).
   shareActivity Boolean @default(false) @map("share_activity")
@@ -1037,6 +1038,46 @@ model GymMember {
 
   @@index([gymId, status])
   @@map("gym_member")
+}
+
+/// Un cliente del gimnasio (con o sin Forza AI): lo carga el dueño para llevar el control de las cuotas. No es un
+/// usuario de la app; si tiene mail y ese mail es de un socio de Forza AI, se enlazan por el mail.
+model GymClient {
+  id         String    @id @default(uuid()) @db.Uuid
+  gymId      String    @db.Uuid @map("gym_id")
+  gym        Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name       String
+  /// En minúsculas.
+  email      String?
+  phone      String?
+  /// Lo que paga por mes (en la moneda del gimnasio; es sólo de referencia para el dueño).
+  feeAmount  Decimal?  @db.Decimal(12, 2) @map("fee_amount")
+  /// Día en que vence su cuota (el día que le toca volver a pagar). Null = todavía sin controlar.
+  paidUntil  DateTime? @db.Date @map("paid_until")
+  note       String?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  payments   GymClientPayment[]
+
+  @@index([gymId, active])
+  @@index([email])
+  @@map("gym_client")
+}
+
+/// Un pago de cuota registrado por el dueño.
+model GymClientPayment {
+  id        String    @id @default(uuid()) @db.Uuid
+  clientId  String    @db.Uuid @map("client_id")
+  client    GymClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  paidOn    DateTime  @db.Date @map("paid_on")
+  amount    Decimal?  @db.Decimal(12, 2)
+  /// Cuántos meses cubre este pago.
+  months    Int       @default(1)
+  note      String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([clientId])
+  @@map("gym_client_payment")
 }
 
 /// Invitación a un socio por mail. El gimnasio carga el mail (PENDING), el admin la aprueba (APPROVED: se le

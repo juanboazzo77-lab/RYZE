@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getTodaySummary } from '@/server/admin-hub';
 import { buildDigest } from '@/server/digest';
 import { sendAlert } from '@/server/alerts';
+import { runDailyFees } from '@/server/gym-fees';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,5 +18,10 @@ export async function GET(req: Request) {
   const summary = await getTodaySummary();
   const digest = buildDigest(summary);
   const sent = await sendAlert({ subject: digest.subject, text: digest.text });
-  return NextResponse.json({ ok: true, sent, urgent: digest.urgent });
+  // Cuotas de los clientes de cada gimnasio: aviso al dueño y baja de acceso a quien no pagó. Si falla, el resumen ya salió.
+  const fees = await runDailyFees().catch((e) => {
+    console.error('[cron] control de cuotas fallo', e instanceof Error ? e.message : e);
+    return null;
+  });
+  return NextResponse.json({ ok: true, sent, urgent: digest.urgent, fees });
 }
