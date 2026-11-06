@@ -33,12 +33,13 @@ export async function markPaymentPaid(raw: { id: string; paid: boolean; note?: s
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
 }
 
-export async function updateGymPrice(raw: { gymId: string; price: number }): Promise<Result> {
+export async function updateGymPrice(raw: { gymId: string; price: number; currency: 'ARS' | 'USD' }): Promise<Result> {
   await requireAdmin();
   const id = uuid.safeParse(raw.gymId);
-  const price = z.number().min(0).max(1000).safeParse(raw.price);
-  if (!id.success || !price.success) return { error: 'INVALID' };
-  const ok = await setGymPrice(id.data, price.data);
+  const price = z.number().min(0).max(1_000_000).safeParse(raw.price);
+  const currency = z.enum(['ARS', 'USD']).safeParse(raw.currency);
+  if (!id.success || !price.success || !currency.success) return { error: 'INVALID' };
+  const ok = await setGymPrice(id.data, price.data, currency.data);
   revalidatePath('/cobros');
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
 }

@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { prisma } from '@/server/db';
 import { ensureCurrentPayments, listPayments, totalsOf, DUE_DAY } from '@/server/gym-billing';
 import { Badge } from '@/components/ui/badge';
-import { Kpi, usd } from '@/features/admin/ui';
+import { Kpi } from '@/features/admin/ui';
+import { asCurrency, formatMoney, formatMoneyMap } from '@/features/gym/money';
 import { PaidButton, PriceEditor } from '@/features/admin/payment-controls';
 
 export const metadata: Metadata = { title: 'Cobros', robots: { index: false, follow: false } };
@@ -15,7 +16,7 @@ export default async function AdminBillingPage() {
     prisma.gym.findMany({
       where: { status: { in: ['ACTIVE', 'SUSPENDED'] } },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, status: true, pricePerMemberUsd: true },
+      select: { id: true, name: true, status: true, pricePerMember: true, currency: true },
     }),
   ]);
   const t = totalsOf(payments);
@@ -30,9 +31,9 @@ export default async function AdminBillingPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Kpi label="Vencido" value={usd(t.overdueUsd)} sub={`${t.overdueCount} cobros`} tone={t.overdueCount > 0 ? 'alert' : 'good'} />
-        <Kpi label="Por cobrar (todo)" value={usd(t.pendingUsd)} />
-        <Kpi label="Cobrado este mes" value={usd(t.collectedThisMonthUsd)} tone="good" />
+        <Kpi label="Vencido" value={formatMoneyMap(t.overdue)} sub={`${t.overdueCount} cobros`} tone={t.overdueCount > 0 ? 'alert' : 'good'} />
+        <Kpi label="Por cobrar (todo)" value={formatMoneyMap(t.pending)} />
+        <Kpi label="Cobrado este mes" value={formatMoneyMap(t.collectedThisMonth)} tone="good" />
       </div>
 
       <section className="space-y-2">
@@ -50,13 +51,13 @@ export default async function AdminBillingPage() {
                     {p.gymName} <span className="font-normal text-muted-foreground">· {p.period}</span>
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {p.members} socios × {usd(p.pricePerMemberUsd)} · vence {p.dueDate}
+                    {p.members} socios × {formatMoney(p.pricePerMember, p.currency)} · vence {p.dueDate}
                     {p.paidAt ? ` · pagado ${new Date(p.paidAt).toLocaleDateString('es-AR')}` : ''}
                     {p.note ? ` · ${p.note}` : ''}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="font-semibold tabular-nums">{usd(p.amountUsd)}</span>
+                  <span className="font-semibold tabular-nums">{formatMoney(p.amount, p.currency)}</span>
                   {p.overdue ? <Badge variant="warning">Vencido</Badge> : p.status === 'PAID' ? <Badge variant="success">Pagado</Badge> : <Badge variant="secondary">Pendiente</Badge>}
                   <PaidButton id={p.id} paid={p.status === 'PAID'} />
                 </div>
@@ -79,7 +80,7 @@ export default async function AdminBillingPage() {
                   {g.name}
                   {g.status === 'SUSPENDED' ? <span className="font-normal text-muted-foreground"> · suspendido</span> : null}
                 </span>
-                <PriceEditor gymId={g.id} price={Number(g.pricePerMemberUsd)} />
+                <PriceEditor gymId={g.id} price={Number(g.pricePerMember)} currency={asCurrency(g.currency)} />
               </li>
             ))}
           </ul>

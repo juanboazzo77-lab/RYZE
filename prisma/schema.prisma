@@ -1009,7 +1009,9 @@ model Gym {
   createdAt           DateTime    @default(now()) @map("created_at")
   approvedAt          DateTime?   @map("approved_at")
   /// Lo que paga el gimnasio por cada socio que entró con su código, por mes (US$).
-  pricePerMemberUsd   Decimal     @default(1.50) @db.Decimal(8, 2) @map("price_per_member_usd")
+  pricePerMember      Decimal     @default(5000) @db.Decimal(8, 2) @map("price_per_member_usd")
+  /// Moneda en la que paga el gimnasio: ARS (pesos argentinos) o USD.
+  currency            String      @default("ARS")
   /// Cuenta de Forza AI del dueño del gimnasio (la fija el admin). Una misma cuenta puede ser socia de un
   /// gimnasio y dueña de otro: son dos roles aparte.
   ownerUserId         String?     @db.Uuid @map("owner_user_id")
@@ -1220,8 +1222,10 @@ model GymPayment {
   /// Mes que se cobra, "2026-11".
   period             String
   members            Int
-  pricePerMemberUsd  Decimal   @db.Decimal(8, 2) @map("price_per_member_usd")
-  amountUsd          Decimal   @db.Decimal(10, 2) @map("amount_usd")
+  pricePerMember     Decimal   @db.Decimal(8, 2) @map("price_per_member_usd")
+  amount             Decimal   @db.Decimal(10, 2) @map("amount_usd")
+  /// ARS | USD (la moneda del gimnasio cuando se armó el cobro).
+  currency           String    @default("USD")
   dueDate            DateTime  @db.Date @map("due_date")
   /// PENDING | PAID
   status             String    @default("PENDING")

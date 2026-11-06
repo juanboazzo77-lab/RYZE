@@ -8,7 +8,7 @@ const empty: TodaySummary = {
   subscribers: { new7d: 1, pastDue: 0, total: 5 },
   errors: { open: 0, last24h: 0, recent: [] },
   gyms: { pending: [], active: 2, full: 0, members: 80 },
-  billing: { overdueCount: 0, overdueUsd: 0, pendingUsd: 120, collectedThisMonthUsd: 60 },
+  billing: { overdueCount: 0, overdue: { ARS: 0, USD: 0 }, pending: { ARS: 0, USD: 120 }, collectedThisMonth: { ARS: 0, USD: 60 } },
   invitesPending: 0,
   overdue: [],
 };
@@ -26,15 +26,15 @@ describe('resumen diario', () => {
     const d = buildDigest({
       ...empty,
       gyms: { ...empty.gyms, pending: [{ id: '1', name: 'Gym Norte', city: 'Hudson', createdAt: '2026-11-05T00:00:00Z' }] },
-      billing: { ...empty.billing, overdueCount: 1, overdueUsd: 180 },
-      overdue: [{ id: 'p', gymName: 'Gym Sur', period: '2026-11', amountUsd: 180, dueDate: '2026-11-10' }],
+      billing: { ...empty.billing, overdueCount: 1, overdue: { ARS: 180000, USD: 0 } },
+      overdue: [{ id: 'p', gymName: 'Gym Sur', period: '2026-11', amount: 180000, currency: 'ARS', dueDate: '2026-11-10' }],
       errors: { open: 3, last24h: 2, recent: [{ id: 'e', message: 'Boom', path: 'GET /x', count: 4, lastSeen: '2026-11-06T10:00:00Z' }] },
       subscribers: { ...empty.subscribers, pastDue: 1 },
     });
     expect(d.urgent).toBe(5);
     expect(d.subject).toContain('5 para mirar');
     expect(d.text).toContain('Gym Norte (Hudson)');
-    expect(d.text).toContain('Gym Sur, 2026-11: US$ 180');
+    expect(d.text).toContain('Gym Sur, 2026-11: $180.000');
     expect(d.text).toContain('Boom · GET /x · 4 veces');
     expect(d.text).toContain('PAGO FALLIDO (1)');
   });

@@ -43,7 +43,9 @@ export interface OwnerView {
   specialty: string | null;
   profile: GymProfile;
   /** Lo que paga el gimnasio por cada socio, por mes (US$). */
-  pricePerMemberUsd: number;
+  pricePerMember: number;
+  /** ARS o USD. */
+  currency: 'ARS' | 'USD';
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -101,7 +103,8 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
     hiddenMembers: members.length - shared.length,
     specialty: gym.specialty,
     profile: parseGymProfile(gym.equipment),
-    pricePerMemberUsd: Number(gym.pricePerMemberUsd),
+    pricePerMember: Number(gym.pricePerMember),
+    currency: gym.currency === 'USD' ? 'USD' : 'ARS',
   };
 }
 

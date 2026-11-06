@@ -7,17 +7,18 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { inviteMembers } from './actions';
 import { parseEmailList } from '@/features/gym/logic';
+import { formatMoney, type Currency } from '@/features/gym/money';
 
 /**
  * El dueño pega los mails de sus clientes y pide el alta. El pago lo hace por fuera y manda el comprobante por
  * mail o WhatsApp; el administrador confirma el pago y aprueba. Hasta entonces no sale ningún mail.
  */
-export function InviteForm({ disabled, pricePerMemberUsd, paymentInstructions }: { disabled?: boolean; pricePerMemberUsd: number; paymentInstructions: string }) {
+export function InviteForm({ disabled, pricePerMember, currency, paymentInstructions }: { disabled?: boolean; pricePerMember: number; currency: Currency; paymentInstructions: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [text, setText] = useState('');
   const parsed = parseEmailList(text);
-  const total = parsed.valid.length * pricePerMemberUsd;
+  const total = parsed.valid.length * pricePerMember;
 
   function submit() {
     start(async () => {
@@ -41,7 +42,7 @@ export function InviteForm({ disabled, pricePerMemberUsd, paymentInstructions }:
       <div className="space-y-1 rounded-lg bg-secondary/50 p-3 text-sm">
         <p className="font-medium">Cómo funciona el pago</p>
         <p className="text-xs text-muted-foreground">
-          Cada alta cuesta US$ {pricePerMemberUsd.toLocaleString('es-AR', { maximumFractionDigits: 2 })} por mes. {paymentInstructions}
+          Cada alta cuesta {formatMoney(pricePerMember, currency)} por mes. {paymentInstructions}
         </p>
         <p className="text-xs text-muted-foreground">
           Cuando recibamos el comprobante y confirmemos el pago, aprobamos las altas y cada cliente recibe su invitación por mail.
@@ -64,7 +65,7 @@ export function InviteForm({ disabled, pricePerMemberUsd, paymentInstructions }:
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">
           {parsed.valid.length} {parsed.valid.length === 1 ? 'mail' : 'mails'} válidos
-          {parsed.valid.length > 0 ? ` · a pagar US$ ${total.toLocaleString('es-AR', { maximumFractionDigits: 2 })} por mes` : ''}
+          {parsed.valid.length > 0 ? ` · a pagar ${formatMoney(total, currency)} por mes` : ''}
           {parsed.invalid.length > 0 ? ` · ${parsed.invalid.length} sin entender` : ''}
         </span>
         <Button disabled={disabled || pending || parsed.valid.length === 0} onClick={submit}>

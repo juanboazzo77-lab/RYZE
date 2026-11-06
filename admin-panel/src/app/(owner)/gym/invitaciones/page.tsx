@@ -41,7 +41,8 @@ export default async function GymInvitesPage() {
 
       <InviteForm
         disabled={view.status !== 'ACTIVE'}
-        pricePerMemberUsd={view.pricePerMemberUsd}
+        pricePerMember={view.pricePerMember}
+        currency={view.currency}
         paymentInstructions={process.env.GYM_PAYMENT_INSTRUCTIONS || 'Pedinos los datos para transferir escribiendo a gimnasios@forzaai.app, y mandanos ahí el comprobante.'}
       />
 

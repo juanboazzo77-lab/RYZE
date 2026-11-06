@@ -1,5 +1,6 @@
 import 'server-only';
 import { prisma } from './db';
+import { asCurrency, priceLimit, zeroMoney, type Currency, type Money } from '@/features/gym/money';
 
 /**
  * Cobros a gimnasios. Un registro por gimnasio y mes: socios que entraron con su código × precio por socio.
@@ -41,7 +42,7 @@ export function isOverdue(status: string, dueDate: Date, today: Date = todayDate
 /** Crea o actualiza el cobro del mes de cada gimnasio activo. Idempotente. */
 export async function ensureCurrentPayments(): Promise<void> {
   const period = periodOf();
-  const gyms = await prisma.gym.findMany({ where: { status: 'ACTIVE' }, select: { id: true, pricePerMemberUsd: true } });
+  const gyms = await prisma.gym.findMany({ where: { status: 'ACTIVE' }, select: { id: true, pricePerMember: true, currency: true } });
   if (gyms.length === 0) return;
   const counts = await prisma.gymMember.groupBy({
     by: ['gymId'],
@@ -54,7 +55,7 @@ export async function ensureCurrentPayments(): Promise<void> {
 
   for (const g of gyms) {
     const members = byGym.get(g.id) ?? 0;
-    const price = Number(g.pricePerMemberUsd);
+    const price = Number(g.pricePerMember);
     const current = existingByGym.get(g.id);
     if (!current) {
       if (members === 0) continue;
@@ -64,8 +65,9 @@ export async function ensureCurrentPayments(): Promise<void> {
             gymId: g.id,
             period,
             members,
-            pricePerMemberUsd: price,
-            amountUsd: amountFor(members, price),
+            pricePerMember: price,
+            amount: amountFor(members, price),
+            currency: asCurrency(g.currency),
             dueDate: dueDateOf(period),
           },
         });
@@ -75,7 +77,7 @@ export async function ensureCurrentPayments(): Promise<void> {
     } else if (current.status === 'PENDING') {
       await prisma.gymPayment.update({
         where: { id: current.id },
-        data: { members, pricePerMemberUsd: price, amountUsd: amountFor(members, price) },
+        data: { members, pricePerMember: price, amount: amountFor(members, price), currency: asCurrency(g.currency) },
       });
     }
   }
@@ -87,8 +89,9 @@ export interface PaymentRow {
   gymName: string;
   period: string;
   members: number;
-  pricePerMemberUsd: number;
-  amountUsd: number;
+  pricePerMember: number;
+  amount: number;
+  currency: Currency;
   dueDate: string;
   status: 'PENDING' | 'PAID';
   overdue: boolean;
@@ -109,8 +112,9 @@ export async function listPayments(take = 200): Promise<PaymentRow[]> {
     gymName: r.gym.name,
     period: r.period,
     members: r.members,
-    pricePerMemberUsd: Number(r.pricePerMemberUsd),
-    amountUsd: Number(r.amountUsd),
+    pricePerMember: Number(r.pricePerMember),
+    amount: Number(r.amount),
+    currency: asCurrency(r.currency),
     dueDate: r.dueDate.toISOString().slice(0, 10),
     status: (r.status === 'PAID' ? 'PAID' : 'PENDING') as 'PENDING' | 'PAID',
     overdue: isOverdue(r.status, r.dueDate, today),
@@ -124,35 +128,32 @@ export async function listPayments(take = 200): Promise<PaymentRow[]> {
 
 export interface BillingTotals {
   overdueCount: number;
-  overdueUsd: number;
-  pendingUsd: number;
-  collectedThisMonthUsd: number;
+  /** Lo vencido, lo pendiente y lo cobrado este mes, cada uno por moneda (nunca se suman pesos con dólares). */
+  overdue: Money;
+  pending: Money;
+  collectedThisMonth: Money;
 }
 
 export function totalsOf(rows: PaymentRow[], now: Date = new Date()): BillingTotals {
   const period = periodOf(now);
   const monthStart = new Date(Date.UTC(Number(period.slice(0, 4)), Number(period.slice(5)) - 1, 1));
   let overdueCount = 0;
-  let overdueUsd = 0;
-  let pendingUsd = 0;
-  let collected = 0;
+  const overdue = zeroMoney();
+  const pending = zeroMoney();
+  const collected = zeroMoney();
   for (const r of rows) {
     if (r.status === 'PENDING') {
-      pendingUsd += r.amountUsd;
+      pending[r.currency] += r.amount;
       if (r.overdue) {
         overdueCount += 1;
-        overdueUsd += r.amountUsd;
+        overdue[r.currency] += r.amount;
       }
     } else if (r.paidAt && new Date(r.paidAt) >= monthStart) {
-      collected += r.amountUsd;
+      collected[r.currency] += r.amount;
     }
   }
-  return {
-    overdueCount,
-    overdueUsd: roundMoney(overdueUsd),
-    pendingUsd: roundMoney(pendingUsd),
-    collectedThisMonthUsd: roundMoney(collected),
-  };
+  const round = (m: Money): Money => ({ ARS: roundMoney(m.ARS), USD: roundMoney(m.USD) });
+  return { overdueCount, overdue: round(overdue), pending: round(pending), collectedThisMonth: round(collected) };
 }
 
 export async function setPaymentPaid(id: string, paid: boolean, note?: string): Promise<boolean> {
@@ -165,8 +166,10 @@ export async function setPaymentPaid(id: string, paid: boolean, note?: string): 
   return res.count > 0;
 }
 
-export async function setGymPrice(gymId: string, pricePerMemberUsd: number): Promise<boolean> {
-  if (!Number.isFinite(pricePerMemberUsd) || pricePerMemberUsd < 0 || pricePerMemberUsd > 1000) return false;
-  const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { pricePerMemberUsd: roundMoney(pricePerMemberUsd) } });
+/** El administrador fija el precio por socio y la moneda de un gimnasio. Los cobros pendientes lo toman la próxima vez. */
+export async function setGymPrice(gymId: string, pricePerMember: number, currency: Currency): Promise<boolean> {
+  const cur = asCurrency(currency);
+  if (!Number.isFinite(pricePerMember) || pricePerMember < 0 || pricePerMember > priceLimit(cur)) return false;
+  const res = await prisma.gym.updateMany({ where: { id: gymId }, data: { pricePerMember: roundMoney(pricePerMember), currency: cur } });
   return res.count > 0;
 }

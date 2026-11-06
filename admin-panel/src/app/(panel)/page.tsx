@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTodaySummary } from '@/server/admin-hub';
-import { Kpi, Section, ago, usd } from '@/features/admin/ui';
+import { Kpi, Section, ago } from '@/features/admin/ui';
+import { formatMoney, formatMoneyMap } from '@/features/gym/money';
 import { DigestButton } from '@/features/admin/digest-button';
 
 export const metadata: Metadata = { title: 'Gestión', robots: { index: false, follow: false } };
@@ -57,7 +58,7 @@ export default async function AdminTodayPage() {
         <Kpi
           label="Cobros vencidos"
           value={s.billing.overdueCount}
-          sub={s.billing.overdueCount ? `${usd(s.billing.overdueUsd)} por cobrar` : 'Todo al día'}
+          sub={s.billing.overdueCount ? `${formatMoneyMap(s.billing.overdue)} por cobrar` : 'Todo al día'}
           tone={s.billing.overdueCount > 0 ? 'alert' : 'good'}
           href="/cobros"
         />
@@ -76,8 +77,8 @@ export default async function AdminTodayPage() {
         <Kpi label="Usuarios en total" value={s.users.total} />
         <Kpi
           label="Por cobrar a gimnasios"
-          value={usd(s.billing.pendingUsd)}
-          sub={`Cobrado este mes: ${usd(s.billing.collectedThisMonthUsd)}`}
+          value={formatMoneyMap(s.billing.pending)}
+          sub={`Cobrado este mes: ${formatMoneyMap(s.billing.collectedThisMonth)}`}
           href="/cobros"
         />
       </div>
@@ -107,7 +108,7 @@ export default async function AdminTodayPage() {
                   <span className="font-medium">{p.gymName}</span>
                   <span className="text-muted-foreground"> · {p.period} · vencía el {p.dueDate}</span>
                 </span>
-                <span className="shrink-0 font-semibold tabular-nums">{usd(p.amountUsd)}</span>
+                <span className="shrink-0 font-semibold tabular-nums">{formatMoney(p.amount, p.currency)}</span>
               </li>
             ))}
           </ul>

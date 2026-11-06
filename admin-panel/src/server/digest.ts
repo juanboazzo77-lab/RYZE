@@ -1,7 +1,6 @@
 import type { TodaySummary } from './admin-hub';
 
-/** Dólares sin decimales de más: US$ 1.234,5 */
-const usd = (n: number) => `US$ ${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+import { formatMoney, formatMoneyMap } from '@/features/gym/money';
 
 export interface Digest {
   subject: string;
@@ -29,8 +28,8 @@ export function buildDigest(s: TodaySummary): Digest {
     lines.push(`ALTAS DE SOCIOS ESPERANDO TU APROBACIÓN (${s.invitesPending})`, "Aprobalas en el panel, en Altas: cada persona recibe su invitación por mail.", "");
   }
   if (s.overdue.length > 0) {
-    lines.push(`COBROS VENCIDOS (${s.billing.overdueCount}, ${usd(s.billing.overdueUsd)})`);
-    for (const p of s.overdue) lines.push(`- ${p.gymName}, ${p.period}: ${usd(p.amountUsd)} (vencía el ${p.dueDate})`);
+    lines.push(`COBROS VENCIDOS (${s.billing.overdueCount}, ${formatMoneyMap(s.billing.overdue)})`);
+    for (const p of s.overdue) lines.push(`- ${p.gymName}, ${p.period}: ${formatMoney(p.amount, p.currency)} (vencía el ${p.dueDate})`);
     lines.push('');
   }
   if (s.errors.last24h > 0) {
@@ -46,7 +45,7 @@ export function buildDigest(s: TodaySummary): Digest {
   lines.push(`- Usuarios nuevos: ${s.users.new24h} en 24 h, ${s.users.new7d} en 7 días (${s.users.total} en total)`);
   lines.push(`- Suscriptores nuevos en 7 días: ${s.subscribers.new7d} (${s.subscribers.total} en total)`);
   lines.push(`- Gimnasios activos: ${s.gyms.active}, con ${s.gyms.members} socios${s.gyms.full > 0 ? ` (${s.gyms.full} con el cupo lleno)` : ''}`);
-  lines.push(`- Por cobrar a gimnasios: ${usd(s.billing.pendingUsd)}. Cobrado este mes: ${usd(s.billing.collectedThisMonthUsd)}`);
+  lines.push(`- Por cobrar a gimnasios: ${formatMoneyMap(s.billing.pending)}. Cobrado este mes: ${formatMoneyMap(s.billing.collectedThisMonth)}`);
 
   return {
     subject: urgent === 0 ? 'Forza AI · resumen de hoy: nada urgente' : `Forza AI · resumen de hoy: ${urgent} para mirar`,

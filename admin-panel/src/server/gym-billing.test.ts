@@ -31,18 +31,33 @@ describe('cobros a gimnasios', () => {
   });
 
   it('suma lo vencido, lo pendiente y lo cobrado este mes', () => {
-    const base = { gymId: 'g', gymName: 'G', period: '2026-11', members: 10, pricePerMemberUsd: 1.5, dueDate: '2026-11-10', note: null };
+    const base = { gymId: 'g', gymName: 'G', period: '2026-11', members: 10, pricePerMember: 1.5, currency: 'USD' as const, dueDate: '2026-11-10', note: null };
     const rows: PaymentRow[] = [
-      { ...base, id: '1', amountUsd: 100, status: 'PENDING', overdue: true, paidAt: null },
-      { ...base, id: '2', amountUsd: 50, status: 'PENDING', overdue: false, paidAt: null },
-      { ...base, id: '3', amountUsd: 70, status: 'PAID', overdue: false, paidAt: '2026-11-05T12:00:00Z' },
-      { ...base, id: '4', amountUsd: 999, status: 'PAID', overdue: false, paidAt: '2026-10-05T12:00:00Z' },
+      { ...base, id: '1', amount: 100, status: 'PENDING', overdue: true, paidAt: null },
+      { ...base, id: '2', amount: 50, status: 'PENDING', overdue: false, paidAt: null },
+      { ...base, id: '3', amount: 70, status: 'PAID', overdue: false, paidAt: '2026-11-05T12:00:00Z' },
+      { ...base, id: '4', amount: 999, status: 'PAID', overdue: false, paidAt: '2026-10-05T12:00:00Z' },
     ];
     expect(totalsOf(rows, new Date('2026-11-20T12:00:00Z'))).toEqual({
       overdueCount: 1,
-      overdueUsd: 100,
-      pendingUsd: 150,
-      collectedThisMonthUsd: 70,
+      overdue: { ARS: 0, USD: 100 },
+      pending: { ARS: 0, USD: 150 },
+      collectedThisMonth: { ARS: 0, USD: 70 },
+    });
+  });
+
+  it('nunca mezcla pesos con dólares: cada moneda va aparte', () => {
+    const base = { gymId: 'g', gymName: 'G', period: '2026-11', members: 8, pricePerMember: 5000, dueDate: '2026-11-10', note: null };
+    const rows: PaymentRow[] = [
+      { ...base, id: '1', currency: 'ARS', amount: 40000, status: 'PENDING', overdue: true, paidAt: null },
+      { ...base, id: '2', currency: 'USD', amount: 12, status: 'PENDING', overdue: true, paidAt: null },
+      { ...base, id: '3', currency: 'ARS', amount: 25000, status: 'PAID', overdue: false, paidAt: '2026-11-05T12:00:00Z' },
+    ];
+    expect(totalsOf(rows, new Date('2026-11-20T12:00:00Z'))).toEqual({
+      overdueCount: 2,
+      overdue: { ARS: 40000, USD: 12 },
+      pending: { ARS: 40000, USD: 12 },
+      collectedThisMonth: { ARS: 25000, USD: 0 },
     });
   });
 });
