@@ -23,6 +23,9 @@ export default async function GymRoutinesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Rutinas de {ctx.gym?.name ?? 'tu gimnasio'}</h1>
         <p className="text-sm text-muted-foreground">Armadas por los profes de tu gimnasio.</p>
+        <Link href="/training/gym/retos" className="mt-1 inline-block text-sm font-medium text-primary underline">
+          Ver los retos del gimnasio
+        </Link>
       </div>
 
       {routines.length === 0 ? (

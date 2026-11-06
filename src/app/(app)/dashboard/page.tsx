@@ -15,6 +15,8 @@ import { CompetitionBanner } from '@/features/sports/competition-banner';
 import { CoachProfileNudge } from '@/features/coach-profile/completion-card';
 import { GymBrandCard } from '@/features/gym/gym-brand-card';
 import { countMemberRoutines } from '@/server/gym-routines';
+import { nextChallengeBanner } from '@/server/gym-challenges';
+import { ChallengeBanner } from '@/features/gym/challenge-banner';
 
 export const metadata: Metadata = { title: 'Inicio' };
 
@@ -26,6 +28,8 @@ export default async function DashboardPage() {
   const checkinDue = can(ctx.entitlement, 'weekly_checkin')
     ? await isCheckinDue(ctx.profile, limitsFor(ctx.entitlement).checkinEveryWeeks)
     : false;
+
+  const challenge = ctx.gym ? await nextChallengeBanner(ctx.userId, ctx.gym.gymId) : null;
 
   const part = dayPart(ctx.profile.timezone);
   const greeting =
@@ -51,6 +55,8 @@ export default async function DashboardPage() {
       </div>
 
       {ctx.gym ? <GymBrandCard gym={ctx.gym} routineCount={await countMemberRoutines(ctx.gym.gymId)} /> : null}
+
+      {challenge ? <ChallengeBanner challenge={challenge} /> : null}
 
       {checkinDue ? <CheckinReminder t={t} /> : null}
 

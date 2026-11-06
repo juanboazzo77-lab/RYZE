@@ -291,6 +291,7 @@ model Profile {
   pushSubscriptions       PushSubscription[]
   deviceTokens            DeviceToken[]
   gymMembership           GymMember?
+  challengeEntries        GymChallengeEntry[]
   ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
@@ -1017,6 +1018,7 @@ model Gym {
   clients             GymClient[]
   payments            GymPayment[]
   routines            GymRoutine[]
+  challenges          GymChallenge[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
@@ -1088,6 +1090,40 @@ model GymRoutine {
 
   @@index([gymId, active])
   @@map("gym_routine")
+}
+
+/// Reto del gimnasio: un desafío entre sus socios entre dos fechas. El puntaje sale de los entrenamientos que
+/// cada socio que se sumó completa en la app (metric: WORKOUTS = entrenamientos, DAYS = días distintos).
+model GymChallenge {
+  id          String   @id @default(uuid()) @db.Uuid
+  gymId       String   @db.Uuid @map("gym_id")
+  gym         Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  metric      String   @default("WORKOUTS")
+  startsOn    DateTime @db.Date @map("starts_on")
+  endsOn      DateTime @db.Date @map("ends_on")
+  /// Premio para quien gane (texto libre, lo entrega el gimnasio).
+  prize       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  entries     GymChallengeEntry[]
+
+  @@index([gymId, endsOn])
+  @@map("gym_challenge")
+}
+
+/// Un socio que se sumó a un reto (al sumarse acepta aparecer en el ranking con su nombre y la inicial del apellido).
+model GymChallengeEntry {
+  id          String       @id @default(uuid()) @db.Uuid
+  challengeId String       @db.Uuid @map("challenge_id")
+  challenge   GymChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String       @db.Uuid @map("user_id")
+  user        Profile      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt    DateTime     @default(now()) @map("joined_at")
+
+  @@unique([challengeId, userId])
+  @@index([userId])
+  @@map("gym_challenge_entry")
 }
 
 /// Un pago de cuota registrado por el dueño.
