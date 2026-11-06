@@ -6,18 +6,21 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { adminApproveInvites, adminRejectInvites } from './invite-actions';
+import { adminApproveInvites, adminMarkInvitesPaid, adminRejectInvites } from './invite-actions';
 import type { PendingGroup } from '@/server/invites';
 
-/** Altas pendientes de un gimnasio: se eligen y se aprueban (sale el mail al cliente) o se rechazan. */
+/**
+ * Altas pendientes de un gimnasio. El comprobante de pago te llega por mail o WhatsApp: cuando ves que pagaron,
+ * marcás "Pago recibido" y recién ahí se pueden aprobar (sale el mail de invitación a cada cliente).
+ */
 export function PendingInvites({ group }: { group: PendingGroup }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
-  // Sólo se pueden aprobar las que traen comprobante de pago.
-  const all = group.invites.filter((i) => i.hasProof).map((i) => i.id);
-  const withoutProof = group.invites.length - all.length;
+  const allIds = group.invites.map((i) => i.id);
+  const unpaidIds = group.invites.filter((i) => !i.paid).map((i) => i.id);
+  const paidIds = group.invites.filter((i) => i.paid).map((i) => i.id);
   const toggle = (id: string) =>
     setPicked((p) => {
       const n = new Set(p);
@@ -25,9 +28,24 @@ export function PendingInvites({ group }: { group: PendingGroup }) {
       else n.add(id);
       return n;
     });
-  const chosen = picked.size > 0 ? [...picked] : all;
-  // Rechazar sirve también para los que no traen comprobante.
-  const toReject = picked.size > 0 ? [...picked] : group.invites.map((i) => i.id);
+
+  // Sin elegir nada, cada botón actúa sobre lo que corresponde: marcar pago sobre los que faltan, aprobar sobre los pagados.
+  const pickedList = [...picked];
+  const toMark = pickedList.length > 0 ? pickedList.filter((id) => unpaidIds.includes(id)) : unpaidIds;
+  const toApprove = pickedList.length > 0 ? pickedList.filter((id) => paidIds.includes(id)) : paidIds;
+  const toUnmark = pickedList.filter((id) => paidIds.includes(id));
+  const toReject = pickedList.length > 0 ? pickedList : allIds;
+
+  function markPaid(list: string[], paid: boolean) {
+    start(async () => {
+      const res = await adminMarkInvitesPaid({ ids: list, paid });
+      if (res.ok) {
+        toast.success(paid ? `${res.count} marcados como pagados.` : 'Pago desmarcado.');
+        setPicked(new Set());
+        router.refresh();
+      } else toast.error('No se pudo actualizar.');
+    });
+  }
 
   function approve(list: string[]) {
     start(async () => {
@@ -36,7 +54,7 @@ export function PendingInvites({ group }: { group: PendingGroup }) {
         const r = res.result;
         toast.success(`${r.approved} aprobados · ${r.emailsSent} mails enviados`);
         if (r.emailsFailed > 0) toast.warning(`${r.emailsFailed} mails no salieron: reenvialos desde "Mails sin enviar".`);
-        if (r.missingProof > 0) toast.warning(`${r.missingProof} no tienen comprobante: no se aprobaron.`);
+        if (r.unpaid > 0) toast.warning(`${r.unpaid} sin pago confirmado: no se aprobaron.`);
         if (r.overCapacity > 0) toast.warning(`${r.overCapacity} no entran en el cupo: subí el cupo del gimnasio y aprobalos de nuevo.`);
         setPicked(new Set());
         router.refresh();
@@ -65,8 +83,8 @@ export function PendingInvites({ group }: { group: PendingGroup }) {
             {group.activeMembers} socios + {group.approvedWaiting} invitados sin entrar, de un cupo de {group.memberLimit}
           </p>
         </div>
-        <Badge variant={group.room >= all.length ? 'success' : 'warning'}>
-          {group.room >= all.length ? `Entran los ${all.length}` : `Hay lugar para ${group.room}`}
+        <Badge variant={group.room >= paidIds.length ? 'success' : 'warning'}>
+          {group.room >= paidIds.length ? `Hay lugar para los ${paidIds.length} pagados` : `Hay lugar para ${group.room}`}
         </Badge>
       </div>
 
@@ -74,38 +92,32 @@ export function PendingInvites({ group }: { group: PendingGroup }) {
         {group.invites.map((i) => (
           <li key={i.id} className="px-3 py-2 text-sm">
             <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" checked={picked.has(i.id)} disabled={!i.hasProof} onChange={() => toggle(i.id)} className="size-4 accent-[var(--primary)] disabled:opacity-40" />
+              <input type="checkbox" checked={picked.has(i.id)} onChange={() => toggle(i.id)} className="size-4 accent-[var(--primary)]" />
               <span className="min-w-0 flex-1 truncate">{i.email}</span>
-              {i.hasProof ? (
-                i.proofUrl ? (
-                  <a href={i.proofUrl} target="_blank" rel="noreferrer" className="shrink-0 text-xs underline" onClick={(e) => e.stopPropagation()}>
-                    Ver comprobante
-                  </a>
-                ) : (
-                  <span className="shrink-0 text-xs text-muted-foreground">Comprobante cargado</span>
-                )
-              ) : (
-                <Badge variant="warning">Sin comprobante</Badge>
-              )}
+              {i.paid ? <Badge variant="success">Pago recibido</Badge> : <Badge variant="secondary">Falta el pago</Badge>}
               <span className="shrink-0 text-xs text-muted-foreground">{new Date(i.requestedAt).toLocaleDateString('es-AR')}</span>
             </label>
           </li>
         ))}
       </ul>
 
-      {withoutProof > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          {withoutProof} {withoutProof === 1 ? 'pedido no tiene' : 'pedidos no tienen'} comprobante de pago: no se pueden aprobar hasta que el gimnasio los adjunte.
-        </p>
-      ) : null}
+      <p className="text-xs text-muted-foreground">
+        El gimnasio te manda el comprobante por mail o WhatsApp. Cuando veas que pagó, marcá <strong>Pago recibido</strong> y después <strong>Aprobar</strong>.
+      </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={pending || all.length === 0} onClick={() => approve(chosen)}>
+        <Button size="sm" variant="outline" disabled={pending || toMark.length === 0} onClick={() => markPaid(toMark, true)}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-          {picked.size > 0 ? `Aprobar ${picked.size} elegidos` : `Aprobar los ${all.length}`}
+          Pago recibido ({toMark.length})
+        </Button>
+        <Button size="sm" disabled={pending || toApprove.length === 0} onClick={() => approve(toApprove)}>
+          Aprobar ({toApprove.length})
+        </Button>
+        <Button size="sm" variant="ghost" disabled={pending || toUnmark.length === 0} onClick={() => markPaid(toUnmark, false)}>
+          Quitar pago
         </Button>
         <Button size="sm" variant="outline" disabled={pending} onClick={() => reject(toReject)}>
-          {picked.size > 0 ? `Rechazar ${picked.size} elegidos` : 'Rechazar todos'}
+          {pickedList.length > 0 ? `Rechazar ${pickedList.length}` : 'Rechazar todos'}
         </Button>
       </div>
     </div>

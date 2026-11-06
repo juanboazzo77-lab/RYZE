@@ -2,18 +2,6 @@ import 'server-only';
 import { prisma } from './db';
 import { sendMail } from './alerts';
 import { approvableCount } from '@/features/gym/logic';
-import { createSupabaseAdminClient, supabaseAdminConfigured } from '@/lib/supabase-admin';
-
-const PROOF_BUCKET = 'gym-payment-proofs';
-
-/** Enlaces para ver los comprobantes (vencen en una hora). Si no se puede, las altas siguen apareciendo sin enlace. */
-async function signedProofUrls(paths: string[]): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
-  if (paths.length === 0 || !supabaseAdminConfigured()) return out;
-  const { data } = await createSupabaseAdminClient().storage.from(PROOF_BUCKET).createSignedUrls(paths, 60 * 60);
-  for (const d of data ?? []) if (d.path && d.signedUrl) out.set(d.path, d.signedUrl);
-  return out;
-}
 
 /**
  * Altas de socios por mail. El gimnasio carga los mails (PENDING); desde acá se aprueban (se manda el mail de
@@ -58,7 +46,7 @@ export interface PendingGroup {
   approvedWaiting: number;
   /** Cuántos más se pueden aprobar sin pasarse del cupo. */
   room: number;
-  invites: Array<{ id: string; email: string; requestedAt: string; hasProof: boolean; proofUrl: string | null }>;
+  invites: Array<{ id: string; email: string; requestedAt: string; paid: boolean }>;
 }
 
 export interface ApprovedRow {
@@ -73,10 +61,9 @@ export async function listPendingGroups(): Promise<PendingGroup[]> {
   const pending = await prisma.gymInvite.findMany({
     where: { status: 'PENDING', gym: { status: 'ACTIVE' } },
     orderBy: { requestedAt: 'asc' },
-    select: { id: true, email: true, requestedAt: true, proofPath: true, gymId: true, gym: { select: { name: true, memberLimit: true } } },
+    select: { id: true, email: true, requestedAt: true, paidAt: true, gymId: true, gym: { select: { name: true, memberLimit: true } } },
   });
   if (pending.length === 0) return [];
-  const urls = await signedProofUrls([...new Set(pending.map((p) => p.proofPath).filter((x): x is string => !!x))]);
   const gymIds = [...new Set(pending.map((p) => p.gymId))];
   const members = await prisma.gymMember.groupBy({ by: ['gymId'], where: { status: 'ACTIVE', gymId: { in: gymIds } }, _count: { _all: true } });
   const approved = await prisma.gymInvite.groupBy({ by: ['gymId'], where: { status: 'APPROVED', gymId: { in: gymIds } }, _count: { _all: true } });
@@ -100,13 +87,7 @@ export async function listPendingGroups(): Promise<PendingGroup[]> {
       };
       groups.set(p.gymId, g);
     }
-    g.invites.push({
-      id: p.id,
-      email: p.email,
-      requestedAt: p.requestedAt.toISOString(),
-      hasProof: !!p.proofPath,
-      proofUrl: p.proofPath ? (urls.get(p.proofPath) ?? null) : null,
-    });
+    g.invites.push({ id: p.id, email: p.email, requestedAt: p.requestedAt.toISOString(), paid: !!p.paidAt });
   }
   return [...groups.values()];
 }
@@ -126,8 +107,8 @@ export interface ApproveResult {
   approved: number;
   /** No entraron en el cupo del gimnasio: siguen pendientes. */
   overCapacity: number;
-  /** No tienen comprobante de pago: no se aprueban. */
-  missingProof: number;
+  /** Todavía sin pago confirmado: no se aprueban. */
+  unpaid: number;
   emailsSent: number;
   emailsFailed: number;
 }
@@ -137,17 +118,17 @@ export interface ApproveResult {
  * aprobadas): las que no entran quedan pendientes. A cada persona aprobada se le manda su mail.
  */
 export async function approveInvites(ids: string[]): Promise<ApproveResult> {
-  const result: ApproveResult = { approved: 0, overCapacity: 0, missingProof: 0, emailsSent: 0, emailsFailed: 0 };
+  const result: ApproveResult = { approved: 0, overCapacity: 0, unpaid: 0, emailsSent: 0, emailsFailed: 0 };
   if (ids.length === 0) return result;
   const rows = await prisma.gymInvite.findMany({
     where: { id: { in: ids }, status: 'PENDING', gym: { status: 'ACTIVE' } },
     orderBy: { requestedAt: 'asc' },
-    select: { id: true, email: true, gymId: true, proofPath: true, gym: { select: { name: true, memberLimit: true } } },
+    select: { id: true, email: true, gymId: true, paidAt: true, gym: { select: { name: true, memberLimit: true } } },
   });
-  // Sin comprobante de pago no se aprueba: queda pendiente.
-  result.missingProof = rows.filter((r) => !r.proofPath).length;
+  // Sin pago confirmado no se aprueba: queda pendiente.
+  result.unpaid = rows.filter((r) => !r.paidAt).length;
   const byGym = new Map<string, typeof rows>();
-  for (const r of rows.filter((x) => !!x.proofPath)) byGym.set(r.gymId, [...(byGym.get(r.gymId) ?? []), r]);
+  for (const r of rows.filter((x) => !!x.paidAt)) byGym.set(r.gymId, [...(byGym.get(r.gymId) ?? []), r]);
 
   for (const [gymId, list] of byGym) {
     const first = list[0]!;
@@ -166,6 +147,16 @@ export async function approveInvites(ids: string[]): Promise<ApproveResult> {
     }
   }
   return result;
+}
+
+/** Marca (o desmarca) que el gimnasio pagó estas altas. El comprobante le llega al admin por mail o WhatsApp. */
+export async function markInvitesPaid(ids: string[], paid: boolean): Promise<number> {
+  if (ids.length === 0) return 0;
+  const res = await prisma.gymInvite.updateMany({
+    where: { id: { in: ids }, status: 'PENDING' },
+    data: { paidAt: paid ? new Date() : null },
+  });
+  return res.count;
 }
 
 export async function rejectInvites(ids: string[]): Promise<number> {

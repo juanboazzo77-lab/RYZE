@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Invitar socios' };
 export const dynamic = 'force-dynamic';
 
 const LABEL = {
-  PENDING: { text: 'Esperando aprobación', variant: 'secondary' as const },
+  PENDING: { text: 'Esperando pago', variant: 'secondary' as const },
   APPROVED: { text: 'Invitación enviada', variant: 'warning' as const },
   JOINED: { text: 'Ya es socio', variant: 'success' as const },
   REJECTED: { text: 'No aprobado', variant: 'secondary' as const },
@@ -28,7 +28,7 @@ export default async function GymInvitesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Invitar socios</h1>
         <p className="text-sm text-muted-foreground">
-          Cargá los mails de tus clientes con el comprobante de pago de cada uno. Revisamos el pedido y, cuando lo aprobamos, cada cliente recibe un mail con tu invitación a Forza AI. Para ellos es gratis: lo cubre el gimnasio.
+          Cargá los mails de tus clientes y mandanos el comprobante de pago. Cuando confirmamos el pago y aprobamos el pedido, cada cliente recibe un mail con tu invitación a Forza AI. Para ellos es gratis: lo cubre el gimnasio.
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export default async function GymInvitesPage() {
       <InviteForm
         disabled={view.status !== 'ACTIVE'}
         pricePerMemberUsd={view.pricePerMemberUsd}
-        paymentInstructions={process.env.GYM_PAYMENT_INSTRUCTIONS || 'Pedinos los datos para transferir escribiendo a gimnasios@forzaai.app.'}
+        paymentInstructions={process.env.GYM_PAYMENT_INSTRUCTIONS || 'Pedinos los datos para transferir escribiendo a gimnasios@forzaai.app, y mandanos ahí el comprobante.'}
       />
 
       <div className="rounded-xl bg-secondary/50 p-3 text-sm">
@@ -69,7 +69,9 @@ export default async function GymInvitesPage() {
             {rows.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm">
                 <span className="min-w-0 truncate">{r.email}</span>
-                <Badge variant={LABEL[r.status].variant}>{LABEL[r.status].text}</Badge>
+                <Badge variant={r.status === 'PENDING' && r.paid ? 'warning' : LABEL[r.status].variant}>
+                  {r.status === 'PENDING' && r.paid ? 'Pago recibido' : LABEL[r.status].text}
+                </Badge>
               </li>
             ))}
           </ul>

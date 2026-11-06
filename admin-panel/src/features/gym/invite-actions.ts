@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/admin';
-import { approveInvites, rejectInvites, resendInvite, type ApproveResult } from '@/server/invites';
+import { approveInvites, markInvitesPaid, rejectInvites, resendInvite, type ApproveResult } from '@/server/invites';
 
 const ids = z.array(z.string().uuid()).min(1).max(500);
 
@@ -38,4 +38,14 @@ export async function adminResendInvite(raw: { id: string }): Promise<{ ok?: boo
   const sent = await resendInvite(id.data);
   refresh();
   return sent ? { ok: true } : { error: 'SEND_FAILED' };
+}
+
+/** El admin confirma que el gimnasio pagó estas altas (o lo desmarca). */
+export async function adminMarkInvitesPaid(raw: { ids: string[]; paid: boolean }): Promise<{ ok?: boolean; error?: string; count?: number }> {
+  await requireAdmin();
+  const parsed = ids.safeParse(raw.ids);
+  if (!parsed.success) return { error: 'INVALID' };
+  const count = await markInvitesPaid(parsed.data, raw.paid === true);
+  refresh();
+  return { ok: true, count };
 }
