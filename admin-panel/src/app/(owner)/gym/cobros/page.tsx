@@ -63,7 +63,7 @@ export default async function GymFinancePage() {
         </p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat label={`Cobrado en ${monthLabel(f.month)}`} value={money(f.collectedThisMonth)} sub={delta ?? `${f.paymentsThisMonth} ${f.paymentsThisMonth === 1 ? 'pago' : 'pagos'}`} />
             <Stat label="Falta cobrar ya" value={money(f.pending.amount)} sub={`${f.pending.count} ${f.pending.count === 1 ? 'cliente' : 'clientes'}`} alert={f.pending.count > 0} />
             <Stat label="Vencen esta semana" value={money(f.soon.amount)} sub={`${f.soon.count} ${f.soon.count === 1 ? 'cliente' : 'clientes'}`} />

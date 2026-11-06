@@ -59,7 +59,7 @@ export default async function GymHomePage() {
         </Link>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Socios" value={view.activeMembers} sub={`de ${view.memberLimit} del cupo`} />
         <Stat label="Entrenaron esta semana" value={view.trainedThisWeek} sub={view.activeMembers ? `${Math.round((view.trainedThisWeek / view.activeMembers) * 100)}% de tus socios` : undefined} />
         <Stat label={`Sin entrenar hace ${INACTIVE_DAYS}+ días`} value={view.inactiveCount} sub="En riesgo de irse" alert={view.inactiveCount > 0} />

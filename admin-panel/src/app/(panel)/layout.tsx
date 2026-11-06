@@ -9,7 +9,7 @@ import { BrandLockup } from '@/components/brand';
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {
   const email = await requireAdminPage();
   return (
-    <div className="mx-auto min-h-screen max-w-3xl space-y-4 px-4 py-4">
+    <div className="mx-auto min-h-screen max-w-6xl space-y-4 px-4 py-4 lg:space-y-6 lg:px-8 lg:py-6">
       <header className="flex items-center justify-between gap-2">
         <BrandLockup sub="Gestión" />
         <form action={signOutAction} className="flex items-center gap-2">
@@ -19,8 +19,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           </Button>
         </form>
       </header>
-      <AdminNav />
-      {children}
+      <div className="space-y-4 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
+        <div className="lg:sticky lg:top-6">
+          <AdminNav />
+        </div>
+        <div className="min-w-0 space-y-4">{children}</div>
+      </div>
     </div>
   );
 }

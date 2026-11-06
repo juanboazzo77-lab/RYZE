@@ -21,7 +21,7 @@ const ITEMS = [
 export function GymNav() {
   const pathname = usePathname();
   return (
-    <nav className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 pb-2" aria-label="Panel del gimnasio">
+    <nav className="-mx-4 flex gap-1 overflow-x-auto border-b px-4 pb-2 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:px-0 lg:pb-0" aria-label="Panel del gimnasio">
       {ITEMS.map((i) => {
         const active = i.href === '/gym' ? pathname === '/gym' : pathname.startsWith(i.href);
         return (
@@ -29,7 +29,7 @@ export function GymNav() {
             key={i.href}
             href={i.href}
             className={cn(
-              'shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors',
+              'shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors lg:rounded-lg lg:px-3 lg:py-2',
               active ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
             )}
           >
