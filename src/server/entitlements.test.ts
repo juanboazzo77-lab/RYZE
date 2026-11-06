@@ -1,7 +1,41 @@
 import { describe, expect, it } from 'vitest';
-import { can, hasFullAccess, limitsFor, showAds, isInTrial, trialDaysLeft, withFullAccess } from './entitlements';
+import { can, hasFullAccess, limitsFor, showAds, isInTrial, trialDaysLeft, withFullAccess, withGymAccess, GYM_LIMITS } from './entitlements';
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+
+describe('socio de un gimnasio', () => {
+  const free = { tier: 'FREE' as const, createdAt: daysAgo(30) };
+
+  it('una cuenta gratis pasa a los límites del gimnasio, sin anuncios', () => {
+    const g = withGymAccess(free);
+    expect(g.gymAccess).toBe(true);
+    expect(showAds(g)).toBe(false);
+    expect(limitsFor(g)).toBe(GYM_LIMITS);
+    expect(limitsFor(g).aiCoachMessagesPerDay).toBe(5);
+    expect(limitsFor(g).aiPlansPerMonth).toBe(1);
+    expect(limitsFor(g).mealPlansPerMonth).toBe(1);
+  });
+
+  it('puede pedir su rutina y su dieta, pero no la revisión semanal ni el análisis de físico', () => {
+    const g = withGymAccess(free);
+    expect(can(g, 'ai_generate_plan')).toBe(true);
+    expect(can(g, 'ai_meal_plan')).toBe(true);
+    expect(can(g, 'ai_coach_message')).toBe(true);
+    expect(can(g, 'weekly_checkin')).toBe(false);
+    expect(can(g, 'physique_analysis')).toBe(false);
+  });
+
+  it('el acceso del gimnasio gana también durante la prueba gratis', () => {
+    const g = withGymAccess({ tier: 'FREE' as const, createdAt: daysAgo(1) });
+    expect(limitsFor(g).aiCoachMessagesPerDay).toBe(5);
+  });
+
+  it('quien ya paga un plan propio se queda con lo que contrató', () => {
+    const pro = { tier: 'PRO' as const, createdAt: daysAgo(30) };
+    expect(withGymAccess(pro)).toBe(pro);
+    expect(limitsFor(withGymAccess(pro)).aiCoachMessagesPerDay).toBe(30);
+  });
+});
 
 describe('entitlements', () => {
   it('FREE dentro de la prueba gratis tiene acceso completo (igual que COACH) para probar todo', () => {

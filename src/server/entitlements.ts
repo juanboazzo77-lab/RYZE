@@ -149,6 +149,8 @@ export const TRIAL_LIMITS: TierLimits = {
 
 /** Lo que hace falta del entitlement para saber si está en prueba. */
 export type TrialInfo = Pick<Entitlement, 'tier' | 'createdAt'> & {
+  /** El acceso viene de un gimnasio (no de un plan pago): rigen los límites de GYM_LIMITS. */
+  gymAccess?: boolean;
   /** Días regalados por invitar: extienden la prueba más allá de los `TRIAL_DAYS`. */
   bonusUntil?: Date | null;
 };
@@ -173,7 +175,33 @@ export function trialDaysLeft(entitlement: TrialInfo): number {
   return Math.max(0, Math.ceil((trialEndMs(entitlement) - Date.now()) / DAY_MS));
 }
 
+/**
+ * Plan de un socio de gimnasio: lo paga el gimnasio (por fuera de la tienda). Un plan de entrenamiento y uno de
+ * dieta por mes, algunos mensajes con la IA por día y nada de los extras caros (revisión semanal con fotos,
+ * análisis de físico, perfil de coaching). Está pensado para que el costo de IA por socio quede muy por debajo
+ * de lo que paga el gimnasio.
+ */
+export const GYM_LIMITS: TierLimits = {
+  aiCoachMessagesPerDay: 5,
+  aiPlansPerMonth: 1,
+  physiquePerMonth: 0,
+  checkinEveryWeeks: 0,
+  aiQuickPerDay: 5,
+  mealPlansPerMonth: 1,
+  features: {
+    ai_coach_message: true,
+    ai_generate_plan: true,
+    ai_meal_plan: true,
+    weekly_checkin: false,
+    advanced_stats: false,
+    progression_analysis: true,
+    coach_profile: false,
+    physique_analysis: false,
+  },
+};
+
 export function limitsFor(entitlement: TrialInfo): TierLimits {
+  if (entitlement.gymAccess) return GYM_LIMITS;
   if (isInTrial(entitlement)) return TRIAL_LIMITS;
   return TIER_LIMITS[entitlement.tier];
 }
@@ -218,11 +246,13 @@ export function withFullAccess<T extends { tier: EntitlementTier }>(
 }
 
 /**
- * Un socio de un gimnasio activo usa Forza AI con todo desbloqueado (plan COACH) sin pagar: el gimnasio
- * paga por él, por fuera de la tienda. Si ya tiene un plan pago igual o mayor, no se toca.
+ * Un socio de un gimnasio activo usa Forza AI sin pagar (lo paga el gimnasio) con los límites de GYM_LIMITS:
+ * un plan de entrenamiento y uno de dieta por mes y algunos mensajes con la IA. Sin anuncios (se lo muestra
+ * como PRO). Si ya paga un plan propio (BASIC, PRO o COACH) no se toca: se queda con lo que contrató.
  */
-export function withGymAccess<T extends { tier: EntitlementTier }>(entitlement: T): T {
-  return entitlement.tier === 'COACH' ? entitlement : { ...entitlement, tier: 'COACH' as EntitlementTier };
+export function withGymAccess<T extends { tier: EntitlementTier }>(entitlement: T): T & { gymAccess?: boolean } {
+  if (entitlement.tier !== 'FREE') return entitlement;
+  return { ...entitlement, tier: 'PRO' as EntitlementTier, gymAccess: true };
 }
 
 /** Sólo FREE ve publicidad (BASIC/PRO/COACH la sacan, sin importar la prueba). */

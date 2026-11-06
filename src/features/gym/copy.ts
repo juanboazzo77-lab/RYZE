@@ -42,7 +42,10 @@ export const GYM = {
   joinShareLabel: 'Dejar que mi gimnasio vea mi nombre y cuándo entrené por última vez',
   joinShareHelp:
     'Así el gimnasio puede ayudarte si te alejás. Nunca ve tu peso, tus fotos ni tus comidas. Lo podés apagar cuando quieras en Ajustes, en Gimnasio.',
-  rowDesc: 'Ingresá el código de tu gimnasio',
+  noGymTitle: 'Todavía no estás en un gimnasio',
+  noGymText:
+    'Si tu gimnasio usa Forza AI, pedile que cargue tu mail. Cuando lo aprueben te llega una invitación por mail con tu plan de entrenamiento, tu plan de dieta y mensajes con la IA, sin costo para vos.',
+  rowDesc: 'Tu gimnasio te invita por mail',
   rowDescIn: 'Estás en {name}',
 
   // Admin

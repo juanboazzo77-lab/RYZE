@@ -53,3 +53,56 @@ export function usedPercent(activeMembers: number, memberLimit: number): number 
 export const MAX_MEMBER_ESTIMATE = 100_000;
 /** Cupo máximo que el admin puede fijar de una vez (evita un error de tipeo). */
 export const MAX_MEMBER_LIMIT = 20_000;
+
+/* ---------- Invitaciones por mail ---------- */
+
+/** Tope de mails por pedido, para que un error de pegado no cargue miles. */
+export const MAX_INVITES_PER_REQUEST = 200;
+
+const EMAIL_RE = /^[^\s@,;<>()]+@[^\s@,;<>()]+\.[^\s@,;<>()]{2,}$/;
+
+export function normalizeEmail(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/**
+ * Lee una lista pegada de mails (uno por línea, o separados por coma, punto y coma o espacios; también acepta
+ * "Nombre <mail@x.com>"). Devuelve los válidos sin repetir y los que no se entendieron.
+ */
+export function parseEmailList(raw: string): { valid: string[]; invalid: string[] } {
+  const parts = raw
+    .split(/[\n\r,;\t ]+/)
+    .map((p) => p.replace(/^[^<]*<|>[^>]*$/g, '').trim())
+    .filter(Boolean);
+  const seen = new Set<string>();
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  for (const p of parts) {
+    const e = normalizeEmail(p);
+    if (!EMAIL_RE.test(e) || e.length > 200) {
+      if (!invalid.includes(p)) invalid.push(p);
+      continue;
+    }
+    if (!seen.has(e)) {
+      seen.add(e);
+      valid.push(e);
+    }
+  }
+  return { valid, invalid };
+}
+
+export type InviteStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'JOINED';
+
+export function asInviteStatus(value: string): InviteStatus {
+  return (['PENDING', 'APPROVED', 'REJECTED', 'JOINED'] as const).includes(value as InviteStatus) ? (value as InviteStatus) : 'PENDING';
+}
+
+/** Lugares del cupo que ya están tomados: socios adentro más invitaciones aprobadas que todavía no entraron. */
+export function reservedSlots(args: { activeMembers: number; approvedInvites: number }): number {
+  return args.activeMembers + args.approvedInvites;
+}
+
+/** ¿Cuántas invitaciones más se pueden aprobar sin pasarse del cupo? */
+export function approvableCount(args: { memberLimit: number; activeMembers: number; approvedInvites: number }): number {
+  return Math.max(0, args.memberLimit - reservedSlots(args));
+}

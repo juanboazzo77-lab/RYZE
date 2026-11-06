@@ -9,6 +9,7 @@ const empty: TodaySummary = {
   errors: { open: 0, last24h: 0, recent: [] },
   gyms: { pending: [], active: 2, full: 0, members: 80 },
   billing: { overdueCount: 0, overdueUsd: 0, pendingUsd: 120, collectedThisMonthUsd: 60 },
+  invitesPending: 0,
   overdue: [],
 };
 
@@ -36,6 +37,12 @@ describe('resumen diario', () => {
     expect(d.text).toContain('Gym Sur, 2026-11: US$ 180');
     expect(d.text).toContain('Boom · GET /x · 4 veces');
     expect(d.text).toContain('PAGO FALLIDO (1)');
+  });
+
+  it('avisa las altas de socios pendientes de aprobación', () => {
+    const d = buildDigest({ ...empty, invitesPending: 12 });
+    expect(d.urgent).toBe(1);
+    expect(d.text).toContain('ALTAS DE SOCIOS ESPERANDO TU APROBACIÓN (12)');
   });
 
   it('avisa si hay gimnasios con el cupo lleno', () => {

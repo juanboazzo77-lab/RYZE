@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getOwnerView, INACTIVE_DAYS } from '@/server/gyms';
-import { formatGymCode, usedPercent } from '@/features/gym/logic';
+import { usedPercent } from '@/features/gym/logic';
 import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = { title: 'Panel del gimnasio' };
@@ -50,15 +50,20 @@ export default async function GymHomePage() {
       </div>
 
       <div className="space-y-2 rounded-xl border p-4">
-        <p className="text-sm text-muted-foreground">Código para tus socios</p>
-        <p className="select-all font-mono text-3xl font-bold tracking-widest">{view.inviteCode ? formatGymCode(view.inviteCode) : '—'}</p>
-        <p className="text-xs text-muted-foreground">
-          Compartilo en recepción o por tu grupo de socios. Lo ingresan en Forza AI, en Ajustes, en Gimnasio, y usan la app sin pagar.
+        <p className="font-semibold">Sumá a tus clientes</p>
+        <p className="text-sm text-muted-foreground">
+          Cargá los mails de tus clientes en Invitar. Revisamos el pedido y, cuando lo aprobamos, cada uno recibe tu invitación y un plan de entrenamiento, un plan de dieta por mes y mensajes con la IA.
         </p>
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
           <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
+        <p className="text-xs text-muted-foreground">
+          {view.activeMembers} de {view.memberLimit} lugares usados
+        </p>
         {full ? <p className="text-xs text-warning">Cupo lleno: para sumar más socios, escribinos a gimnasios@forzaai.app.</p> : null}
+        <Link href="/gym/invitaciones" className="inline-block text-sm font-medium underline">
+          Invitar socios
+        </Link>
       </div>
 
       <section className="space-y-2">

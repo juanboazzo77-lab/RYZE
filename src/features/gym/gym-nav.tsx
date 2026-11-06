@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 const ITEMS = [
   { href: '/gym', label: 'Resumen' },
   { href: '/gym/socios', label: 'Socios' },
+  { href: '/gym/invitaciones', label: 'Invitar' },
   { href: '/gym/equipamiento', label: 'Equipamiento' },
 ] as const;
 

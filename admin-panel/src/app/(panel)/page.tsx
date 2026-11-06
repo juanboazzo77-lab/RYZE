@@ -21,7 +21,7 @@ export default async function AdminTodayPage() {
     );
   }
 
-  const todo = s.gyms.pending.length + s.billing.overdueCount + s.errors.last24h + s.subscribers.pastDue;
+  const todo = s.gyms.pending.length + (s.invitesPending > 0 ? 1 : 0) + s.billing.overdueCount + s.errors.last24h + s.subscribers.pastDue;
 
   return (
     <div className="space-y-6">
@@ -46,6 +46,13 @@ export default async function AdminTodayPage() {
           sub={`${s.gyms.active} activos · ${s.gyms.members} socios`}
           tone={s.gyms.pending.length > 0 ? 'alert' : 'normal'}
           href="/gimnasios"
+        />
+        <Kpi
+          label="Altas de socios"
+          value={s.invitesPending}
+          sub="Esperan tu aprobación"
+          tone={s.invitesPending > 0 ? "alert" : "normal"}
+          href="/altas"
         />
         <Kpi
           label="Cobros vencidos"

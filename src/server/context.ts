@@ -10,7 +10,7 @@ export interface UserContext {
   userId: string;
   email: string;
   profile: Profile;
-  entitlement: Entitlement;
+  entitlement: Entitlement & { gymAccess?: boolean };
   /** Gimnasio activo del que es socio (si tiene uno): usa la app sin pagar. */
   gym: MemberGym | null;
   /** Gimnasio del que es dueña esta cuenta (si lo es): tiene su propio panel en /gym. */

@@ -69,3 +69,49 @@ describe('cupo', () => {
     expect(usedPercent(10, 0)).toBe(0);
   });
 });
+
+import { approvableCount, asInviteStatus, parseEmailList, reservedSlots } from './logic';
+
+describe('lista de mails para invitar', () => {
+  it('separa por líneas, comas, punto y coma y espacios', () => {
+    const r = parseEmailList('ana@x.com\nluis@x.com, marta@x.com;pedro@x.com  sol@x.com');
+    expect(r.valid).toEqual(['ana@x.com', 'luis@x.com', 'marta@x.com', 'pedro@x.com', 'sol@x.com']);
+    expect(r.invalid).toEqual([]);
+  });
+
+  it('pasa todo a minúsculas y saca los repetidos', () => {
+    const r = parseEmailList('Ana@X.com\nana@x.com\nANA@x.COM');
+    expect(r.valid).toEqual(['ana@x.com']);
+  });
+
+  it('acepta el formato "Nombre <mail>"', () => {
+    expect(parseEmailList('Ana Perez <ana@x.com>').valid).toEqual(['ana@x.com']);
+  });
+
+  it('devuelve aparte lo que no es un mail', () => {
+    const r = parseEmailList('ana@x.com hola sinarroba.com juan@@x.com');
+    expect(r.valid).toEqual(['ana@x.com']);
+    expect(r.invalid).toEqual(['hola', 'sinarroba.com', 'juan@@x.com']);
+  });
+
+  it('una lista vacía no da nada', () => {
+    expect(parseEmailList('   \n  ')).toEqual({ valid: [], invalid: [] });
+  });
+});
+
+describe('cupo con invitaciones', () => {
+  it('las invitaciones aprobadas reservan lugar aunque la persona no haya entrado', () => {
+    expect(reservedSlots({ activeMembers: 10, approvedInvites: 5 })).toBe(15);
+    expect(approvableCount({ memberLimit: 20, activeMembers: 10, approvedInvites: 5 })).toBe(5);
+  });
+
+  it('no se puede aprobar más allá del cupo', () => {
+    expect(approvableCount({ memberLimit: 10, activeMembers: 10, approvedInvites: 0 })).toBe(0);
+    expect(approvableCount({ memberLimit: 10, activeMembers: 8, approvedInvites: 5 })).toBe(0);
+  });
+
+  it('un estado raro cuenta como pendiente', () => {
+    expect(asInviteStatus('JOINED')).toBe('JOINED');
+    expect(asInviteStatus('xx')).toBe('PENDING');
+  });
+});

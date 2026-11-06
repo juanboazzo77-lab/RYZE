@@ -1013,6 +1013,7 @@ model Gym {
   ownerUserId         String?     @db.Uuid @map("owner_user_id")
   owner               Profile?    @relation("GymOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
   members             GymMember[]
+  invites             GymInvite[]
   payments            GymPayment[]
 
   @@index([status])
@@ -1036,6 +1037,28 @@ model GymMember {
 
   @@index([gymId, status])
   @@map("gym_member")
+}
+
+/// Invitación a un socio por mail. El gimnasio carga el mail (PENDING), el admin la aprueba (APPROVED: se le
+/// manda el mail y reserva un lugar del cupo), y cuando la persona entra con ese mail y acepta queda JOINED.
+model GymInvite {
+  id           String    @id @default(uuid()) @db.Uuid
+  gymId        String    @db.Uuid @map("gym_id")
+  gym          Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  /// Siempre en minúsculas.
+  email        String
+  /// PENDING | APPROVED | REJECTED | JOINED
+  status       String    @default("PENDING")
+  requestedAt  DateTime  @default(now()) @map("requested_at")
+  decidedAt    DateTime? @map("decided_at")
+  joinedAt     DateTime? @map("joined_at")
+  /// Si el mail de invitación salió bien al aprobar.
+  emailSent    Boolean   @default(false) @map("email_sent")
+
+  @@unique([gymId, email])
+  @@index([status])
+  @@index([email])
+  @@map("gym_invite")
 }
 
 /// Cobro mensual a un gimnasio (se arma solo al abrir el panel de cobros, un registro por gimnasio y mes).

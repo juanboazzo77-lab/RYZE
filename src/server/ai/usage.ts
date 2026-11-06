@@ -2,7 +2,7 @@ import 'server-only';
 import type { Entitlement } from '@prisma/client';
 import { DateTime } from 'luxon';
 import { prisma } from '@/server/db';
-import { limitsFor } from '@/server/entitlements';
+import { limitsFor, type TrialInfo } from '@/server/entitlements';
 import { estimateCostUsd } from './pricing';
 import { AiRateLimitedError } from './errors';
 import type { AiUsageRaw } from './providers/types';
@@ -19,7 +19,7 @@ const PLAN_TASKS: AiTask[] = ['generate_plan'];
 /** Lanza `AiRateLimitedError` si el usuario ya gastó su cuota. */
 export async function assertWithinLimits(
   userId: string,
-  entitlement: Pick<Entitlement, 'tier' | 'createdAt'>,
+  entitlement: TrialInfo,
   task: AiTask,
   timezone: string,
 ): Promise<void> {

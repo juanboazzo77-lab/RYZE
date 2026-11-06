@@ -8,6 +8,7 @@ const ITEMS = [
   { href: '/', label: 'Hoy' },
   { href: '/errores', label: 'Errores' },
   { href: '/suscriptores', label: 'Suscriptores' },
+  { href: '/altas', label: 'Altas' },
   { href: '/gimnasios', label: 'Gimnasios' },
   { href: '/cobros', label: 'Cobros' },
   { href: '/numeros', label: 'Números' },
