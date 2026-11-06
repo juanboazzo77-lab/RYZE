@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUser } from '@/server/context';
 import { saveProof, type ProofError } from '@/server/storage/payment-proofs';
-import { acceptInvite, getOwnedGym, leaveGym, redeemGymCode, requestInvites, saveOwnGymProfile, setShareActivity } from '@/server/gyms';
+import { acceptInvite, getOwnedGym, leaveGym, requestInvites, saveOwnGymProfile, setShareActivity } from '@/server/gyms';
 import type { JoinError } from './logic';
 
 interface Result<T = void> {
@@ -14,18 +14,11 @@ interface Result<T = void> {
   data?: T;
 }
 
-const codeSchema = z.string().trim().min(4).max(30);
-
 /** El socio entra a su gimnasio con el código. */
-export async function joinGym(raw: { code: string; share?: boolean }): Promise<Result<{ gymName: string }> & { reason?: JoinError }> {
-  const code = codeSchema.safeParse(raw.code);
-  if (!code.success) return { error: 'INVALID', reason: 'INVALID_CODE' };
-  const { userId } = await requireUser();
-  const res = await redeemGymCode(userId, code.data, raw.share === true);
-  revalidatePath('/settings');
-  revalidatePath('/settings/gym');
-  revalidatePath('/dashboard');
-  return 'ok' in res ? { ok: true, data: { gymName: res.gymName } } : { error: res.error, reason: res.error };
+export async function joinGym(_raw: { code: string; share?: boolean }): Promise<Result<{ gymName: string }> & { reason?: JoinError }> {
+  // Entrar con un código quedó desactivado: un socio sólo entra por la invitación que el administrador aprobó
+  // (con el comprobante de pago del alta). Así nadie se suma a un gimnasio sin esa autorización.
+  return { error: 'DISABLED', reason: 'INVALID_CODE' };
 }
 
 export async function leaveMyGym(): Promise<Result> {
