@@ -28,7 +28,7 @@ export default async function GymInvitesPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Invitar socios</h1>
         <p className="text-sm text-muted-foreground">
-          Cargá los mails de tus clientes. Nosotros revisamos el pedido, y cuando lo aprobamos cada uno recibe un mail con tu invitación a Forza AI. Sin costo para ellos.
+          Cargá los mails de tus clientes con el comprobante de pago de cada uno. Revisamos el pedido y, cuando lo aprobamos, cada cliente recibe un mail con tu invitación a Forza AI. Para ellos es gratis: lo cubre el gimnasio.
         </p>
       </div>
 
@@ -40,7 +40,11 @@ export default async function GymInvitesPage() {
         </p>
       ) : null}
 
-      <InviteForm disabled={view.status !== 'ACTIVE'} />
+      <InviteForm
+        disabled={view.status !== 'ACTIVE'}
+        pricePerMemberUsd={view.pricePerMemberUsd}
+        paymentInstructions={process.env.GYM_PAYMENT_INSTRUCTIONS || 'Pedinos los datos para transferir escribiendo a gimnasios@forzaai.app.'}
+      />
 
       <div className="rounded-xl bg-secondary/50 p-3 text-sm">
         <p className="font-medium">Lo que recibe cada cliente</p>

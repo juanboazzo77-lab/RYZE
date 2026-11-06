@@ -1054,6 +1054,8 @@ model GymInvite {
   joinedAt     DateTime? @map("joined_at")
   /// Si el mail de invitación salió bien al aprobar.
   emailSent    Boolean   @default(false) @map("email_sent")
+  /// Ruta del comprobante de pago de este alta en el depósito privado. Sin comprobante no se puede aprobar.
+  proofPath    String?   @map("proof_path")
 
   @@unique([gymId, email])
   @@index([status])

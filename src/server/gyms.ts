@@ -1,6 +1,7 @@
 import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
+import { isProofPathOf } from './storage/payment-proofs';
 import { sendAlert } from './alerts';
 import { gymContextLines, parseGymProfile, specialtyByKey, type GymProfile } from '@/features/gym/catalog';
 import {
@@ -198,6 +199,8 @@ export interface OwnerView {
   hiddenMembers: number;
   specialty: string | null;
   profile: GymProfile;
+  /** Lo que paga el gimnasio por cada socio, por mes (US$). */
+  pricePerMemberUsd: number;
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -255,6 +258,7 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
     hiddenMembers: members.length - shared.length,
     specialty: gym.specialty,
     profile: parseGymProfile(gym.equipment),
+    pricePerMemberUsd: Number(gym.pricePerMemberUsd),
   };
 }
 
@@ -293,6 +297,7 @@ export interface InviteRow {
   email: string;
   status: InviteStatus;
   requestedAt: string;
+  hasProof: boolean;
 }
 
 export interface RequestInvitesResult {
@@ -307,18 +312,41 @@ export interface RequestInvitesResult {
  * El dueño carga los mails de sus clientes. Quedan PENDIENTES: no sale ningún mail hasta que el administrador
  * los aprueba. Sólo un gimnasio activo puede pedir, y sólo su dueño.
  */
+export interface InviteItem {
+  email: string;
+  /** Ruta del comprobante de pago de este alta (ya subido). */
+  proofPath: string;
+}
+
 export async function requestInvites(
   ownerUserId: string,
   gymId: string,
-  rawList: string,
-): Promise<RequestInvitesResult | { error: 'NOT_OWNER' | 'NOT_ACTIVE' | 'EMPTY' | 'TOO_MANY' }> {
+  items: InviteItem[],
+): Promise<RequestInvitesResult | { error: 'NOT_OWNER' | 'NOT_ACTIVE' | 'EMPTY' | 'TOO_MANY' | 'BAD_PROOF' }> {
   const gym = await prisma.gym.findFirst({ where: { id: gymId, ownerUserId }, select: { name: true, status: true } });
   if (!gym) return { error: 'NOT_OWNER' };
   if (gym.status !== 'ACTIVE') return { error: 'NOT_ACTIVE' };
 
-  const { valid, invalid } = parseEmailList(rawList);
-  if (valid.length === 0) return { error: 'EMPTY' };
-  if (valid.length > MAX_INVITES_PER_REQUEST) return { error: 'TOO_MANY' };
+  // Cada alta lleva su comprobante: la ruta tiene que ser de un archivo de ESTE gimnasio.
+  const clean: InviteItem[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  for (const it of items) {
+    const email = normalizeEmail(it.email);
+    if (!parseEmailList(email).valid.includes(email)) {
+      invalid.push(it.email);
+      continue;
+    }
+    if (!isProofPathOf(gymId, it.proofPath)) return { error: 'BAD_PROOF' };
+    if (!seen.has(email)) {
+      seen.add(email);
+      clean.push({ email, proofPath: it.proofPath });
+    }
+  }
+  if (clean.length === 0) return { error: 'EMPTY' };
+  if (clean.length > MAX_INVITES_PER_REQUEST) return { error: 'TOO_MANY' };
+  const valid = clean.map((c) => c.email);
+  const proofByEmail = new Map(clean.map((c) => [c.email, c.proofPath]));
 
   const existing = await prisma.gymInvite.findMany({ where: { gymId, email: { in: valid } }, select: { id: true, email: true, status: true } });
   const byEmail = new Map(existing.map((e) => [e.email, e]));
@@ -329,29 +357,30 @@ export async function requestInvites(
   });
   const alreadyMembers = new Set(memberRows.map((m) => m.user.email.toLowerCase()));
 
-  const toCreate: string[] = [];
-  const toReopen: string[] = [];
+  const toCreate: InviteItem[] = [];
+  const toReopen: Array<{ id: string; proofPath: string }> = [];
   let skipped = 0;
   for (const email of valid) {
     const found = byEmail.get(email);
+    const proofPath = proofByEmail.get(email)!;
     if (alreadyMembers.has(email)) skipped += 1;
-    else if (!found) toCreate.push(email);
-    else if (found.status === 'REJECTED') toReopen.push(found.id);
+    else if (!found) toCreate.push({ email, proofPath });
+    else if (found.status === 'REJECTED') toReopen.push({ id: found.id, proofPath });
     else skipped += 1;
   }
   if (toCreate.length > 0) {
-    await prisma.gymInvite.createMany({ data: toCreate.map((email) => ({ gymId, email })), skipDuplicates: true });
+    await prisma.gymInvite.createMany({ data: toCreate.map((c) => ({ gymId, email: c.email, proofPath: c.proofPath })), skipDuplicates: true });
   }
-  if (toReopen.length > 0) {
-    await prisma.gymInvite.updateMany({ where: { id: { in: toReopen } }, data: { status: 'PENDING', decidedAt: null, requestedAt: new Date() } });
+  for (const r of toReopen) {
+    await prisma.gymInvite.update({ where: { id: r.id }, data: { status: 'PENDING', decidedAt: null, requestedAt: new Date(), proofPath: r.proofPath } });
   }
   const added = toCreate.length + toReopen.length;
 
   if (added > 0) {
     const text = [
-      `"${gym.name}" pidió dar de alta a ${added} ${added === 1 ? 'socio' : 'socios'}.`,
+      `"${gym.name}" pidió dar de alta a ${added} ${added === 1 ? 'socio' : 'socios'}, cada uno con su comprobante de pago.`,
       '',
-      'Revisá y aprobá los pedidos en el panel de gestión, en Altas. Al aprobar, cada persona recibe su invitación por mail.',
+      'Revisá los comprobantes y aprobá los pedidos en el panel de gestión, en Altas. Al aprobar, cada persona recibe su invitación por mail.',
     ].join('\n');
     const subject = `Altas pendientes: ${gym.name} (${added})`;
     try {
@@ -368,7 +397,7 @@ export async function listInvitesForOwner(ownerUserId: string, gymId: string): P
   const gym = await prisma.gym.findFirst({ where: { id: gymId, ownerUserId }, select: { id: true } });
   if (!gym) return null;
   const rows = await prisma.gymInvite.findMany({ where: { gymId }, orderBy: { requestedAt: 'desc' }, take: 500 });
-  return rows.map((r) => ({ id: r.id, email: r.email, status: asInviteStatus(r.status), requestedAt: r.requestedAt.toISOString() }));
+  return rows.map((r) => ({ id: r.id, email: r.email, status: asInviteStatus(r.status), requestedAt: r.requestedAt.toISOString(), hasProof: !!r.proofPath }));
 }
 
 export interface PendingInvite {
