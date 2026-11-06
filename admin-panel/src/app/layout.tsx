@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {
-  title: { default: 'Forza AI · Gestión', template: '%s · Gestión' },
-  description: 'Panel interno de Forza AI.',
+  title: { default: 'Forza AI · Panel', template: '%s · Forza AI' },
+  description: 'Panel de gimnasios y gestión de Forza AI.',
   // Es un panel privado: que no aparezca en buscadores.
   robots: { index: false, follow: false },
 };

@@ -7,6 +7,12 @@
       "runtimeArgs": ["next", "dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "panel-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["admin-panel/node_modules/next/dist/bin/next", "dev", "admin-panel", "-p", "3100"],
+      "port": 3100
     }
   ]
 }

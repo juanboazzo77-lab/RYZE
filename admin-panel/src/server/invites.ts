@@ -2,6 +2,7 @@ import 'server-only';
 import { prisma } from './db';
 import { sendMail } from './alerts';
 import { approvableCount } from '@/features/gym/logic';
+import { composeEmail, type ComposedEmail } from './email-template';
 
 /**
  * Altas de socios por mail. El gimnasio carga los mails (PENDING); desde acá se aprueban (se manda el mail de
@@ -12,30 +13,32 @@ import { approvableCount } from '@/features/gym/logic';
 const APP_URL = (process.env.APP_URL || 'https://www.forzaai.app').replace(/\/$/, '');
 
 /** Mail de invitación al cliente. Función pura (se prueba sin base de datos). */
-export function invitationEmail(gymName: string): { subject: string; text: string } {
-  return {
+export function invitationEmail(gymName: string): ComposedEmail {
+  return composeEmail({
     subject: `${gymName} te invita a Forza AI`,
-    text: [
-      'Hola,',
-      '',
-      `${gymName} te invita a unirte a Forza AI, tu entrenador con inteligencia artificial. Es gratis para vos: tu gimnasio se hace cargo.`,
-      '',
-      'Con tu invitación tenés:',
-      `- Un plan de entrenamiento por mes, armado con las máquinas de ${gymName}.`,
-      '- Un plan de dieta por mes.',
-      '- Mensajes con la IA para tus dudas, todos los días.',
-      '',
-      'Cómo empezar:',
-      `1. Entrá a ${APP_URL}/register y creá tu cuenta con ESTE mismo mail. Si ya tenés cuenta de Forza AI, iniciá sesión con él.`,
-      `2. Vas a ver tu invitación de ${gymName}: aceptala y listo.`,
-      '',
-      'También podés usar Forza AI desde la app del iPhone, con la misma cuenta.',
-      '',
-      `Si no conocés a ${gymName} o no esperabas este mensaje, ignoralo.`,
-      '',
-      'Equipo de Forza AI · soporte@forzaai.app',
-    ].join('\n'),
-  };
+    preheader: `Tu plan de entrenamiento y tu plan de dieta del mes, gratis: lo cubre ${gymName}.`,
+    heading: `${gymName} te invita a Forza AI`,
+    blocks: [
+      { type: 'p', text: 'Hola,' },
+      { type: 'p', text: `${gymName} te invita a unirte a Forza AI, tu entrenador con inteligencia artificial. Es gratis para vos: tu gimnasio se hace cargo.` },
+      { type: 'p', text: 'Con tu invitación tenés:' },
+      {
+        type: 'list',
+        items: [`Un plan de entrenamiento por mes, armado con las máquinas de ${gymName}.`, 'Un plan de dieta por mes.', 'Mensajes con la IA para tus dudas, todos los días.'],
+      },
+      { type: 'p', text: 'Cómo empezar:' },
+      {
+        type: 'steps',
+        items: [
+          'Creá tu cuenta con ESTE mismo mail (si ya tenés cuenta de Forza AI, iniciá sesión con él).',
+          `Vas a ver tu invitación de ${gymName}: aceptala y listo.`,
+        ],
+      },
+      { type: 'button', label: 'Crear mi cuenta', url: `${APP_URL}/register` },
+      { type: 'p', text: 'También podés usar Forza AI desde la app del iPhone, con la misma cuenta.' },
+      { type: 'note', text: `Si no conocés a ${gymName} o no esperabas este mensaje, ignoralo.` },
+    ],
+  });
 }
 
 export interface PendingGroup {
@@ -139,7 +142,7 @@ export async function approveInvites(ids: string[]): Promise<ApproveResult> {
     result.overCapacity += list.length - take.length;
     const mail = invitationEmail(first.gym.name);
     for (const inv of take) {
-      const sent = await sendMail({ to: inv.email, subject: mail.subject, text: mail.text });
+      const sent = await sendMail({ to: inv.email, subject: mail.subject, text: mail.text, html: mail.html });
       await prisma.gymInvite.update({ where: { id: inv.id }, data: { status: 'APPROVED', decidedAt: new Date(), emailSent: sent } });
       result.approved += 1;
       if (sent) result.emailsSent += 1;
@@ -170,7 +173,7 @@ export async function resendInvite(id: string): Promise<boolean> {
   const inv = await prisma.gymInvite.findFirst({ where: { id, status: 'APPROVED' }, select: { id: true, email: true, gym: { select: { name: true } } } });
   if (!inv) return false;
   const mail = invitationEmail(inv.gym.name);
-  const sent = await sendMail({ to: inv.email, subject: mail.subject, text: mail.text });
+  const sent = await sendMail({ to: inv.email, subject: mail.subject, text: mail.text, html: mail.html });
   if (sent) await prisma.gymInvite.update({ where: { id: inv.id }, data: { emailSent: true } });
   return sent;
 }

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { editGymClient, markGymClientPaid, removeGymClient, requestForzaForClients } from './client-actions';
 import { FEE_LABEL } from '@/features/gym/fees';
 import type { ClientRow, ForzaState } from '@/server/gym-clients';
+import { reminderMessage, whatsappLink } from './whatsapp';
 
 const fmtDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
@@ -33,7 +34,7 @@ const FORZA_LABEL: Record<ForzaState, string> = {
 };
 
 /** Un cliente del gimnasio: su cuota, el botón de "Pagó" y las opciones. */
-export function ClientRow({ c }: { c: ClientRow }) {
+export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
@@ -72,6 +73,8 @@ export function ClientRow({ c }: { c: ClientRow }) {
   }
 
   const urgent = c.status === 'DUE_TODAY' || c.status === 'OVERDUE' || c.status === 'LAPSED';
+  // Aviso por WhatsApp: solo si le toca pagar (hoy o atrasado) y hay un teléfono que sirve.
+  const wa = urgent ? whatsappLink(c.phone, reminderMessage({ name: c.name, gymName, daysLeft: c.daysLeft })) : null;
 
   return (
     <li className={`space-y-2 px-3 py-3 ${urgent ? 'bg-warning/5' : ''}`}>
@@ -96,6 +99,16 @@ export function ClientRow({ c }: { c: ClientRow }) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{FORZA_LABEL[c.forza]}</span>
         <div className="flex flex-wrap gap-1">
+          {wa ? (
+            <a
+              href={wa}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
+            >
+              Avisar por WhatsApp
+            </a>
+          ) : null}
           {c.forza === 'NONE' ? (
             <Button
               size="sm"

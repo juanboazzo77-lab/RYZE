@@ -74,7 +74,7 @@ export default async function GymClientsPage({ searchParams }: { searchParams: P
           ) : (
             <ul className="divide-y rounded-xl border">
               {shown.map((c) => (
-                <ClientRow key={c.id} c={c} />
+                <ClientRow key={c.id} c={c} gymName={owner.gym.name} />
               ))}
             </ul>
           )}

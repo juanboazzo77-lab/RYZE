@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { Dumbbell, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { getOwnerCtx } from '@/lib/owner';
 import { signOutAction } from '@/features/auth/actions';
 import { GymNav } from '@/features/owner/gym-nav';
 import { Button } from '@/components/ui/button';
+import { BrandMark } from '@/components/brand';
 
 /**
  * Panel del gimnasio: lo que ve el dueño. Vive en el mismo sitio que la gestión, pero cada uno ve solo lo suyo:
@@ -37,9 +38,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
     <div className="mx-auto min-h-screen max-w-3xl space-y-4 px-4 py-4">
       <header className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Dumbbell className="size-5" />
-          </span>
+          <BrandMark size={36} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{ctx.gym.name}</p>
             <p className="text-xs text-muted-foreground">Panel del gimnasio · Forza AI</p>

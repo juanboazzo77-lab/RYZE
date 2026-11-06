@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { prisma } from './db';
 import { createSupabaseAdminClient, supabaseAdminConfigured } from '@/lib/supabase-admin';
 import { sendMail } from './alerts';
+import { composeEmail, type ComposedEmail } from './email-template';
 import { setGymOwner } from './gyms';
 
 /**
@@ -32,38 +33,34 @@ export type InviteResult =
   | { ok: true; created: boolean; emailSent: boolean; /** Sólo si el mail no salió: para pasárselo a mano. */ link?: string }
   | { error: InviteError };
 
-/** Texto del mail según el caso. Función pura (se prueba sin base de datos). */
-export function inviteEmail(args: { gymName: string; created: boolean; link?: string; panelUrl?: string }): { subject: string; text: string } {
+/** Mail al dueño según el caso. Función pura (se prueba sin base de datos). */
+export function inviteEmail(args: { gymName: string; created: boolean; link?: string; panelUrl?: string }): ComposedEmail {
   const { gymName, created, link } = args;
   const panel = (args.panelUrl ?? 'https://gestion.forzaai.app').replace(/\/$/, '');
   if (created && link) {
-    return {
+    return composeEmail({
       subject: `Tu acceso a Forza AI para ${gymName}`,
-      text: [
-        'Hola,',
-        '',
-        `Te dimos acceso a "${gymName}" en Forza AI. Elegí tu contraseña con este enlace (sirve una sola vez y vence en poco tiempo):`,
-        '',
-        link,
-        '',
-        `Después entrá a tu panel en ${panel}/login con este mismo mail y tu contraseña (es una página web, no la app del celular). Ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.`,
-        '',
-        'Si el enlace venció, pedinos uno nuevo respondiendo este mail. Si no esperabas este mensaje, ignoralo.',
-        '',
-        'Equipo de Forza AI · soporte@forzaai.app',
-      ].join('\n'),
-    };
+      preheader: 'Elegí tu contraseña y entrá a tu panel.',
+      heading: `Ya podés entrar al panel de ${gymName}`,
+      blocks: [
+        { type: 'p', text: 'Hola,' },
+        { type: 'p', text: `Te dimos acceso a "${gymName}" en Forza AI. Elegí tu contraseña con este enlace (sirve una sola vez y vence en poco tiempo):` },
+        { type: 'button', label: 'Elegir mi contraseña', url: link },
+        { type: 'p', text: `Después entrá a tu panel en ${panel}/login con este mismo mail y tu contraseña (es una página web, no la app del celular). Ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.` },
+        { type: 'note', text: 'Si el enlace venció, pedinos uno nuevo respondiendo este mail. Si no esperabas este mensaje, ignoralo.' },
+      ],
+    });
   }
-  return {
+  return composeEmail({
     subject: `Ya sos dueño de ${gymName} en Forza AI`,
-    text: [
-      'Hola,',
-      '',
-      `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a tu panel en ${panel}/login con tu mail: ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.`,
-      '',
-      'Equipo de Forza AI · soporte@forzaai.app',
-    ].join('\n'),
-  };
+    preheader: 'Tu cuenta ya está vinculada a tu gimnasio.',
+    heading: `Ya sos dueño de ${gymName}`,
+    blocks: [
+      { type: 'p', text: 'Hola,' },
+      { type: 'p', text: `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a tu panel con tu mail: ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.` },
+      { type: 'button', label: 'Entrar a mi panel', url: `${panel}/login` },
+    ],
+  });
 }
 
 /** Arma el enlace de un solo uso que valida el panel (/auth/confirm) y lleva a elegir contraseña. */
@@ -110,6 +107,6 @@ export async function inviteGymOwner(gymId: string, rawEmail: string, opts: { re
   }
 
   const mail = inviteEmail({ gymName: gym.name, created: Boolean(link), link, panelUrl: await panelUrl() });
-  const emailSent = await sendMail({ to: email, subject: mail.subject, text: mail.text });
+  const emailSent = await sendMail({ to: email, subject: mail.subject, text: mail.text, html: mail.html });
   return { ok: true, created, emailSent, link: emailSent ? undefined : link };
 }

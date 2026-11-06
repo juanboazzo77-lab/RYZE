@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from './db';
 import { sendMail } from './alerts';
+import { composeEmail, type Block } from './email-template';
 import { daysBetween, feeStatus, type FeeStatus } from '@/features/gym/fees';
 
 /**
@@ -26,6 +27,7 @@ interface Line {
 export interface OwnerReminder {
   subject: string;
   text: string;
+  html: string;
   dueToday: number;
   overdue: number;
 }
@@ -38,26 +40,30 @@ export function buildOwnerReminder(gymName: string, lines: Line[], panelUrl = 'h
   if (today.length === 0 && late.length === 0) return null;
 
   const money = (l: Line) => (l.fee !== null ? ` · $${l.fee.toLocaleString('es-AR')}` : '');
-  const out: string[] = [`Hola. Este es el resumen de cuotas de ${gymName}.`, ''];
+  const dias = (n: number) => `${n} ${n === 1 ? 'día' : 'días'}`;
+  const blocks: Block[] = [{ type: 'p', text: `Este es el resumen de cuotas de ${gymName}.` }];
   if (today.length > 0) {
-    out.push(`HOY TIENEN QUE PAGAR (${today.length})`);
-    for (const l of today) out.push(`- ${l.name}${money(l)}`);
-    out.push('');
+    blocks.push({ type: 'p', text: `Hoy tienen que pagar (${today.length}):` }, { type: 'list', items: today.map((l) => `${l.name}${money(l)}`) });
   }
   if (late.length > 0) {
-    out.push(`CUOTAS VENCIDAS (${late.length})`);
-    for (const l of late) out.push(`- ${l.name}${money(l)} · hace ${-l.daysLeft} ${-l.daysLeft === 1 ? 'día' : 'días'}${l.status === 'LAPSED' ? ' (sin acceso a Forza AI)' : ''}`);
-    out.push('');
+    blocks.push(
+      { type: 'p', text: `Cuotas vencidas (${late.length}):` },
+      { type: 'list', items: late.map((l) => `${l.name}${money(l)} · hace ${dias(-l.daysLeft)}${l.status === 'LAPSED' ? ' (sin acceso a Forza AI)' : ''}`) },
+    );
   }
   if (soon.length > 0) {
-    out.push(`VENCEN ESTA SEMANA (${soon.length})`);
-    for (const l of soon.slice(0, 15)) out.push(`- ${l.name}${money(l)} · en ${l.daysLeft} ${l.daysLeft === 1 ? 'día' : 'días'}`);
-    if (soon.length > 15) out.push(`- y ${soon.length - 15} más`);
-    out.push('');
+    const items = soon.slice(0, 15).map((l) => `${l.name}${money(l)} · en ${dias(l.daysLeft)}`);
+    if (soon.length > 15) items.push(`y ${soon.length - 15} más`);
+    blocks.push({ type: 'p', text: `Vencen esta semana (${soon.length}):` }, { type: 'list', items });
   }
-  out.push(`Cuando te paguen, entrá a Clientes en tu panel (${panelUrl.replace(/\/$/, '')}/gym/clientes) y tocá "Pagó": el vencimiento se corre solo.`);
+  blocks.push(
+    { type: 'button', label: 'Abrir mis clientes', url: `${panelUrl.replace(/\/$/, '')}/gym/clientes` },
+    { type: 'note', text: 'Cuando te paguen, tocá "Pagó" en cada cliente: el vencimiento se corre solo.' },
+  );
   const count = today.length + late.length;
-  return { subject: `${count} ${count === 1 ? 'cuota para cobrar' : 'cuotas para cobrar'} hoy en ${gymName}`.slice(0, 150), text: out.join('\n'), dueToday: today.length, overdue: late.length };
+  const subject = `${count} ${count === 1 ? 'cuota para cobrar' : 'cuotas para cobrar'} hoy en ${gymName}`.slice(0, 150);
+  const mail = composeEmail({ subject, preheader: 'Quién vence hoy y quién está atrasado.', heading: 'Cuotas para cobrar hoy', blocks });
+  return { subject: mail.subject, text: mail.text, html: mail.html, dueToday: today.length, overdue: late.length };
 }
 
 export interface FeeRunResult {
@@ -100,7 +106,7 @@ export async function runDailyFees(today = todayArgentina(), panelUrl?: string):
     }
 
     const reminder = buildOwnerReminder(g.name, lines, panelUrl);
-    if (reminder && g.owner?.email && (await sendMail({ to: g.owner.email, subject: reminder.subject, text: reminder.text }))) mailsSent += 1;
+    if (reminder && g.owner?.email && (await sendMail({ to: g.owner.email, subject: reminder.subject, text: reminder.text, html: reminder.html }))) mailsSent += 1;
   }
   return { gyms: gyms.length, mailsSent, lapsed };
 }

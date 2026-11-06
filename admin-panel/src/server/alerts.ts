@@ -13,7 +13,7 @@ export function alertsConfigured(): boolean {
 }
 
 /** Manda un mail a cualquiera (por ejemplo, la invitación a un dueño de gimnasio). El remitente tiene que ser del dominio verificado en Resend. */
-export async function sendMail(args: { to: string; subject: string; text: string; from?: string }): Promise<boolean> {
+export async function sendMail(args: { to: string; subject: string; text: string; html?: string; from?: string }): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key) return false;
   try {
@@ -25,6 +25,7 @@ export async function sendMail(args: { to: string; subject: string; text: string
         to: [args.to],
         subject: args.subject.slice(0, 200),
         text: args.text.slice(0, 20000),
+        ...(args.html ? { html: args.html.slice(0, 100000) } : {}),
         reply_to: 'soporte@forzaai.app',
       }),
       signal: AbortSignal.timeout(8000),
