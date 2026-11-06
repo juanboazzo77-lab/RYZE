@@ -33,7 +33,7 @@ export interface OwnerReminder {
 }
 
 /** Arma el mail para el dueño. Devuelve null si no hay nada para cobrar hoy. Función pura. */
-export function buildOwnerReminder(gymName: string, lines: Line[], panelUrl = 'https://gestion.forzaai.app'): OwnerReminder | null {
+export function buildOwnerReminder(gymName: string, lines: Line[], panelUrl = 'https://panel.forzaai.app'): OwnerReminder | null {
   const today = lines.filter((l) => l.status === 'DUE_TODAY');
   const late = lines.filter((l) => l.status === 'OVERDUE' || l.status === 'LAPSED').sort((a, b) => a.daysLeft - b.daysLeft);
   const soon = lines.filter((l) => l.status === 'SOON');

@@ -23,7 +23,7 @@ async function panelUrl(): Promise<string> {
   } catch {
     // Fuera de una pantalla: sin dirección no hay enlace propio.
   }
-  return 'https://gestion.forzaai.app';
+  return 'https://panel.forzaai.app';
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,7 +36,7 @@ export type InviteResult =
 /** Mail al dueño según el caso. Función pura (se prueba sin base de datos). */
 export function inviteEmail(args: { gymName: string; created: boolean; link?: string; panelUrl?: string }): ComposedEmail {
   const { gymName, created, link } = args;
-  const panel = (args.panelUrl ?? 'https://gestion.forzaai.app').replace(/\/$/, '');
+  const panel = (args.panelUrl ?? 'https://panel.forzaai.app').replace(/\/$/, '');
   if (created && link) {
     return composeEmail({
       subject: `Tu acceso a Forza AI para ${gymName}`,
@@ -64,7 +64,7 @@ export function inviteEmail(args: { gymName: string; created: boolean; link?: st
 }
 
 /** Arma el enlace de un solo uso que valida el panel (/auth/confirm) y lleva a elegir contraseña. */
-export function passwordLink(hashedToken: string, baseUrl = 'https://gestion.forzaai.app'): string {
+export function passwordLink(hashedToken: string, baseUrl = 'https://panel.forzaai.app'): string {
   return `${baseUrl.replace(/\/$/, '')}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`;
 }
 
