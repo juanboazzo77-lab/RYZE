@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Download } from 'lucide-react';
+import { Download, QrCode } from 'lucide-react';
 import { requireOwnerPage } from '@/lib/owner';
 import { getFinance } from '@/server/gym-finance';
 import { money, monthLabel } from '@/features/owner/finance';
@@ -35,6 +35,14 @@ export default async function GymFinancePage() {
           <h1 className="text-2xl font-bold tracking-tight">Cobros</h1>
           <p className="text-xs text-muted-foreground">Con los pagos que anotás en Clientes con el botón Pagó.</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link
+          href="/gym/cobros/qr"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
+        >
+          <QrCode className="size-4" />
+          QR de cobro
+        </Link>
         <a
           href="/gym/cobros/export"
           className="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
@@ -42,6 +50,7 @@ export default async function GymFinancePage() {
           <Download className="size-4" />
           Bajar a Excel
         </a>
+        </div>
       </div>
 
       {f.clients === 0 ? (

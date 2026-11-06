@@ -1020,6 +1020,9 @@ model Gym {
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
+  /// Cómo le pagan sus clientes: un link de pago (se vuelve QR) y un alias o CBU para transferir.
+  paymentLink         String?     @map("payment_link")
+  paymentAlias        String?     @map("payment_alias")
 
   @@index([status])
   @@index([ownerUserId])

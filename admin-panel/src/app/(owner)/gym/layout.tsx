@@ -36,7 +36,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl space-y-4 px-4 py-4">
-      <header className="flex items-center justify-between gap-2">
+      <header className="flex items-center justify-between gap-2 print:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <BrandMark size={36} />
           <div className="min-w-0">
@@ -56,10 +56,12 @@ export default async function GymLayout({ children }: { children: React.ReactNod
         </form>
       </header>
 
-      <GymNav />
+      <div className="print:hidden">
+        <GymNav />
+      </div>
       {children}
 
-      <footer className="border-t pt-4 text-center text-xs text-muted-foreground">
+      <footer className="border-t pt-4 text-center text-xs text-muted-foreground print:hidden">
         <a href="mailto:gimnasios@forzaai.app" className="underline hover:text-foreground">
           Ayuda: gimnasios@forzaai.app
         </a>
