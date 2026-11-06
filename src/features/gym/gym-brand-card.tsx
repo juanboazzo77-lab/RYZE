@@ -31,16 +31,14 @@ export function GymBrandCard({ gym, routineCount }: { gym: MemberGym; routineCou
             {routineCount > 0 ? `${routineCount} ${routineCount === 1 ? 'rutina' : 'rutinas'} de tu gimnasio` : 'Tu gimnasio y tu entrenador con IA'}
           </p>
         </div>
-        {routineCount > 0 ? <ChevronRight className="size-5 shrink-0 text-muted-foreground" /> : null}
+        <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
       </div>
     </>
   );
   const cls = 'block rounded-2xl border border-l-[6px] border-l-primary bg-card p-3.5 shadow-sm';
-  return routineCount > 0 ? (
+  return (
     <Link href="/training/gym" className={`${cls} transition-colors hover:bg-accent`}>
       {inner}
     </Link>
-  ) : (
-    <div className={cls}>{inner}</div>
   );
 }

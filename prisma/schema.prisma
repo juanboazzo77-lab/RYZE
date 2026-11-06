@@ -292,6 +292,7 @@ model Profile {
   deviceTokens            DeviceToken[]
   gymMembership           GymMember?
   challengeEntries        GymChallengeEntry[]
+  gymBookings             GymBooking[]
   ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
@@ -1019,6 +1020,7 @@ model Gym {
   payments            GymPayment[]
   routines            GymRoutine[]
   challenges          GymChallenge[]
+  classes             GymClass[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
@@ -1124,6 +1126,45 @@ model GymChallengeEntry {
   @@unique([challengeId, userId])
   @@index([userId])
   @@map("gym_challenge_entry")
+}
+
+/// Clase del gimnasio con reserva: se repite cada semana el mismo día (weekday: 1 = lunes … 7 = domingo) a la misma
+/// hora (start_time "HH:MM", hora de Argentina). Una fila por día y horario.
+model GymClass {
+  id          String   @id @default(uuid()) @db.Uuid
+  gymId       String   @db.Uuid @map("gym_id")
+  gym         Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  instructor  String?
+  weekday     Int
+  startTime   String   @map("start_time")
+  durationMin Int      @default(60) @map("duration_min")
+  capacity    Int
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  bookings    GymBooking[]
+
+  @@index([gymId, active])
+  @@map("gym_class")
+}
+
+/// Reserva de un socio para UNA fecha concreta de una clase. BOOKED | CANCELLED.
+model GymBooking {
+  id          String    @id @default(uuid()) @db.Uuid
+  classId     String    @db.Uuid @map("class_id")
+  class       GymClass  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId      String    @db.Uuid @map("user_id")
+  user        Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime  @db.Date
+  status      String    @default("BOOKED")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  @@unique([classId, userId, date])
+  @@index([classId, date, status])
+  @@index([userId, date])
+  @@map("gym_booking")
 }
 
 /// Un pago de cuota registrado por el dueño.

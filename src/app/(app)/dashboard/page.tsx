@@ -16,6 +16,8 @@ import { CoachProfileNudge } from '@/features/coach-profile/completion-card';
 import { GymBrandCard } from '@/features/gym/gym-brand-card';
 import { countMemberRoutines } from '@/server/gym-routines';
 import { nextChallengeBanner } from '@/server/gym-challenges';
+import { nextBookingFor } from '@/server/gym-classes';
+import { NextClassChip } from '@/features/gym/next-class-chip';
 import { ChallengeBanner } from '@/features/gym/challenge-banner';
 
 export const metadata: Metadata = { title: 'Inicio' };
@@ -30,6 +32,7 @@ export default async function DashboardPage() {
     : false;
 
   const challenge = ctx.gym ? await nextChallengeBanner(ctx.userId, ctx.gym.gymId) : null;
+  const nextClass = ctx.gym ? await nextBookingFor(ctx.userId, ctx.gym.gymId) : null;
 
   const part = dayPart(ctx.profile.timezone);
   const greeting =
@@ -55,6 +58,8 @@ export default async function DashboardPage() {
       </div>
 
       {ctx.gym ? <GymBrandCard gym={ctx.gym} routineCount={await countMemberRoutines(ctx.gym.gymId)} /> : null}
+
+      {nextClass ? <NextClassChip booking={nextClass} /> : null}
 
       {challenge ? <ChallengeBanner challenge={challenge} /> : null}
 

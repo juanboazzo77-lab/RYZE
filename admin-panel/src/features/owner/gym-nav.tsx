@@ -11,6 +11,7 @@ const ITEMS = [
   { href: '/gym/socios', label: 'Con Forza AI' },
   { href: '/gym/invitaciones', label: 'Invitar' },
   { href: '/gym/rutinas', label: 'Rutinas' },
+  { href: '/gym/clases', label: 'Clases' },
   { href: '/gym/retos', label: 'Retos' },
   { href: '/gym/marca', label: 'Marca' },
   { href: '/gym/equipamiento', label: 'Equipamiento' },

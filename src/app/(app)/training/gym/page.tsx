@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { listMemberRoutines } from '@/server/gym-routines';
 import { countExercises, levelLabel } from '@/features/gym/routines';
@@ -21,12 +21,34 @@ export default async function GymRoutinesPage() {
         Entrenamiento
       </Link>
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Rutinas de {ctx.gym?.name ?? 'tu gimnasio'}</h1>
-        <p className="text-sm text-muted-foreground">Armadas por los profes de tu gimnasio.</p>
-        <Link href="/training/gym/retos" className="mt-1 inline-block text-sm font-medium text-primary underline">
-          Ver los retos del gimnasio
+        <h1 className="text-2xl font-bold tracking-tight">{ctx.gym?.name ?? 'Tu gimnasio'}</h1>
+        <p className="text-sm text-muted-foreground">Todo lo de tu gimnasio, en un solo lugar.</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href="/training/gym/clases" className="flex items-center gap-3 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <CalendarCheck className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Reservar clase</span>
+            <span className="block text-xs text-muted-foreground">Elegí día y horario</span>
+          </span>
+          <ChevronRight className="size-5 text-muted-foreground" />
+        </Link>
+        <Link href="/training/gym/retos" className="flex items-center gap-3 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <Trophy className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Retos</span>
+            <span className="block text-xs text-muted-foreground">Sumate y mirá el ranking</span>
+          </span>
+          <ChevronRight className="size-5 text-muted-foreground" />
         </Link>
       </div>
+
+      <h2 className="text-lg font-semibold">Rutinas de tu gimnasio</h2>
 
       {routines.length === 0 ? (
         <p className="rounded-xl border p-4 text-sm text-muted-foreground">Tu gimnasio todavía no cargó rutinas. Mientras tanto, usá tu plan de entrenamiento de Forza AI.</p>
