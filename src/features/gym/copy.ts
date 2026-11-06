@@ -39,6 +39,9 @@ export const GYM = {
   shareTitle: 'Que mi gimnasio vea mi nombre y mi actividad',
   shareText:
     'Si lo activás, el dueño ve tu nombre y hace cuántos días entrenaste por última vez, para poder ayudarte si te alejás. Tu peso, tus fotos y tus comidas nunca se comparten. Podés apagarlo cuando quieras.',
+  joinShareLabel: 'Dejar que mi gimnasio vea mi nombre y cuándo entrené por última vez',
+  joinShareHelp:
+    'Así el gimnasio puede ayudarte si te alejás. Nunca ve tu peso, tus fotos ni tus comidas. Lo podés apagar cuando quieras en Ajustes, en Gimnasio.',
   rowDesc: 'Ingresá el código de tu gimnasio',
   rowDescIn: 'Estás en {name}',
 

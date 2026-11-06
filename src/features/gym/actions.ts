@@ -15,11 +15,11 @@ interface Result<T = void> {
 const codeSchema = z.string().trim().min(4).max(30);
 
 /** El socio entra a su gimnasio con el código. */
-export async function joinGym(raw: { code: string }): Promise<Result<{ gymName: string }> & { reason?: JoinError }> {
+export async function joinGym(raw: { code: string; share?: boolean }): Promise<Result<{ gymName: string }> & { reason?: JoinError }> {
   const code = codeSchema.safeParse(raw.code);
   if (!code.success) return { error: 'INVALID', reason: 'INVALID_CODE' };
   const { userId } = await requireUser();
-  const res = await redeemGymCode(userId, code.data);
+  const res = await redeemGymCode(userId, code.data, raw.share === true);
   revalidatePath('/settings');
   revalidatePath('/settings/gym');
   revalidatePath('/dashboard');

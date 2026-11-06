@@ -102,7 +102,12 @@ export async function previewGymCode(rawCode: string): Promise<{ name: string; c
 }
 
 /** El socio entra con el código. Se bloquea la fila del gimnasio para que el cupo no se pase por dos a la vez. */
-export async function redeemGymCode(userId: string, rawCode: string): Promise<{ ok: true; gymName: string } | { error: JoinError }> {
+export async function redeemGymCode(
+  userId: string,
+  rawCode: string,
+  /** El socio aceptó que su gimnasio vea su nombre y su actividad (lo elige al ingresar el código). */
+  shareActivity = false,
+): Promise<{ ok: true; gymName: string } | { error: JoinError }> {
   const code = normalizeGymCode(rawCode);
   if (!code) return { error: 'INVALID_CODE' };
   const gym = await prisma.gym.findUnique({ where: { inviteCode: code }, select: { id: true } });
@@ -124,8 +129,8 @@ export async function redeemGymCode(userId: string, rawCode: string): Promise<{ 
 
     await tx.gymMember.upsert({
       where: { userId },
-      create: { gymId: gym.id, userId },
-      update: { gymId: gym.id, status: 'ACTIVE', joinedAt: new Date(), endedAt: null },
+      create: { gymId: gym.id, userId, shareActivity },
+      update: { gymId: gym.id, status: 'ACTIVE', joinedAt: new Date(), endedAt: null, shareActivity },
     });
     return { ok: true as const, gymName: g.name };
   });

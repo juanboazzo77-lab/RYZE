@@ -16,6 +16,8 @@ export function MemberGymPanel({ gymName, shareActivity }: { gymName: string | n
   const [pending, start] = useTransition();
   const [code, setCode] = useState('');
   const [share, setShare] = useState(shareActivity);
+  // Al ingresar el código, el permiso viene tildado (con la explicación a la vista) y se puede destildar.
+  const [joinShare, setJoinShare] = useState(true);
 
   if (gymName) {
     return (
@@ -70,7 +72,7 @@ export function MemberGymPanel({ gymName, shareActivity }: { gymName: string | n
     e.preventDefault();
     if (code.trim().length < 4) return;
     start(async () => {
-      const res = await joinGym({ code });
+      const res = await joinGym({ code, share: joinShare });
       if (res.ok && res.data) {
         toast.success(fill(GYM.joined, { name: res.data.gymName }));
         setCode('');
@@ -95,6 +97,13 @@ export function MemberGymPanel({ gymName, shareActivity }: { gymName: string | n
           maxLength={12}
           className="font-mono uppercase tracking-wider"
         />
+      </label>
+      <label className="flex cursor-pointer items-start gap-2 rounded-lg bg-secondary/50 p-3">
+        <input type="checkbox" checked={joinShare} onChange={(e) => setJoinShare(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]" />
+        <span className="space-y-0.5">
+          <span className="block text-sm font-medium">{GYM.joinShareLabel}</span>
+          <span className="block text-xs text-muted-foreground">{GYM.joinShareHelp}</span>
+        </span>
       </label>
       <Button type="submit" disabled={pending || code.trim().length < 4} className="w-full">
         {pending ? <Loader2 className="size-4 animate-spin" /> : null}
