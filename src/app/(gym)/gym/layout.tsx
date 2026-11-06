@@ -4,6 +4,7 @@ import { Dumbbell, LogOut } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { signOutAction } from '@/app/(auth)/actions';
 import { GymNav } from '@/features/gym/gym-nav';
+import { WebOnly } from '@/features/gym/web-only';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -15,6 +16,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
   if (!ctx.ownedGym) redirect('/dashboard');
 
   return (
+    <WebOnly needsOnboarding={ctx.needsOnboarding}>
     <div className="mx-auto min-h-screen max-w-3xl space-y-4 px-4 py-4">
       <header className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -52,5 +54,6 @@ export default async function GymLayout({ children }: { children: React.ReactNod
         </a>
       </footer>
     </div>
+    </WebOnly>
   );
 }
