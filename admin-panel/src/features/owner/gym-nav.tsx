@@ -10,6 +10,8 @@ const ITEMS = [
   { href: '/gym/cobros', label: 'Cobros' },
   { href: '/gym/socios', label: 'Con Forza AI' },
   { href: '/gym/invitaciones', label: 'Invitar' },
+  { href: '/gym/rutinas', label: 'Rutinas' },
+  { href: '/gym/marca', label: 'Marca' },
   { href: '/gym/equipamiento', label: 'Equipamiento' },
 ] as const;
 

@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getUserContext } from '@/server/context';
 import { getApprovedInviteFor } from '@/server/gyms';
+import { brandTheme } from '@/features/gym/brand';
 import { showAds } from '@/server/entitlements';
 import { getT } from '@/i18n/server';
 import { AppShell } from '@/components/app-shell/app-shell';
@@ -30,7 +31,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
   if (ctx.needsOnboarding) redirect('/onboarding');
 
-  return (
+  // Si es socio de un gimnasio con su marca cargada, la app toma sus colores.
+  const theme = brandTheme(ctx.gym?.brandColor);
+
+  const shell = (
     <AppShell email={ctx.email} showAds={showAds(ctx.entitlement)} adCopy={t.ads}>
       <NavTracker />
       <NotificationPrompt />
@@ -44,4 +48,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {children}
     </AppShell>
   );
+  // display: contents → el div no cambia el diseño; solo reparte las variables de color a todo lo de adentro.
+  return theme ? <div style={{ display: 'contents', ...theme }}>{shell}</div> : shell;
 }

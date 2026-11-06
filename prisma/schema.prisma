@@ -1016,6 +1016,10 @@ model Gym {
   invites             GymInvite[]
   clients             GymClient[]
   payments            GymPayment[]
+  routines            GymRoutine[]
+  /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
+  brandColor          String?     @map("brand_color")
+  logoUrl             String?     @map("logo_url")
 
   @@index([status])
   @@index([ownerUserId])
@@ -1062,6 +1066,25 @@ model GymClient {
   @@index([gymId, active])
   @@index([email])
   @@map("gym_client")
+}
+
+/// Rutina oficial del gimnasio: la arma el profe y la ven los socios en la app. `days` es una lista de
+/// { name, exercises: [{ name, sets, reps, note }] }.
+model GymRoutine {
+  id          String   @id @default(uuid()) @db.Uuid
+  gymId       String   @db.Uuid @map("gym_id")
+  gym         Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  level       String?
+  days        Json
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([gymId, active])
+  @@map("gym_routine")
 }
 
 /// Un pago de cuota registrado por el dueño.

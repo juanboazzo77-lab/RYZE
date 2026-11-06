@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { prisma } from './db';
 import { sendAlert } from './alerts';
 import { gymContextLines, parseGymProfile } from '@/features/gym/catalog';
+import { normalizeHexColor, safeLogoUrl } from '@/features/gym/brand';
 import { asGymStatus, canJoin, MAX_MEMBER_ESTIMATE, normalizeEmail, normalizeGymCode, type JoinError } from '@/features/gym/logic';
 
 /**
@@ -82,15 +83,18 @@ export async function submitGymApplication(input: GymApplicationInput): Promise<
 export interface MemberGym {
   gymId: string;
   name: string;
+  /** Marca del gimnasio: logo (dirección https) y color (#rrggbb), o null. */
+  logoUrl: string | null;
+  brandColor: string | null;
 }
 
 /** El gimnasio activo al que pertenece la persona (con el gimnasio también activo), si tiene uno. */
 export async function getMemberGym(userId: string): Promise<MemberGym | null> {
   const m = await prisma.gymMember.findFirst({
     where: { userId, status: 'ACTIVE', gym: { status: 'ACTIVE' } },
-    select: { gymId: true, gym: { select: { name: true } } },
+    select: { gymId: true, gym: { select: { name: true, logoUrl: true, brandColor: true } } },
   });
-  return m ? { gymId: m.gymId, name: m.gym.name } : null;
+  return m ? { gymId: m.gymId, name: m.gym.name, logoUrl: safeLogoUrl(m.gym.logoUrl), brandColor: normalizeHexColor(m.gym.brandColor) } : null;
 }
 
 /** Quién es el gimnasio de un código (para mostrárselo antes de aceptar). Sólo si está activo. */

@@ -13,6 +13,8 @@ import { CheckinReminder } from '@/features/dashboard/checkin-reminder';
 import { FirstPlanCard } from '@/features/dashboard/first-plan-card';
 import { CompetitionBanner } from '@/features/sports/competition-banner';
 import { CoachProfileNudge } from '@/features/coach-profile/completion-card';
+import { GymBrandCard } from '@/features/gym/gym-brand-card';
+import { countMemberRoutines } from '@/server/gym-routines';
 
 export const metadata: Metadata = { title: 'Inicio' };
 
@@ -47,6 +49,8 @@ export default async function DashboardPage() {
           {ctx.profile.name ? `, ${ctx.profile.name}` : ''}
         </h1>
       </div>
+
+      {ctx.gym ? <GymBrandCard gym={ctx.gym} routineCount={await countMemberRoutines(ctx.gym.gymId)} /> : null}
 
       {checkinDue ? <CheckinReminder t={t} /> : null}
 
