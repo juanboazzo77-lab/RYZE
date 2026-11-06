@@ -8,6 +8,17 @@ describe('catálogo del gimnasio', () => {
     expect(new Set(SPECIALTIES.map((s) => s.key)).size).toBe(SPECIALTIES.length);
   });
 
+  it('mantiene las claves que los gimnasios ya cargaron', () => {
+    const legacy = ['barbell','dumbbells','kettlebells','squat_rack','bench_flat','bench_adjustable','bench_decline','preacher','hip_thrust','ez_bar','trap_bar','leg_press','hack_squat','leg_extension','leg_curl','hip_abductor','calf_machine','chest_press','pec_deck','shoulder_press','lat_pulldown','seated_row','cable_crossover','smith','assisted_pullup','biceps_machine','triceps_machine','ab_machine','back_extension','pullup_bar','rings','plyo_box','battle_ropes','sled','medicine_ball','trx','landmine','heavy_bag','rower','assault_bike','ski_erg','treadmill','bike','elliptical','stair_climber','spinning','bands','mats','fitball','foam_roller','pool','turf'];
+    const keys = new Set(EQUIPMENT_GROUPS.flatMap((g) => g.items.map((i) => i.key)));
+    for (const k of legacy) expect(keys.has(k)).toBe(true);
+  });
+
+  it('tiene un catálogo amplio de máquinas', () => {
+    const total = EQUIPMENT_GROUPS.reduce((n, g) => n + g.items.length, 0);
+    expect(total).toBeGreaterThanOrEqual(120);
+  });
+
   it('lee lo guardado ignorando claves inventadas y duplicados', () => {
     const p = parseGymProfile({ items: ['barbell', 'barbell', 'nave_espacial', 5], notes: 'Mancuernas hasta 40 kg', specialtyDetail: 'rugby' });
     expect(p.items).toEqual(['barbell']);
