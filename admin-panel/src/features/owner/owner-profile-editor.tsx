@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { saveMyGymProfile } from './actions';
-import { EQUIPMENT_GROUPS, SPECIALTIES, type GymProfile } from './catalog';
+import { EQUIPMENT_GROUPS, SPECIALTIES, type GymProfile } from '@/features/gym/catalog';
 
 /** El dueño carga las máquinas y la especialidad de su gimnasio: la IA arma las rutinas de sus socios con eso. */
 export function OwnerProfileEditor({ specialty, profile }: { specialty: string | null; profile: GymProfile }) {

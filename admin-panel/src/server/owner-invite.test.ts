@@ -3,17 +3,16 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('./db', () => ({ prisma: {} }));
 vi.mock('@/lib/supabase-admin', () => ({ createSupabaseAdminClient: () => ({}), supabaseAdminConfigured: () => true }));
+vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('./alerts', () => ({ sendMail: async () => true }));
 vi.mock('./gyms', () => ({ setGymOwner: async () => ({ ok: true }) }));
 
 import { inviteEmail, passwordLink } from './owner-invite';
 
 describe('invitación a dueños de gimnasio', () => {
-  it('el enlace va a la app, valida el token y sigue a elegir contraseña', () => {
-    const link = passwordLink('abc123');
-    expect(link).toContain('/auth/confirm?token_hash=abc123');
-    expect(link).toContain('type=recovery');
-    expect(link).toContain(encodeURIComponent('/reset-password'));
+  it('el enlace va al panel y valida el token (después se elige la contraseña)', () => {
+    const link = passwordLink('abc123', 'https://panel.example/');
+    expect(link).toBe('https://panel.example/auth/confirm?token_hash=abc123&type=recovery');
   });
 
   it('el token se escapa para no romper el enlace', () => {
@@ -29,7 +28,7 @@ describe('invitación a dueños de gimnasio', () => {
 
   it('a una cuenta que ya existía solo le avisa, sin enlace ni contraseña', () => {
     const m = inviteEmail({ gymName: 'Gym Norte', created: false });
-    expect(m.text).not.toContain('http');
-    expect(m.text).toContain('Mi gimnasio');
+    expect(m.text).not.toContain('token_hash');
+    expect(m.text).toContain('/login');
   });
 });

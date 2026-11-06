@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/server/context';
+import { requireOwnerPage } from '@/lib/owner';
 import { countClients, listClients } from '@/server/gym-clients';
-import { AddClientsForm } from '@/features/gym/add-clients-form';
-import { ClientRow } from '@/features/gym/client-row';
+import { AddClientsForm } from '@/features/owner/add-clients-form';
+import { ClientRow } from '@/features/owner/client-row';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Clientes' };
@@ -19,10 +19,9 @@ const FILTERS = [
 
 /** Sistema de gestión del gimnasio: sus clientes, quién pagó y a quién le toca pagar. */
 export default async function GymClientsPage({ searchParams }: { searchParams: Promise<{ f?: string; q?: string }> }) {
-  const ctx = await requireUser();
-  if (!ctx.ownedGym) redirect('/dashboard');
+  const owner = await requireOwnerPage();
   const { f, q } = await searchParams;
-  const rows = (await listClients(ctx.userId, ctx.ownedGym.id)) ?? [];
+  const rows = (await listClients(owner.userId, owner.gym.id)) ?? [];
   const counts = countClients(rows);
   const toCollect = counts.dueToday + counts.overdue + counts.lapsed;
   // Por defecto, lo que hay que cobrar; si no hay nada, todos.

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { editGymClient, markGymClientPaid, removeGymClient, requestForzaForClients } from './client-actions';
-import { FEE_LABEL } from './fees';
+import { FEE_LABEL } from '@/features/gym/fees';
 import type { ClientRow, ForzaState } from '@/server/gym-clients';
 
 const fmtDate = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', timeZone: 'UTC' });

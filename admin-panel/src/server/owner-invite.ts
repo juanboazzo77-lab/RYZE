@@ -1,4 +1,5 @@
 import 'server-only';
+import { headers } from 'next/headers';
 import { prisma } from './db';
 import { createSupabaseAdminClient, supabaseAdminConfigured } from '@/lib/supabase-admin';
 import { sendMail } from './alerts';
@@ -10,7 +11,20 @@ import { setGymOwner } from './gyms';
  * comparte una contraseña provisoria). Si ya tiene cuenta, solo se vincula y se le avisa.
  */
 
-const APP_URL = (process.env.APP_URL || 'https://www.forzaai.app').replace(/\/$/, '');
+/** Dirección del panel (donde entran los dueños). Sin PANEL_URL, se usa la del sitio desde el que se manda la invitación. */
+async function panelUrl(): Promise<string> {
+  const fixed = process.env.PANEL_URL?.trim();
+  if (fixed) return fixed.replace(/\/$/, '');
+  try {
+    const h = await headers();
+    const host = h.get('x-forwarded-host') ?? h.get('host');
+    if (host) return `${h.get('x-forwarded-proto') ?? 'https'}://${host}`;
+  } catch {
+    // Fuera de una pantalla: sin dirección no hay enlace propio.
+  }
+  return 'https://gestion.forzaai.app';
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export type InviteError = 'NOT_CONFIGURED' | 'INVALID' | 'NOT_FOUND' | 'CREATE_FAILED' | 'LINK_FAILED';
@@ -19,8 +33,9 @@ export type InviteResult =
   | { error: InviteError };
 
 /** Texto del mail según el caso. Función pura (se prueba sin base de datos). */
-export function inviteEmail(args: { gymName: string; created: boolean; link?: string }): { subject: string; text: string } {
+export function inviteEmail(args: { gymName: string; created: boolean; link?: string; panelUrl?: string }): { subject: string; text: string } {
   const { gymName, created, link } = args;
+  const panel = (args.panelUrl ?? 'https://gestion.forzaai.app').replace(/\/$/, '');
   if (created && link) {
     return {
       subject: `Tu acceso a Forza AI para ${gymName}`,
@@ -31,7 +46,7 @@ export function inviteEmail(args: { gymName: string; created: boolean; link?: st
         '',
         link,
         '',
-        'Después entrá a Forza AI (en la app o en www.forzaai.app) con este mismo mail y tu contraseña. En Ajustes vas a ver "Mi gimnasio": ahí está el código para tus socios, el cupo, quiénes entrenan y la carga de tus máquinas.',
+        `Después entrá a tu panel en ${panel}/login con este mismo mail y tu contraseña (es una página web, no la app del celular). Ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.`,
         '',
         'Si el enlace venció, pedinos uno nuevo respondiendo este mail. Si no esperabas este mensaje, ignoralo.',
         '',
@@ -44,16 +59,16 @@ export function inviteEmail(args: { gymName: string; created: boolean; link?: st
     text: [
       'Hola,',
       '',
-      `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a Forza AI con tu cuenta de siempre y en Ajustes vas a ver "Mi gimnasio": ahí está el código para tus socios, el cupo, quiénes entrenan y la carga de tus máquinas.`,
+      `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a tu panel en ${panel}/login con tu mail: ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.`,
       '',
       'Equipo de Forza AI · soporte@forzaai.app',
     ].join('\n'),
   };
 }
 
-/** Arma el enlace de un solo uso que valida la app (/auth/confirm) y lleva a elegir contraseña. */
-export function passwordLink(hashedToken: string): string {
-  return `${APP_URL}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=recovery&next=${encodeURIComponent('/reset-password')}`;
+/** Arma el enlace de un solo uso que valida el panel (/auth/confirm) y lleva a elegir contraseña. */
+export function passwordLink(hashedToken: string, baseUrl = 'https://gestion.forzaai.app'): string {
+  return `${baseUrl.replace(/\/$/, '')}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=recovery`;
 }
 
 export async function inviteGymOwner(gymId: string, rawEmail: string, opts: { resend?: boolean } = {}): Promise<InviteResult> {
@@ -91,10 +106,10 @@ export async function inviteGymOwner(gymId: string, rawEmail: string, opts: { re
       console.error('[owner-invite] no se pudo generar el enlace:', error?.message);
       return { error: 'LINK_FAILED' };
     }
-    link = passwordLink(hashed);
+    link = passwordLink(hashed, await panelUrl());
   }
 
-  const mail = inviteEmail({ gymName: gym.name, created: Boolean(link), link });
+  const mail = inviteEmail({ gymName: gym.name, created: Boolean(link), link, panelUrl: await panelUrl() });
   const emailSent = await sendMail({ to: email, subject: mail.subject, text: mail.text });
   return { ok: true, created, emailSent, link: emailSent ? undefined : link };
 }

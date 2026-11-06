@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/server/context';
-import { getOwnerView, INACTIVE_DAYS } from '@/server/gyms';
+import { requireOwnerPage } from '@/lib/owner';
+import { getOwnerView, INACTIVE_DAYS } from '@/server/owner';
 import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = { title: 'Socios' };
@@ -25,10 +25,9 @@ const LABEL: Record<Level, { text: string; variant: 'success' | 'secondary' | 'w
 
 /** Los socios del gimnasio: nombre y cuándo entrenaron por última vez, de los que aceptaron compartirlo. */
 export default async function GymMembersPage() {
-  const ctx = await requireUser();
-  if (!ctx.ownedGym) redirect('/dashboard');
-  const view = await getOwnerView(ctx.userId, ctx.ownedGym.id);
-  if (!view) redirect('/dashboard');
+  const owner = await requireOwnerPage();
+  const view = await getOwnerView(owner.userId, owner.gym.id);
+  if (!view) redirect('/gym');
 
   const rows = view.sharedMembers.map((m) => ({ ...m, level: levelOf(m.daysSinceLastWorkout, m.joinedDaysAgo) }));
   const count = (l: Level) => rows.filter((r) => r.level === l).length;

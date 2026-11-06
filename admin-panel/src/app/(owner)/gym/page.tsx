@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/server/context';
-import { getOwnerView, INACTIVE_DAYS } from '@/server/gyms';
+import { requireOwnerPage } from '@/lib/owner';
+import { getOwnerView, INACTIVE_DAYS } from '@/server/owner';
 import { countClients, listClients } from '@/server/gym-clients';
 import { usedPercent } from '@/features/gym/logic';
 import { Badge } from '@/components/ui/badge';
@@ -21,11 +21,10 @@ function Stat({ label, value, sub, alert }: { label: string; value: string | num
 }
 
 export default async function GymHomePage() {
-  const ctx = await requireUser();
-  if (!ctx.ownedGym) redirect('/dashboard');
-  const view = await getOwnerView(ctx.userId, ctx.ownedGym.id);
-  if (!view) redirect('/dashboard');
-  const clients = (await listClients(ctx.userId, ctx.ownedGym.id)) ?? [];
+  const owner = await requireOwnerPage();
+  const view = await getOwnerView(owner.userId, owner.gym.id);
+  if (!view) redirect('/gym');
+  const clients = (await listClients(owner.userId, owner.gym.id)) ?? [];
   const fees = countClients(clients);
   const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
   const pct = usedPercent(view.activeMembers, view.memberLimit);

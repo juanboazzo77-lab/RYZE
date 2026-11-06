@@ -8,7 +8,7 @@ export default async function OnboardingLayout({ children }: { children: React.R
   if (!ctx) redirect('/login');
   if (!ctx.needsOnboarding) redirect('/dashboard');
   // Si su gimnasio la invitó por mail, acepta la invitación antes de hacer el cuestionario.
-  if (!ctx.gym && !ctx.ownedGym && (await cookies()).get('fz_invite_skip')?.value !== '1') {
+  if (!ctx.gym && (await cookies()).get('fz_invite_skip')?.value !== '1') {
     if (await getApprovedInviteFor(ctx.userId, ctx.email)) redirect('/invitacion');
   }
 

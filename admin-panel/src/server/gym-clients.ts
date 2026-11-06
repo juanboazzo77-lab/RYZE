@@ -1,7 +1,7 @@
 import 'server-only';
 import { prisma } from './db';
-import { requestInvites, type RequestInvitesResult } from './gyms';
-import { localTodayISO } from '@/lib/date';
+import { requestInvites, type RequestInvitesResult } from './owner';
+import { todayArgentina } from './gym-fees';
 import { daysBetween, feeRank, feeStatus, nextPaidUntil, isISODate, type ClientLine, type FeeStatus } from '@/features/gym/fees';
 
 /**
@@ -10,7 +10,6 @@ import { daysBetween, feeRank, feeStatus, nextPaidUntil, isISODate, type ClientL
  * global a propósito: son datos del gimnasio, no de un usuario de la app.
  */
 
-export const GYM_TZ = 'America/Argentina/Buenos_Aires';
 export const MAX_CLIENTS_PER_ADD = 500;
 
 const isoOf = (d: Date | null): string | null => (d ? d.toISOString().slice(0, 10) : null);
@@ -40,7 +39,7 @@ async function ownedGym(ownerUserId: string, gymId: string) {
   });
 }
 
-export async function listClients(ownerUserId: string, gymId: string, today = localTodayISO(GYM_TZ)): Promise<ClientRow[] | null> {
+export async function listClients(ownerUserId: string, gymId: string, today = todayArgentina()): Promise<ClientRow[] | null> {
   if (!(await ownedGym(ownerUserId, gymId))) return null;
   const clients = await prisma.gymClient.findMany({ where: { gymId, active: true }, orderBy: { name: 'asc' }, take: 2000 });
   if (clients.length === 0) return [];
@@ -148,7 +147,7 @@ export async function markClientPaid(
   opts: { paidOn?: string; amount?: number | null; months?: number; note?: string } = {},
 ): Promise<{ ok: true; paidUntil: string } | { error: 'NOT_FOUND' | 'INVALID' }> {
   const months = Math.min(24, Math.max(1, Math.round(opts.months ?? 1)));
-  const paidOn = opts.paidOn ?? localTodayISO(GYM_TZ);
+  const paidOn = opts.paidOn ?? todayArgentina();
   if (!isISODate(paidOn)) return { error: 'INVALID' };
   const client = await prisma.gymClient.findFirst({ where: { id: clientId, active: true, gym: { ownerUserId } }, select: { id: true, gymId: true, email: true, paidUntil: true, feeAmount: true } });
   if (!client) return { error: 'NOT_FOUND' };

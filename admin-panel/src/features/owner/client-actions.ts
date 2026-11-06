@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { requireUser } from '@/server/context';
-import { getOwnedGym } from '@/server/gyms';
+import { requireOwner } from '@/lib/owner';
+import { getOwnedGym } from '@/server/owner';
 import { addClients, markClientPaid, removeClient, requestForzaFor, updateClient } from '@/server/gym-clients';
-import { parseClientLines } from './fees';
+import { parseClientLines } from '@/features/gym/fees';
 
 interface Result<T = void> {
   ok?: boolean;
@@ -23,7 +23,7 @@ const refresh = () => {
 export async function addGymClients(raw: { text: string }): Promise<Result<{ added: number; skipped: number; invalid: string[] }>> {
   const text = z.string().max(100_000).safeParse(raw.text);
   if (!text.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
+  const { userId } = await requireOwner();
   const gym = await getOwnedGym(userId);
   if (!gym) return { error: 'NOT_OWNER' };
   const { valid, invalid } = parseClientLines(text.data);
@@ -37,7 +37,7 @@ export async function addGymClients(raw: { text: string }): Promise<Result<{ add
 export async function markGymClientPaid(raw: { id: string; months?: number; amount?: number | null }): Promise<Result<{ paidUntil: string }>> {
   const id = uuid.safeParse(raw.id);
   if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
+  const { userId } = await requireOwner();
   const res = await markClientPaid(userId, id.data, { months: raw.months, amount: raw.amount });
   refresh();
   return 'ok' in res ? { ok: true, data: { paidUntil: res.paidUntil } } : { error: res.error };
@@ -57,7 +57,7 @@ export async function editGymClient(raw: z.input<typeof editSchema>): Promise<Re
   if (!parsed.success) return { error: 'INVALID' };
   const { id, ...patch } = parsed.data;
   if (patch.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(patch.email.trim())) return { error: 'INVALID_EMAIL' };
-  const { userId } = await requireUser();
+  const { userId } = await requireOwner();
   const ok = await updateClient(userId, id, patch);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
@@ -66,7 +66,7 @@ export async function editGymClient(raw: z.input<typeof editSchema>): Promise<Re
 export async function removeGymClient(raw: { id: string }): Promise<Result> {
   const id = uuid.safeParse(raw.id);
   if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
+  const { userId } = await requireOwner();
   const ok = await removeClient(userId, id.data);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
@@ -76,7 +76,7 @@ export async function removeGymClient(raw: { id: string }): Promise<Result> {
 export async function requestForzaForClients(raw: { ids: string[] }): Promise<Result<{ added: number; skipped: number }>> {
   const ids = z.array(z.string().uuid()).min(1).max(200).safeParse(raw.ids);
   if (!ids.success) return { error: 'INVALID' };
-  const { userId } = await requireUser();
+  const { userId } = await requireOwner();
   const gym = await getOwnedGym(userId);
   if (!gym) return { error: 'NOT_OWNER' };
   const res = await requestForzaFor(userId, gym.id, ids.data);

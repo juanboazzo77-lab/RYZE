@@ -19,7 +19,7 @@ export async function GET(req: Request) {
   const digest = buildDigest(summary);
   const sent = await sendAlert({ subject: digest.subject, text: digest.text });
   // Cuotas de los clientes de cada gimnasio: aviso al dueño y baja de acceso a quien no pagó. Si falla, el resumen ya salió.
-  const fees = await runDailyFees().catch((e) => {
+  const fees = await runDailyFees(undefined, process.env.PANEL_URL?.trim() || new URL(req.url).origin).catch((e) => {
     console.error('[cron] control de cuotas fallo', e instanceof Error ? e.message : e);
     return null;
   });

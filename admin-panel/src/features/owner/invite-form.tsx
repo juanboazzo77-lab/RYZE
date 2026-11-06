@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { inviteMembers } from './actions';
-import { parseEmailList } from './logic';
+import { parseEmailList } from '@/features/gym/logic';
 
 /**
  * El dueño pega los mails de sus clientes y pide el alta. El pago lo hace por fuera y manda el comprobante por

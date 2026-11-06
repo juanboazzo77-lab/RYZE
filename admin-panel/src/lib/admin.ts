@@ -14,8 +14,11 @@ export async function getAdminEmail(): Promise<string | null> {
 /** Para las pantallas: sin sesión de administrador, al login. */
 export async function requireAdminPage(): Promise<string> {
   const email = await getAdminEmail();
-  if (!email) redirect('/login');
-  return email;
+  if (email) return email;
+  // Con sesión pero sin ser administrador: va a lo suyo (el panel del gimnasio).
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getUser();
+  redirect(data.user ? '/gym' : '/login');
 }
 
 /** Para las acciones del servidor: se comprueba en CADA acción, no sólo al mostrar la pantalla. */

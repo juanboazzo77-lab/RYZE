@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { requireUser } from '@/server/context';
-import { getOwnerView, listInvitesForOwner } from '@/server/gyms';
-import { InviteForm } from '@/features/gym/invite-form';
+import { requireOwnerPage } from '@/lib/owner';
+import { getOwnerView, listInvitesForOwner } from '@/server/owner';
+import { InviteForm } from '@/features/owner/invite-form';
 import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = { title: 'Invitar socios' };
@@ -16,10 +16,9 @@ const LABEL = {
 };
 
 export default async function GymInvitesPage() {
-  const ctx = await requireUser();
-  if (!ctx.ownedGym) redirect('/dashboard');
-  const [view, invites] = await Promise.all([getOwnerView(ctx.userId, ctx.ownedGym.id), listInvitesForOwner(ctx.userId, ctx.ownedGym.id)]);
-  if (!view) redirect('/dashboard');
+  const owner = await requireOwnerPage();
+  const [view, invites] = await Promise.all([getOwnerView(owner.userId, owner.gym.id), listInvitesForOwner(owner.userId, owner.gym.id)]);
+  if (!view) redirect('/gym');
   const rows = invites ?? [];
   const count = (s: keyof typeof LABEL) => rows.filter((r) => r.status === s).length;
 

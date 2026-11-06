@@ -31,7 +31,7 @@ export interface OwnerReminder {
 }
 
 /** Arma el mail para el dueño. Devuelve null si no hay nada para cobrar hoy. Función pura. */
-export function buildOwnerReminder(gymName: string, lines: Line[]): OwnerReminder | null {
+export function buildOwnerReminder(gymName: string, lines: Line[], panelUrl = 'https://gestion.forzaai.app'): OwnerReminder | null {
   const today = lines.filter((l) => l.status === 'DUE_TODAY');
   const late = lines.filter((l) => l.status === 'OVERDUE' || l.status === 'LAPSED').sort((a, b) => a.daysLeft - b.daysLeft);
   const soon = lines.filter((l) => l.status === 'SOON');
@@ -55,7 +55,7 @@ export function buildOwnerReminder(gymName: string, lines: Line[]): OwnerReminde
     if (soon.length > 15) out.push(`- y ${soon.length - 15} más`);
     out.push('');
   }
-  out.push('Cuando te paguen, entrá a Clientes en tu panel (www.forzaai.app/gym/clientes) y tocá "Pagó": el vencimiento se corre solo.');
+  out.push(`Cuando te paguen, entrá a Clientes en tu panel (${panelUrl.replace(/\/$/, '')}/gym/clientes) y tocá "Pagó": el vencimiento se corre solo.`);
   const count = today.length + late.length;
   return { subject: `${count} ${count === 1 ? 'cuota para cobrar' : 'cuotas para cobrar'} hoy en ${gymName}`.slice(0, 150), text: out.join('\n'), dueToday: today.length, overdue: late.length };
 }
@@ -67,7 +67,7 @@ export interface FeeRunResult {
 }
 
 /** Corre el control diario de cuotas de todos los gimnasios activos. */
-export async function runDailyFees(today = todayArgentina()): Promise<FeeRunResult> {
+export async function runDailyFees(today = todayArgentina(), panelUrl?: string): Promise<FeeRunResult> {
   const gyms = await prisma.gym.findMany({
     where: { status: 'ACTIVE', clients: { some: { active: true, paidUntil: { not: null } } } },
     select: {
@@ -99,7 +99,7 @@ export async function runDailyFees(today = todayArgentina()): Promise<FeeRunResu
       lapsed += res.count;
     }
 
-    const reminder = buildOwnerReminder(g.name, lines);
+    const reminder = buildOwnerReminder(g.name, lines, panelUrl);
     if (reminder && g.owner?.email && (await sendMail({ to: g.owner.email, subject: reminder.subject, text: reminder.text }))) mailsSent += 1;
   }
   return { gyms: gyms.length, mailsSent, lapsed };

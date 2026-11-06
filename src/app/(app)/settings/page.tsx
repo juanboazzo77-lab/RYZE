@@ -31,7 +31,6 @@ export default async function SettingsPage() {
     { href: '/settings/profile', icon: User, title: t.settings.profile, desc: t.settings.profileDesc },
     { href: '/settings/goals', icon: Target, title: t.settings.goals, desc: t.settings.goalsDesc },
     { href: '/settings/sports', icon: Trophy, title: t.settings.sports, desc: t.settings.sportsDesc },
-    ...(ctx.ownedGym ? [{ href: '/api/mode?to=gym', icon: Dumbbell, title: 'Panel del gimnasio', desc: ctx.ownedGym.name }] : []),
     {
       href: '/settings/gym',
       icon: Dumbbell,

@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { addGymClients } from './client-actions';
-import { parseClientLines } from './fees';
+import { parseClientLines } from '@/features/gym/fees';
 
 /** Cargar clientes: se pega una lista, una por línea. Sólo el nombre es obligatorio. */
 export function AddClientsForm({ defaultOpen = false }: { defaultOpen?: boolean }) {
