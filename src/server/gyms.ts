@@ -160,7 +160,8 @@ export async function getMemberGymContext(userId: string): Promise<string[] | nu
 /** El gimnasio del que esta cuenta es dueña (el más reciente si hubiera más de uno), o null. */
 export async function getOwnedGym(userId: string): Promise<{ id: string; name: string } | null> {
   const g = await prisma.gym.findFirst({
-    where: { ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED'] } },
+    // También los pendientes: el dueño ya puede entrar a su panel mientras el gimnasio está en revisión.
+    where: { ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED', 'PENDING'] } },
     orderBy: { createdAt: 'desc' },
     select: { id: true, name: true },
   });
@@ -173,7 +174,7 @@ export const INACTIVE_DAYS = 10;
 export interface OwnerView {
   gymId: string;
   name: string;
-  status: 'ACTIVE' | 'SUSPENDED';
+  status: 'ACTIVE' | 'SUSPENDED' | 'PENDING';
   inviteCode: string | null;
   memberLimit: number;
   activeMembers: number;
@@ -193,7 +194,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** Lo que ve el dueño de su gimnasio. Devuelve null si esa cuenta no es la dueña de ese gimnasio. */
 export async function getOwnerView(userId: string, gymId: string): Promise<OwnerView | null> {
   const gym = await prisma.gym.findFirst({
-    where: { id: gymId, ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED'] } },
+    where: { id: gymId, ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED', 'PENDING'] } },
   });
   if (!gym) return null;
   const members = await prisma.gymMember.findMany({
@@ -233,7 +234,7 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
   return {
     gymId: gym.id,
     name: gym.name,
-    status: gym.status === 'SUSPENDED' ? 'SUSPENDED' : 'ACTIVE',
+    status: gym.status === 'SUSPENDED' ? 'SUSPENDED' : gym.status === 'PENDING' ? 'PENDING' : 'ACTIVE',
     inviteCode: gym.inviteCode,
     memberLimit: gym.memberLimit,
     activeMembers: members.length,

@@ -30,6 +30,12 @@ export default async function GymHomePage() {
 
   return (
     <div className="space-y-4">
+      {view.status === 'PENDING' ? (
+        <p className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
+          Tu gimnasio está en revisión. Apenas lo aprobemos vas a ver acá tu código para los socios y tu cupo. Mientras tanto ya podés cargar tus máquinas y tu especialidad en Equipamiento.
+        </p>
+      ) : null}
+
       {view.status === 'SUSPENDED' ? (
         <p className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
           Tu gimnasio está suspendido: tus socios no tienen acceso gratis por ahora. Escribinos a gimnasios@forzaai.app.
