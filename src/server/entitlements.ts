@@ -46,22 +46,23 @@ export const TRIAL_DAYS = 3;
 
 /**
  * Plan de un socio de gimnasio: lo paga el gimnasio (por fuera de la tienda). Un plan de entrenamiento y uno de
- * dieta por mes, algunos mensajes con la IA por día y nada de los extras caros (revisión semanal con fotos,
- * análisis de físico, perfil de coaching). Está pensado para que el costo de IA por socio quede muy por debajo
+ * dieta por mes, algunos mensajes con la IA por día y una revisión con ajustes cada dos semanas. Sin los extras caros
+ * (análisis de físico, perfil de coaching). Es lo mismo para quien lo recibe de un gimnasio, quien paga el plan
+ * por la web y quien compra el plan GYM en las tiendas. Está pensado para que el costo de IA por socio quede muy por debajo
  * de lo que paga el gimnasio.
  */
 export const GYM_LIMITS: TierLimits = {
   aiCoachMessagesPerDay: 5,
   aiPlansPerMonth: 1,
   physiquePerMonth: 0,
-  checkinEveryWeeks: 0,
+  checkinEveryWeeks: 2,
   aiQuickPerDay: 5,
   mealPlansPerMonth: 1,
   features: {
     ai_coach_message: true,
     ai_generate_plan: true,
     ai_meal_plan: true,
-    weekly_checkin: false,
+    weekly_checkin: true,
     advanced_stats: false,
     progression_analysis: true,
     coach_profile: false,

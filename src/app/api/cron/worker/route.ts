@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { DateTime } from 'luxon';
 import type { NotificationKind } from '@prisma/client';
 import { prisma } from '@/server/db';
-import { limitsFor } from '@/server/entitlements';
+import { limitsFor, withGymAccess } from '@/server/entitlements';
 import { sendPushToUser } from '@/server/push';
 import { computeNudges } from '@/server/nudges';
 
@@ -81,6 +81,9 @@ export async function GET(req: NextRequest) {
       timezone: true,
       weekStart: true,
       entitlement: { select: { tier: true, createdAt: true } },
+      // Socios de un gimnasio y quienes pagan el plan por la web también tienen la revisión cada dos semanas.
+      gymMembership: { select: { status: true } },
+      webSubscription: { select: { status: true } },
       notificationPreferences: { select: { kind: true, enabled: true, dayOfWeek: true } },
     },
   });
@@ -91,7 +94,9 @@ export async function GET(req: NextRequest) {
   for (const u of users) {
     const prefByKind = new Map(u.notificationPreferences.map((p) => [p.kind, p]));
 
-    if (u.entitlement && limitsFor(u.entitlement).features.weekly_checkin) {
+    const gymAccess = u.gymMembership?.status === 'ACTIVE' || u.webSubscription?.status === 'AUTHORIZED';
+    const ent = u.entitlement && gymAccess ? withGymAccess(u.entitlement) : u.entitlement;
+    if (ent && limitsFor(ent).features.weekly_checkin) {
       const cp = prefByKind.get('WEEKLY_CHECKIN');
       if ((cp?.enabled ?? true) && (await maybeCheckinReminder(u, cp?.dayOfWeek ?? 1))) {
         created++;

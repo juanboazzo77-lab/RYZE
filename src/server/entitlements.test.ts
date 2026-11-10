@@ -16,12 +16,13 @@ describe('socio de un gimnasio', () => {
     expect(limitsFor(g).mealPlansPerMonth).toBe(1);
   });
 
-  it('puede pedir su rutina y su dieta, pero no la revisión semanal ni el análisis de físico', () => {
+  it('puede pedir su rutina, su dieta y una revisión cada dos semanas, pero no el análisis de físico', () => {
     const g = withGymAccess(free);
     expect(can(g, 'ai_generate_plan')).toBe(true);
     expect(can(g, 'ai_meal_plan')).toBe(true);
     expect(can(g, 'ai_coach_message')).toBe(true);
-    expect(can(g, 'weekly_checkin')).toBe(false);
+    expect(can(g, 'weekly_checkin')).toBe(true);
+    expect(limitsFor(g).checkinEveryWeeks).toBe(2);
     expect(can(g, 'physique_analysis')).toBe(false);
   });
 
@@ -44,7 +45,8 @@ describe('plan GYM de las tiendas', () => {
     expect(limitsFor(gym)).toBe(GYM_LIMITS);
     expect(showAds(gym)).toBe(false);
     expect(can(gym, 'ai_meal_plan')).toBe(true);
-    expect(can(gym, 'weekly_checkin')).toBe(false);
+    expect(can(gym, 'weekly_checkin')).toBe(true);
+    expect(limitsFor(gym).checkinEveryWeeks).toBe(2);
   });
 
   it('si además es socio de un gimnasio, se queda como está', () => {
