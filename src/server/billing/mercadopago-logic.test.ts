@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { buildPreapprovalBody, DEFAULT_PRICE_ARS, grantsAccess, mapMpStatus, priceFromEnv, verifyMpSignature } from './mercadopago-logic';
+import { buildPreapprovalBody, DEFAULT_PRICE_ARS, grantsAccess, mapMpStatus, payerEmailFor, priceFromEnv, verifyMpSignature } from './mercadopago-logic';
 
 describe('estados de Mercado Pago', () => {
   it('traduce los estados conocidos', () => {
@@ -74,5 +74,18 @@ describe('firma de los avisos', () => {
     expect(verifyMpSignature({ signatureHeader: null, requestId: 'r', dataId: 'a', secret })).toBe(false);
     expect(verifyMpSignature({ signatureHeader: 'ts=1,v1=2', requestId: 'r', dataId: 'a', secret: undefined })).toBe(false);
     expect(verifyMpSignature({ signatureHeader: 'basura', requestId: 'r', dataId: 'a', secret })).toBe(false);
+  });
+});
+
+describe('mail del pagador', () => {
+  it('normalmente es el de la persona', () => {
+    expect(payerEmailFor('ana@ejemplo.com', undefined)).toBe('ana@ejemplo.com');
+    expect(payerEmailFor('ana@ejemplo.com', '')).toBe('ana@ejemplo.com');
+  });
+  it('para probar, se puede forzar el del comprador de prueba', () => {
+    expect(payerEmailFor('ana@ejemplo.com', ' test_user_1@testuser.com ')).toBe('test_user_1@testuser.com');
+  });
+  it('un valor que no es un mail se ignora', () => {
+    expect(payerEmailFor('ana@ejemplo.com', 'no-es-mail')).toBe('ana@ejemplo.com');
   });
 });

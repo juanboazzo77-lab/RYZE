@@ -1,6 +1,6 @@
 import 'server-only';
 import { prisma } from '../db';
-import { buildPreapprovalBody, grantsAccess, mapMpStatus, priceFromEnv, type WebSubStatus } from './mercadopago-logic';
+import { buildPreapprovalBody, grantsAccess, mapMpStatus, payerEmailFor, priceFromEnv, type WebSubStatus } from './mercadopago-logic';
 
 /**
  * Plan mensual por la web con Mercado Pago (Suscripciones), en pesos. La persona autoriza la suscripción en
@@ -9,6 +9,7 @@ import { buildPreapprovalBody, grantsAccess, mapMpStatus, priceFromEnv, type Web
  *
  * Variables (proyecto `forza` de Vercel): MERCADOPAGO_ACCESS_TOKEN (clave del vendedor; de prueba o de producción),
  * MERCADOPAGO_WEBHOOK_SECRET (secreto de las notificaciones de la aplicación) y, opcional, MERCADOPAGO_PRICE_ARS.
+ * Solo para pruebas: MERCADOPAGO_TEST_PAYER_EMAIL (mail del comprador de prueba).
  */
 
 const API = 'https://api.mercadopago.com';
@@ -50,7 +51,7 @@ export async function startSubscription(args: { userId: string; email: string; g
   try {
     const created = await mpFetch<MpPreapproval>('/preapproval', {
       method: 'POST',
-      body: JSON.stringify(buildPreapprovalBody({ userId: args.userId, email: args.email, priceArs: mpPriceArs(), backUrl: args.backUrl })),
+      body: JSON.stringify(buildPreapprovalBody({ userId: args.userId, email: payerEmailFor(args.email, process.env.MERCADOPAGO_TEST_PAYER_EMAIL), priceArs: mpPriceArs(), backUrl: args.backUrl })),
     });
     if (!created.id || !created.init_point) return { error: 'FAILED' };
     await prisma.webSubscription.upsert({

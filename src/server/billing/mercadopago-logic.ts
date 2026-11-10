@@ -45,6 +45,16 @@ export function buildPreapprovalBody(args: { userId: string; email: string; pric
   };
 }
 
+/**
+ * Mail con el que se crea la suscripción en Mercado Pago. Normalmente el de la persona. Solo para PROBAR: si está
+ * MERCADOPAGO_TEST_PAYER_EMAIL (el mail del comprador de prueba de Mercado Pago), se usa ese, porque en modo de
+ * prueba Mercado Pago puede no aceptar mails reales. Con credenciales de producción esa variable no debe existir.
+ */
+export function payerEmailFor(email: string, testOverride: string | null | undefined): string {
+  const t = (testOverride ?? '').trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : email;
+}
+
 /** ¿Este estado da acceso al plan? Solo la suscripción autorizada. */
 export const grantsAccess = (status: string | null | undefined): boolean => status === 'AUTHORIZED';
 
