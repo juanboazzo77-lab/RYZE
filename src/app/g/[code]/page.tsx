@@ -24,17 +24,23 @@ const BENEFITS = [
 ] as const;
 
 /** Página pública de un gimnasio: la abre el QR que el gimnasio pega en su local. */
-export default async function GymLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pago?: string }> }) {
+export default async function GymLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pago?: string; preapproval_id?: string }> }) {
   const { code } = await params;
-  const { pago } = await searchParams;
+  const { pago, preapproval_id: mpReturn } = await searchParams;
   const gym = await getGymLanding(code);
   if (!gym) notFound();
 
   const ctx = await getUserContext();
   const isMember = ctx?.gym?.gymId === gym.id;
-  // Al volver del pago le preguntamos directo a Mercado Pago, sin esperar su aviso.
-  if (ctx && pago === 'ok') await syncUserSubscription(ctx.userId).catch((e) => console.error('[mercadopago] no se pudo confirmar al volver:', e instanceof Error ? e.message : e));
-  const planStatus = ctx ? await getWebPlanStatus(ctx.userId) : null;
+  // Si ya inició un pago que todavía no figura como activo, le preguntamos directo a Mercado Pago (sin esperar su
+  // aviso). No depende de cómo vuelva de Mercado Pago: a veces la dirección de retorno pierde los parámetros.
+  let planStatus = ctx ? await getWebPlanStatus(ctx.userId) : null;
+  if (ctx && planStatus && planStatus !== 'AUTHORIZED') {
+    await syncUserSubscription(ctx.userId).catch((e) => console.error('[mercadopago] no se pudo confirmar al volver:', e instanceof Error ? e.message : e));
+    planStatus = await getWebPlanStatus(ctx.userId);
+  }
+  // Está esperando la confirmación: volvió de Mercado Pago (con o sin parámetros) y el pago figura pendiente.
+  const confirming = Boolean(ctx) && planStatus === 'PENDING' && Boolean(pago === 'ok' || mpReturn);
   const price = `${mpPriceArs().toLocaleString('es-AR')}`;
   const here = `/g/${encodeURIComponent(code)}`;
   const theme = brandTheme(gym.brandColor);
@@ -85,10 +91,16 @@ export default async function GymLandingPage({ params, searchParams }: { params:
               <p className="text-center font-semibold">¡Tu plan está activo!</p>
               <p className="text-center text-sm text-muted-foreground">Abrí la app de Forza AI con tu cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
             </>
-          ) : pago === 'ok' && ctx ? (
+          ) : confirming ? (
             <>
               <p className="text-center font-semibold">Estamos confirmando tu pago</p>
-              <p className="text-center text-sm text-muted-foreground">Mercado Pago nos avisa en unos minutos y tu plan se activa solo. Podés cerrar esta página y abrir la app más tarde.</p>
+              <p className="text-center text-sm text-muted-foreground">Mercado Pago todavía no nos confirmó el pago. Puede tardar unos minutos: recargá esta página en un rato o abrí la app más tarde, tu plan se activa solo.</p>
+              <details className="text-center text-xs text-muted-foreground">
+                <summary className="cursor-pointer underline">¿No llegaste a pagar? Empezar de nuevo</summary>
+                <div className="mt-3 text-left">
+                  <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} />
+                </div>
+              </details>
             </>
           ) : isMember ? (
             <>
