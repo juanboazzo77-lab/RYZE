@@ -23,20 +23,20 @@ describe('estados de Mercado Pago', () => {
 });
 
 describe('precio', () => {
-  it('por defecto $5.000', () => {
-    expect(DEFAULT_PRICE_ARS).toBe(5000);
-    expect(priceFromEnv(undefined)).toBe(5000);
-    expect(priceFromEnv('')).toBe(5000);
+  it('por defecto $9.000', () => {
+    expect(DEFAULT_PRICE_ARS).toBe(9000);
+    expect(priceFromEnv(undefined)).toBe(9000);
+    expect(priceFromEnv('')).toBe(9000);
   });
   it('acepta un valor razonable de la variable', () => {
     expect(priceFromEnv('7500')).toBe(7500);
     expect(priceFromEnv('7500,50')).toBe(7500.5);
   });
-  it('rechaza valores absurdos y vuelve a $5.000', () => {
-    expect(priceFromEnv('0')).toBe(5000);
-    expect(priceFromEnv('-5')).toBe(5000);
-    expect(priceFromEnv('barato')).toBe(5000);
-    expect(priceFromEnv('999999999')).toBe(5000);
+  it('rechaza valores absurdos y vuelve a $9.000', () => {
+    expect(priceFromEnv('0')).toBe(9000);
+    expect(priceFromEnv('-5')).toBe(9000);
+    expect(priceFromEnv('barato')).toBe(9000);
+    expect(priceFromEnv('999999999')).toBe(9000);
   });
 });
 

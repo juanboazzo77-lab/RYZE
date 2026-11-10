@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * suscripción, se traducen sus estados y se comprueba la firma de los avisos.
  */
 
-export const DEFAULT_PRICE_ARS = 5000;
+export const DEFAULT_PRICE_ARS = 9000;
 export const PLAN_REASON = 'Forza AI · plan mensual';
 
 export type WebSubStatus = 'PENDING' | 'AUTHORIZED' | 'PAUSED' | 'CANCELLED';
