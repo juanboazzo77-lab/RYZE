@@ -6,6 +6,14 @@ import { gymLandingUrl, type PaymentInfo } from '@/server/gym-payment';
 
 export type PosterKind = 'FEE' | 'PLAN' | 'WEB';
 
+/** Los pasos que se imprimen en el cartel de la página web del gimnasio, para que el cliente sepa qué hacer. */
+const WEB_STEPS = [
+  { title: 'Escaneá el código', text: 'Abrí la cámara de tu celular y apuntá al QR.' },
+  { title: 'Creá tu cuenta', text: 'Con tu mail y una contraseña. Es gratis.' },
+  { title: 'Activá tu plan', text: 'Pagás el plan mensual con Mercado Pago. Podés cancelarlo cuando quieras.' },
+  { title: 'Entrená', text: 'Entrá con tu cuenta en forzaai.app o en la app de Forza AI y ya tenés tu rutina, tu dieta y tu coach.' },
+] as const;
+
 /**
  * El cartel para imprimir. FEE = "Pagá tu cuota" (con el alias para transferir); PLAN = el plan de rutina con IA,
  * que el cliente puede pagar aparte, con su propio QR y valor; WEB = la página web del gimnasio, donde el cliente crea su
@@ -47,9 +55,23 @@ export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: P
         {qr ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt={kind === 'WEB' ? `Código QR de la página de ${info.gymName}` : `Código QR para pagar ${kind === 'PLAN' ? 'el plan de rutina' : 'la cuota'} de ${info.gymName}`} className="mx-auto size-60 print:size-80" />
+            <img src={qr} alt={kind === 'WEB' ? `Código QR de la página de ${info.gymName}` : `Código QR para pagar ${kind === 'PLAN' ? 'el plan de rutina' : 'la cuota'} de ${info.gymName}`} className="mx-auto size-60 print:size-72" />
             <p className="text-sm text-[#5b6472]">{kind === 'WEB' ? 'Escaneá el código con la cámara de tu celular.' : 'Escaneá el código con la cámara o con tu app de pagos.'}</p>
           </>
+        ) : null}
+        {kind === 'WEB' ? (
+          <ol className="space-y-2 text-left">
+            {WEB_STEPS.map((st, i) => (
+              <li key={st.title} className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: color, color: readableOn(color) }}>
+                  {i + 1}
+                </span>
+                <span className="text-sm">
+                  <strong>{st.title}.</strong> <span className="text-[#5b6472]">{st.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
         ) : null}
         {kind === 'FEE' && info.alias ? (
           <div className="rounded-xl bg-[#f3f5f7] px-4 py-3">
@@ -58,7 +80,7 @@ export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: P
           </div>
         ) : null}
         <p className="text-xs text-[#5b6472]">
-          {kind === 'WEB' ? 'Creá tu cuenta gratis y activá tu plan desde la página del gimnasio.' : kind === 'PLAN' ? 'Después de pagar, avisá en recepción y pasá tu mail para activar tu plan.' : 'Después de pagar, avisá en recepción así te anotan el pago.'}
+          {kind === 'WEB' ? `Tu plan es tuyo: lo pagás vos y ${info.gymName} te suma a sus rutinas, clases y retos.` : kind === 'PLAN' ? 'Después de pagar, avisá en recepción y pasá tu mail para activar tu plan.' : 'Después de pagar, avisá en recepción así te anotan el pago.'}
         </p>
       </div>
     </div>
