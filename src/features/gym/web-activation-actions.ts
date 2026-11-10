@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/server/context';
-import { getGymLanding, recordGymReferral, webPurchaseUrlFor } from '@/server/gym-referrals';
+import { getGymLanding, recordGymReferral, webPurchaseProblem, webPurchaseUrlFor } from '@/server/gym-referrals';
 
 export interface ActivationState {
   error?: 'NOT_FOUND' | 'NOT_READY';
@@ -18,6 +18,10 @@ export async function activateGymPlan(_prev: ActivationState, formData: FormData
   if (!gym) return { error: 'NOT_FOUND' };
   await recordGymReferral(ctx.userId, gym.id);
   const url = webPurchaseUrlFor(ctx.userId);
-  if (!url) return { error: 'NOT_READY' };
+  if (!url) {
+    // Queda en los registros del servidor para poder ver por qué (sin imprimir el valor, que tiene el token).
+    console.error(`[gym-web] no hay enlace de compra: REVENUECAT_WEB_PURCHASE_URL ${webPurchaseProblem() === 'MISSING' ? 'no está configurada' : 'tiene un formato inválido'}`);
+    return { error: 'NOT_READY' };
+  }
   redirect(url);
 }

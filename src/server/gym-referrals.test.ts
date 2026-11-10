@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 vi.mock('./db', () => ({ prisma: {} }));
 
-import { webPurchaseUrlFor } from './gym-referrals';
+import { normalizePurchaseBase, webPurchaseProblem, webPurchaseUrlFor } from './gym-referrals';
 
 describe('enlace de compra de la web', () => {
   it('suma el identificador de la persona al final', () => {
@@ -18,5 +18,26 @@ describe('enlace de compra de la web', () => {
   });
   it('el identificador se escapa', () => {
     expect(webPurchaseUrlFor('a/b c', 'https://pay.rev.cat/t')).toBe('https://pay.rev.cat/t/a%2Fb%20c');
+  });
+});
+
+describe('limpieza de la dirección pegada', () => {
+  it('saca espacios y comillas de más', () => {
+    expect(normalizePurchaseBase('  "https://pay.rev.cat/tok"  ')).toBe('https://pay.rev.cat/tok');
+    expect(normalizePurchaseBase("'https://pay.rev.cat/tok'")).toBe('https://pay.rev.cat/tok');
+  });
+  it('si falta el https:// de pay.rev.cat, lo agrega', () => {
+    expect(normalizePurchaseBase('pay.rev.cat/tok')).toBe('https://pay.rev.cat/tok');
+  });
+  it('lo que no es una dirección https sigue sin servir', () => {
+    expect(normalizePurchaseBase('http://pay.rev.cat/tok')).toBeNull();
+    expect(normalizePurchaseBase('otra-cosa')).toBeNull();
+    expect(normalizePurchaseBase('')).toBeNull();
+  });
+  it('dice por qué falla, sin mostrar el valor', () => {
+    expect(webPurchaseProblem('')).toBe('MISSING');
+    expect(webPurchaseProblem(undefined)).toBe('MISSING');
+    expect(webPurchaseProblem('basura')).toBe('INVALID');
+    expect(webPurchaseProblem('https://pay.rev.cat/tok')).toBeNull();
   });
 });

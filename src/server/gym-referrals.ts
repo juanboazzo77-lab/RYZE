@@ -32,12 +32,28 @@ export async function recordGymReferral(userId: string, gymId: string): Promise<
 }
 
 /**
- * Enlace de compra de la web (RevenueCat) para esta persona: la dirección base viene de REVENUECAT_WEB_PURCHASE_URL
- * y lleva el identificador del usuario al final, para que lo comprado se active en su cuenta. Null si todavía no
- * está configurado o la dirección no es https.
+ * Dirección base del enlace de compra de la web (REVENUECAT_WEB_PURCHASE_URL), ya limpia. Tolera lo que pasa al
+ * pegarla: espacios, comillas de más, o que falte el "https://" delante de pay.rev.cat. Null si está vacía o no
+ * es una dirección https.
+ */
+export function normalizePurchaseBase(raw: string | null | undefined): string | null {
+  let v = (raw ?? '').trim().replace(/^["']+|["']+$/g, '').trim();
+  if (!v) return null;
+  if (/^pay\.rev\.cat\//i.test(v)) v = `https://${v}`;
+  return /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
+}
+
+/**
+ * Enlace de compra de la web (RevenueCat) para esta persona: la dirección base lleva el identificador del usuario al
+ * final, para que lo comprado se active en su cuenta. Null si todavía no está configurado o no sirve.
  */
 export function webPurchaseUrlFor(userId: string, base = process.env.REVENUECAT_WEB_PURCHASE_URL): string | null {
-  const b = base?.trim();
-  if (!b || !/^https:\/\/[^\s"'<>]+$/i.test(b)) return null;
-  return `${b.replace(/\/+$/, '')}/${encodeURIComponent(userId)}`;
+  const b = normalizePurchaseBase(base);
+  return b ? `${b.replace(/\/+$/, '')}/${encodeURIComponent(userId)}` : null;
+}
+
+/** Por qué no hay enlace (para el registro del servidor; nunca se imprime el valor, tiene el token). */
+export function webPurchaseProblem(base = process.env.REVENUECAT_WEB_PURCHASE_URL): 'MISSING' | 'INVALID' | null {
+  if (!(base ?? '').trim()) return 'MISSING';
+  return normalizePurchaseBase(base) ? null : 'INVALID';
 }
