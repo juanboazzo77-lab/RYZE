@@ -70,7 +70,7 @@ export default async function GymHomePage() {
       <div className="space-y-2 rounded-xl border p-4">
         <p className="font-semibold">Sumá a tus clientes</p>
         <p className="text-sm text-muted-foreground">
-          Cargá los mails de tus clientes en Invitar. Revisamos el pedido y, cuando lo aprobamos, cada uno recibe tu invitación y un plan de entrenamiento, un plan de dieta por mes y mensajes con la IA.
+          Imprimí tu QR en Invitar y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio.
         </p>
         <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
           <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
@@ -80,7 +80,7 @@ export default async function GymHomePage() {
         </p>
         {full ? <p className="text-xs text-warning">Cupo lleno: para sumar más socios, escribinos a gimnasios@forzaai.app.</p> : null}
         <Link href="/gym/invitaciones" className="inline-block text-sm font-medium underline">
-          Invitar socios
+          Ver mi QR
         </Link>
       </div>
 
