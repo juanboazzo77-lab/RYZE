@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Términos de Servicio · FORZA AI' };
 
-const LAST_UPDATED = '7 de noviembre de 2026';
+const LAST_UPDATED = '10 de noviembre de 2026';
 const CONTACT_EMAIL = 'soporte@forzaai.app';
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -109,11 +109,18 @@ export default function TermsPage() {
 
       <H2>Planes y suscripciones</H2>
       <P>
-        FORZA AI tiene un plan gratuito (FREE) y planes pagos (PRO, COACH) con más funciones.{' '}
-        <strong className="text-foreground">Hoy no hay cobros activos</strong>: los planes pagos
-        todavía no se pueden contratar dentro de la app. Cuando se habilite el pago, estos términos se
-        van a actualizar con los detalles de facturación, renovación y cancelación, y ese cambio se te
-        va a mostrar antes de que puedas pagar por primera vez.
+        FORZA AI tiene un plan gratuito (FREE) y planes pagos (PRO, COACH) con más funciones. Los planes
+        pagos todavía no se contratan dentro de la app; cuando se habilite, estos términos se van a
+        actualizar con los detalles de facturación, renovación y cancelación, y ese cambio se te va a mostrar
+        antes de que puedas pagar por primera vez.
+      </P>
+      <P>
+        <strong className="text-foreground">Plan mensual por la web.</strong> Si llegás desde la página de tu
+        gimnasio, podés activar un plan mensual (un plan de entrenamiento y uno de dieta por mes, y una cantidad
+        diaria de mensajes con el AI Coach) pagándolo en pesos con Mercado Pago. Es una suscripción: se renueva
+        todos los meses hasta que la canceles. La cancelás cuando quieras desde tu cuenta de Mercado Pago y el
+        plan sigue hasta que termina el período ya pago. Si el pago se rechaza, se pausa o se cancela, el plan
+        se desactiva. El cobro lo procesa Mercado Pago: FORZA AI no ve ni guarda los datos de tu tarjeta.
       </P>
 
       <H2>Contenido generado por inteligencia artificial</H2>

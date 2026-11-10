@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarCheck, Dumbbell, MessageCircle, Salad } from 'lucide-react';
 import { getUserContext } from '@/server/context';
-import { describePurchaseConfig, getGymLanding } from '@/server/gym-referrals';
+import { getGymLanding } from '@/server/gym-referrals';
+import { getWebPlanStatus, mpPriceArs } from '@/server/billing/mercadopago';
 import { brandTheme } from '@/features/gym/brand';
 import { ActivatePlanForm } from '@/features/gym/activate-plan-form';
 
@@ -23,16 +24,16 @@ const BENEFITS = [
 ] as const;
 
 /** Página pública de un gimnasio: la abre el QR que el gimnasio pega en su local. */
-export default async function GymLandingPage({ params }: { params: Promise<{ code: string }> }) {
+export default async function GymLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pago?: string }> }) {
   const { code } = await params;
+  const { pago } = await searchParams;
   const gym = await getGymLanding(code);
   if (!gym) notFound();
 
-  // Diagnóstico temporal del enlace de compra (sin el token): se lee en los registros del servidor.
-  console.log('[gym-web] config', JSON.stringify(describePurchaseConfig()));
-
   const ctx = await getUserContext();
   const isMember = ctx?.gym?.gymId === gym.id;
+  const planStatus = ctx ? await getWebPlanStatus(ctx.userId) : null;
+  const price = `${mpPriceArs().toLocaleString('es-AR')}`;
   const here = `/g/${encodeURIComponent(code)}`;
   const theme = brandTheme(gym.brandColor);
 
@@ -77,7 +78,17 @@ export default async function GymLandingPage({ params }: { params: Promise<{ cod
         </ul>
 
         <div className="space-y-3 rounded-2xl border bg-card p-4 shadow-sm">
-          {isMember ? (
+          {planStatus === 'AUTHORIZED' ? (
+            <>
+              <p className="text-center font-semibold">¡Tu plan está activo!</p>
+              <p className="text-center text-sm text-muted-foreground">Abrí la app de Forza AI con tu cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
+            </>
+          ) : pago === 'ok' && ctx ? (
+            <>
+              <p className="text-center font-semibold">Estamos confirmando tu pago</p>
+              <p className="text-center text-sm text-muted-foreground">Mercado Pago nos avisa en unos minutos y tu plan se activa solo. Podés cerrar esta página y abrir la app más tarde.</p>
+            </>
+          ) : isMember ? (
             <>
               <p className="text-center font-semibold">Ya sos socio de {gym.name}</p>
               <p className="text-center text-sm text-muted-foreground">Abrí la app de Forza AI con tu cuenta y listo.</p>
@@ -87,7 +98,7 @@ export default async function GymLandingPage({ params }: { params: Promise<{ cod
               <p className="text-center text-sm text-muted-foreground">
                 Entraste como <span className="font-medium text-foreground">{ctx.email}</span>.
               </p>
-              <ActivatePlanForm code={code} gymName={gym.name} />
+              <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} />
             </>
           ) : (
             <>

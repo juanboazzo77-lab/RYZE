@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = { title: 'Política de Privacidad · FORZA AI' };
 
-const LAST_UPDATED = '7 de noviembre de 2026';
+const LAST_UPDATED = '10 de noviembre de 2026';
 const CONTACT_EMAIL = 'soporte@forzaai.app';
 
 function H2({ children }: { children: React.ReactNode }) {
@@ -80,10 +80,11 @@ export default function PrivacyPage() {
         </Li>
       </ul>
       <P>
-        Hoy la app <strong className="text-foreground">no tiene cobros activos</strong> — cuando se
-        habilite el pago de suscripciones, esta política se va a actualizar para explicar qué datos de
-        pago procesa cada proveedor (Stripe, Google Play Billing o Apple, según corresponda); FORZA AI
-        nunca va a ver ni guardar el número completo de tu tarjeta.
+        <strong className="text-foreground">Pagos.</strong> Si activás el plan mensual por la web, el pago lo
+        procesa Mercado Pago, que recibe tu email y los datos de tu tarjeta o medio de pago. FORZA AI guarda solo el
+        identificador de tu suscripción y su estado (activa, pausada o cancelada) para saber si te corresponde el
+        plan; nunca ve ni guarda el número de tu tarjeta. Cuando se habiliten otros medios de pago, esta política
+        se va a actualizar con el proveedor que corresponda (por ejemplo Apple o Google).
       </P>
 
       <H2>Para qué usamos tus datos</H2>
@@ -107,6 +108,10 @@ export default function PrivacyPage() {
           <strong className="text-foreground">Google (Gemini API):</strong> procesa los mensajes al AI
           Coach, la generación de planes y el análisis de fotos. Le mandamos sólo lo necesario para
           esa consulta puntual; las fotos nunca quedan guardadas del lado de FORZA AI.
+        </Li>
+        <Li>
+          <strong className="text-foreground">Mercado Pago:</strong> procesa el pago del plan mensual por la web y
+          nos avisa si la suscripción está activa, pausada o cancelada.
         </Li>
         <Li>
           <strong className="text-foreground">Resend:</strong> envía por email las invitaciones de tu gimnasio y

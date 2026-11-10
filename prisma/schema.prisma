@@ -294,6 +294,7 @@ model Profile {
   challengeEntries        GymChallengeEntry[]
   gymBookings             GymBooking[]
   gymReferral             GymReferral?
+  webSubscription         WebSubscription?
   ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
@@ -1023,6 +1024,7 @@ model Gym {
   payments            GymPayment[]
   routines            GymRoutine[]
   referrals           GymReferral[]
+  webSubscriptions    WebSubscription[]
   challenges          GymChallenge[]
   classes             GymClass[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
@@ -1188,6 +1190,26 @@ model GymReferral {
 
   @@index([gymId])
   @@map("gym_referral")
+}
+
+/// Plan mensual que una persona paga directo por la web (hoy Mercado Pago, en pesos). Una por persona. `providerId`
+/// es el id de la suscripción en el proveedor; `status`: PENDING | AUTHORIZED | PAUSED | CANCELLED. Solo AUTHORIZED
+/// da acceso (lo mismo que un socio de gimnasio). `gymId` es el gimnasio de donde vino (su QR), solo para reportes.
+model WebSubscription {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @unique @db.Uuid @map("user_id")
+  user          Profile   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider      String    @default("MERCADOPAGO")
+  providerId    String    @unique @map("provider_id")
+  status        String    @default("PENDING")
+  gymId         String?   @db.Uuid @map("gym_id")
+  gym           Gym?      @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  nextPaymentAt DateTime? @map("next_payment_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("web_subscription")
 }
 
 /// Un pago de cuota registrado por el dueño.

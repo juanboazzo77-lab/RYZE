@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from './supabase/server';
 import { prisma } from './db';
 import { withFullAccess, withGymAccess } from './entitlements';
 import { getMemberGym, type MemberGym } from './gyms';
+import { hasActiveWebPlan } from './billing/mercadopago';
 
 export interface UserContext {
   userId: string;
@@ -39,10 +40,11 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
 
   // Lectura en paralelo; sólo se escribe si la fila falta o el email cambió
   // (antes eran 2 upserts secuenciales en CADA request).
-  const [existingProfile, existingEntitlement, gym] = await Promise.all([
+  const [existingProfile, existingEntitlement, gym, webPlan] = await Promise.all([
     prisma.profile.findUnique({ where: { id: user.id } }),
     prisma.entitlement.findUnique({ where: { userId: user.id } }),
     getMemberGym(user.id),
+    hasActiveWebPlan(user.id),
   ]);
 
   const profile =
@@ -70,7 +72,8 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
     userId: profile.id,
     email: profile.email,
     profile,
-    entitlement: withFullAccess(profile.email, gym ? withGymAccess(entitlement) : entitlement),
+    // Un socio de gimnasio y quien paga el plan mensual por la web tienen el mismo acceso.
+    entitlement: withFullAccess(profile.email, gym || webPlan ? withGymAccess(entitlement) : entitlement),
     gym,
     needsOnboarding: profile.onboardingCompletedAt === null,
   };
