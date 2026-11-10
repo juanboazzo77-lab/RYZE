@@ -46,7 +46,7 @@ export function inviteEmail(args: { gymName: string; created: boolean; link?: st
         { type: 'p', text: 'Hola,' },
         { type: 'p', text: `Te dimos acceso a "${gymName}" en Forza AI. Elegí tu contraseña con este enlace (sirve una sola vez y vence en poco tiempo):` },
         { type: 'button', label: 'Elegir mi contraseña', url: link },
-        { type: 'p', text: `Después entrá a tu panel en ${panel}/login con este mismo mail y tu contraseña (es una página web, no la app del celular). Ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.` },
+        { type: 'p', text: `Después entrá a tu panel en ${panel}/login con este mismo mail y tu contraseña (es una página web, no la app del celular). Ahí cargás tus clientes y sus cuotas, imprimís tu QR para que tus clientes se sumen y paguen su plan por su cuenta, y armás tus rutinas, clases y retos.` },
         { type: 'note', text: 'Si el enlace venció, pedinos uno nuevo respondiendo este mail. Si no esperabas este mensaje, ignoralo.' },
       ],
     });
@@ -57,7 +57,7 @@ export function inviteEmail(args: { gymName: string; created: boolean; link?: st
     heading: `Ya sos dueño de ${gymName}`,
     blocks: [
       { type: 'p', text: 'Hola,' },
-      { type: 'p', text: `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a tu panel con tu mail: ahí cargás tus clientes y sus cuotas, pedís las altas de Forza AI y subís tus máquinas.` },
+      { type: 'p', text: `Vinculamos tu cuenta de Forza AI con "${gymName}". Entrá a tu panel con tu mail: ahí cargás tus clientes y sus cuotas, imprimís tu QR para que tus clientes se sumen y paguen su plan por su cuenta, y armás tus rutinas, clases y retos.` },
       { type: 'button', label: 'Entrar a mi panel', url: `${panel}/login` },
     ],
   });

@@ -27,21 +27,23 @@ export default async function GymHomePage() {
   const clients = (await listClients(owner.userId, owner.gym.id)) ?? [];
   const fees = countClients(clients);
   const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
-  const pct = usedPercent(view.activeMembers, view.memberLimit);
-  const full = view.memberLimit > 0 && view.activeMembers >= view.memberLimit;
+  const pct = usedPercent(view.cupoUsed, view.memberLimit);
+  const full = view.memberLimit > 0 && view.cupoUsed >= view.memberLimit;
+  // En Argentina los clientes entran por el QR y pagan su plan por su cuenta: no hay cupo ni nada que pagar.
+  const viaQr = view.currency === 'ARS';
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
 
   return (
     <div className="space-y-4">
       {view.status === 'PENDING' ? (
         <p className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
-          Tu gimnasio está en revisión. Apenas lo aprobemos vas a ver acá tu código para los socios y tu cupo. Mientras tanto ya podés cargar tus máquinas y tu especialidad en Equipamiento.
+          Tu gimnasio está en revisión. Apenas lo aprobemos vas a ver acá tu QR para que tus clientes se sumen. Mientras tanto ya podés cargar tus máquinas y tu especialidad en Equipamiento, y armar tus rutinas, clases y retos.
         </p>
       ) : null}
 
       {view.status === 'SUSPENDED' ? (
         <p className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
-          Tu gimnasio está suspendido: tus socios no tienen acceso gratis por ahora. Escribinos a gimnasios@forzaai.app.
+          Tu gimnasio está suspendido: por ahora tus clientes no ven tu marca, rutinas ni clases en la app. Escribinos a gimnasios@forzaai.app.
         </p>
       ) : null}
 
@@ -60,27 +62,38 @@ export default async function GymHomePage() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Socios" value={view.activeMembers} sub={`de ${view.memberLimit} del cupo`} />
-        <Stat label="Entrenaron esta semana" value={view.trainedThisWeek} sub={view.activeMembers ? `${Math.round((view.trainedThisWeek / view.activeMembers) * 100)}% de tus socios` : undefined} />
+        <Stat label="Clientes con Forza AI" value={view.activeMembers} sub={viaQr ? 'Conectados a tu gimnasio' : `${view.cupoUsed} de ${view.memberLimit} del cupo`} />
+        <Stat label="Entrenaron esta semana" value={view.trainedThisWeek} sub={view.activeMembers ? `${Math.round((view.trainedThisWeek / view.activeMembers) * 100)}% de tus clientes` : undefined} />
         <Stat label={`Sin entrenar hace ${INACTIVE_DAYS}+ días`} value={view.inactiveCount} sub="En riesgo de irse" alert={view.inactiveCount > 0} />
-        <Stat label="Cupo usado" value={`${pct}%`} sub={full ? 'Cupo lleno' : undefined} alert={full} />
-        {view.webMembers > 0 ? <Stat label="Pagan por su cuenta" value={view.webMembers} sub="Llegaron por tu página. No ocupan cupo ni se te cobran." /> : null}
+        {viaQr ? (
+          <Stat label="Pagan su plan por su cuenta" value={view.webMembers} sub="No te cuestan nada" />
+        ) : (
+          <Stat label="Cupo usado" value={`${pct}%`} sub={full ? 'Cupo lleno' : undefined} alert={full} />
+        )}
       </div>
 
       <div className="space-y-2 rounded-xl border p-4">
-        <p className="font-semibold">Sumá a tus clientes</p>
-        <p className="text-sm text-muted-foreground">
-          Imprimí tu QR en Invitar y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio.
-        </p>
-        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {view.activeMembers} de {view.memberLimit} lugares usados
-        </p>
-        {full ? <p className="text-xs text-warning">Cupo lleno: para sumar más socios, escribinos a gimnasios@forzaai.app.</p> : null}
+        <p className="font-semibold">{viaQr ? 'Sumá a tus clientes con tu QR' : 'Sumá a tus clientes'}</p>
+        {viaQr ? (
+          <p className="text-sm text-muted-foreground">
+            Imprimí tu QR y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio. Vos no pagás nada por ellos y ven tu marca, tus rutinas, clases y retos.
+          </p>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Cargá los mails de tus clientes en Invitar. Revisamos el pedido y, cuando lo aprobamos, cada uno recibe tu invitación y un plan de entrenamiento, un plan de dieta por mes y mensajes con la IA.
+            </p>
+            <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {view.cupoUsed} de {view.memberLimit} lugares usados
+            </p>
+            {full ? <p className="text-xs text-warning">Cupo lleno: para sumar más socios, escribinos a gimnasios@forzaai.app.</p> : null}
+          </>
+        )}
         <Link href="/gym/invitaciones" className="inline-block text-sm font-medium underline">
-          Ver mi QR
+          {viaQr ? 'Ver mi QR' : 'Invitar socios'}
         </Link>
       </div>
 
@@ -94,8 +107,8 @@ export default async function GymHomePage() {
         {atRisk.length === 0 ? (
           <p className="rounded-xl border p-3 text-sm text-muted-foreground">
             {view.sharedMembers.length === 0
-              ? 'Cuando tus socios compartan su nombre, acá ves a los que llevan días sin entrenar.'
-              : 'Ninguno de tus socios pasó los 10 días sin entrenar. ¡Bien!'}
+              ? 'Cuando tus clientes acepten compartir su nombre, acá ves a los que llevan días sin entrenar.'
+              : 'Ninguno de tus clientes pasó los 10 días sin entrenar. ¡Bien!'}
           </p>
         ) : (
           <ul className="divide-y rounded-xl border">

@@ -30,6 +30,21 @@ export default async function GymBillingPage() {
   const instructions = process.env.GYM_PAYMENT_INSTRUCTIONS || TRANSFER_FALLBACK;
   const hasCurrent = b.rows.some((r) => r.period === b.currentPeriod);
   const overdue = b.rows.some((r) => r.overdue);
+  // Los gimnasios de Argentina no pagan por sus clientes: cada uno paga su plan por su cuenta. El detalle solo se muestra si quedan cobros de invitaciones anteriores.
+  const nothingToPay = b.currency === 'ARS' && b.activeMembers === 0 && b.rows.length === 0;
+  if (nothingToPay) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Lo que pagás a Forza AI</h1>
+          <p className="text-sm text-muted-foreground">Nada. Tus clientes se suman con tu QR y pagan su plan por su cuenta.</p>
+        </div>
+        <div className="rounded-xl border p-4 text-sm text-muted-foreground">
+          Forza AI no te cobra por los clientes que llegan por tu QR: ellos pagan su plan mensual directamente. Si más adelante sumás clientes por invitación de mail, el cobro de esos clientes aparece acá.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

@@ -3,7 +3,7 @@ export const GYM = {
   // Formulario público
   applyTitle: 'Forza AI para tu gimnasio',
   applyIntro:
-    'Tus socios tienen un coach con IA que les arma la rutina y el plan de comidas, y vos ves quiénes dejaron de entrenar para llamarlos antes de que se vayan. Dejanos tus datos y te contactamos.',
+    'Tus clientes escanean tu QR, se crean la cuenta y pagan su plan: un coach con IA que les arma la rutina y la dieta con las máquinas de tu gimnasio. Vos no pagás nada, llevás tus cuotas, tus clases y tus retos, y ves quiénes dejaron de entrenar. Dejanos tus datos y te contactamos.',
   fName: 'Nombre del gimnasio',
   fCity: 'Ciudad',
   fContactName: 'Tu nombre',

@@ -2,7 +2,7 @@
  * Términos y condiciones para gimnasios. Se aceptan al pedir el alta (y los gimnasios que ya estaban los aceptan la
  * primera vez que entran). Si se cambia el texto, subir TERMS_VERSION para volver a pedir la aceptación.
  */
-export const TERMS_VERSION = '2026-11-07';
+export const TERMS_VERSION = '2026-11-10';
 export const TERMS_DATE = '7 de noviembre de 2026';
 const CONTACT = 'gimnasios@forzaai.app';
 
@@ -34,6 +34,10 @@ export function GymTerms() {
           armar rutinas y clases con reserva, crear retos entre socios, cargar sus máquinas y su marca.
         </Li>
         <Li>
+          <B>Un QR y una página web propia del Gimnasio</B> donde cada cliente crea su cuenta, paga su plan mensual de FORZA AI por su cuenta (con
+          Mercado Pago) y queda conectado al Gimnasio. El Gimnasio no paga por esos clientes.
+        </Li>
+        <Li>
           <B>FORZA AI para los clientes que el Gimnasio invite:</B> un plan de entrenamiento y uno de dieta por mes, armados con las máquinas y la
           especialidad del Gimnasio, y una cantidad diaria de mensajes con un coach de inteligencia artificial. Esas cantidades pueden cambiar
           con aviso previo.
@@ -46,8 +50,18 @@ export function GymTerms() {
         compromete a dar datos verdaderos y a mantenerlos al día. Podemos rechazar, suspender o dar de baja un gimnasio que incumpla estos términos.
       </P>
 
-      <H2>3. Altas de socios y pago</H2>
+      <H2>3. Clientes que se suman y pago</H2>
       <ul className="list-disc space-y-1 pl-5">
+        <Li>
+          <B>Clientes que se suman por el QR del Gimnasio:</B> crean su cuenta y pagan su plan mensual directamente a FORZA AI. Ese pago es del
+          cliente, no del Gimnasio: no genera ningún cobro al Gimnasio y no ocupa cupo. El cliente puede cancelar su plan cuando quiera desde
+          Mercado Pago; al cancelarlo deja de estar conectado al Gimnasio. FORZA AI es quien presta el servicio y quien cobra ese plan, y no es
+          parte de la relación de cuota entre el Gimnasio y sus clientes.
+        </Li>
+        <Li>
+          <B>Altas por invitación (opcional):</B> lo que sigue rige solo si el Gimnasio y FORZA AI acuerdan que FORZA AI cubra a clientes
+          invitados por el Gimnasio.
+        </Li>
         <Li>El Gimnasio carga los mails de los clientes a los que quiere dar acceso y pide el alta desde el panel.</Li>
         <Li>
           Las altas se aprueban cuando FORZA AI confirma el pago correspondiente. El comprobante se envía por mail o por WhatsApp. Una vez aprobada

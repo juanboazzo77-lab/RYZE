@@ -33,6 +33,8 @@ export interface OwnerView {
   inviteCode: string | null;
   memberLimit: number;
   activeMembers: number;
+  /** Lugares del cupo usados: solo los socios que el gimnasio invitó (los que pagan por su cuenta no ocupan cupo). */
+  cupoUsed: number;
   /** Gente que llegó por tu página y paga su plan por su cuenta (no ocupa cupo ni se te cobra). */
   webMembers: number;
   /** Socios que completaron un entrenamiento en los últimos 7 días. */
@@ -59,10 +61,10 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
   });
   if (!gym) return null;
   const members = await prisma.gymMember.findMany({
-    where: { gymId, status: 'ACTIVE', source: { not: 'WEB' } },
-    select: { userId: true, shareActivity: true, joinedAt: true, user: { select: { name: true } } },
+    where: { gymId, status: 'ACTIVE' },
+    select: { userId: true, shareActivity: true, joinedAt: true, source: true, user: { select: { name: true } } },
   });
-  const webMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE', source: 'WEB' } });
+  const webMembers = members.filter((m) => m.source === 'WEB').length;
   const now = Date.now();
   const last = members.length
     ? await prisma.workout.groupBy({
@@ -100,6 +102,7 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
     inviteCode: gym.inviteCode,
     memberLimit: gym.memberLimit,
     activeMembers: members.length,
+    cupoUsed: members.length - webMembers,
     webMembers,
     trainedThisWeek,
     inactiveCount,
