@@ -39,6 +39,7 @@ interface MpPreapproval {
   external_reference?: string;
   init_point?: string;
   next_payment_date?: string | null;
+  date_created?: string;
 }
 
 export type StartResult = { ok: true; url: string } | { error: 'NOT_CONFIGURED' | 'ALREADY_ACTIVE' | 'FAILED' };
@@ -73,7 +74,12 @@ export async function startSubscription(args: { userId: string; email: string; g
  */
 export async function syncSubscription(preapprovalId: string): Promise<WebSubStatus | null> {
   const row = await prisma.webSubscription.findUnique({ where: { providerId: preapprovalId } });
-  if (!row) return null;
+  if (!row) {
+    // Puede ser una suscripción anterior de alguien que tocó "Activar" más de una vez: se busca por su dueño.
+    const other = await mpFetch<MpPreapproval>(`/preapproval/${encodeURIComponent(preapprovalId)}`);
+    const ref = other.external_reference ?? '';
+    return /^[0-9a-f-]{36}$/i.test(ref) ? syncUserSubscription(ref) : null;
+  }
   const mp = await mpFetch<MpPreapproval>(`/preapproval/${encodeURIComponent(preapprovalId)}`);
   if (mp.external_reference && mp.external_reference !== row.userId) {
     console.error('[mercadopago] la suscripción no es de esa persona; se ignora', preapprovalId);
@@ -85,6 +91,29 @@ export async function syncSubscription(preapprovalId: string): Promise<WebSubSta
   await prisma.webSubscription.update({
     where: { id: row.id },
     data: { status, nextPaymentAt: mp.next_payment_date ? new Date(mp.next_payment_date) : null },
+  });
+  return status;
+}
+
+/**
+ * Busca en Mercado Pago TODAS las suscripciones de esta persona (por su identificador) y deja guardada la que
+ * corresponde: la autorizada si hay una, y si no, la más reciente. Así no importa cuántas veces haya tocado "Activar"
+ * ni cuál pagó. Solo para quien ya inició un pago desde nuestro sistema.
+ */
+export async function syncUserSubscription(userId: string): Promise<WebSubStatus | null> {
+  if (!mpConfigured()) return null;
+  const row = await prisma.webSubscription.findUnique({ where: { userId } });
+  if (!row) return null;
+  const found = await mpFetch<{ results?: MpPreapproval[] }>(`/preapproval/search?external_reference=${encodeURIComponent(userId)}&limit=20`);
+  const list = (found.results ?? []).filter((p) => p.id && (!p.external_reference || p.external_reference === userId));
+  if (list.length === 0) return null;
+  const authorized = list.find((p) => mapMpStatus(p.status) === 'AUTHORIZED');
+  const pick = authorized ?? [...list].sort((a, b) => (b.date_created ?? '').localeCompare(a.date_created ?? ''))[0]!;
+  const status = mapMpStatus(pick.status);
+  console.log(`[mercadopago] persona ...${userId.slice(-6)}: ${list.length} suscripción(es) en Mercado Pago; elegida ...${pick.id.slice(-6)} "${pick.status ?? 'sin estado'}" → ${status}`);
+  await prisma.webSubscription.update({
+    where: { id: row.id },
+    data: { providerId: pick.id, status, nextPaymentAt: pick.next_payment_date ? new Date(pick.next_payment_date) : null },
   });
   return status;
 }
@@ -128,11 +157,14 @@ export async function diagnoseSubscription(userId: string): Promise<Record<strin
   const mp: Record<string, unknown> = await mpFetch<Record<string, unknown>>(`/preapproval/${encodeURIComponent(row.providerId)}`).catch((e: unknown) => ({ error: e instanceof Error ? e.message : String(e) }));
   const failed = typeof mp.error === 'string';
   const ar = (mp.auto_recurring ?? {}) as Record<string, unknown>;
-  const synced = failed ? null : await syncSubscription(row.providerId).catch(() => null);
+  const search = await mpFetch<{ results?: MpPreapproval[] }>(`/preapproval/search?external_reference=${encodeURIComponent(userId)}&limit=20`).catch(() => ({ results: [] as MpPreapproval[] }));
+  const all = (search.results ?? []).map((p) => ({ id: `...${p.id.slice(-6)}`, status: p.status, created: p.date_created }));
+  const synced = await syncUserSubscription(userId).catch(() => null);
   return {
     found: true,
     ours: { status: row.status, createdAt: row.createdAt, updatedAt: row.updatedAt },
     mercadoPago: failed ? mp : { status: mp.status, date_created: mp.date_created, last_modified: mp.last_modified, next_payment_date: mp.next_payment_date, payer_id_present: Boolean(mp.payer_id), amount: ar.transaction_amount, currency: ar.currency_id, frequency: ar.frequency, frequency_type: ar.frequency_type, reason: mp.reason },
+    allSubscriptionsInMercadoPago: all,
     afterSync: synced,
   };
 }

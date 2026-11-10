@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { CalendarCheck, Dumbbell, MessageCircle, Salad } from 'lucide-react';
 import { getUserContext } from '@/server/context';
 import { getGymLanding } from '@/server/gym-referrals';
-import { getWebPlanStatus, mpPriceArs } from '@/server/billing/mercadopago';
+import { getWebPlanStatus, mpPriceArs, syncUserSubscription } from '@/server/billing/mercadopago';
 import { brandTheme } from '@/features/gym/brand';
 import { ActivatePlanForm } from '@/features/gym/activate-plan-form';
 
@@ -32,6 +32,8 @@ export default async function GymLandingPage({ params, searchParams }: { params:
 
   const ctx = await getUserContext();
   const isMember = ctx?.gym?.gymId === gym.id;
+  // Al volver del pago le preguntamos directo a Mercado Pago, sin esperar su aviso.
+  if (ctx && pago === 'ok') await syncUserSubscription(ctx.userId).catch((e) => console.error('[mercadopago] no se pudo confirmar al volver:', e instanceof Error ? e.message : e));
   const planStatus = ctx ? await getWebPlanStatus(ctx.userId) : null;
   const price = `${mpPriceArs().toLocaleString('es-AR')}`;
   const here = `/g/${encodeURIComponent(code)}`;
