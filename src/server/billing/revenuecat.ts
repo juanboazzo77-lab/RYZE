@@ -12,6 +12,7 @@ import { prisma } from '@/server/db';
 const TIER_BY_RC_ENTITLEMENT: Array<{ rcId: string; tier: EntitlementTier }> = [
   { rcId: 'coach', tier: 'COACH' },
   { rcId: 'pro', tier: 'PRO' },
+  { rcId: 'gym', tier: 'GYM' },
   { rcId: 'basic', tier: 'BASIC' },
 ];
 

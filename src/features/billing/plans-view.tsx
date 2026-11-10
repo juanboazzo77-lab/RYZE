@@ -4,7 +4,7 @@ import { ChevronLeft, Check, X, Crown } from 'lucide-react';
 import type { EntitlementTier } from '@prisma/client';
 import type { Dictionary } from '@/i18n';
 import { TIER_LIMITS, TRIAL_LIMITS, showAds } from '@/server/entitlements';
-import { PLAN_ORDER, PLAN_PRICE_USD, BASIC_PRICE_USD, FEATURE_ROWS } from './plans';
+import { PLAN_ORDER, PLAN_PRICE_USD, BASIC_PRICE_USD, GYM_PRICE_USD, FEATURE_ROWS } from './plans';
 import { PlanPriceSelector } from './plan-price-selector';
 import { TrialRecapCard } from './trial-recap';
 import type { TrialRecap } from './recap';
@@ -60,7 +60,7 @@ export function PlansView({
         <TrialRecapCard t={t} recap={recap} ended={!trial.inTrial} unitSystem={unitSystem} />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {PLAN_ORDER.map((tier) => {
           const limits = tier === 'FREE' ? TRIAL_LIMITS : TIER_LIMITS[tier];
           const isCurrent = tier === currentTier;
@@ -147,10 +147,10 @@ export function PlansView({
                       <p className="text-center text-xs font-medium text-warning">{p.trialExpired}</p>
                     )
                   ) : null
-                ) : tier === 'BASIC' ? (
+                ) : tier === 'BASIC' || tier === 'GYM' ? (
                   <div className="space-y-3">
                     <p className="text-center text-3xl font-bold tabular-nums">
-                      {interpolate(p.basicPrice, { price: BASIC_PRICE_USD.toFixed(2) })}
+                      {interpolate(p.basicPrice, { price: (tier === 'GYM' ? GYM_PRICE_USD : BASIC_PRICE_USD).toFixed(2) })}
                     </p>
                     {isCurrent ? (
                       <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
@@ -158,7 +158,7 @@ export function PlansView({
                       </Badge>
                     ) : (
                       <PlanSelectButton
-                        tier="BASIC"
+                        tier={tier}
                         duration="monthly"
                         label={p.choose}
                         comingSoonMessage={p.comingSoon}

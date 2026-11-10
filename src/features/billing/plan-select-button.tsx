@@ -24,7 +24,7 @@ export function PlanSelectButton({
   errorMessage,
   variant = 'outline',
 }: {
-  tier: 'BASIC' | 'PRO' | 'COACH';
+  tier: 'BASIC' | 'GYM' | 'PRO' | 'COACH';
   duration: PlanDuration;
   label: string;
   comingSoonMessage: string;

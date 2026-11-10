@@ -422,6 +422,7 @@ export const pt: Dictionary = {
     tiers: {
       FREE: { name: 'FREE', tagline: 'Tudo liberado e grátis nos primeiros 3 dias.' },
       BASIC: { name: 'BASIC', tagline: 'O plano de entrada para continuar sem anúncios.' },
+      GYM: { name: 'GYM', tagline: 'Treino e dieta do mês, pensados para a sua academia.' },
       PRO: { name: 'PRO', tagline: 'Para treinar a sério, com acompanhamento de verdade.' },
       COACH: { name: 'COACH', tagline: 'Um treinador que realmente te conhece.' },
     },

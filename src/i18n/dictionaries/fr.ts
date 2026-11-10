@@ -422,6 +422,7 @@ export const fr: Dictionary = {
     tiers: {
       FREE: { name: 'FREE', tagline: 'Tout débloqué et gratuit les 3 premiers jours.' },
       BASIC: { name: 'BASIC', tagline: 'Le forfait d’entrée pour continuer, sans publicité.' },
+      GYM: { name: 'GYM', tagline: 'Ton entraînement et ta diète du mois, pensés pour ta salle.' },
       PRO: { name: 'PRO', tagline: 'Pour s’entraîner sérieusement, avec un vrai suivi.' },
       COACH: { name: 'COACH', tagline: 'Un coach qui vous connaît vraiment.' },
     },

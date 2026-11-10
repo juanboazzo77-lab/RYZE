@@ -14,10 +14,13 @@ import { type PlanDuration } from './plan-durations';
  * `{tier}_{duration}` en minúsculas, ej. `pro_6month`. BASIC es un plan de
  * entrada sin variantes de duración (solo `basic_monthly`).
  */
-export const PLAN_ORDER: EntitlementTier[] = ['FREE', 'BASIC', 'PRO', 'COACH'];
+export const PLAN_ORDER: EntitlementTier[] = ['FREE', 'BASIC', 'GYM', 'PRO', 'COACH'];
 
 /** Único precio de BASIC (sin descuentos por duración). */
 export const BASIC_PRICE_USD = 2.99;
+
+/** Único precio del plan GYM (producto `gym_monthly` en las tiendas y en RevenueCat). */
+export const GYM_PRICE_USD = 4.99;
 
 /** PRO y COACH sí tienen variantes de duración con descuento (ver plan-durations.ts). */
 export const PLAN_PRICE_USD: Record<'PRO' | 'COACH', Record<PlanDuration, number>> = {

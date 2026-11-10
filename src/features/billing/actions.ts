@@ -34,9 +34,11 @@ export interface CheckoutResult {
 
 /** Compra desde la web (navegador, no app nativa): Lemon Squeezy Checkout. */
 export async function createCheckoutAction(
-  tier: 'BASIC' | 'PRO' | 'COACH',
+  tier: 'BASIC' | 'GYM' | 'PRO' | 'COACH',
   duration: PlanDuration,
 ): Promise<CheckoutResult> {
+  // El plan GYM se compra solo en las tiendas (producto gym_monthly).
+  if (tier === 'GYM') return { error: 'PRICE_NOT_CONFIGURED' };
   if (!lemonSqueezyConfigured()) return { error: 'LEMONSQUEEZY_NOT_CONFIGURED' };
   if (!variantIdFor(tier, duration)) return { error: 'PRICE_NOT_CONFIGURED' };
 

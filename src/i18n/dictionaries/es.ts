@@ -420,6 +420,7 @@ export const es = {
     tiers: {
       FREE: { name: 'FREE', tagline: 'Todo desbloqueado y gratis los primeros 3 días.' },
       BASIC: { name: 'BASIC', tagline: 'El plan de entrada para seguir sin anuncios.' },
+      GYM: { name: 'GYM', tagline: 'Entrenamiento y dieta del mes, pensado para tu gimnasio.' },
       PRO: { name: 'PRO', tagline: 'Para entrenar en serio, con seguimiento real.' },
       COACH: { name: 'COACH', tagline: 'Un entrenador que te conoce de verdad.' },
     },

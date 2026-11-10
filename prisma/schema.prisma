@@ -152,6 +152,8 @@ enum EntitlementTier {
   FREE
   /// Plan de entrada pago ($2.99/mes): mensajes/planes limitados, sin anuncios.
   BASIC
+  /// Plan del gimnasio (US$4,99/mes en las tiendas): mismos límites que un socio de gimnasio (GYM_LIMITS).
+  GYM
   PRO
   /// Plan más top: entrenador de verdad — desbloquea el perfil de coaching y
   /// la individualización 100% a medida en todos los planes que arma la IA.

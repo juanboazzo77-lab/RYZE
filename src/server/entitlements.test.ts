@@ -37,6 +37,21 @@ describe('socio de un gimnasio', () => {
   });
 });
 
+describe('plan GYM de las tiendas', () => {
+  const gym = { tier: 'GYM' as const, createdAt: daysAgo(30) };
+
+  it('da lo mismo que un socio de gimnasio y sin anuncios', () => {
+    expect(limitsFor(gym)).toBe(GYM_LIMITS);
+    expect(showAds(gym)).toBe(false);
+    expect(can(gym, 'ai_meal_plan')).toBe(true);
+    expect(can(gym, 'weekly_checkin')).toBe(false);
+  });
+
+  it('si además es socio de un gimnasio, se queda como está', () => {
+    expect(withGymAccess(gym)).toBe(gym);
+  });
+});
+
 describe('entitlements', () => {
   it('FREE dentro de la prueba gratis tiene acceso completo (igual que COACH) para probar todo', () => {
     const trial = { tier: 'FREE' as const, createdAt: daysAgo(1) };
