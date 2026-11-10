@@ -39,6 +39,8 @@ export function PlansView({
   unitSystem?: 'METRIC' | 'IMPERIAL';
 }) {
   const p = t.plans;
+  // BASIC ya no se vende: lo reemplaza el plan GYM. Solo se muestra a quien todavía lo tiene contratado.
+  const tiers = PLAN_ORDER.filter((tier) => tier !== 'BASIC' || currentTier === 'BASIC');
   return (
     <div className="space-y-4">
       <Suspense fallback={null}>
@@ -60,8 +62,8 @@ export function PlansView({
         <TrialRecapCard t={t} recap={recap} ended={!trial.inTrial} unitSystem={unitSystem} />
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {PLAN_ORDER.map((tier) => {
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {tiers.map((tier) => {
           const limits = tier === 'FREE' ? TRIAL_LIMITS : TIER_LIMITS[tier];
           const isCurrent = tier === currentTier;
           const isTop = tier === 'COACH';

@@ -14,7 +14,8 @@ import { type PlanDuration } from './plan-durations';
  * `{tier}_{duration}` en minúsculas, ej. `pro_6month`. BASIC es un plan de
  * entrada sin variantes de duración (solo `basic_monthly`).
  */
-export const PLAN_ORDER: EntitlementTier[] = ['FREE', 'BASIC', 'GYM', 'PRO', 'COACH'];
+/** BASIC ya no se vende (lo reemplaza GYM): se conserva solo para quien ya lo tiene contratado. */
+export const PLAN_ORDER: EntitlementTier[] = ['FREE', 'GYM', 'BASIC', 'PRO', 'COACH'];
 
 /** Único precio de BASIC (sin descuentos por duración). */
 export const BASIC_PRICE_USD = 2.99;
