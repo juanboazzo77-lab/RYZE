@@ -36,6 +36,19 @@ describe('limpieza de la dirección pegada', () => {
     expect(normalizePurchaseBase('https://pay.rev.cat/tok/APP_USER_ID')).toBe('https://pay.rev.cat/tok');
     expect(webPurchaseUrlFor('u1', 'https://pay.rev.cat/tok/<app_user_id>')).toBe('https://pay.rev.cat/tok/u1');
   });
+  it('en pay.rev.cat se queda solo con el token: un identificador de más o parámetros se descartan', () => {
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/algun-usuario')).toBe('https://pay.rev.cat/tok');
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/usuario?email=a@b.com')).toBe('https://pay.rev.cat/tok');
+    expect(webPurchaseUrlFor('u1', 'https://pay.rev.cat/tok/otro-id')).toBe('https://pay.rev.cat/tok/u1');
+  });
+  it('el enlace de prueba (sandbox) conserva su parte', () => {
+    expect(normalizePurchaseBase('https://pay.rev.cat/sandbox/tok/usuario')).toBe('https://pay.rev.cat/sandbox/tok');
+    expect(normalizePurchaseBase('https://pay.rev.cat/sandbox')).toBeNull();
+  });
+  it('una dirección de pay.rev.cat sin token no sirve', () => {
+    expect(normalizePurchaseBase('https://pay.rev.cat/')).toBeNull();
+    expect(normalizePurchaseBase('https://pay.rev.cat')).toBeNull();
+  });
   it('lo que no es una dirección https sigue sin servir', () => {
     expect(normalizePurchaseBase('http://pay.rev.cat/tok')).toBeNull();
     expect(normalizePurchaseBase('otra-cosa')).toBeNull();

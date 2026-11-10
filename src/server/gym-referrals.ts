@@ -34,7 +34,8 @@ export async function recordGymReferral(userId: string, gymId: string): Promise<
 /**
  * Dirección base del enlace de compra de la web (REVENUECAT_WEB_PURCHASE_URL), ya limpia. Tolera lo que pasa al
  * pegarla: espacios, comillas de más, que falte el "https://" delante de pay.rev.cat, o el marcador del usuario al
- * final. Null si está vacía o no es una dirección https.
+ * final, o un identificador de más después del token (en pay.rev.cat solo se conserva el token). Null si está vacía o no es una
+ * dirección https.
  */
 export function normalizePurchaseBase(raw: string | null | undefined): string | null {
   let v = (raw ?? '').trim().replace(/^["']+|["']+$/g, '').trim();
@@ -42,7 +43,21 @@ export function normalizePurchaseBase(raw: string | null | undefined): string | 
   if (/^pay\.rev\.cat\//i.test(v)) v = `https://${v}`;
   // La documentación muestra el enlace con un marcador al final ("/<app_user_id>"): se saca, el identificador lo suma la app.
   v = v.replace(/\/(?:<[^/]*>|\{[^/]*\}|\[[^/]*\]|[^/]*app_?user_?id[^/]*)\/?$/i, '');
-  return /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
+  if (!/^https:\/\/[^\s"'<>]+$/i.test(v)) return null;
+  // Un enlace de pay.rev.cat es https://pay.rev.cat/<token> (o .../sandbox/<token>); lo que venga después (un
+  // identificador de usuario de más, parámetros) se descarta: el identificador de cada persona lo suma la app.
+  try {
+    const u = new URL(v);
+    if (u.hostname.toLowerCase() === 'pay.rev.cat') {
+      const seg = u.pathname.split('/').filter(Boolean);
+      const keep = seg[0]?.toLowerCase() === 'sandbox' ? seg.slice(0, 2) : seg.slice(0, 1);
+      if (keep.length === 0 || (seg[0]?.toLowerCase() === 'sandbox' && keep.length < 2)) return null;
+      return `https://pay.rev.cat/${keep.join('/')}`;
+    }
+  } catch {
+    return null;
+  }
+  return v;
 }
 
 /**
