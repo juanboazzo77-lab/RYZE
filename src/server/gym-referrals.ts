@@ -74,3 +74,24 @@ export function webPurchaseProblem(base = process.env.REVENUECAT_WEB_PURCHASE_UR
   if (!(base ?? '').trim()) return 'MISSING';
   return normalizePurchaseBase(base) ? null : 'INVALID';
 }
+
+/**
+ * Descripción segura del enlace cargado, para diagnosticar sin mostrar el token: dirección, cantidad de partes del
+ * camino, si es el de prueba y el largo de cada parte. Nunca devuelve el contenido del camino.
+ */
+export function describePurchaseConfig(raw = process.env.REVENUECAT_WEB_PURCHASE_URL): Record<string, unknown> {
+  const v = (raw ?? '').trim();
+  if (!v) return { present: false };
+  const info: Record<string, unknown> = { present: true, length: v.length, hadQuotes: /^["']|["']$/.test(v), hadWhitespaceInside: /\s/.test(v.replace(/^["'\s]+|["'\s]+$/g, '')) };
+  try {
+    const u = new URL(v.replace(/^["']+|["']+$/g, ''));
+    const seg = u.pathname.split('/').filter(Boolean);
+    Object.assign(info, { scheme: u.protocol, host: u.hostname, segments: seg.length, segmentLengths: seg.map((s) => s.length), sandbox: seg[0]?.toLowerCase() === 'sandbox', hasQuery: u.search.length > 0 });
+  } catch {
+    info.parsable = false;
+  }
+  const finalBase = normalizePurchaseBase(raw);
+  info.usable = finalBase !== null;
+  if (finalBase) info.finalSegments = new URL(finalBase).pathname.split('/').filter(Boolean).length;
+  return info;
+}

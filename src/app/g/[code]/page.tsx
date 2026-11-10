@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { CalendarCheck, Dumbbell, MessageCircle, Salad } from 'lucide-react';
 import { getUserContext } from '@/server/context';
-import { getGymLanding } from '@/server/gym-referrals';
+import { describePurchaseConfig, getGymLanding } from '@/server/gym-referrals';
 import { brandTheme } from '@/features/gym/brand';
 import { ActivatePlanForm } from '@/features/gym/activate-plan-form';
 
@@ -27,6 +27,9 @@ export default async function GymLandingPage({ params }: { params: Promise<{ cod
   const { code } = await params;
   const gym = await getGymLanding(code);
   if (!gym) notFound();
+
+  // Diagnóstico temporal del enlace de compra (sin el token): se lee en los registros del servidor.
+  console.log('[gym-web] config', JSON.stringify(describePurchaseConfig()));
 
   const ctx = await getUserContext();
   const isMember = ctx?.gym?.gymId === gym.id;
