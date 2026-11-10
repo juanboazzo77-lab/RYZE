@@ -46,7 +46,7 @@ export async function ensureCurrentPayments(): Promise<void> {
   if (gyms.length === 0) return;
   const counts = await prisma.gymMember.groupBy({
     by: ['gymId'],
-    where: { status: 'ACTIVE', gymId: { in: gyms.map((g) => g.id) } },
+    where: { status: 'ACTIVE', source: { not: 'WEB' }, gymId: { in: gyms.map((g) => g.id) } },
     _count: { _all: true },
   });
   const byGym = new Map(counts.map((c) => [c.gymId, c._count._all]));

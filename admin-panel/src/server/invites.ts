@@ -68,7 +68,7 @@ export async function listPendingGroups(): Promise<PendingGroup[]> {
   });
   if (pending.length === 0) return [];
   const gymIds = [...new Set(pending.map((p) => p.gymId))];
-  const members = await prisma.gymMember.groupBy({ by: ['gymId'], where: { status: 'ACTIVE', gymId: { in: gymIds } }, _count: { _all: true } });
+  const members = await prisma.gymMember.groupBy({ by: ['gymId'], where: { status: 'ACTIVE', source: { not: 'WEB' }, gymId: { in: gymIds } }, _count: { _all: true } });
   const approved = await prisma.gymInvite.groupBy({ by: ['gymId'], where: { status: 'APPROVED', gymId: { in: gymIds } }, _count: { _all: true } });
   const mCount = new Map(members.map((m) => [m.gymId, m._count._all]));
   const aCount = new Map(approved.map((a) => [a.gymId, a._count._all]));
@@ -135,7 +135,7 @@ export async function approveInvites(ids: string[]): Promise<ApproveResult> {
 
   for (const [gymId, list] of byGym) {
     const first = list[0]!;
-    const activeMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE' } });
+    const activeMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE', source: { not: 'WEB' } } });
     const approvedInvites = await prisma.gymInvite.count({ where: { gymId, status: 'APPROVED' } });
     const room = approvableCount({ memberLimit: first.gym.memberLimit, activeMembers, approvedInvites });
     const take = list.slice(0, room);

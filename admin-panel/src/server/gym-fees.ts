@@ -99,7 +99,7 @@ export async function runDailyFees(today = todayArgentina(), panelUrl?: string):
     // Quien lleva demasiado sin pagar la cuota del gimnasio pierde el acceso a Forza AI (lo recupera cuando el gimnasio anota su pago).
     if (lapsedEmails.length > 0) {
       const res = await prisma.gymMember.updateMany({
-        where: { gymId: g.id, status: 'ACTIVE', user: { email: { in: lapsedEmails, mode: 'insensitive' } } },
+        where: { gymId: g.id, status: 'ACTIVE', source: { not: 'WEB' }, user: { email: { in: lapsedEmails, mode: 'insensitive' } } },
         data: { status: 'LAPSED' },
       });
       lapsed += res.count;

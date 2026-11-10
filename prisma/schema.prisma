@@ -1056,6 +1056,8 @@ model GymMember {
   status    String    @default("ACTIVE")
   /// El socio dejó que su gimnasio vea su nombre y cuándo entrenó por última vez (apagado por defecto).
   shareActivity Boolean @default(false) @map("share_activity")
+  /// INVITE (código o invitación del gimnasio: el gimnasio paga por él) | WEB (pagó su plan por la web con Mercado Pago: no se cobra al gimnasio ni ocupa cupo).
+  source    String    @default("INVITE")
   joinedAt  DateTime  @default(now()) @map("joined_at")
   endedAt   DateTime? @map("ended_at")
 

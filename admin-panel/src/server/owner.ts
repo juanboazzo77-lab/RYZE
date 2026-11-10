@@ -33,6 +33,8 @@ export interface OwnerView {
   inviteCode: string | null;
   memberLimit: number;
   activeMembers: number;
+  /** Gente que llegó por tu página y paga su plan por su cuenta (no ocupa cupo ni se te cobra). */
+  webMembers: number;
   /** Socios que completaron un entrenamiento en los últimos 7 días. */
   trainedThisWeek: number;
   /** Socios que llevan 10 días o más sin entrenar (sólo el número: nunca quiénes, salvo los que lo permiten). */
@@ -57,9 +59,10 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
   });
   if (!gym) return null;
   const members = await prisma.gymMember.findMany({
-    where: { gymId, status: 'ACTIVE' },
+    where: { gymId, status: 'ACTIVE', source: { not: 'WEB' } },
     select: { userId: true, shareActivity: true, joinedAt: true, user: { select: { name: true } } },
   });
+  const webMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE', source: 'WEB' } });
   const now = Date.now();
   const last = members.length
     ? await prisma.workout.groupBy({
@@ -97,6 +100,7 @@ export async function getOwnerView(userId: string, gymId: string): Promise<Owner
     inviteCode: gym.inviteCode,
     memberLimit: gym.memberLimit,
     activeMembers: members.length,
+    webMembers,
     trainedThisWeek,
     inactiveCount,
     sharedMembers: shared,
@@ -163,7 +167,7 @@ export async function requestInvites(
   const byEmail = new Map(existing.map((e) => [e.email, e]));
   // Los que ya son socios activos de este gimnasio no se vuelven a invitar.
   const memberRows = await prisma.gymMember.findMany({
-    where: { gymId, status: 'ACTIVE', user: { email: { in: valid, mode: 'insensitive' } } },
+    where: { gymId, status: 'ACTIVE', source: { not: 'WEB' }, user: { email: { in: valid, mode: 'insensitive' } } },
     select: { user: { select: { email: true } } },
   });
   const alreadyMembers = new Set(memberRows.map((m) => m.user.email.toLowerCase()));

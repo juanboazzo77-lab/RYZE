@@ -42,6 +42,34 @@ interface MpPreapproval {
   date_created?: string;
 }
 
+/**
+ * Quien paga el plan por la página de un gimnasio queda conectado a ese gimnasio como socio con origen WEB: ve su marca,
+ * rutinas, retos y clases. No se le cobra al gimnasio ni ocupa cupo (el gimnasio no paga por él: paga él mismo). Si el
+ * plan se pausa o se cancela, deja de ser socio. Si ya es socio activo de un gimnasio (con su código), no se toca.
+ */
+export async function syncWebMembership(userId: string): Promise<void> {
+  try {
+    const row = await prisma.webSubscription.findUnique({ where: { userId }, select: { status: true, gymId: true } });
+    if (!row) return;
+    if (!grantsAccess(row.status)) {
+      await prisma.gymMember.updateMany({ where: { userId, source: 'WEB', status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: new Date() } });
+      return;
+    }
+    if (!row.gymId) return;
+    const gym = await prisma.gym.findFirst({ where: { id: row.gymId, status: 'ACTIVE' }, select: { id: true } });
+    if (!gym) return;
+    const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true } });
+    if (existing?.status === 'ACTIVE') return;
+    await prisma.gymMember.upsert({
+      where: { userId },
+      create: { gymId: gym.id, userId, source: 'WEB' },
+      update: { gymId: gym.id, status: 'ACTIVE', source: 'WEB', joinedAt: new Date(), endedAt: null },
+    });
+  } catch (e) {
+    console.error('[mercadopago] no se pudo conectar la persona con su gimnasio:', e instanceof Error ? e.message : e);
+  }
+}
+
 export type StartResult = { ok: true; url: string } | { error: 'NOT_CONFIGURED' | 'ALREADY_ACTIVE' | 'FAILED' };
 
 /** Crea la suscripción de esta persona y devuelve la dirección de Mercado Pago donde la autoriza y paga. */
@@ -92,6 +120,7 @@ export async function syncSubscription(preapprovalId: string): Promise<WebSubSta
     where: { id: row.id },
     data: { status, nextPaymentAt: mp.next_payment_date ? new Date(mp.next_payment_date) : null },
   });
+  await syncWebMembership(row.userId);
   return status;
 }
 
@@ -115,6 +144,7 @@ export async function syncUserSubscription(userId: string): Promise<WebSubStatus
     where: { id: row.id },
     data: { providerId: pick.id, status, nextPaymentAt: pick.next_payment_date ? new Date(pick.next_payment_date) : null },
   });
+  await syncWebMembership(userId);
   return status;
 }
 

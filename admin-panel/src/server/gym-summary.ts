@@ -58,7 +58,7 @@ export async function runMonthlySummaries(today = todayArgentina(), panelUrl?: s
     try {
       const f = await getFinance(g.ownerUserId, g.id, today);
       if (!f) continue;
-      const forzaMembers = await prisma.gymMember.count({ where: { gymId: g.id, status: 'ACTIVE' } });
+      const forzaMembers = await prisma.gymMember.count({ where: { gymId: g.id, status: 'ACTIVE', source: { not: 'WEB' } } });
       const mail = buildMonthlySummary({ gymName: g.name, f, forzaMembers, panelUrl });
       if (await sendMail({ to: g.owner.email, subject: mail.subject, text: mail.text, html: mail.html })) sent += 1;
     } catch (e) {

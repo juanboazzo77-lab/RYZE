@@ -60,14 +60,14 @@ export async function redeemGymCode(
     if (existing?.status === 'ACTIVE') {
       return { error: 'ALREADY_MEMBER' as const };
     }
-    const activeMembers = await tx.gymMember.count({ where: { gymId: gym.id, status: 'ACTIVE' } });
+    const activeMembers = await tx.gymMember.count({ where: { gymId: gym.id, status: 'ACTIVE', source: { not: 'WEB' } } });
     const blocked = canJoin({ status: g.status, memberLimit: g.member_limit, activeMembers });
     if (blocked) return { error: blocked };
 
     await tx.gymMember.upsert({
       where: { userId },
       create: { gymId: gym.id, userId, shareActivity },
-      update: { gymId: gym.id, status: 'ACTIVE', joinedAt: new Date(), endedAt: null, shareActivity },
+      update: { gymId: gym.id, status: 'ACTIVE', source: 'INVITE', joinedAt: new Date(), endedAt: null, shareActivity },
     });
     return { ok: true as const, gymName: g.name };
   });
@@ -148,7 +148,7 @@ export async function acceptInvite(
     await tx.gymMember.upsert({
       where: { userId },
       create: { gymId: inv.gymId, userId, shareActivity },
-      update: { gymId: inv.gymId, status: 'ACTIVE', joinedAt: new Date(), endedAt: null, shareActivity },
+      update: { gymId: inv.gymId, status: 'ACTIVE', source: 'INVITE', joinedAt: new Date(), endedAt: null, shareActivity },
     });
     await tx.gymInvite.update({ where: { id: inv.id }, data: { status: 'JOINED', joinedAt: new Date() } });
     return { ok: true as const, gymName: inv.gym.name };

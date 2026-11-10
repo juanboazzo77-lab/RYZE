@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { CalendarCheck, Dumbbell, MessageCircle, Salad } from 'lucide-react';
 import { getUserContext } from '@/server/context';
 import { getGymLanding } from '@/server/gym-referrals';
-import { getWebPlanStatus, mpPriceArs, syncUserSubscription } from '@/server/billing/mercadopago';
+import { getWebPlanStatus, mpPriceArs, syncUserSubscription, syncWebMembership } from '@/server/billing/mercadopago';
 import { brandTheme } from '@/features/gym/brand';
 import { ActivatePlanForm } from '@/features/gym/activate-plan-form';
 
@@ -24,6 +24,22 @@ const BENEFITS = [
 ] as const;
 
 /** Página pública de un gimnasio: la abre el QR que el gimnasio pega en su local. */
+/** Descarga de la app. Los enlaces se cargan por variable cuando la app esté publicada; mientras tanto se avisa que viene. */
+function StoreLinks() {
+  const ios = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim();
+  const android = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim();
+  if (!ios && !android) {
+    return <p className="text-center text-xs text-muted-foreground">Muy pronto vas a poder descargar la app desde App Store y Google Play. Entrá con esta misma cuenta.</p>;
+  }
+  const cls = 'inline-flex h-11 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition-colors hover:bg-secondary';
+  return (
+    <div className="flex gap-2">
+      {ios ? <a href={ios} className={cls}>App Store</a> : null}
+      {android ? <a href={android} className={cls}>Google Play</a> : null}
+    </div>
+  );
+}
+
 export default async function GymLandingPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ pago?: string; preapproval_id?: string }> }) {
   const { code } = await params;
   const { pago, preapproval_id: mpReturn } = await searchParams;
@@ -39,6 +55,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
     await syncUserSubscription(ctx.userId).catch((e) => console.error('[mercadopago] no se pudo confirmar al volver:', e instanceof Error ? e.message : e));
     planStatus = await getWebPlanStatus(ctx.userId);
   }
+  if (ctx && planStatus === 'AUTHORIZED') await syncWebMembership(ctx.userId);
   // Está esperando la confirmación: volvió de Mercado Pago (con o sin parámetros) y el pago figura pendiente.
   const confirming = Boolean(ctx) && planStatus === 'PENDING' && Boolean(pago === 'ok' || mpReturn);
   const price = `${mpPriceArs().toLocaleString('es-AR')}`;
@@ -89,7 +106,8 @@ export default async function GymLandingPage({ params, searchParams }: { params:
           {planStatus === 'AUTHORIZED' ? (
             <>
               <p className="text-center font-semibold">¡Tu plan está activo!</p>
-              <p className="text-center text-sm text-muted-foreground">Abrí la app de Forza AI con tu cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
+              <p className="text-center text-sm text-muted-foreground">Ya estás conectado a {gym.name}. Entrá a la app de Forza AI con esta misma cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
+              <StoreLinks />
             </>
           ) : confirming ? (
             <>
