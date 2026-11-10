@@ -1,6 +1,6 @@
 import 'server-only';
 import { prisma } from '../db';
-import { buildPreapprovalBody, grantsAccess, mapMpStatus, payerEmailFor, priceFromEnv, type WebSubStatus } from './mercadopago-logic';
+import { DEFAULT_PRICE_ARS, buildPreapprovalBody, grantsAccess, mapMpStatus, payerEmailFor, priceFromEnv, type WebSubStatus } from './mercadopago-logic';
 
 /**
  * Plan mensual por la web con Mercado Pago (Suscripciones), en pesos. La persona autoriza la suscripción en
@@ -8,14 +8,18 @@ import { buildPreapprovalBody, grantsAccess, mapMpStatus, payerEmailFor, priceFr
  * dar o sacar el acceso. Nunca se confía en lo que diga el aviso por sí solo.
  *
  * Variables (proyecto `forza` de Vercel): MERCADOPAGO_ACCESS_TOKEN (clave del vendedor; de prueba o de producción),
- * MERCADOPAGO_WEBHOOK_SECRET (secreto de las notificaciones de la aplicación) y, opcional, MERCADOPAGO_PRICE_ARS.
+ * MERCADOPAGO_WEBHOOK_SECRET (secreto de las notificaciones de la aplicación) y, solo fuera de producción, MERCADOPAGO_PRICE_ARS.
  * Solo para pruebas: MERCADOPAGO_TEST_PAYER_EMAIL (mail del comprador de prueba).
  */
 
 const API = 'https://api.mercadopago.com';
 
 export const mpConfigured = (): boolean => Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim());
-export const mpPriceArs = (): number => priceFromEnv(process.env.MERCADOPAGO_PRICE_ARS);
+/**
+ * Precio mensual. En producción es siempre el precio oficial (DEFAULT_PRICE_ARS): una variable de prueba olvidada no puede
+ * cobrar de menos. MERCADOPAGO_PRICE_ARS solo se usa fuera de producción (previews y pruebas).
+ */
+export const mpPriceArs = (): number => (process.env.VERCEL_ENV === 'production' ? DEFAULT_PRICE_ARS : priceFromEnv(process.env.MERCADOPAGO_PRICE_ARS));
 
 async function mpFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
