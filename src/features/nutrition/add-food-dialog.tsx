@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
-import { Check, Loader2, Search, Trash2 } from 'lucide-react';
+import { Camera, Check, Loader2, Pencil, ScanLine, Search, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react';
 import type { MealType } from '@prisma/client';
 import type { BarcodeLookup } from '@/server/nutrition/food-provider';
 import {
@@ -81,24 +81,37 @@ function Body({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{td.title}</DialogTitle>
+        <div className="flex items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent text-primary">
+            <UtensilsCrossed className="size-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 text-left">
+            <DialogTitle>{td.title}</DialogTitle>
+            <p className="text-sm text-muted-foreground">{t.nutrition.meals[mealType]}</p>
+          </div>
+        </div>
       </DialogHeader>
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="w-full">
-          <TabsTrigger value="search" className="flex-1 px-1">
-            {td.searchTab}
+        <TabsList className="h-14 w-full rounded-xl p-1">
+          <TabsTrigger value="search" className="h-full flex-1 flex-col gap-0.5 rounded-lg px-1 py-1 data-[state=active]:text-primary">
+            <Search className="size-[18px]" aria-hidden="true" />
+            <span className="text-[11px] leading-none">{td.searchTab}</span>
           </TabsTrigger>
-          <TabsTrigger value="scan" className="flex-1 px-1">
-            {td.scanTab}
+          <TabsTrigger value="scan" className="h-full flex-1 flex-col gap-0.5 rounded-lg px-1 py-1 data-[state=active]:text-primary">
+            <ScanLine className="size-[18px]" aria-hidden="true" />
+            <span className="text-[11px] leading-none">{td.scanTab}</span>
           </TabsTrigger>
-          <TabsTrigger value="photo" className="flex-1 px-1">
-            {td.photoTab}
+          <TabsTrigger value="photo" className="h-full flex-1 flex-col gap-0.5 rounded-lg px-1 py-1 data-[state=active]:text-primary">
+            <Camera className="size-[18px]" aria-hidden="true" />
+            <span className="text-[11px] leading-none">{td.photoTab}</span>
           </TabsTrigger>
-          <TabsTrigger value="describe" className="flex-1 px-1">
-            {td.describeTab}
+          <TabsTrigger value="describe" className="h-full flex-1 flex-col gap-0.5 rounded-lg px-1 py-1 data-[state=active]:text-primary">
+            <Sparkles className="size-[18px]" aria-hidden="true" />
+            <span className="text-[11px] leading-none">{td.describeTab}</span>
           </TabsTrigger>
-          <TabsTrigger value="manual" className="flex-1 px-1">
-            {td.manualTab}
+          <TabsTrigger value="manual" className="h-full flex-1 flex-col gap-0.5 rounded-lg px-1 py-1 data-[state=active]:text-primary">
+            <Pencil className="size-[18px]" aria-hidden="true" />
+            <span className="text-[11px] leading-none">{td.manualTab}</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="search" className="min-h-0 flex-1 overflow-y-auto">
@@ -638,13 +651,13 @@ function SearchTab({
   return (
     <div className="space-y-2 py-2">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={td.searchPlaceholder}
-          className="pl-9"
+          className="h-12 rounded-xl pl-10 text-base"
         />
       </div>
       {searching ? (
@@ -652,7 +665,27 @@ function SearchTab({
           <Loader2 className="size-5 animate-spin" />
         </div>
       ) : q.trim().length < 2 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">{td.searchHint}</p>
+        <div className="flex flex-col items-center gap-3 px-2 py-5 text-center">
+          <span className="grid size-14 place-items-center rounded-2xl bg-accent text-primary">
+            <UtensilsCrossed className="size-7" aria-hidden="true" />
+          </span>
+          <div>
+            <p className="font-semibold">{td.searchEmptyTitle}</p>
+            <p className="text-sm text-muted-foreground">{td.searchHint}</p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
+            {td.searchSuggestions.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setQ(s)}
+                className="rounded-full border bg-card px-3.5 py-1.5 text-sm font-medium transition-colors hover:border-primary/50 hover:bg-accent active:scale-95"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
       ) : results.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">{td.noResults}</p>
       ) : (

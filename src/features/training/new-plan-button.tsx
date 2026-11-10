@@ -26,7 +26,7 @@ export function NewPlanButton() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm">
+        <Button size="sm" className="rounded-full">
           <Plus className="size-4" />
           {t.training.newPlan}
         </Button>

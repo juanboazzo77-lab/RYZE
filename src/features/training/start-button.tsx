@@ -14,6 +14,7 @@ export function StartWorkoutButton({
   size = 'default',
   className,
   icon = true,
+  ariaLabel,
 }: {
   planDayId?: string;
   label: string;
@@ -21,6 +22,8 @@ export function StartWorkoutButton({
   size?: ButtonProps['size'];
   className?: string;
   icon?: boolean;
+  /** Para botones sin texto (solo el ícono). */
+  ariaLabel?: string;
 }) {
   const t = useT();
   const [pending, start] = useTransition();
@@ -30,6 +33,7 @@ export function StartWorkoutButton({
       variant={variant}
       size={size}
       className={className}
+      aria-label={ariaLabel}
       disabled={pending}
       onClick={() =>
         start(async () => {

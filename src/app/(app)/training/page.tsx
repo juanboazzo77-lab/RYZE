@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { DateTime } from 'luxon';
+import { History } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { interpolate } from '@/i18n';
@@ -8,8 +9,8 @@ import { getTrainingOverview } from '@/features/training/queries';
 import { StartWorkoutButton } from '@/features/training/start-button';
 import { NewPlanButton } from '@/features/training/new-plan-button';
 import { PlanRow } from '@/features/training/plan-row';
-import { ShiftDaysControls } from '@/features/training/shift-days';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { WeekView } from '@/features/training/week-view';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -19,15 +20,21 @@ export default async function TrainingPage() {
   const [{ t, locale }, ctx] = await Promise.all([getT(), requireUser()]);
   const data = await getTrainingOverview(ctx.profile);
 
+  const plan = data.activePlan;
+  const todayWeekday = DateTime.now().setZone(ctx.profile.timezone).weekday;
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">{t.training.title}</h1>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" asChild className="text-muted-foreground">
-            <Link href="/training/history">{t.training.history.title}</Link>
-          </Button>
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <h1 className="text-3xl font-extrabold tracking-tight">{t.training.title}</h1>
+        <div className="flex flex-wrap items-center gap-2">
           <NewPlanButton />
+          <Button variant="outline" size="sm" asChild className="rounded-full">
+            <Link href="/training/history">
+              <History className="size-4" />
+              {t.training.history.title}
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -54,68 +61,25 @@ export default async function TrainingPage() {
         </Card>
       ) : null}
 
-      {data.activePlan ? (
-        <Card>
-          <CardHeader className="flex-row items-center justify-between">
-            <CardTitle className="text-base">{data.activePlan.name}</CardTitle>
-            <Link
-              href={`/training/plans/${data.activePlan.id}`}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              {t.common.edit}
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {data.activePlan.days.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t.training.emptyDays}</p>
-            ) : (
-              data.activePlan.days.map((d) => (
-                <div
-                  key={d.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{d.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {d.weekday ? `${t.training.weekdays[String(d.weekday) as '1']} · ` : ''}
-                      {d.exerciseCount} {t.training.exercises}
-                    </p>
-                  </div>
-                  <StartWorkoutButton
-                    planDayId={d.id}
-                    label={t.training.start}
-                    size="sm"
-                    className="shrink-0"
-                  />
-                </div>
-              ))
-            )}
-            {data.activePlan.days.some((d) => d.weekday) ? <ShiftDaysControls /> : null}
-          </CardContent>
-        </Card>
-      ) : null}
+      {plan ? <WeekView plan={plan} t={t} todayWeekday={todayWeekday} showHero={!data.activeWorkout} /> : null}
 
       {!data.activeWorkout ? (
         <StartWorkoutButton
           label={t.training.freeWorkout}
           variant="outline"
           icon={false}
-          className="w-full"
+          className="h-12 w-full rounded-2xl border-dashed text-base font-semibold"
         />
       ) : null}
 
       <div>
-        <h2 className="mb-2 mt-2 text-sm font-medium text-muted-foreground">{t.training.plans}</h2>
+        <h2 className="mb-2 mt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t.training.plans}</h2>
         {data.plans.length === 0 ? (
-          <Card className="p-4">
-            <EmptyState
-              compact
-              illustration="workout"
-              title={t.training.noPlans}
-            />
+          <Card className="rounded-2xl p-4">
+            <EmptyState compact illustration="workout" title={t.training.noPlans} />
           </Card>
         ) : (
-          <Card className="divide-y">
+          <Card className="divide-y overflow-hidden rounded-2xl">
             {data.plans.map((p) => (
               <PlanRow key={p.id} plan={p} />
             ))}
