@@ -2,7 +2,7 @@ import 'server-only';
 import { DateTime } from 'luxon';
 import type { NotificationKind } from '@prisma/client';
 import { prisma } from './db';
-import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
+import { activeWeekShift, doneWeekdays, weekdayThisWeek } from '@/features/training/weekday';
 
 /**
  * "Coach proactivo": condiciones que disparan un aviso, evaluadas por el cron en
@@ -31,6 +31,17 @@ export async function computeNudges(
   const weekStartDate = new Date(
     `${now.minus({ days: (now.weekday - weekStart + 7) % 7 }).toISODate()}T00:00:00.000Z`,
   );
+  const weekStartISO = weekStartDate.toISOString().slice(0, 10);
+  /** Lo ya entrenado esta semana, por día de la rutina (para que pasar un día no mueva lo hecho). */
+  const doneThisWeek = async () =>
+    doneWeekdays(
+      await prisma.workout.findMany({
+        where: { userId, status: 'COMPLETED', planDayId: { not: null }, finishedAt: { gte: new Date(weekStartDate.getTime() - 24 * 60 * 60 * 1000) } },
+        select: { planDayId: true, finishedAt: true },
+      }),
+      timezone,
+      weekStartISO,
+    );
 
   // Ya avisados hoy (cualquier kind de nudge) + tope diario.
   const sentTodayRows = await prisma.notification.findMany({
@@ -53,7 +64,7 @@ export async function computeNudges(
         select: {
           weekShift: true,
           weekShiftStart: true,
-          days: { select: { weekday: true, name: true, _count: { select: { exercises: true } } } },
+          days: { select: { id: true, weekday: true, name: true, _count: { select: { exercises: true } } } },
         },
       }),
       prisma.workout.findFirst({
@@ -64,8 +75,9 @@ export async function computeNudges(
         select: { id: true },
       }),
     ]);
-    const shift = plan ? activeWeekShift(plan, weekStartDate.toISOString().slice(0, 10)) : 0;
-    const day = plan?.days.find((d) => effectiveWeekday(d.weekday, shift) === now.weekday);
+    const shift = plan ? activeWeekShift(plan, weekStartISO) : 0;
+    const done = await doneThisWeek();
+    const day = plan?.days.find((d) => weekdayThisWeek(d, shift, done) === now.weekday);
     if (day && !doneToday) {
       out.push({
         kind: 'WORKOUT_TODAY',
@@ -140,15 +152,16 @@ export async function computeNudges(
       }),
       prisma.workoutPlan.findFirst({
         where: { userId, isActive: true },
-        select: { weekShift: true, weekShiftStart: true, days: { select: { weekday: true } } },
+        select: { weekShift: true, weekShiftStart: true, days: { select: { id: true, weekday: true } } },
       }),
       prisma.workout.findFirst({
         where: { userId, status: 'COMPLETED', finishedAt: { gte: todayStart } },
         select: { id: true },
       }),
     ]);
-    const todayShift = planDayToday ? activeWeekShift(planDayToday, weekStartDate.toISOString().slice(0, 10)) : 0;
-    const isPlanDayToday = planDayToday?.days.some((d) => effectiveWeekday(d.weekday, todayShift) === now.weekday);
+    const todayShift = planDayToday ? activeWeekShift(planDayToday, weekStartISO) : 0;
+    const doneDays = await doneThisWeek();
+    const isPlanDayToday = planDayToday?.days.some((d) => weekdayThisWeek(d, todayShift, doneDays) === now.weekday);
     if (completed.length >= 2 && isPlanDayToday && !doneToday) {
       out.push({
         kind: 'STREAK',

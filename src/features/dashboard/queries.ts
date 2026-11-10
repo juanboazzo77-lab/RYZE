@@ -4,7 +4,7 @@ import type { Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { coachProfileCompletion, parseSection } from '@/features/coach-profile/schema';
-import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
+import { activeWeekShift, doneWeekdays, weekdayThisWeek } from '@/features/training/weekday';
 import {
   nutritionAdherence,
   weeklyWeightChangeKg,
@@ -126,7 +126,7 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
         where: { status: 'COMPLETED', finishedAt: { not: null } },
         orderBy: { finishedAt: 'desc' },
         take: 120,
-        select: { finishedAt: true },
+        select: { finishedAt: true, planDayId: true },
       }),
       db.workout.count({ where: { status: 'COMPLETED', finishedAt: { gte: weekStartDate } } }),
       db.foodEntry.groupBy({
@@ -189,8 +189,11 @@ export async function getDashboardData(profile: Profile): Promise<DashboardData>
       estMinutes,
     };
   } else if (activePlan) {
-    const shift = activeWeekShift(activePlan, weekStartISO(todayISO, profile.weekStart));
-    const day = activePlan.days.find((d) => effectiveWeekday(d.weekday, shift) === todayWeekday);
+    const weekStart = weekStartISO(todayISO, profile.weekStart);
+    const shift = activeWeekShift(activePlan, weekStart);
+    // Lo que ya entrenaste esta semana no se mueve al pasar un día.
+    const done = doneWeekdays(completed, tz, weekStart);
+    const day = activePlan.days.find((d) => weekdayThisWeek(d, shift, done) === todayWeekday);
     if (day) {
       training = {
         kind: 'planned',

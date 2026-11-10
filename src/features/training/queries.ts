@@ -1,8 +1,8 @@
 import 'server-only';
 import type { ExerciseType, MuscleGroup, Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
-import { localTodayISO, weekStartISO } from '@/lib/date';
-import { activeWeekShift, effectiveWeekday } from './weekday';
+import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
+import { activeWeekShift, doneWeekdays, weekdayThisWeek } from './weekday';
 
 export interface OverviewDay {
   id: string;
@@ -24,8 +24,9 @@ export interface TrainingOverview {
 
 export async function getTrainingOverview(profile: Profile): Promise<TrainingOverview> {
   const db = forUser(profile.id);
+  const weekStart = weekStartISO(localTodayISO(profile.timezone), profile.weekStart);
 
-  const [activeWorkout, activePlan, plans] = await db.$transaction([
+  const [activeWorkout, activePlan, plans, doneRows] = await db.$transaction([
     db.workout.findFirst({
       where: { status: 'ACTIVE' },
       orderBy: { startedAt: 'desc' },
@@ -48,11 +49,17 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
       orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
       select: { id: true, name: true, isActive: true, _count: { select: { days: true } } },
     }),
+    // Lo ya entrenado esta semana (un día de margen: el recorte exacto se hace con la hora de la persona).
+    db.workout.findMany({
+      where: { status: 'COMPLETED', planDayId: { not: null }, finishedAt: { gte: isoToUtcDate(addDaysISO(weekStart, -1)) } },
+      select: { planDayId: true, finishedAt: true },
+    }),
   ]);
 
   const shift = activePlan
-    ? activeWeekShift(activePlan, weekStartISO(localTodayISO(profile.timezone), profile.weekStart))
+    ? activeWeekShift(activePlan, weekStart)
     : 0;
+  const done = doneWeekdays(doneRows, profile.timezone, weekStart);
 
   return {
     activeWorkout: activeWorkout ?? null,
@@ -63,7 +70,7 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
           days: activePlan.days.map((d) => ({
             id: d.id,
             name: d.name,
-            weekday: effectiveWeekday(d.weekday, shift),
+            weekday: weekdayThisWeek(d, shift, done),
             exerciseCount: d._count.exercises,
           })),
         }

@@ -47,11 +47,29 @@ export function AddFoodDialog({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState('search');
+  // Escanear y foto usan toda la pantalla (la cámara necesita lugar); las demás, la hoja de abajo.
+  const full = tab === 'scan' || tab === 'photo';
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setTab('search');
+      }}
+    >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="gap-3">
-        <Body date={date} mealType={mealType} onDone={() => setOpen(false)} />
+      <DialogContent
+        // El teclado no se abre solo: aparece cuando la persona toca para escribir.
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className={cn(
+          'gap-3',
+          full &&
+            'inset-0 h-dvh max-h-none w-screen max-w-none rounded-none pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-[calc(1.25rem+env(safe-area-inset-top))] sm:inset-0 sm:h-dvh sm:max-h-none sm:w-screen sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-none',
+        )}
+        closeClassName={full ? 'top-[calc(1rem+env(safe-area-inset-top))]' : undefined}
+      >
+        <Body date={date} mealType={mealType} tab={tab} setTab={setTab} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
@@ -60,15 +78,18 @@ export function AddFoodDialog({
 function Body({
   date,
   mealType,
+  tab,
+  setTab,
   onDone,
 }: {
   date: string;
   mealType: MealType;
+  tab: string;
+  setTab: (tab: string) => void;
   onDone: () => void;
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
-  const [tab, setTab] = useState('search');
   const [prefillName, setPrefillName] = useState('');
   const [prefillBarcode, setPrefillBarcode] = useState<string | undefined>(undefined);
 
@@ -215,9 +236,9 @@ function ScanTab({
   }
 
   return (
-    <div className="space-y-3">
-      <BarcodeScanner active onDetected={handleDetected} />
-      <div className="space-y-1.5">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <BarcodeScanner active fill onDetected={handleDetected} />
+      <div className="shrink-0 space-y-1.5">
         <Label htmlFor="manual-barcode" className="text-xs text-muted-foreground">
           {td.scanManualLabel}
         </Label>
@@ -348,15 +369,16 @@ function PhotoTab({
 
   if (!estimate) {
     return (
-      <div className="space-y-3 py-2">
-        <p className="text-xs text-muted-foreground">{tp.privacyNote}</p>
+      <div className="flex h-full min-h-0 flex-col gap-3">
         <PhotoPicker
+          large
           value={photos}
           onChange={setPhotos}
           max={1}
           labels={{ add: tp.add, remove: t.common.delete, max: tp.max, error: tp.imgError }}
         />
-        <div className="space-y-1.5">
+        <p className="shrink-0 text-center text-xs text-muted-foreground">{tp.privacyNote}</p>
+        <div className="shrink-0 space-y-1.5">
           <Label className="text-xs text-muted-foreground">{tp.noteLabel}</Label>
           <Textarea
             value={note}
@@ -366,7 +388,7 @@ function PhotoTab({
             placeholder={tp.notePh}
           />
         </div>
-        <Button onClick={estimateNow} disabled={photos.length === 0} className="w-full">
+        <Button onClick={estimateNow} disabled={photos.length === 0} className="h-12 w-full shrink-0 rounded-xl text-base font-semibold">
           {tp.estimate}
         </Button>
       </div>
@@ -570,7 +592,6 @@ function DescribeTab({
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">{td.label}</Label>
           <Textarea
-            autoFocus
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
@@ -653,7 +674,6 @@ function SearchTab({
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
         <Input
-          autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={td.searchPlaceholder}
@@ -886,7 +906,7 @@ function ManualTab({
     <div className="space-y-4 py-2">
       <div className="space-y-1.5">
         <Label>{td.manualName}</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
       <div className="inline-flex w-full rounded-lg border bg-secondary p-1 text-sm">

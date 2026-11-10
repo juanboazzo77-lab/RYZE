@@ -7,7 +7,7 @@ import { forUser } from '@/server/user-db';
 import { can, limitsFor } from '@/server/entitlements';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
 import { getCheckinStatus } from '@/features/checkin/queries';
-import { activeWeekShift, effectiveWeekday } from '@/features/training/weekday';
+import { activeWeekShift, doneWeekdays, weekdayThisWeek } from '@/features/training/weekday';
 import { getNotificationPrefs } from './queries';
 
 /** Lo que el teléfono necesita saber para programar los avisos locales de los próximos días. */
@@ -45,10 +45,16 @@ export async function getReminderPlan(): Promise<ReminderPlan> {
     select: {
       weekShift: true,
       weekShiftStart: true,
-      days: { select: { weekday: true, name: true, _count: { select: { exercises: true } } } },
+      days: { select: { id: true, weekday: true, name: true, _count: { select: { exercises: true } } } },
     },
   });
-  const shift = plan ? activeWeekShift(plan, weekStartISO(todayISO, profile.weekStart)) : 0;
+  const weekStart = weekStartISO(todayISO, profile.weekStart);
+  const shift = plan ? activeWeekShift(plan, weekStart) : 0;
+  const doneRows = await db.workout.findMany({
+    where: { status: 'COMPLETED', planDayId: { not: null }, finishedAt: { gte: isoToUtcDate(addDaysISO(weekStart, -1)) } },
+    select: { planDayId: true, finishedAt: true },
+  });
+  const done = doneWeekdays(doneRows, profile.timezone, weekStart);
   const activeOrDone = await db.workout.findFirst({
     where: { OR: [{ status: 'ACTIVE' }, { status: 'COMPLETED', finishedAt: { gte: today } }] },
     select: { id: true },
@@ -67,7 +73,7 @@ export async function getReminderPlan(): Promise<ReminderPlan> {
   const baseTrainingDays: ReminderPlan['trainingDays'] = {};
   for (const d of plan?.days ?? []) {
     const info = { name: d.name, exercises: d._count.exercises };
-    const weekday = effectiveWeekday(d.weekday, shift);
+    const weekday = weekdayThisWeek(d, shift, done);
     if (weekday != null) trainingDays[weekday] = info;
     if (d.weekday != null) baseTrainingDays[d.weekday] = info;
   }

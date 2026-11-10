@@ -724,7 +724,7 @@ export const en: Dictionary = {
     noPlans: "You haven't created any routine yet.",
     emptyDays: 'This routine has no days yet.',
     shift: {
-      hint: 'Missed a day? Shift all your routines for this week. Next week they go back to their usual days.',
+      hint: 'Missed a day? Shift all your routines for this week. Next week they go back to their usual days. What you\'ve already trained stays where it is.',
       back: 'One day earlier',
       forward: 'One day later',
       shifted: 'Done, your routines moved one day later.',

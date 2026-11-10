@@ -724,7 +724,7 @@ export const pt: Dictionary = {
     noPlans: 'Você ainda não criou nenhuma rotina.',
     emptyDays: 'Este plano ainda não tem dias.',
     shift: {
-      hint: 'Se um dia você não conseguiu treinar, adie todas as rotinas desta semana. Na semana que vem elas voltam aos dias de sempre.',
+      hint: 'Se um dia você não conseguiu treinar, adie todas as rotinas desta semana. Na semana que vem elas voltam aos dias de sempre. O que você já treinou não muda de lugar.',
       back: 'Um dia antes',
       forward: 'Um dia depois',
       shifted: 'Pronto, suas rotinas foram para um dia depois.',

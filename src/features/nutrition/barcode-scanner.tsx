@@ -32,9 +32,12 @@ export function extractProductCode(text: string, isQr: boolean): string | null {
 export function BarcodeScanner({
   active,
   onDetected,
+  fill = false,
 }: {
   active: boolean;
   onDetected: (code: string) => void;
+  /** En pantalla completa: la cámara ocupa todo el alto disponible en vez de un cuadrado. */
+  fill?: boolean;
 }) {
   const t = useT();
   const td = t.nutrition.dialog;
@@ -130,7 +133,7 @@ export function BarcodeScanner({
 
   if (status === 'error') {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center">
+      <div className={fill ? 'flex h-full flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed text-center' : 'flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center'}>
         <CameraOff className="size-6 text-muted-foreground" />
         <p className="px-6 text-sm text-muted-foreground">
           {error === 'denied'
@@ -144,8 +147,8 @@ export function BarcodeScanner({
   }
 
   return (
-    <div className="space-y-2 py-2">
-      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-black">
+    <div className={fill ? 'flex h-full min-h-0 flex-col gap-2' : 'space-y-2 py-2'}>
+      <div className={fill ? 'relative min-h-0 w-full flex-1 overflow-hidden rounded-2xl bg-black' : 'relative aspect-square w-full overflow-hidden rounded-xl bg-black'}>
         <video
           ref={videoRef}
           playsInline

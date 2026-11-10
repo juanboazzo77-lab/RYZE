@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ImagePlus, Loader2, X } from 'lucide-react';
+import { Camera, ImagePlus, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { downscaleImage } from '@/lib/image/downscale';
 
@@ -21,11 +21,14 @@ export function PhotoPicker({
   onChange,
   max = 4,
   labels,
+  large = false,
 }: {
   value: string[];
   onChange: (next: string[]) => void;
   max?: number;
   labels: { add: string; remove: string; max: string; error: string };
+  /** Pantalla completa: una sola foto, grande, con un área grande para tocar. */
+  large?: boolean;
 }) {
   const [items, setItems] = useState<PhotoItem[]>(() =>
     value.map((dataUrl) => ({ id: crypto.randomUUID(), dataUrl })),
@@ -58,6 +61,39 @@ export function PhotoPicker({
     commit([...items, ...added]);
     setProcessing(false);
     if (fileInput.current) fileInput.current.value = '';
+  }
+
+  if (large) {
+    const photo = items[0];
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <input ref={fileInput} type="file" accept="image/*" hidden onChange={(e) => addFiles(e.target.files)} />
+        {photo ? (
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl bg-black">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.dataUrl} alt="" className="size-full object-cover" />
+            <button
+              type="button"
+              onClick={() => commit([])}
+              aria-label={labels.remove}
+              className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-black/60 text-white backdrop-blur"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={processing}
+            onClick={() => fileInput.current?.click()}
+            className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-primary/40 bg-accent/40 text-primary transition-colors active:bg-accent"
+          >
+            {processing ? <Loader2 className="size-10 animate-spin" /> : <Camera className="size-12" />}
+            <span className="text-base font-semibold">{labels.add}</span>
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (

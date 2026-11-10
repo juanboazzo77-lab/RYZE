@@ -724,7 +724,7 @@ export const de: Dictionary = {
     noPlans: 'Du hast noch keinen Trainingsplan erstellt.',
     emptyDays: 'Dieser Plan hat noch keine Tage.',
     shift: {
-      hint: 'Einen Tag verpasst? Verschiebe alle Einheiten dieser Woche. Nächste Woche gelten wieder die üblichen Tage.',
+      hint: 'Einen Tag verpasst? Verschiebe alle Einheiten dieser Woche. Nächste Woche gelten wieder die üblichen Tage. Was du schon trainiert hast, bleibt, wo es ist.',
       back: 'Einen Tag früher',
       forward: 'Einen Tag später',
       shifted: 'Erledigt, deine Einheiten sind einen Tag nach hinten gerutscht.',
