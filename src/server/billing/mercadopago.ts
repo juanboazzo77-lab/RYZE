@@ -117,3 +117,21 @@ export async function getWebPlanStatus(userId: string): Promise<WebSubStatus | n
     return null;
   }
 }
+
+/**
+ * Diagnóstico (solo administrador): le pregunta a Mercado Pago cómo ve ahora la suscripción de esta persona, la
+ * sincroniza y devuelve lo que sirve para entender por qué un plan no se activa. Sin datos de tarjetas ni claves.
+ */
+export async function diagnoseSubscription(userId: string): Promise<Record<string, unknown>> {
+  const row = await prisma.webSubscription.findUnique({ where: { userId } });
+  if (!row) return { found: false };
+  const mp = await mpFetch<Record<string, unknown>>(`/preapproval/${encodeURIComponent(row.providerId)}`).catch((e: unknown) => ({ error: e instanceof Error ? e.message : String(e) }));
+  const ar = (mp.auto_recurring ?? {}) as Record<string, unknown>;
+  const synced = 'error' in mp ? null : await syncSubscription(row.providerId).catch(() => null);
+  return {
+    found: true,
+    ours: { status: row.status, createdAt: row.createdAt, updatedAt: row.updatedAt },
+    mercadoPago: 'error' in mp ? mp : { status: mp.status, date_created: mp.date_created, last_modified: mp.last_modified, next_payment_date: mp.next_payment_date, payer_id_present: Boolean(mp.payer_id), amount: ar.transaction_amount, currency: ar.currency_id, frequency: ar.frequency, frequency_type: ar.frequency_type, reason: mp.reason },
+    afterSync: synced,
+  };
+}
