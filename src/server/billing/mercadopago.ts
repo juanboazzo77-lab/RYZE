@@ -80,6 +80,8 @@ export async function syncSubscription(preapprovalId: string): Promise<WebSubSta
     return null;
   }
   const status = mapMpStatus(mp.status);
+  // Queda en los registros qué dijo Mercado Pago (sin datos personales): sirve para entender por qué un plan no se activa.
+  console.log(`[mercadopago] suscripción ...${preapprovalId.slice(-6)}: Mercado Pago dice "${mp.status ?? 'sin estado'}" → ${status}`);
   await prisma.webSubscription.update({
     where: { id: row.id },
     data: { status, nextPaymentAt: mp.next_payment_date ? new Date(mp.next_payment_date) : null },
