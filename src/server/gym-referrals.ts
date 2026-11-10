@@ -33,13 +33,15 @@ export async function recordGymReferral(userId: string, gymId: string): Promise<
 
 /**
  * Dirección base del enlace de compra de la web (REVENUECAT_WEB_PURCHASE_URL), ya limpia. Tolera lo que pasa al
- * pegarla: espacios, comillas de más, o que falte el "https://" delante de pay.rev.cat. Null si está vacía o no
- * es una dirección https.
+ * pegarla: espacios, comillas de más, que falte el "https://" delante de pay.rev.cat, o el marcador del usuario al
+ * final. Null si está vacía o no es una dirección https.
  */
 export function normalizePurchaseBase(raw: string | null | undefined): string | null {
   let v = (raw ?? '').trim().replace(/^["']+|["']+$/g, '').trim();
   if (!v) return null;
   if (/^pay\.rev\.cat\//i.test(v)) v = `https://${v}`;
+  // La documentación muestra el enlace con un marcador al final ("/<app_user_id>"): se saca, el identificador lo suma la app.
+  v = v.replace(/\/(?:<[^/]*>|\{[^/]*\}|\[[^/]*\]|[^/]*app_?user_?id[^/]*)\/?$/i, '');
   return /^https:\/\/[^\s"'<>]+$/i.test(v) ? v : null;
 }
 

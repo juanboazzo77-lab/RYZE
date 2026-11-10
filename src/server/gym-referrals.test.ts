@@ -29,6 +29,13 @@ describe('limpieza de la dirección pegada', () => {
   it('si falta el https:// de pay.rev.cat, lo agrega', () => {
     expect(normalizePurchaseBase('pay.rev.cat/tok')).toBe('https://pay.rev.cat/tok');
   });
+  it('saca el marcador del usuario que muestra la documentación', () => {
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/<app_user_id>')).toBe('https://pay.rev.cat/tok');
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/<yourAppUserId>')).toBe('https://pay.rev.cat/tok');
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/{app_user_id}/')).toBe('https://pay.rev.cat/tok');
+    expect(normalizePurchaseBase('https://pay.rev.cat/tok/APP_USER_ID')).toBe('https://pay.rev.cat/tok');
+    expect(webPurchaseUrlFor('u1', 'https://pay.rev.cat/tok/<app_user_id>')).toBe('https://pay.rev.cat/tok/u1');
+  });
   it('lo que no es una dirección https sigue sin servir', () => {
     expect(normalizePurchaseBase('http://pay.rev.cat/tok')).toBeNull();
     expect(normalizePurchaseBase('otra-cosa')).toBeNull();
