@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSupabaseServerClient } from '@/server/supabase/server';
+import { safeNext } from '@/lib/safe-next';
 
 /**
  * Callback de Supabase Auth: confirmación de email, recuperación de contraseña
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
   const rawNext = searchParams.get('next') ?? '/dashboard';
-  const next = rawNext.startsWith('/') ? rawNext : '/dashboard';
+  const next = safeNext(rawNext, '/dashboard');
 
   if (code) {
     const supabase = await createSupabaseServerClient();

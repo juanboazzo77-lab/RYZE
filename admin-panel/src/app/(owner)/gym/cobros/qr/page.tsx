@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { requireOwnerPage } from '@/lib/owner';
-import { getPaymentInfo } from '@/server/gym-payment';
+import { getPaymentInfo, gymLandingUrl } from '@/server/gym-payment';
 import { PaymentForm } from '@/features/owner/payment-form';
 import { PaymentPoster, type PosterKind } from '@/features/owner/payment-poster';
 import { PrintButton } from '@/features/owner/print-button';
@@ -30,11 +30,13 @@ export default async function PaymentQrPage({ searchParams }: { searchParams: Pr
     );
   }
 
-  const kind: PosterKind = cartel === 'plan' ? 'PLAN' : 'FEE';
-  const ready = kind === 'PLAN' ? Boolean(info.planLink) : Boolean(info.link || info.alias);
+  const kind: PosterKind = cartel === 'plan' ? 'PLAN' : cartel === 'web' ? 'WEB' : 'FEE';
+  const webUrl = gymLandingUrl(info.inviteCode);
+  const ready = kind === 'WEB' ? Boolean(webUrl) : kind === 'PLAN' ? Boolean(info.planLink) : Boolean(info.link || info.alias);
   const tabs: Array<{ key: PosterKind; label: string; href: string }> = [
     { key: 'FEE', label: 'Cuota', href: '/gym/cobros/qr' },
     { key: 'PLAN', label: 'Plan de rutina con IA', href: '/gym/cobros/qr?cartel=plan' },
+    { key: 'WEB', label: 'Activar plan en la web', href: '/gym/cobros/qr?cartel=web' },
   ];
 
   return (
@@ -72,11 +74,16 @@ export default async function PaymentQrPage({ searchParams }: { searchParams: Pr
         {ready ? (
           <>
             <PaymentPoster info={info} kind={kind} />
+            {kind === 'WEB' && webUrl ? (
+              <p className="break-all text-center text-xs text-muted-foreground print:hidden">
+                Este QR abre la página de tu gimnasio: <span className="font-mono">{webUrl}</span>
+              </p>
+            ) : null}
             {kind === 'FEE' && !info.link ? <p className="text-xs text-muted-foreground print:hidden">Para que aparezca el código QR, cargá un link de pago arriba. Por ahora el cartel muestra solo el alias.</p> : null}
           </>
         ) : (
           <p className="rounded-xl border p-4 text-sm text-muted-foreground print:hidden">
-            {kind === 'PLAN' ? 'Cargá el link de pago del plan arriba y acá aparece el cartel con su QR.' : 'Cargá tu link de pago o tu alias arriba y acá aparece el cartel.'}
+            {kind === 'WEB' ? 'Tu página web se activa cuando aprobamos tu gimnasio. Apenas esté lista, acá aparece el cartel con su QR.' : kind === 'PLAN' ? 'Cargá el link de pago del plan arriba y acá aparece el cartel con su QR.' : 'Cargá tu link de pago o tu alias arriba y acá aparece el cartel.'}
           </p>
         )}
       </section>

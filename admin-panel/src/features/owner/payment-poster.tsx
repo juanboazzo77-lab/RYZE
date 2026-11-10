@@ -2,17 +2,19 @@ import QRCode from 'qrcode';
 import { isCbu } from './payment';
 import { readableOn } from '@/features/gym/brand';
 import { formatMoney } from '@/features/gym/money';
-import type { PaymentInfo } from '@/server/gym-payment';
+import { gymLandingUrl, type PaymentInfo } from '@/server/gym-payment';
 
-export type PosterKind = 'FEE' | 'PLAN';
+export type PosterKind = 'FEE' | 'PLAN' | 'WEB';
 
 /**
  * El cartel para imprimir. FEE = "Pagá tu cuota" (con el alias para transferir); PLAN = el plan de rutina con IA,
- * que el cliente puede pagar aparte, con su propio QR y valor.
+ * que el cliente puede pagar aparte, con su propio QR y valor; WEB = la página web del gimnasio, donde el cliente crea su
+ * cuenta y activa su plan.
  */
 export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: PosterKind }) {
   const color = info.color ?? '#1d9a5f';
-  const link = kind === 'PLAN' ? info.planLink : info.link;
+  const webUrl = gymLandingUrl(info.inviteCode);
+  const link = kind === 'WEB' ? webUrl : kind === 'PLAN' ? info.planLink : info.link;
   // El QR se arma acá, con el link que ya se validó (solo https) al guardarlo.
   const qr = link ? await QRCode.toDataURL(link, { margin: 1, width: 520, errorCorrectionLevel: 'M' }) : null;
 
@@ -28,7 +30,12 @@ export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: P
         </div>
       </div>
       <div className="space-y-4 px-6 py-6">
-        {kind === 'PLAN' ? (
+        {kind === 'WEB' ? (
+          <>
+            <p className="text-2xl font-extrabold tracking-tight">Entrená con {info.gymName}</p>
+            <p className="text-sm text-[#5b6472]">Activá tu plan de entrenamiento y dieta con inteligencia artificial, hecho para las máquinas de tu gimnasio.</p>
+          </>
+        ) : kind === 'PLAN' ? (
           <>
             <p className="text-2xl font-extrabold tracking-tight">Tu plan de rutina con IA</p>
             <p className="text-sm text-[#5b6472]">Tu plan de entrenamiento y tu plan de dieta del mes, armados con las máquinas de {info.gymName}, más mensajes con tu coach de IA.</p>
@@ -40,8 +47,8 @@ export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: P
         {qr ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={qr} alt={`Código QR para pagar ${kind === 'PLAN' ? 'el plan de rutina' : 'la cuota'} de ${info.gymName}`} className="mx-auto size-60 print:size-80" />
-            <p className="text-sm text-[#5b6472]">Escaneá el código con la cámara o con tu app de pagos.</p>
+            <img src={qr} alt={kind === 'WEB' ? `Código QR de la página de ${info.gymName}` : `Código QR para pagar ${kind === 'PLAN' ? 'el plan de rutina' : 'la cuota'} de ${info.gymName}`} className="mx-auto size-60 print:size-80" />
+            <p className="text-sm text-[#5b6472]">{kind === 'WEB' ? 'Escaneá el código con la cámara de tu celular.' : 'Escaneá el código con la cámara o con tu app de pagos.'}</p>
           </>
         ) : null}
         {kind === 'FEE' && info.alias ? (
@@ -51,7 +58,7 @@ export async function PaymentPoster({ info, kind }: { info: PaymentInfo; kind: P
           </div>
         ) : null}
         <p className="text-xs text-[#5b6472]">
-          {kind === 'PLAN' ? 'Después de pagar, avisá en recepción y pasá tu mail para activar tu plan.' : 'Después de pagar, avisá en recepción así te anotan el pago.'}
+          {kind === 'WEB' ? 'Creá tu cuenta gratis y activá tu plan desde la página del gimnasio.' : kind === 'PLAN' ? 'Después de pagar, avisá en recepción y pasá tu mail para activar tu plan.' : 'Después de pagar, avisá en recepción así te anotan el pago.'}
         </p>
       </div>
     </div>

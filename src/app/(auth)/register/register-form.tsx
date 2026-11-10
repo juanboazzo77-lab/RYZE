@@ -2,6 +2,8 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { safeNext } from '@/lib/safe-next';
 import { signUpAction, type AuthActionState } from '../actions';
 import { AuthFormShell, FormMessage, LegalNotice, SubmitButton } from '../_ui';
 import { Input } from '@/components/ui/input';
@@ -13,9 +15,12 @@ const initial: AuthActionState = {};
 export function RegisterForm() {
   const t = useT();
   const [state, action] = useActionState(signUpAction, initial);
+  // Si vino del QR de un gimnasio, vuelve a su página al terminar.
+  const next = safeNext(useSearchParams().get('next'), '');
 
   return (
     <form action={action}>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <AuthFormShell>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">{t.auth.name}</Label>
@@ -47,7 +52,7 @@ export function RegisterForm() {
 
         <p className="text-center text-sm text-muted-foreground">
           {t.auth.haveAccount}{' '}
-          <Link href="/login" className="font-medium text-foreground hover:underline">
+          <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="font-medium text-foreground hover:underline">
             {t.auth.signIn}
           </Link>
         </p>

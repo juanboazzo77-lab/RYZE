@@ -13,6 +13,8 @@ const PUBLIC_PATHS = [
   '/privacy',
   '/terms',
   '/gimnasios',
+  // Página pública de cada gimnasio (la abre el QR del panel).
+  '/g',
   // Vista de prueba para capturas: sólo existe fuera de producción.
   ...(process.env.NODE_ENV !== 'production' ? ['/dev-preview'] : []),
 ];

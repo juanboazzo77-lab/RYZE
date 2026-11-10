@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from '@/server/supabase/server';
 import { prisma } from '@/server/db';
 import { getDictionary } from '@/i18n';
 import { getLocale } from '@/i18n/server';
+import { safeNext } from '@/lib/safe-next';
 
 export interface AuthActionState {
   error?: string;
@@ -36,7 +37,7 @@ export async function signInAction(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: t.auth.invalidCredentials };
 
-  redirect(next.startsWith('/') ? next : '/dashboard');
+  redirect(safeNext(next, '/dashboard'));
 }
 
 export async function signUpAction(
@@ -47,6 +48,8 @@ export async function signUpAction(
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
   const name = String(formData.get('name') ?? '').trim();
+  // Quien llega desde el QR de un gimnasio vuelve a la página de ese gimnasio al terminar (solo rutas de este sitio).
+  const next = safeNext(String(formData.get('next') ?? ''), '/onboarding');
 
   if (!emailSchema.safeParse(email).success) return { error: t.auth.fillFields };
   if (!passwordSchema.safeParse(password).success) return { error: t.auth.passwordTooShort };
@@ -56,14 +59,14 @@ export async function signUpAction(
     email,
     password,
     options: {
-      emailRedirectTo: `${appUrl()}/auth/callback?next=/onboarding`,
+      emailRedirectTo: `${appUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
       data: name ? { full_name: name } : undefined,
     },
   });
   if (error) return { error: error.message };
 
   // Si el proyecto no exige confirmación de email, ya hay sesión.
-  if (data.session) redirect('/onboarding');
+  if (data.session) redirect(next);
   return { message: t.auth.checkEmail };
 }
 

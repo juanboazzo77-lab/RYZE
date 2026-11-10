@@ -293,6 +293,7 @@ model Profile {
   gymMembership           GymMember?
   challengeEntries        GymChallengeEntry[]
   gymBookings             GymBooking[]
+  gymReferral             GymReferral?
   ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
@@ -1021,6 +1022,7 @@ model Gym {
   clients             GymClient[]
   payments            GymPayment[]
   routines            GymRoutine[]
+  referrals           GymReferral[]
   challenges          GymChallenge[]
   classes             GymClass[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
@@ -1173,6 +1175,19 @@ model GymBooking {
   @@index([classId, date, status])
   @@index([userId, date])
   @@map("gym_booking")
+}
+
+/// De qué gimnasio vino una persona que activó su plan por la web (el QR del gimnasio lleva a su página). Una por persona.
+model GymReferral {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gymId     String   @db.Uuid @map("gym_id")
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([gymId])
+  @@map("gym_referral")
 }
 
 /// Un pago de cuota registrado por el dueño.
