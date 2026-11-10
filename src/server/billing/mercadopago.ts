@@ -58,13 +58,26 @@ export async function syncWebMembership(userId: string): Promise<void> {
     if (!row.gymId) return;
     const gym = await prisma.gym.findFirst({ where: { id: row.gymId, status: 'ACTIVE' }, select: { id: true } });
     if (!gym) return;
-    const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true } });
-    if (existing?.status === 'ACTIVE') return;
-    await prisma.gymMember.upsert({
-      where: { userId },
-      create: { gymId: gym.id, userId, source: 'WEB' },
-      update: { gymId: gym.id, status: 'ACTIVE', source: 'WEB', joinedAt: new Date(), endedAt: null },
-    });
+    const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true, gymId: true } });
+    if (existing?.status === 'ACTIVE' && existing.gymId !== gym.id) return;
+    if (existing?.status !== 'ACTIVE') {
+      await prisma.gymMember.upsert({
+        where: { userId },
+        create: { gymId: gym.id, userId, source: 'WEB' },
+        update: { gymId: gym.id, status: 'ACTIVE', source: 'WEB', joinedAt: new Date(), endedAt: null },
+      });
+    }
+    // Aparece en la lista de clientes del panel del gimnasio (sin control de cuota: paga su plan por su cuenta).
+    const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    const email = profile?.email?.trim().toLowerCase();
+    if (email && !email.endsWith('@sin-email.local')) {
+      const has = await prisma.gymClient.findFirst({ where: { gymId: gym.id, active: true, email }, select: { id: true } });
+      if (!has) {
+        await prisma.gymClient.create({
+          data: { gymId: gym.id, name: profile?.name?.trim() || email.split('@')[0]!, email, note: 'Se sumó por tu página y paga su plan de Forza AI por su cuenta.' },
+        });
+      }
+    }
   } catch (e) {
     console.error('[mercadopago] no se pudo conectar la persona con su gimnasio:', e instanceof Error ? e.message : e);
   }
