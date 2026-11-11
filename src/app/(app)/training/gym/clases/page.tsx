@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { listClassesForMember, type ClassOccurrenceView } from '@/server/gym-classes';
+import { getMemberPlanStatus } from '@/server/gym-plans';
+import { describePlan } from '@/features/gym/plans';
 import { CANCEL_BEFORE_MINUTES, timeRange, todayAR, weekdayLabel, weekdayOf } from '@/features/gym/classes';
 import { ClassButton } from '@/features/gym/class-button';
 
@@ -22,8 +24,12 @@ function dayTitle(date: string, today: string): string {
 export default async function GymClassesPage() {
   const ctx = await requireUser();
   const now = new Date();
-  const items = ctx.gym ? await listClassesForMember(ctx.userId, ctx.gym.gymId, now) : [];
+  const [items, planStatus] = ctx.gym
+    ? await Promise.all([listClassesForMember(ctx.userId, ctx.gym.gymId, now), getMemberPlanStatus(ctx.userId, ctx.gym.gymId, now)])
+    : [[] as ClassOccurrenceView[], { plan: null, usedThisWeek: 0 }];
   const today = todayAR(now);
+  const plan = planStatus.plan;
+  const planInfo = plan ? describePlan(plan) : null;
 
   const byDay = new Map<string, ClassOccurrenceView[]>();
   for (const it of items) byDay.set(it.date, [...(byDay.get(it.date) ?? []), it]);
@@ -41,6 +47,16 @@ export default async function GymClassesPage() {
           Reservá tu lugar hasta con 7 días de anticipación. Podés cancelar hasta {CANCEL_BEFORE_MINUTES / 60} horas antes de que empiece.
         </p>
       </div>
+
+      {plan && planInfo ? (
+        <section className="space-y-1 rounded-xl border bg-card p-3 text-sm">
+          <p className="font-semibold">Tu plan: {plan.name}</p>
+          <p className="text-xs text-muted-foreground">{planInfo.classes}</p>
+          <p className="text-xs text-muted-foreground">
+            {plan.weeklyLimit === null ? planInfo.weekly : `${planStatus.usedThisWeek} de ${plan.weeklyLimit} reservas usadas esta semana`}
+          </p>
+        </section>
+      ) : null}
 
       {mine.length > 0 ? (
         <section className="space-y-2">
@@ -81,7 +97,7 @@ export default async function GymClassesPage() {
                       {c.description ? <p className="text-xs text-muted-foreground">{c.description}</p> : null}
                       <p className="mt-0.5 text-xs">{left === 0 ? <span className="text-warning">Completa</span> : <span className="text-muted-foreground">{left === 1 ? 'Queda 1 lugar' : `Quedan ${left} lugares`}</span>}</p>
                     </div>
-                    <ClassButton classId={c.classId} date={c.date} state={c.state} />
+                    <ClassButton classId={c.classId} date={c.date} state={c.state} inPlan={c.inPlan} />
                   </li>
                 );
               })}

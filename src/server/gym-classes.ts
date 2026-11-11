@@ -11,6 +11,8 @@ import {
   withinBookingWindow,
   type BookingState,
 } from '@/features/gym/classes';
+import { planAllowsClass, weeklyLimitReached } from '@/features/gym/plans';
+import { bookingsInWeek, getMemberPlan } from './gym-plans';
 
 /**
  * Reservas de clases, del lado del socio. Todo sale del gimnasio ACTIVO de quien reserva (el `gymId` viene de su
@@ -32,6 +34,8 @@ export interface ClassOccurrenceView {
   capacity: number;
   booked: number;
   state: BookingState;
+  /** El plan de pago del socio incluye esta clase (si no tiene plan asignado, todas están incluidas). */
+  inPlan: boolean;
 }
 
 /** Las clases de los próximos 7 días del gimnasio del socio, con cuántos lugares quedan y qué puede hacer él. */
@@ -41,6 +45,7 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
   const slots = classes.map((c) => ({ id: c.id, weekday: c.weekday, startTime: c.startTime, durationMin: c.durationMin, capacity: c.capacity, row: c }));
   const occ = upcomingOccurrences(slots, now);
   if (occ.length === 0) return [];
+  const plan = await getMemberPlan(userId, gymId);
   const today = todayAR(now);
   const bookings = await prisma.gymBooking.findMany({
     where: { classId: { in: classes.map((c) => c.id) }, status: 'BOOKED', date: { gte: dateOf(today), lte: dateOf(addDays(today, 7)) } },
@@ -68,11 +73,12 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
       capacity: o.slot.capacity,
       booked,
       state: bookingState({ now, startsAt: o.startsAt, capacity: o.slot.capacity, booked, mine: mine.has(key) }),
+      inPlan: planAllowsClass(plan, o.slot.row.name),
     };
   });
 }
 
-export type BookError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'FULL' | 'ALREADY';
+export type BookError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT';
 
 /** Reserva un lugar. Se bloquea la fila de la clase para que dos personas no se lleven el último lugar a la vez. */
 export async function bookClass(userId: string, gymId: string, classId: string, dateISO: string, now = new Date()): Promise<'ok' | BookError> {
@@ -81,10 +87,14 @@ export async function bookClass(userId: string, gymId: string, classId: string, 
     const cls = await tx.gymClass.findFirst({ where: { id: classId, gymId, active: true } });
     if (!cls || cls.weekday !== weekdayOf(dateISO)) return 'NOT_FOUND' as const;
     if (startInstant(dateISO, cls.startTime).getTime() <= now.getTime()) return 'STARTED' as const;
+    // El plan de pago que le asignó el gimnasio: a qué tipos de clase se puede anotar y cuántas reservas por semana.
+    const plan = await getMemberPlan(userId, gymId);
+    if (!planAllowsClass(plan, cls.name)) return 'NOT_IN_PLAN' as const;
     await tx.$queryRaw`SELECT id FROM gym_class WHERE id = ${classId}::uuid FOR UPDATE`;
     const date = dateOf(dateISO);
     const existing = await tx.gymBooking.findUnique({ where: { classId_userId_date: { classId, userId, date } } });
     if (existing?.status === 'BOOKED') return 'ALREADY' as const;
+    if (plan && plan.weeklyLimit !== null && weeklyLimitReached(plan, await bookingsInWeek(userId, gymId, dateISO))) return 'WEEK_LIMIT' as const;
     const booked = await tx.gymBooking.count({ where: { classId, date, status: 'BOOKED' } });
     if (booked >= cls.capacity) return 'FULL' as const;
     if (existing) await tx.gymBooking.update({ where: { id: existing.id }, data: { status: 'BOOKED', cancelledAt: null } });

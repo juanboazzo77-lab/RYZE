@@ -1029,6 +1029,7 @@ model Gym {
   webSubscriptions    WebSubscription[]
   challenges          GymChallenge[]
   classes             GymClass[]
+  plans               GymPlan[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
@@ -1084,11 +1085,37 @@ model GymClient {
   note       String?
   active     Boolean   @default(true)
   createdAt  DateTime  @default(now()) @map("created_at")
+  /// Plan de pago del gimnasio que tiene este cliente (define a qué clases puede anotarse). Null = sin plan asignado.
+  planId     String?   @db.Uuid @map("plan_id")
+  plan       GymPlan?  @relation(fields: [planId], references: [id], onDelete: SetNull)
   payments   GymClientPayment[]
 
   @@index([gymId, active])
   @@index([email])
+  @@index([planId])
   @@map("gym_client")
+}
+
+/// Plan de pago del gimnasio (p. ej. "Pase libre", "3 veces por semana"): qué tipos de clase incluye y cuántas reservas por
+/// semana permite. classesMode: ALL (todas las clases) | SELECTED (solo las de `classNames`).
+model GymPlan {
+  id          String      @id @default(uuid()) @db.Uuid
+  gymId       String      @db.Uuid @map("gym_id")
+  gym         Gym         @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  /// Lo que paga el cliente por mes, solo de referencia (en la moneda del gimnasio).
+  price       Decimal?    @db.Decimal(12, 2)
+  classesMode String      @default("ALL") @map("classes_mode")
+  classNames  String[]    @default([]) @map("class_names")
+  /// Reservas de clase por semana (lunes a domingo). Null = sin límite.
+  weeklyLimit Int?        @map("weekly_limit")
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  clients     GymClient[]
+
+  @@index([gymId, active])
+  @@map("gym_plan")
 }
 
 /// Rutina oficial del gimnasio: la arma el profe y la ven los socios en la app. `days` es una lista de

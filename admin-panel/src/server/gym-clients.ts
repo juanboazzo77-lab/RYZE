@@ -29,6 +29,9 @@ export interface ClientRow {
   daysLeft: number | null;
   lastPaidOn: string | null;
   forza: ForzaState;
+  /** Plan de pago del gimnasio que tiene asignado (null = sin plan). */
+  planId: string | null;
+  planName: string | null;
 }
 
 async function ownedGym(ownerUserId: string, gymId: string) {
@@ -40,7 +43,7 @@ async function ownedGym(ownerUserId: string, gymId: string) {
 
 export async function listClients(ownerUserId: string, gymId: string, today = todayArgentina()): Promise<ClientRow[] | null> {
   if (!(await ownedGym(ownerUserId, gymId))) return null;
-  const clients = await prisma.gymClient.findMany({ where: { gymId, active: true }, orderBy: { name: 'asc' }, take: 2000 });
+  const clients = await prisma.gymClient.findMany({ where: { gymId, active: true }, orderBy: { name: 'asc' }, take: 2000, include: { plan: { select: { id: true, name: true, active: true } } } });
   if (clients.length === 0) return [];
   const last = await prisma.gymClientPayment.groupBy({ by: ['clientId'], where: { clientId: { in: clients.map((c) => c.id) } }, _max: { paidOn: true } });
   const lastBy = new Map(last.map((l) => [l.clientId, l._max.paidOn]));
@@ -76,6 +79,8 @@ export async function listClients(ownerUserId: string, gymId: string, today = to
       daysLeft: paidUntil ? daysBetween(today, paidUntil) : null,
       lastPaidOn: isoOf(lastBy.get(c.id) ?? null),
       forza: forzaOf(c.email),
+      planId: c.plan?.active ? c.plan.id : null,
+      planName: c.plan?.active ? c.plan.name : null,
     };
   });
   // Primero lo que hay que cobrar ya; dentro de cada estado, por nombre.

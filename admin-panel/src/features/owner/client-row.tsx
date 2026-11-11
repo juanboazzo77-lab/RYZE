@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { editGymClient, markGymClientPaid, removeGymClient } from './client-actions';
+import { editGymClient, markGymClientPaid, removeGymClient, setGymClientPlan } from './client-actions';
 import { FEE_LABEL } from '@/features/gym/fees';
 import type { ClientRow, ForzaState } from '@/server/gym-clients';
 import { reminderMessage, whatsappLink } from './whatsapp';
@@ -31,7 +31,7 @@ const FORZA_LABEL: Record<ForzaState, string> = {
 };
 
 /** Un cliente del gimnasio: su cuota, el botón de "Pagó" y las opciones. */
-export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
+export function ClientRow({ c, gymName, plans = [] }: { c: ClientRow; gymName: string; plans?: Array<{ id: string; name: string }> }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [open, setOpen] = useState(false);
@@ -40,6 +40,7 @@ export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
   const [fee, setFee] = useState(c.feeAmount !== null ? String(c.feeAmount) : '');
   const [phone, setPhone] = useState(c.phone ?? '');
   const [email, setEmail] = useState(c.email ?? '');
+  const [planId, setPlanId] = useState(c.planId ?? '');
 
   const done = (ok: boolean | undefined, msg: string) => {
     if (ok) {
@@ -69,6 +70,20 @@ export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
     });
   }
 
+  function changePlan(next: string) {
+    setPlanId(next);
+    start(async () => {
+      const res = await setGymClientPlan({ id: c.id, planId: next || null });
+      if (res.ok) {
+        toast.success(next ? 'Plan asignado.' : 'Plan sacado.');
+        router.refresh();
+      } else {
+        setPlanId(c.planId ?? '');
+        toast.error('No se pudo cambiar el plan. Probá de nuevo.');
+      }
+    });
+  }
+
   const urgent = c.status === 'DUE_TODAY' || c.status === 'OVERDUE' || c.status === 'LAPSED';
   // Aviso por WhatsApp: solo si le toca pagar (hoy o atrasado) y hay un teléfono que sirve.
   const wa = urgent ? whatsappLink(c.phone, reminderMessage({ name: c.name, gymName, daysLeft: c.daysLeft })) : null;
@@ -92,6 +107,26 @@ export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
           </Button>
         </div>
       </div>
+
+      {plans.length > 0 ? (
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          Plan
+          <select
+            value={planId}
+            disabled={pending}
+            onChange={(e) => changePlan(e.target.value)}
+            className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm text-foreground sm:max-w-xs"
+            aria-label={`Plan de ${c.name}`}
+          >
+            <option value="">Sin plan asignado</option>
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{FORZA_LABEL[c.forza]}</span>

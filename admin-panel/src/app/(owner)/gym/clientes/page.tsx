@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireOwnerPage } from '@/lib/owner';
 import { countClients, listClients } from '@/server/gym-clients';
+import { listPlans } from '@/server/gym-plans';
 import { AddClientsForm } from '@/features/owner/add-clients-form';
 import { ClientRow } from '@/features/owner/client-row';
 import { cn } from '@/lib/utils';
@@ -21,7 +22,7 @@ const FILTERS = [
 export default async function GymClientsPage({ searchParams }: { searchParams: Promise<{ f?: string; q?: string }> }) {
   const owner = await requireOwnerPage();
   const { f, q } = await searchParams;
-  const rows = (await listClients(owner.userId, owner.gym.id)) ?? [];
+  const [rows, plans] = await Promise.all([listClients(owner.userId, owner.gym.id).then((r) => r ?? []), listPlans(owner.userId, owner.gym.id).then((p) => p ?? [])]);
   const counts = countClients(rows);
   const toCollect = counts.dueToday + counts.overdue + counts.lapsed;
   // Por defecto, lo que hay que cobrar; si no hay nada, todos.
@@ -74,7 +75,7 @@ export default async function GymClientsPage({ searchParams }: { searchParams: P
           ) : (
             <ul className="divide-y rounded-xl border">
               {shown.map((c) => (
-                <ClientRow key={c.id} c={c} gymName={owner.gym.name} />
+                <ClientRow key={c.id} c={c} gymName={owner.gym.name} plans={plans.map((p) => ({ id: p.id, name: p.name }))} />
               ))}
             </ul>
           )}

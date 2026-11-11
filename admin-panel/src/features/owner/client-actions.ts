@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/owner';
 import { getOwnedGym } from '@/server/owner';
+import { setClientPlan } from '@/server/gym-plans';
 import { addClients, markClientPaid, removeClient, updateClient } from '@/server/gym-clients';
 import { parseClientLines } from '@/features/gym/fees';
 
@@ -70,4 +71,15 @@ export async function removeGymClient(raw: { id: string }): Promise<Result> {
   const ok = await removeClient(userId, id.data);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
+}
+
+/** Le asigna un plan de pago del gimnasio a un cliente (o se lo saca): define a qué clases puede anotarse. */
+export async function setGymClientPlan(raw: { id: string; planId: string | null }): Promise<Result> {
+  const id = uuid.safeParse(raw.id);
+  const planId = raw.planId === null ? null : uuid.safeParse(raw.planId);
+  if (!id.success || (planId !== null && !planId.success)) return { error: 'INVALID' };
+  const { userId } = await requireOwner();
+  const res = await setClientPlan(userId, id.data, planId === null ? null : (planId as { data: string }).data);
+  refresh();
+  return res === 'ok' ? { ok: true } : { error: 'NOT_FOUND' };
 }
