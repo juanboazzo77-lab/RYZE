@@ -165,6 +165,32 @@ export async function syncUserSubscription(userId: string): Promise<WebSubStatus
   return status;
 }
 
+/**
+ * La persona cancela su plan desde nuestra página: se cancela la suscripción en Mercado Pago (no se cobra más), el
+ * plan queda sin acceso y deja de ser socia del gimnasio. Devuelve false si no hay nada para cancelar o falló.
+ */
+export async function cancelWebPlan(userId: string): Promise<boolean> {
+  if (!mpConfigured()) return false;
+  const row = await prisma.webSubscription.findUnique({ where: { userId } });
+  if (!row || !grantsAccess(row.status)) return false;
+  try {
+    // Se cancelan todas las suscripciones de esta persona que sigan vivas (puede haber más de una por tocar "Activar" varias veces).
+    const found = await mpFetch<{ results?: MpPreapproval[] }>(`/preapproval/search?external_reference=${encodeURIComponent(userId)}&limit=20`);
+    const live = (found.results ?? []).filter((p) => p.id && (!p.external_reference || p.external_reference === userId) && ['authorized', 'pending', 'paused'].includes((p.status ?? '').toLowerCase()));
+    const ids = new Set([row.providerId, ...live.map((p) => p.id)]);
+    for (const id of ids) {
+      await mpFetch(`/preapproval/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ status: 'cancelled' }) });
+    }
+    await prisma.webSubscription.update({ where: { id: row.id }, data: { status: 'CANCELLED', nextPaymentAt: null } });
+    await syncWebMembership(userId);
+    console.log(`[mercadopago] persona ...${userId.slice(-6)} canceló su plan`);
+    return true;
+  } catch (e) {
+    console.error('[mercadopago] no se pudo cancelar el plan:', e instanceof Error ? e.message : e);
+    return false;
+  }
+}
+
 /** Un aviso de cobro mensual trae el id del pago; de ahí sale el id de la suscripción. */
 export async function preapprovalIdOfPayment(authorizedPaymentId: string): Promise<string | null> {
   const p = await mpFetch<{ preapproval_id?: string }>(`/authorized_payments/${encodeURIComponent(authorizedPaymentId)}`);

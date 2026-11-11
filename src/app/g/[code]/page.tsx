@@ -8,6 +8,8 @@ import { getGymLanding } from '@/server/gym-referrals';
 import { getWebPlanStatus, mpPriceArs, syncUserSubscription, syncWebMembership } from '@/server/billing/mercadopago';
 import { brandTheme } from '@/features/gym/brand';
 import { ActivatePlanForm } from '@/features/gym/activate-plan-form';
+import { ActivePlanPanel } from '@/features/gym/active-plan-panel';
+import { getShareActivity } from '@/server/gyms';
 
 export const metadata: Metadata = {
   title: 'Activá tu plan · Forza AI',
@@ -108,6 +110,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
               <p className="text-center font-semibold">¡Tu plan está activo!</p>
               <p className="text-center text-sm text-muted-foreground">Ya estás conectado a {gym.name}. Entrá a la app de Forza AI con esta misma cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
               <StoreLinks />
+              {ctx ? <ActivePlanPanel code={code} gymName={gym.name} initialShare={await getShareActivity(ctx.userId)} /> : null}
             </>
           ) : confirming ? (
             <>

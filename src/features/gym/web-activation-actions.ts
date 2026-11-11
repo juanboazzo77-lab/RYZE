@@ -3,7 +3,9 @@
 import { redirect } from 'next/navigation';
 import { requireUser } from '@/server/context';
 import { getGymLanding, recordGymReferral } from '@/server/gym-referrals';
-import { startSubscription } from '@/server/billing/mercadopago';
+import { revalidatePath } from 'next/cache';
+import { cancelWebPlan, startSubscription } from '@/server/billing/mercadopago';
+import { setShareActivity } from '@/server/gyms';
 import { normalizeGymCode } from '@/features/gym/logic';
 
 export interface ActivationState {
@@ -26,4 +28,20 @@ export async function activateGymPlan(_prev: ActivationState, formData: FormData
   const res = await startSubscription({ userId: ctx.userId, email: ctx.email, gymId: gym.id, backUrl: `${base.replace(/\/+$/, '')}/g/${encodeURIComponent(code)}?pago=ok` });
   if ('ok' in res) redirect(res.url);
   return { error: res.error === 'NOT_CONFIGURED' ? 'NOT_READY' : res.error };
+}
+
+/** "Cancelar mi plan": corta la suscripción en Mercado Pago y deja de estar conectado al gimnasio. */
+export async function cancelMyWebPlan(code: string): Promise<{ ok?: true; error?: 'FAILED' }> {
+  const ctx = await requireUser();
+  const ok = await cancelWebPlan(ctx.userId);
+  const clean = normalizeGymCode(code);
+  if (clean) revalidatePath(`/g/${clean}`);
+  return ok ? { ok: true } : { error: 'FAILED' };
+}
+
+/** La persona decide si su gimnasio ve su nombre y cuándo entrenó por última vez (apagado por defecto). */
+export async function setWebShareActivity(share: boolean): Promise<{ ok?: true; error?: 'FAILED' }> {
+  const ctx = await requireUser();
+  const ok = await setShareActivity(ctx.userId, share === true);
+  return ok ? { ok: true } : { error: 'FAILED' };
 }
