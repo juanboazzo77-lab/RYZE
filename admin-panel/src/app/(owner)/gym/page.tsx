@@ -35,7 +35,7 @@ export default async function GymHomePage() {
   const steps: StartStep[] = [
     { href: '/gym/equipamiento', title: 'Cargá tus máquinas', hint: 'La IA arma los planes de tus clientes con lo que tiene tu gimnasio.', done: view.profile.items.length > 0 },
     { href: '/gym/marca', title: 'Subí tu logo y tu color', hint: 'Tus clientes ven tu marca dentro de la app.', done: Boolean(brand?.logoUrl || brand?.color) },
-    { href: '/gym/clientes', title: 'Cargá tus clientes', hint: 'Así te avisamos cada día a quién le toca pagar.', done: clients.length > 0 },
+    { href: '/gym/clientes', title: 'Cargá tus clientes', hint: 'Podés anotarlos en papel y subir una foto. Así te avisamos cada día a quién le toca pagar.', done: clients.length > 0 },
     { href: '/gym/invitaciones', title: 'Imprimí tu QR y ponelo en el mostrador', hint: 'Tus clientes lo escanean, se crean la cuenta y activan su plan.', done: view.activeMembers > 0 },
   ];
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
