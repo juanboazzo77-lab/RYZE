@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, CalendarDays, ClipboardList, Dumbbell, Home, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, Users, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Activity, Bell, CalendarDays, ClipboardList, Dumbbell, Home, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, Users, Wallet, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Item {
@@ -30,6 +30,7 @@ const GROUPS: Group[] = [
       { href: '/gym/clientes', label: 'Clientes y cuotas', short: 'Clientes', icon: Users, main: true },
       { href: '/gym/cobros', label: 'Cobros', icon: Wallet, main: true },
       { href: '/gym/planes', label: 'Planes del gimnasio', icon: Tags },
+      { href: '/gym/avisos', label: 'Avisos de Forza AI', icon: Bell },
     ],
   },
   {
@@ -61,7 +62,7 @@ const isActive = (pathname: string, href: string) => (href === '/gym' ? pathname
  * Menú del panel del gimnasio. En la computadora es una barra lateral con secciones; en el celular, una barra abajo con
  * lo principal y un botón "Más" que abre el resto (así nada queda escondido fuera de la pantalla).
  */
-export function GymNav() {
+export function GymNav({ unread = 0 }: { unread?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -90,6 +91,7 @@ export function GymNav() {
                   >
                     <i.icon className="size-4 shrink-0" aria-hidden="true" />
                     {i.label}
+                    {i.href === '/gym/avisos' && unread > 0 ? <span className="ml-auto rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">{unread}</span> : null}
                   </Link>
                 </li>
               ))}
@@ -126,6 +128,7 @@ export function GymNav() {
                     >
                       <i.icon className="size-4 shrink-0" aria-hidden="true" />
                       <span className="leading-tight">{i.label}</span>
+                      {i.href === '/gym/avisos' && unread > 0 ? <span className="ml-auto rounded-full bg-destructive px-1.5 text-[10px] font-semibold text-destructive-foreground">{unread}</span> : null}
                     </Link>
                   ))}
                 </div>
@@ -152,7 +155,10 @@ export function GymNav() {
             aria-expanded={open}
             className={cn('flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px]', open || moreActive ? 'font-semibold text-primary' : 'text-muted-foreground')}
           >
-            <MoreHorizontal className="size-5" aria-hidden="true" />
+            <span className="relative">
+              <MoreHorizontal className="size-5" aria-hidden="true" />
+              {unread > 0 ? <span className="absolute -right-1 -top-1 size-2.5 rounded-full bg-destructive" /> : null}
+            </span>
             Más
           </button>
         </nav>

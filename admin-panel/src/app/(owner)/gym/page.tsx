@@ -5,6 +5,7 @@ import { requireOwnerPage } from '@/lib/owner';
 import { getOwnerView, INACTIVE_DAYS } from '@/server/owner';
 import { countClients, listClients } from '@/server/gym-clients';
 import { getBrand } from '@/server/gym-brand';
+import { countUnreadNotices } from '@/server/gym-notices';
 import { GettingStarted, type StartStep } from '@/features/owner/getting-started';
 import { Badge } from '@/components/ui/badge';
 
@@ -28,6 +29,7 @@ export default async function GymHomePage() {
   const owner = await requireOwnerPage();
   const view = await getOwnerView(owner.userId, owner.gym.id);
   if (!view) redirect('/gym');
+  const unreadNotices = await countUnreadNotices(owner.gym.id);
   const [clients, brand] = await Promise.all([listClients(owner.userId, owner.gym.id).then((c) => c ?? []), getBrand(owner.userId, owner.gym.id).catch(() => null)]);
   const fees = countClients(clients);
   const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
@@ -52,6 +54,13 @@ export default async function GymHomePage() {
         <p className="rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
           Tu gimnasio está suspendido: por ahora tus clientes no ven tu marca, rutinas ni clases en la app. Escribinos a gimnasios@forzaai.app.
         </p>
+      ) : null}
+
+      {unreadNotices > 0 ? (
+        <Link href="/gym/avisos" className="block rounded-xl border border-primary/40 bg-primary/5 p-4">
+          <p className="font-semibold">{unreadNotices === 1 ? 'Tenés 1 aviso nuevo de Forza AI' : `Tenés ${unreadNotices} avisos nuevos de Forza AI`}</p>
+          <p className="text-sm text-muted-foreground">Tocá para leerlo.</p>
+        </Link>
       ) : null}
 
       <GettingStarted steps={steps} />

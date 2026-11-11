@@ -6,6 +6,7 @@ import { GymNav } from '@/features/owner/gym-nav';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand';
 import { hasAcceptedTerms } from '@/server/gym-terms';
+import { countUnreadNotices } from '@/server/gym-notices';
 import { TermsGate } from '@/features/legal/terms-gate';
 
 /**
@@ -39,6 +40,8 @@ export default async function GymLayout({ children }: { children: React.ReactNod
   // Hasta que no acepte la versión vigente de los términos, no ve el panel.
   if (!(await hasAcceptedTerms(ctx.gym.id))) return <TermsGate gymName={ctx.gym.name} />;
 
+  const unread = await countUnreadNotices(ctx.gym.id);
+
   return (
     <div className="mx-auto min-h-screen max-w-6xl space-y-4 px-4 pb-24 pt-4 lg:space-y-6 lg:px-8 lg:py-6">
       <header className="flex items-center justify-between gap-2 print:hidden">
@@ -63,7 +66,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
 
       <div className="space-y-4 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0 print:block">
         <div className="print:hidden lg:sticky lg:top-6">
-          <GymNav />
+          <GymNav unread={unread} />
         </div>
         <div className="min-w-0 space-y-4">
           {children}
