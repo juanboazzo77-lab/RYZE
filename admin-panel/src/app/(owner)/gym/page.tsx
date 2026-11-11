@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/badge';
 export const metadata: Metadata = { title: 'Panel del gimnasio' };
 export const dynamic = 'force-dynamic';
 
+/** Meta: clientes que pagan el plan de Forza AI. El panel funciona completo igual, aunque todavía no se llegue. */
+const PLAN_GOAL = 10;
+
 function Stat({ label, value, sub, alert }: { label: string; value: string | number; sub?: string; alert?: boolean }) {
   return (
     <div className={`rounded-xl border p-3 ${alert ? 'border-warning/50 bg-warning/10' : ''}`}>
@@ -86,9 +89,27 @@ export default async function GymHomePage() {
       <div className="space-y-2 rounded-xl border p-4">
         <p className="font-semibold">{viaQr ? 'Sumá a tus clientes con tu QR' : 'Sumá a tus clientes'}</p>
         {viaQr ? (
-          <p className="text-sm text-muted-foreground">
-            Imprimí tu QR y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio. Vos no pagás nada por ellos y ven tu marca, tus rutinas, clases y retos.
-          </p>
+          <>
+            <p className="text-sm text-muted-foreground">
+              Imprimí tu QR y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio. Vos no pagás nada por ellos y ven tu marca, tus rutinas, clases y retos.
+            </p>
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-baseline justify-between gap-2 text-sm">
+                <p className="font-medium">{view.webMembers >= PLAN_GOAL ? '¡Meta cumplida!' : 'Tu meta: 10 clientes con el plan'}</p>
+                <p className="tabular-nums text-muted-foreground">
+                  {Math.min(view.webMembers, PLAN_GOAL)} de {PLAN_GOAL}
+                </p>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={0} aria-valuemax={PLAN_GOAL} aria-valuenow={Math.min(view.webMembers, PLAN_GOAL)} aria-label="Clientes con el plan">
+                <div className="h-full bg-primary transition-all" style={{ width: `${Math.min(100, (view.webMembers / PLAN_GOAL) * 100)}%` }} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {view.webMembers >= PLAN_GOAL
+                  ? 'Ya tenés 10 o más clientes usando el plan. Seguí sumando.'
+                  : `Ofrecele el plan a tus clientes con tu QR. Te faltan ${PLAN_GOAL - view.webMembers}. Mientras tanto usás todo el panel, aunque tus clientes no usen la app.`}
+              </p>
+            </div>
+          </>
         ) : (
           <>
             <p className="text-sm text-muted-foreground">
