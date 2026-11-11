@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { editGymClient, markGymClientPaid, removeGymClient, requestForzaForClients } from './client-actions';
+import { editGymClient, markGymClientPaid, removeGymClient } from './client-actions';
 import { FEE_LABEL } from '@/features/gym/fees';
 import type { ClientRow, ForzaState } from '@/server/gym-clients';
 import { reminderMessage, whatsappLink } from './whatsapp';
@@ -26,9 +26,6 @@ const STATUS_VARIANT = { NEW: 'secondary', OK: 'success', SOON: 'secondary', DUE
 const FORZA_LABEL: Record<ForzaState, string> = {
   NONE: '',
   NO_EMAIL: '',
-  REQUESTED: 'Forza AI: esperando el pago',
-  PAID: 'Forza AI: pago recibido, falta aprobar',
-  INVITED: 'Forza AI: invitado por mail',
   MEMBER: 'Tiene Forza AI',
   LAPSED: 'Forza AI pausado por cuota vencida',
 };
@@ -108,21 +105,6 @@ export function ClientRow({ c, gymName }: { c: ClientRow; gymName: string }) {
             >
               Avisar por WhatsApp
             </a>
-          ) : null}
-          {c.forza === 'NONE' ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={() =>
-                start(async () => {
-                  const res = await requestForzaForClients({ ids: [c.id] });
-                  done(res.ok, 'Pedido enviado. Mandanos el comprobante de pago para aprobarlo.');
-                })
-              }
-            >
-              Pedir Forza AI
-            </Button>
           ) : null}
           <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>
             {open ? 'Cerrar' : 'Más'}

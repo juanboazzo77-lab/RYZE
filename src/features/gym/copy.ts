@@ -43,9 +43,8 @@ export const GYM = {
   joinShareHelp:
     'Así el gimnasio puede ayudarte si te alejás. Nunca ve tu peso, tus fotos ni tus comidas. Lo podés apagar cuando quieras en Ajustes, en Gimnasio.',
   noGymTitle: 'Todavía no estás en un gimnasio',
-  noGymText:
-    'Si tu gimnasio usa Forza AI, pedile que cargue tu mail. Cuando lo aprueben te llega una invitación por mail con tu plan de entrenamiento, tu plan de dieta y mensajes con la IA, sin costo para vos.',
-  rowDesc: 'Tu gimnasio te invita por mail',
+  noGymText: 'Cuando te sumes al plan de tu gimnasio, acá vas a ver su marca, sus clases y sus retos.',
+  rowDesc: 'Tu gimnasio en Forza AI',
   rowDescIn: 'Estás en {name}',
 
   // Admin

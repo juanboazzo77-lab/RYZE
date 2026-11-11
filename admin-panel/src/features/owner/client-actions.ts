@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireOwner } from '@/lib/owner';
 import { getOwnedGym } from '@/server/owner';
-import { addClients, markClientPaid, removeClient, requestForzaFor, updateClient } from '@/server/gym-clients';
+import { addClients, markClientPaid, removeClient, updateClient } from '@/server/gym-clients';
 import { parseClientLines } from '@/features/gym/fees';
 
 interface Result<T = void> {
@@ -70,17 +70,4 @@ export async function removeGymClient(raw: { id: string }): Promise<Result> {
   const ok = await removeClient(userId, id.data);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
-}
-
-/** Pide Forza AI para estos clientes: entra al circuito de altas (pago y aprobación). */
-export async function requestForzaForClients(raw: { ids: string[] }): Promise<Result<{ added: number; skipped: number }>> {
-  const ids = z.array(z.string().uuid()).min(1).max(200).safeParse(raw.ids);
-  if (!ids.success) return { error: 'INVALID' };
-  const { userId } = await requireOwner();
-  const gym = await getOwnedGym(userId);
-  if (!gym) return { error: 'NOT_OWNER' };
-  const res = await requestForzaFor(userId, gym.id, ids.data);
-  refresh();
-  revalidatePath('/gym/invitaciones');
-  return 'error' in res ? { error: res.error } : { ok: true, data: { added: res.added, skipped: res.skipped } };
 }

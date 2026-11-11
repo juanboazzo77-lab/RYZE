@@ -2,7 +2,7 @@
  * Términos y condiciones para gimnasios. Se aceptan al pedir el alta (y los gimnasios que ya estaban los aceptan la
  * primera vez que entran). Si se cambia el texto, subir TERMS_VERSION para volver a pedir la aceptación.
  */
-export const TERMS_VERSION = '2026-11-10';
+export const TERMS_VERSION = '2026-11-11';
 export const TERMS_DATE = '7 de noviembre de 2026';
 const CONTACT = 'gimnasios@forzaai.app';
 
@@ -38,15 +38,15 @@ export function GymTerms() {
           Mercado Pago) y queda conectado al Gimnasio. El Gimnasio no paga por esos clientes.
         </Li>
         <Li>
-          <B>FORZA AI para los clientes que el Gimnasio invite:</B> un plan de entrenamiento y uno de dieta por mes, armados con las máquinas y la
-          especialidad del Gimnasio, y una cantidad diaria de mensajes con un coach de inteligencia artificial. Esas cantidades pueden cambiar
-          con aviso previo.
+          <B>FORZA AI para los clientes que se suman:</B> un plan de entrenamiento y uno de dieta por mes, armados con las máquinas y la
+          especialidad del Gimnasio, una cantidad diaria de mensajes con un coach de inteligencia artificial y una revisión con ajustes cada dos
+          semanas. Esas cantidades pueden cambiar con aviso previo.
         </Li>
       </ul>
 
       <H2>2. Alta del Gimnasio</H2>
       <P>
-        Pedir el alta no garantiza que sea aprobada: FORZA AI aprueba cada gimnasio a su criterio y fija un cupo máximo de socios. El Gimnasio se
+        Pedir el alta no garantiza que sea aprobada: FORZA AI aprueba cada gimnasio a su criterio. El Gimnasio se
         compromete a dar datos verdaderos y a mantenerlos al día. Podemos rechazar, suspender o dar de baja un gimnasio que incumpla estos términos.
       </P>
 
@@ -59,39 +59,22 @@ export function GymTerms() {
           parte de la relación de cuota entre el Gimnasio y sus clientes.
         </Li>
         <Li>
-          <B>Altas por invitación (opcional):</B> lo que sigue rige solo si el Gimnasio y FORZA AI acuerdan que FORZA AI cubra a clientes
-          invitados por el Gimnasio.
+          <B>Meta de clientes con el plan:</B> el Gimnasio se compromete a ofrecer el plan a sus clientes. FORZA AI espera que el Gimnasio llegue a
+          10 clientes con el plan activo; mientras tanto el Gimnasio puede usar el panel, incluso para llevar clientes que no usan la aplicación.
         </Li>
-        <Li>El Gimnasio carga los mails de los clientes a los que quiere dar acceso y pide el alta desde el panel.</Li>
-        <Li>
-          Las altas se aprueban cuando FORZA AI confirma el pago correspondiente. El comprobante se envía por mail o por WhatsApp. Una vez aprobada
-          el alta, cada cliente recibe una invitación por mail.
-        </Li>
-        <Li>
-          El precio es por socio y por mes, el que se informe en el panel o se acuerde por escrito. Podemos cambiarlo con al menos 30 días de aviso;
-          el cambio no afecta los períodos ya pagos.
-        </Li>
-        <Li>
-          La facturación es mensual y vence el día 10 de cada mes, por transferencia o el medio que acordemos. Los impuestos que correspondan
-          están a cargo del Gimnasio.
-        </Li>
-        <Li>
-          Si el pago se atrasa, FORZA AI puede suspender el panel y/o el acceso de los socios del Gimnasio, con aviso previo por mail. Al
-          regularizarse el pago, el acceso se restablece.
-        </Li>
-        <Li>No hay reembolso de los meses ya iniciados, salvo que la ley disponga otra cosa.</Li>
+        <Li>FORZA AI no cobra al Gimnasio por el uso del panel ni por los clientes que se suman por su QR. No hay reembolso de los meses ya iniciados de un plan, salvo que la ley disponga otra cosa.</Li>
       </ul>
 
       <H2>4. Datos de los clientes del Gimnasio</H2>
       <P>
         El Gimnasio es el <B>responsable</B> de los datos de sus clientes (nombre, mail, teléfono, cuota, vencimientos y pagos que carga en el
-        panel). FORZA AI los guarda y trata <B>por cuenta y orden del Gimnasio</B>, únicamente para darle el panel y para enviar las invitaciones
+        panel). FORZA AI los guarda y trata <B>por cuenta y orden del Gimnasio</B>, únicamente para darle el panel y para enviarle los avisos
         que el Gimnasio pide; no los usa para otro fin, no los vende ni los cede.
       </P>
       <P>El Gimnasio declara y garantiza que:</P>
       <ul className="list-disc space-y-1 pl-5">
         <Li>tiene derecho a cargar esos datos y cuenta con el consentimiento de sus clientes cuando la ley lo exige (Ley 25.326 de Protección de Datos Personales y normas complementarias);</Li>
-        <Li>sus clientes saben que su mail se usará para invitarlos a FORZA AI;</Li>
+        <Li>sus clientes saben que su mail se usará para identificarlos y para avisarles de su cuota;</Li>
         <Li>cumple las obligaciones que le correspondan como responsable de datos, incluida la inscripción de su base de datos si corresponde.</Li>
       </ul>
       <P>
@@ -167,8 +150,8 @@ export function GymTerms() {
       <H2>12. Duración y baja</H2>
       <P>
         Estos términos rigen mientras el Gimnasio use el servicio. Cualquiera de las partes puede terminar la relación avisando por mail con 30 días
-        de anticipación. FORZA AI puede suspenderla de inmediato ante un incumplimiento grave. Al terminar, los socios del Gimnasio dejan de recibir
-        el acceso que daba el Gimnasio y pueden seguir usando su cuenta con las condiciones del plan gratuito.
+        de anticipación. FORZA AI puede suspenderla de inmediato ante un incumplimiento grave. Al terminar, los clientes del Gimnasio dejan de estar
+        conectados a él (los clientes con plan siguen con su plan de FORZA AI).
       </P>
 
       <H2>13. Cambios en estos términos</H2>

@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { requireOwnerPage } from '@/lib/owner';
 import { getOwnerView, INACTIVE_DAYS } from '@/server/owner';
 import { countClients, listClients } from '@/server/gym-clients';
-import { usedPercent } from '@/features/gym/logic';
 import { getBrand } from '@/server/gym-brand';
 import { GettingStarted, type StartStep } from '@/features/owner/getting-started';
 import { Badge } from '@/components/ui/badge';
@@ -32,16 +31,12 @@ export default async function GymHomePage() {
   const [clients, brand] = await Promise.all([listClients(owner.userId, owner.gym.id).then((c) => c ?? []), getBrand(owner.userId, owner.gym.id).catch(() => null)]);
   const fees = countClients(clients);
   const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
-  const pct = usedPercent(view.cupoUsed, view.memberLimit);
-  const full = view.memberLimit > 0 && view.cupoUsed >= view.memberLimit;
-  // En Argentina los clientes entran por el QR y pagan su plan por su cuenta: no hay cupo ni nada que pagar.
-  const viaQr = view.currency === 'ARS';
-  const viaQrFlow = view.currency === 'ARS';
+
   const steps: StartStep[] = [
     { href: '/gym/equipamiento', title: 'Cargá tus máquinas', hint: 'La IA arma los planes de tus clientes con lo que tiene tu gimnasio.', done: view.profile.items.length > 0 },
     { href: '/gym/marca', title: 'Subí tu logo y tu color', hint: 'Tus clientes ven tu marca dentro de la app.', done: Boolean(brand?.logoUrl || brand?.color) },
     { href: '/gym/clientes', title: 'Cargá tus clientes', hint: 'Así te avisamos cada día a quién le toca pagar.', done: clients.length > 0 },
-    { href: '/gym/invitaciones', title: viaQrFlow ? 'Imprimí tu QR y ponelo en el mostrador' : 'Invitá a tus primeros socios', hint: viaQrFlow ? 'Tus clientes lo escanean, se crean la cuenta y activan su plan.' : 'Cargá sus mails y los invitamos.', done: view.activeMembers > 0 },
+    { href: '/gym/invitaciones', title: 'Imprimí tu QR y ponelo en el mostrador', hint: 'Tus clientes lo escanean, se crean la cuenta y activan su plan.', done: view.activeMembers > 0 },
   ];
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
 
@@ -76,56 +71,37 @@ export default async function GymHomePage() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Clientes con Forza AI" value={view.activeMembers} sub={viaQr ? 'Conectados a tu gimnasio' : `${view.cupoUsed} de ${view.memberLimit} del cupo`} />
+        <Stat label="Clientes con Forza AI" value={view.activeMembers} sub="Conectados a tu gimnasio" />
         <Stat label="Entrenaron esta semana" value={view.trainedThisWeek} sub={view.activeMembers ? `${Math.round((view.trainedThisWeek / view.activeMembers) * 100)}% de tus clientes` : undefined} />
         <Stat label={`Sin entrenar hace ${INACTIVE_DAYS}+ días`} value={view.inactiveCount} sub="En riesgo de irse" alert={view.inactiveCount > 0} />
-        {viaQr ? (
-          <Stat label="Pagan su plan por su cuenta" value={view.webMembers} sub="No te cuestan nada" />
-        ) : (
-          <Stat label="Cupo usado" value={`${pct}%`} sub={full ? 'Cupo lleno' : undefined} alert={full} />
-        )}
+        <Stat label="Pagan su plan por su cuenta" value={view.webMembers} sub="No te cuestan nada" />
       </div>
 
       <div className="space-y-2 rounded-xl border p-4">
-        <p className="font-semibold">{viaQr ? 'Sumá a tus clientes con tu QR' : 'Sumá a tus clientes'}</p>
-        {viaQr ? (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Imprimí tu QR y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio. Vos no pagás nada por ellos y ven tu marca, tus rutinas, clases y retos.
-            </p>
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-baseline justify-between gap-2 text-sm">
-                <p className="font-medium">{view.webMembers >= PLAN_GOAL ? '¡Meta cumplida!' : 'Tu meta: 10 clientes con el plan'}</p>
-                <p className="tabular-nums text-muted-foreground">
-                  {Math.min(view.webMembers, PLAN_GOAL)} de {PLAN_GOAL}
-                </p>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={0} aria-valuemax={PLAN_GOAL} aria-valuenow={Math.min(view.webMembers, PLAN_GOAL)} aria-label="Clientes con el plan">
-                <div className="h-full bg-primary transition-all" style={{ width: `${Math.min(100, (view.webMembers / PLAN_GOAL) * 100)}%` }} />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {view.webMembers >= PLAN_GOAL
-                  ? 'Ya tenés 10 o más clientes usando el plan. Seguí sumando.'
-                  : `Ofrecele el plan a tus clientes con tu QR. Te faltan ${PLAN_GOAL - view.webMembers}. Mientras tanto usás todo el panel, aunque tus clientes no usen la app.`}
+        <p className="font-semibold">Sumá a tus clientes con tu QR</p>
+        <>
+          <p className="text-sm text-muted-foreground">
+            Imprimí tu QR y ponelo en el mostrador: cada cliente lo escanea, crea su cuenta, paga su plan por su cuenta y queda conectado a tu gimnasio. Vos no pagás nada por ellos y ven tu marca, tus rutinas, clases y retos.
+          </p>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-baseline justify-between gap-2 text-sm">
+              <p className="font-medium">{view.webMembers >= PLAN_GOAL ? '¡Meta cumplida!' : 'Tu meta: 10 clientes con el plan'}</p>
+              <p className="tabular-nums text-muted-foreground">
+                {Math.min(view.webMembers, PLAN_GOAL)} de {PLAN_GOAL}
               </p>
             </div>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Cargá los mails de tus clientes en Invitar. Revisamos el pedido y, cuando lo aprobamos, cada uno recibe tu invitación y un plan de entrenamiento, un plan de dieta por mes y mensajes con la IA.
-            </p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
-              <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={0} aria-valuemax={PLAN_GOAL} aria-valuenow={Math.min(view.webMembers, PLAN_GOAL)} aria-label="Clientes con el plan">
+              <div className="h-full bg-primary transition-all" style={{ width: `${Math.min(100, (view.webMembers / PLAN_GOAL) * 100)}%` }} />
             </div>
             <p className="text-xs text-muted-foreground">
-              {view.cupoUsed} de {view.memberLimit} lugares usados
+              {view.webMembers >= PLAN_GOAL
+                ? 'Ya tenés 10 o más clientes usando el plan. Seguí sumando.'
+                : `Ofrecele el plan a tus clientes con tu QR. Te faltan ${PLAN_GOAL - view.webMembers}. Mientras tanto usás todo el panel, aunque tus clientes no usen la app.`}
             </p>
-            {full ? <p className="text-xs text-warning">Cupo lleno: para sumar más socios, escribinos a gimnasios@forzaai.app.</p> : null}
-          </>
-        )}
+          </div>
+        </>
         <Link href="/gym/invitaciones" className="inline-block text-sm font-medium underline">
-          {viaQr ? 'Ver mi QR' : 'Invitar socios'}
+          Ver mi QR
         </Link>
       </div>
 

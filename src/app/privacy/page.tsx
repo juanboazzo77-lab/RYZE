@@ -114,8 +114,7 @@ export default function PrivacyPage() {
           nos avisa si la suscripción está activa, pausada o cancelada.
         </Li>
         <Li>
-          <strong className="text-foreground">Resend:</strong> envía por email las invitaciones de tu gimnasio y
-          otros avisos de la cuenta. Recibe tu email y el texto del mensaje.
+          <strong className="text-foreground">Resend:</strong> envía por email los avisos de la cuenta. Recibe tu email y el texto del mensaje.
         </Li>
         <Li>
           <strong className="text-foreground">Vercel:</strong> aloja el sitio y la aplicación web.
@@ -133,8 +132,8 @@ export default function PrivacyPage() {
 
       <H2>Si usás FORZA AI a través de un gimnasio</H2>
       <P>
-        Cuando tu gimnasio te invita, ya tiene tu email (se lo diste vos, y es el que usa para la invitación) y
-        puede tener otros datos que vos le diste a él, como tu teléfono o tu cuota. Esos datos son del gimnasio:
+        Tu gimnasio puede tener tu email (se lo diste vos) y
+        otros datos que vos le diste a él, como tu teléfono o tu cuota. Esos datos son del gimnasio:
         él decide para qué los usa y es el responsable de cuidarlos. FORZA AI los guarda por cuenta del
         gimnasio solo para darle su panel, y no los usa para otra cosa.
       </P>
@@ -148,7 +147,7 @@ export default function PrivacyPage() {
         </Li>
         <Li>
           Tu <strong className="text-foreground">nombre y cuándo entrenaste por última vez</strong>, solo si lo
-          permitís. Lo elegís al aceptar la invitación y lo cambiás cuando quieras en Ajustes → Gimnasio (está
+          permitís. Lo elegís al activar tu plan y lo cambiás cuando quieras en la página de tu gimnasio o en Ajustes → Gimnasio (está
           apagado por defecto).
         </Li>
         <Li>

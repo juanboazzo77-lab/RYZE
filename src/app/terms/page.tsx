@@ -75,15 +75,15 @@ export default function TermsPage() {
 
       <H2>Si usás FORZA AI a través de tu gimnasio</H2>
       <P>
-        Algunos gimnasios invitan a sus clientes a usar FORZA AI. Si aceptás la invitación de tu gimnasio,
-        usás la app con las condiciones que el gimnasio acordó con nosotros (por ejemplo, un plan de
-        entrenamiento y uno de dieta por mes y una cantidad diaria de mensajes con el AI Coach). Eso no te
-        cuesta nada a vos: lo cubre el gimnasio.
+        Algunos gimnasios les ofrecen a sus clientes el plan de FORZA AI. Si activás tu plan desde la página de
+        tu gimnasio, quedás conectado a él y usás la app con las condiciones de ese plan (por ejemplo, un plan de
+        entrenamiento y uno de dieta por mes, una cantidad diaria de mensajes con el AI Coach y una revisión con
+        ajustes cada dos semanas). El plan lo pagás vos; el gimnasio no paga por vos.
       </P>
       <ul className="list-disc space-y-1 pl-5">
         <Li>
-          <strong className="text-foreground">Podés irte cuando quieras</strong> desde Ajustes → Gimnasio. Tu
-          cuenta sigue siendo tuya y pasa a las condiciones del plan gratuito.
+          <strong className="text-foreground">Podés irte cuando quieras</strong>: cancelás tu plan desde la página de tu gimnasio o desde Mercado Pago, y
+          dejás de estar conectado a él. Tu cuenta sigue siendo tuya.
         </Li>
         <Li>
           El acceso depende de que tu gimnasio esté activo y al día con nosotros. Si el gimnasio deja de

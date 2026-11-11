@@ -80,7 +80,6 @@ export interface TodaySummary {
   };
   billing: BillingTotals;
   /** Altas de socios que los gimnasios pidieron y esperan tu aprobación. */
-  invitesPending: number;
   overdue: Array<{ id: string; gymName: string; period: string; amount: number; currency: 'ARS' | 'USD'; dueDate: string }>;
 }
 
@@ -120,7 +119,6 @@ export async function getTodaySummary(): Promise<TodaySummary> {
   const full = activeGyms.filter((g) => g.memberLimit > 0 && (byGym.get(g.id) ?? 0) >= g.memberLimit).length;
   const gymMembers = [...byGym.values()].reduce((a, b) => a + b, 0);
 
-  const invitesPending = await prisma.gymInvite.count({ where: { status: 'PENDING', gym: { status: 'ACTIVE' } } });
 
   const payments = await listPayments();
   const billing = totalsOf(payments);
@@ -141,7 +139,6 @@ export async function getTodaySummary(): Promise<TodaySummary> {
       members: gymMembers,
     },
     billing,
-    invitesPending,
     overdue: payments
       .filter((p) => p.overdue)
       .map((p) => ({ id: p.id, gymName: p.gymName, period: p.period, amount: p.amount, currency: p.currency, dueDate: p.dueDate })),

@@ -1,6 +1,5 @@
 import 'server-only';
 import { prisma } from './db';
-import { requestInvites, type RequestInvitesResult } from './owner';
 import { todayArgentina } from './gym-fees';
 import { daysBetween, feeRank, feeStatus, nextPaidUntil, isISODate, type ClientLine, type FeeStatus } from '@/features/gym/fees';
 
@@ -16,7 +15,7 @@ const isoOf = (d: Date | null): string | null => (d ? d.toISOString().slice(0, 1
 const dateOf = (iso: string): Date => new Date(`${iso}T00:00:00.000Z`);
 
 /** Estado de Forza AI de un cliente, según su mail. */
-export type ForzaState = 'NONE' | 'NO_EMAIL' | 'REQUESTED' | 'PAID' | 'INVITED' | 'MEMBER' | 'LAPSED';
+export type ForzaState = 'NONE' | 'NO_EMAIL' | 'MEMBER' | 'LAPSED';
 
 export interface ClientRow {
   id: string;
@@ -46,16 +45,14 @@ export async function listClients(ownerUserId: string, gymId: string, today = to
   const last = await prisma.gymClientPayment.groupBy({ by: ['clientId'], where: { clientId: { in: clients.map((c) => c.id) } }, _max: { paidOn: true } });
   const lastBy = new Map(last.map((l) => [l.clientId, l._max.paidOn]));
 
-  // Forza AI por mail: pedidos del gimnasio y socios (activos o sin acceso por cuota vencida).
+  // Forza AI por mail: quiénes de estos clientes ya están conectados al gimnasio (activos o sin acceso por cuota vencida).
   const emails = [...new Set(clients.map((c) => c.email).filter((e): e is string => !!e))];
-  const invites = emails.length ? await prisma.gymInvite.findMany({ where: { gymId, email: { in: emails } }, select: { email: true, status: true, paidAt: true } }) : [];
   const members = emails.length
     ? await prisma.gymMember.findMany({
         where: { gymId, status: { in: ['ACTIVE', 'LAPSED'] }, user: { email: { in: emails, mode: 'insensitive' } } },
         select: { status: true, user: { select: { email: true } } },
       })
     : [];
-  const inviteBy = new Map(invites.map((i) => [i.email, i]));
   const memberBy = new Map(members.map((m) => [m.user.email.toLowerCase(), m.status]));
 
   const forzaOf = (email: string | null): ForzaState => {
@@ -63,10 +60,6 @@ export async function listClients(ownerUserId: string, gymId: string, today = to
     const m = memberBy.get(email);
     if (m === 'ACTIVE') return 'MEMBER';
     if (m === 'LAPSED') return 'LAPSED';
-    const i = inviteBy.get(email);
-    if (!i) return 'NONE';
-    if (i.status === 'APPROVED') return 'INVITED';
-    if (i.status === 'PENDING') return i.paidAt ? 'PAID' : 'REQUESTED';
     return 'NONE';
   };
 
@@ -192,17 +185,4 @@ export async function updateClient(
 export async function removeClient(ownerUserId: string, clientId: string): Promise<boolean> {
   const res = await prisma.gymClient.updateMany({ where: { id: clientId, active: true, gym: { ownerUserId } }, data: { active: false } });
   return res.count > 0;
-}
-
-/** Pide Forza AI para estos clientes (por su mail): entra al mismo circuito de altas (pago y aprobación). */
-export async function requestForzaFor(
-  ownerUserId: string,
-  gymId: string,
-  clientIds: string[],
-): Promise<RequestInvitesResult | { error: 'NOT_OWNER' | 'NOT_ACTIVE' | 'EMPTY' | 'TOO_MANY' | 'NO_EMAIL' }> {
-  if (!(await ownedGym(ownerUserId, gymId))) return { error: 'NOT_OWNER' };
-  const rows = await prisma.gymClient.findMany({ where: { id: { in: clientIds }, gymId, active: true }, select: { email: true } });
-  const emails = rows.map((r) => r.email).filter((e): e is string => !!e);
-  if (emails.length === 0) return { error: 'NO_EMAIL' };
-  return requestInvites(ownerUserId, gymId, emails.join('\n'));
 }
