@@ -1030,6 +1030,7 @@ model Gym {
   challenges          GymChallenge[]
   classes             GymClass[]
   plans               GymPlan[]
+  noticeReads         GymNoticeRead[]
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
@@ -1116,6 +1117,36 @@ model GymPlan {
 
   @@index([gymId, active])
   @@map("gym_plan")
+}
+
+/// Aviso del administrador a los gimnasios. `gymIds` vacío = a todos; si no, solo a esos gimnasios.
+model GymNotice {
+  id        String          @id @default(uuid()) @db.Uuid
+  title     String
+  body      String
+  link      String?
+  gymIds    String[]        @default([]) @map("gym_ids")
+  /// También se mandó por mail a los dueños.
+  emailed   Boolean         @default(false)
+  sentBy    String          @map("sent_by")
+  createdAt DateTime        @default(now()) @map("created_at")
+  reads     GymNoticeRead[]
+
+  @@index([createdAt])
+  @@map("gym_notice")
+}
+
+/// Un gimnasio leyó un aviso.
+model GymNoticeRead {
+  noticeId String    @db.Uuid @map("notice_id")
+  notice   GymNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  gymId    String    @db.Uuid @map("gym_id")
+  gym      Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  readAt   DateTime  @default(now()) @map("read_at")
+
+  @@id([noticeId, gymId])
+  @@index([gymId])
+  @@map("gym_notice_read")
 }
 
 /// Rutina oficial del gimnasio: la arma el profe y la ven los socios en la app. `days` es una lista de
