@@ -67,9 +67,10 @@ export function AddClientsForm({ defaultOpen = false }: { defaultOpen?: boolean 
     start(async () => {
       const res = await addGymClients({ text });
       if (res.ok && res.data) {
-        const { added, skipped, invalid } = res.data;
+        const { added, skipped, invalid, unknownPlans } = res.data;
         toast.success(added > 0 ? `${added} ${added === 1 ? 'cliente cargado' : 'clientes cargados'}.` : 'No había clientes nuevos.');
         if (skipped > 0) toast.message(`${skipped} ya estaban cargados por su mail.`);
+        if (unknownPlans.length > 0) toast.warning(`No existe el plan ${unknownPlans.map((p) => `"${p}"`).join(', ')}: esos clientes quedaron sin plan. Creá el plan en Planes del gimnasio y asignaselo.`);
         if (invalid.length > 0) toast.warning(`No se entendieron ${invalid.length}: ${invalid[0]?.slice(0, 40)}…`);
         if (added > 0) setText('');
         router.refresh();
@@ -98,14 +99,14 @@ export function AddClientsForm({ defaultOpen = false }: { defaultOpen?: boolean 
         </p>
         <label className="block space-y-1">
           <span className="block text-xs text-muted-foreground">
-            Un cliente por línea: <span className="font-mono">Nombre, mail, teléfono, cuota, vencimiento</span>. Solo el nombre es obligatorio; lo demás puede faltar. El vencimiento es el día que le toca pagar (por ejemplo 20/11/2026).
+            Un cliente por línea: <span className="font-mono">Nombre, mail, teléfono, Plan: nombre del plan, cuota, vencimiento</span>. Solo el nombre es obligatorio; lo demás puede faltar. El vencimiento es el día que le toca pagar (por ejemplo 20/11/2026).
           </span>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={6}
             disabled={pending}
-            placeholder={'Ana Pérez, ana@gmail.com, 11 5555-1234, 25000, 20/11/2026\nLuis Gómez, luis@gmail.com\nMarta Ruiz'}
+            placeholder={'Ana Pérez, ana@gmail.com, 11 5555-1234, Plan: Pase libre, 25000, 20/11/2026\nLuis Gómez, luis@gmail.com\nMarta Ruiz'}
             className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
           />
         </label>

@@ -68,7 +68,7 @@ describe('lista pegada de clientes', () => {
   it('lee nombre, mail, teléfono, cuota y vencimiento', () => {
     const r = parseClientLines('Ana Pérez, ana@x.com, 11 5555-1234, 25000, 2026-11-20');
     expect(r.invalid).toEqual([]);
-    expect(r.valid[0]).toEqual({ name: 'Ana Pérez', email: 'ana@x.com', phone: '11 5555-1234', fee: 25000, paidUntil: '2026-11-20' });
+    expect(r.valid[0]).toEqual({ name: 'Ana Pérez', email: 'ana@x.com', phone: '11 5555-1234', fee: 25000, paidUntil: '2026-11-20', plan: null });
   });
 
   it('solo el nombre es obligatorio y el resto puede faltar', () => {
@@ -88,6 +88,13 @@ describe('lista pegada de clientes', () => {
     const r = parseClientLines('Pedro, 1155551234, 18000');
     expect(r.valid[0]!.phone).toBe('1155551234');
     expect(r.valid[0]!.fee).toBe(18000);
+  });
+
+  it('lee el plan cuando viene como "Plan: nombre"', () => {
+    const r = parseClientLines('Ana, ana@x.com, Plan: Pase libre, 25000\nLuis, plan = 3 veces por semana');
+    expect(r.invalid).toEqual([]);
+    expect(r.valid[0]).toMatchObject({ name: 'Ana', plan: 'Pase libre', fee: 25000 });
+    expect(r.valid[1]).toMatchObject({ name: 'Luis', plan: '3 veces por semana' });
   });
 
   it('separa lo que no se entiende', () => {

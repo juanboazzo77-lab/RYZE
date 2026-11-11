@@ -16,15 +16,15 @@ describe('hoja de clientes anotada a mano', () => {
 
   it('arma una línea por cliente en el formato de la carga por texto', () => {
     const lines = sheetRowsToLines([
-      { nombre: 'Ana Pérez', mail: 'ANA@Gmail.com', telefono: '11 5555-1234', cuota: '25000', vence: '20/11/2026' },
+      { nombre: 'Ana Pérez', mail: 'ANA@Gmail.com', telefono: '11 5555-1234', plan: 'Pase libre', cuota: '25000', vence: '20/11/2026' },
       { nombre: 'Luis Gómez', mail: null, telefono: null, cuota: null, vence: null },
     ]);
-    expect(lines).toEqual(['Ana Pérez, ana@gmail.com, 11 5555-1234, 25000, 20/11/2026', 'Luis Gómez']);
+    expect(lines).toEqual(['Ana Pérez, ana@gmail.com, 11 5555-1234, Plan: Pase libre, 25000, 20/11/2026', 'Luis Gómez']);
     // y esas líneas las entiende la carga de clientes
     const parsed = parseClientLines(lines.join('\n'));
     expect(parsed.invalid).toEqual([]);
     expect(parsed.valid).toHaveLength(2);
-    expect(parsed.valid[0]).toMatchObject({ name: 'Ana Pérez', email: 'ana@gmail.com', paidUntil: '2026-11-20', fee: 25000 });
+    expect(parsed.valid[0]).toMatchObject({ name: 'Ana Pérez', email: 'ana@gmail.com', paidUntil: '2026-11-20', fee: 25000, plan: 'Pase libre' });
   });
 
   it('descarta renglones sin nombre y datos que no son válidos, sin romper las comas', () => {

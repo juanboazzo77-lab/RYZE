@@ -96,6 +96,8 @@ export interface ClientLine {
   fee: number | null;
   /** Fecha de vencimiento de la cuota, si la cargaron. */
   paidUntil: string | null;
+  /** Nombre del plan de pago del gimnasio ("Plan: Pase libre"), si lo indicaron. */
+  plan: string | null;
 }
 
 /**
@@ -115,11 +117,14 @@ export function parseClientLines(raw: string): { valid: ClientLine[]; invalid: s
       invalid.push(text);
       continue;
     }
-    const out: ClientLine = { name: name.slice(0, 120), email: null, phone: null, fee: null, paidUntil: null };
+    const out: ClientLine = { name: name.slice(0, 120), email: null, phone: null, fee: null, paidUntil: null, plan: null };
     let bad = false;
     for (const p of parts.slice(1)) {
       if (!p) continue;
-      if (/@/.test(p)) {
+      const planMatch = /^plan\s*[:=]\s*(.+)$/i.exec(p);
+      if (planMatch) {
+        out.plan = planMatch[1]!.trim().slice(0, 60);
+      } else if (/@/.test(p)) {
         const e = p.toLowerCase();
         if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) out.email = e;
         else bad = true;

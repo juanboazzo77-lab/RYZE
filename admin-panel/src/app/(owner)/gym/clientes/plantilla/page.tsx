@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { requireOwnerPage } from '@/lib/owner';
 import { PrintButton } from '@/features/owner/print-button';
+import { listPlans } from '@/server/gym-plans';
 
 export const metadata: Metadata = { title: 'Plantilla para anotar clientes' };
 export const dynamic = 'force-dynamic';
@@ -10,11 +11,12 @@ export const dynamic = 'force-dynamic';
 const ROWS = 16;
 const COLS = [
   { label: 'N°', cls: 'w-[8mm] text-center' },
-  { label: 'Nombre y apellido', cls: 'w-[60mm]' },
-  { label: 'Mail', cls: 'w-[62mm]' },
-  { label: 'Teléfono', cls: 'w-[38mm]' },
-  { label: 'Cuota ($)', cls: 'w-[24mm]' },
-  { label: 'Vence (día/mes/año)', cls: 'w-[34mm]' },
+  { label: 'Nombre y apellido', cls: 'w-[52mm]' },
+  { label: 'Mail', cls: 'w-[54mm]' },
+  { label: 'Teléfono', cls: 'w-[32mm]' },
+  { label: 'Plan', cls: 'w-[38mm]' },
+  { label: 'Cuota ($)', cls: 'w-[22mm]' },
+  { label: 'Vence (día/mes/año)', cls: 'w-[32mm]' },
 ] as const;
 
 /**
@@ -23,6 +25,7 @@ const COLS = [
  */
 export default async function ClientSheetTemplatePage() {
   const owner = await requireOwnerPage();
+  const plans = (await listPlans(owner.userId, owner.gym.id).catch(() => null)) ?? [];
   return (
     <div className="space-y-4">
       <style>{'@media print { @page { size: A4 landscape; margin: 9mm; } }'}</style>
@@ -36,7 +39,7 @@ export default async function ClientSheetTemplatePage() {
         <p className="text-sm text-muted-foreground">Si no querés estar con la compu todo el tiempo, imprimí esta hoja, anotá a tus clientes a mano y después le sacás una foto.</p>
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
           <li>Imprimila en hoja A4 (se imprime acostada).</li>
-          <li>Escribí un cliente por renglón, con letra clara, en este orden: nombre, mail, teléfono, cuota y vencimiento. Solo el nombre es obligatorio.</li>
+          <li>Escribí un cliente por renglón, con letra clara, en este orden: nombre, mail, teléfono, plan, cuota y vencimiento. Solo el nombre es obligatorio. En «Plan» escribí el nombre del plan tal como lo cargaste en Planes del gimnasio.</li>
           <li>Sacale una foto de frente, con buena luz y la hoja entera dentro de la imagen.</li>
           <li>
             En <strong>Clientes</strong>, tocá <strong>+ Cargar clientes</strong> y subí la foto. Revisás la lista que arma y la cargás.
@@ -78,8 +81,13 @@ export default async function ClientSheetTemplatePage() {
             ))}
           </tbody>
         </table>
+        {plans.length > 0 ? (
+          <p className="mt-2 text-xs">
+            <strong>Planes:</strong> {plans.map((p) => p.name).join(' · ')}
+          </p>
+        ) : null}
         <p className="mt-2 text-[11px] text-[#5b6472]">
-          Ejemplo: Ana Pérez · ana@gmail.com · 11 5555-1234 · 25000 · 20/11/2026. Vencimiento = el día que le toca pagar. Si una hoja se llena, seguí en otra y numerala.
+          Ejemplo: Ana Pérez · ana@gmail.com · 11 5555-1234 · Pase libre · 25000 · 20/11/2026. Vencimiento = el día que le toca pagar. Si una hoja se llena, seguí en otra y numerala.
         </p>
       </div>
     </div>

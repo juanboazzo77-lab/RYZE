@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from './db';
 import { todayArgentina } from './gym-fees';
+import { normClassName } from '@/features/gym/plans';
 import { daysBetween, feeRank, feeStatus, nextPaidUntil, isISODate, type ClientLine, type FeeStatus } from '@/features/gym/fees';
 
 /**
@@ -105,7 +106,7 @@ export async function addClients(
   ownerUserId: string,
   gymId: string,
   lines: ClientLine[],
-): Promise<{ added: number; skipped: number } | { error: 'NOT_OWNER' | 'EMPTY' | 'TOO_MANY' }> {
+): Promise<{ added: number; skipped: number; unknownPlans: string[] } | { error: 'NOT_OWNER' | 'EMPTY' | 'TOO_MANY' }> {
   if (!(await ownedGym(ownerUserId, gymId))) return { error: 'NOT_OWNER' };
   if (lines.length === 0) return { error: 'EMPTY' };
   if (lines.length > MAX_CLIENTS_PER_ADD) return { error: 'TOO_MANY' };
@@ -115,23 +116,31 @@ export async function addClients(
   const seen = new Set<string>();
   const data = [];
   let skipped = 0;
+  // Los planes del gimnasio, para asignar el que indica cada línea (por nombre, sin importar mayúsculas).
+  const plans = lines.some((l) => l.plan) ? await prisma.gymPlan.findMany({ where: { gymId, active: true }, select: { id: true, name: true, price: true } }) : [];
+  const planBy = new Map(plans.map((p) => [normClassName(p.name), p]));
+  const unknownPlans = new Set<string>();
   for (const l of lines) {
     if (l.email && (have.has(l.email) || seen.has(l.email))) {
       skipped += 1;
       continue;
     }
     if (l.email) seen.add(l.email);
+    const plan = l.plan ? planBy.get(normClassName(l.plan)) : undefined;
+    if (l.plan && !plan) unknownPlans.add(l.plan);
+    const planPrice = plan?.price === null || plan?.price === undefined ? null : Number(plan.price);
     data.push({
       gymId,
       name: l.name,
       email: l.email,
       phone: l.phone,
-      feeAmount: l.fee !== null && Number.isFinite(l.fee) ? l.fee : null,
+      feeAmount: l.fee !== null && Number.isFinite(l.fee) ? l.fee : planPrice,
       paidUntil: l.paidUntil && isISODate(l.paidUntil) ? dateOf(l.paidUntil) : null,
+      planId: plan?.id ?? null,
     });
   }
   if (data.length > 0) await prisma.gymClient.createMany({ data });
-  return { added: data.length, skipped };
+  return { added: data.length, skipped, unknownPlans: [...unknownPlans] };
 }
 
 /**

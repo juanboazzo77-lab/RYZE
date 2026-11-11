@@ -17,14 +17,15 @@ const MODEL = (): string => {
 };
 
 const PROMPT = `Esta es la foto de una hoja que un gimnasio completó a mano con sus clientes, usando una plantilla con estas columnas, en este orden:
-N°, Nombre y apellido, Mail, Teléfono, Cuota ($), Vence (día/mes/año).
+N°, Nombre y apellido, Mail, Teléfono, Plan, Cuota ($), Vence (día/mes/año).
 Cada renglón es UN cliente. Transcribí la hoja renglón por renglón, en el mismo orden en que está escrita.
 
 Reglas:
-- Respondé SOLO con un JSON de esta forma: {"clientes":[{"nombre":"","mail":"","telefono":"","cuota":"","vence":""}]}
+- Respondé SOLO con un JSON de esta forma: {"clientes":[{"nombre":"","mail":"","telefono":"","plan":"","cuota":"","vence":""}]}
 - Un objeto por renglón que tenga al menos un nombre. No incluyas el renglón de títulos ni renglones vacíos.
 - No inventes nada: si un dato falta o no se lee con seguridad, dejalo vacío ("").
 - Cada dato va en su columna. No mezcles datos de renglones distintos.
+- "plan" es el nombre del plan tal como está escrito (por ejemplo "Pase libre"), sin cambiarlo.
 - "vence" como DD/MM/AAAA (si el año no está, dejalo vacío). "cuota" solo con números. "mail" en minúsculas.
 - Si la foto no es una hoja de clientes o no se puede leer, respondé {"clientes":[]}.`;
 

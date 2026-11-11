@@ -21,7 +21,7 @@ const refresh = () => {
 };
 
 /** El dueño carga clientes pegando una lista: "Nombre, mail, teléfono, cuota, vencimiento", una por línea. */
-export async function addGymClients(raw: { text: string }): Promise<Result<{ added: number; skipped: number; invalid: string[] }>> {
+export async function addGymClients(raw: { text: string }): Promise<Result<{ added: number; skipped: number; invalid: string[]; unknownPlans: string[] }>> {
   const text = z.string().max(100_000).safeParse(raw.text);
   if (!text.success) return { error: 'INVALID' };
   const { userId } = await requireOwner();
@@ -31,7 +31,7 @@ export async function addGymClients(raw: { text: string }): Promise<Result<{ add
   const res = await addClients(userId, gym.id, valid);
   refresh();
   if ('error' in res) return { error: res.error };
-  return { ok: true, data: { added: res.added, skipped: res.skipped, invalid } };
+  return { ok: true, data: { added: res.added, skipped: res.skipped, invalid, unknownPlans: res.unknownPlans } };
 }
 
 /** El cliente pagó: el vencimiento corre uno o más meses. */

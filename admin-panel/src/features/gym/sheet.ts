@@ -8,6 +8,7 @@ export interface SheetRow {
   nombre?: unknown;
   mail?: unknown;
   telefono?: unknown;
+  plan?: unknown;
   cuota?: unknown;
   vence?: unknown;
 }
@@ -38,12 +39,14 @@ export function sheetRowsToLines(rows: SheetRow[]): string[] {
     if (name.length < 2 || name.includes('@')) continue;
     const email = clean(r.mail, 160).toLowerCase();
     const phone = clean(r.telefono, 40);
+    const plan = clean(r.plan, 60);
     const fee = clean(r.cuota, 14).replace(/[^\d.,]/g, '');
     const due = clean(r.vence, 12);
     const parts = [
       name,
       /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? email : '',
       /^[\d\s()+\-]{6,}$/.test(phone) ? phone : '',
+      plan ? `Plan: ${plan}` : '',
       fee,
       /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(due) ? due : '',
     ].filter(Boolean);
