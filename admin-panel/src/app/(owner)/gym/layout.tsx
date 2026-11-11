@@ -40,7 +40,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
   if (!(await hasAcceptedTerms(ctx.gym.id))) return <TermsGate gymName={ctx.gym.name} />;
 
   return (
-    <div className="mx-auto min-h-screen max-w-6xl space-y-4 px-4 py-4 lg:space-y-6 lg:px-8 lg:py-6">
+    <div className="mx-auto min-h-screen max-w-6xl space-y-4 px-4 pb-24 pt-4 lg:space-y-6 lg:px-8 lg:py-6">
       <header className="flex items-center justify-between gap-2 print:hidden">
         <div className="flex min-w-0 items-center gap-2">
           <BrandMark size={36} />

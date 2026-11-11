@@ -5,6 +5,8 @@ import { requireOwnerPage } from '@/lib/owner';
 import { getOwnerView, INACTIVE_DAYS } from '@/server/owner';
 import { countClients, listClients } from '@/server/gym-clients';
 import { usedPercent } from '@/features/gym/logic';
+import { getBrand } from '@/server/gym-brand';
+import { GettingStarted, type StartStep } from '@/features/owner/getting-started';
 import { Badge } from '@/components/ui/badge';
 
 export const metadata: Metadata = { title: 'Panel del gimnasio' };
@@ -24,13 +26,20 @@ export default async function GymHomePage() {
   const owner = await requireOwnerPage();
   const view = await getOwnerView(owner.userId, owner.gym.id);
   if (!view) redirect('/gym');
-  const clients = (await listClients(owner.userId, owner.gym.id)) ?? [];
+  const [clients, brand] = await Promise.all([listClients(owner.userId, owner.gym.id).then((c) => c ?? []), getBrand(owner.userId, owner.gym.id).catch(() => null)]);
   const fees = countClients(clients);
   const toCollect = fees.dueToday + fees.overdue + fees.lapsed;
   const pct = usedPercent(view.cupoUsed, view.memberLimit);
   const full = view.memberLimit > 0 && view.cupoUsed >= view.memberLimit;
   // En Argentina los clientes entran por el QR y pagan su plan por su cuenta: no hay cupo ni nada que pagar.
   const viaQr = view.currency === 'ARS';
+  const viaQrFlow = view.currency === 'ARS';
+  const steps: StartStep[] = [
+    { href: '/gym/equipamiento', title: 'Cargá tus máquinas', hint: 'La IA arma los planes de tus clientes con lo que tiene tu gimnasio.', done: view.profile.items.length > 0 },
+    { href: '/gym/marca', title: 'Subí tu logo y tu color', hint: 'Tus clientes ven tu marca dentro de la app.', done: Boolean(brand?.logoUrl || brand?.color) },
+    { href: '/gym/clientes', title: 'Cargá tus clientes', hint: 'Así te avisamos cada día a quién le toca pagar.', done: clients.length > 0 },
+    { href: '/gym/invitaciones', title: viaQrFlow ? 'Imprimí tu QR y ponelo en el mostrador' : 'Invitá a tus primeros socios', hint: viaQrFlow ? 'Tus clientes lo escanean, se crean la cuenta y activan su plan.' : 'Cargá sus mails y los invitamos.', done: view.activeMembers > 0 },
+  ];
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
 
   return (
@@ -46,6 +55,8 @@ export default async function GymHomePage() {
           Tu gimnasio está suspendido: por ahora tus clientes no ven tu marca, rutinas ni clases en la app. Escribinos a gimnasios@forzaai.app.
         </p>
       ) : null}
+
+      <GettingStarted steps={steps} />
 
       {fees.total > 0 ? (
         <Link href="/gym/clientes" className={`block rounded-xl border p-4 ${toCollect > 0 ? 'border-warning/50 bg-warning/10' : ''}`}>
