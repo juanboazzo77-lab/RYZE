@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import type { NotificationKind } from '@prisma/client';
+import type { NotificationKind as PrismaNotificationKind } from '@prisma/client';
+
+/** Los avisos que la persona puede prender o apagar (el aviso de su gimnasio llega siempre). */
+type NotificationKind = Exclude<PrismaNotificationKind, 'GYM_MESSAGE'>;
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { NativeSelect } from '@/components/ui/native-select';

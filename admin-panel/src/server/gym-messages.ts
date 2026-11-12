@@ -1,13 +1,12 @@
 import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
-import { sendMail } from './alerts';
-import { composeEmail } from './email-template';
 import { cleanMessage } from '@/features/gym/messages';
 
 /**
- * Mensajes del dueño del gimnasio a sus clientes: quedan en la app de los socios del gimnasio y, si el dueño lo pide,
- * también le llegan por mail a los clientes de su lista que tienen mail. Se comprueba que la cuenta sea la dueña.
+ * Mensajes del dueño del gimnasio a sus clientes conectados: aparecen como una ventana en la pantalla principal de la
+ * app durante unos días y después desaparecen, y les llega una notificación. Para hablar con una sola persona, el dueño
+ * usa el botón de WhatsApp de su ficha (uno a uno). Se comprueba que la cuenta sea la dueña.
  */
 
 export interface MessageRow {
@@ -15,7 +14,8 @@ export interface MessageRow {
   title: string;
   body: string;
   createdAt: string;
-  emailed: boolean;
+  expiresAt: string;
+  active: boolean;
 }
 
 async function ownedGym(ownerUserId: string, gymId: string) {
@@ -24,41 +24,54 @@ async function ownedGym(ownerUserId: string, gymId: string) {
 
 export async function listMessages(ownerUserId: string, gymId: string, limit = 30): Promise<MessageRow[] | null> {
   if (!(await ownedGym(ownerUserId, gymId))) return null;
+  const now = Date.now();
   const rows = await prisma.gymMessage.findMany({ where: { gymId }, orderBy: { createdAt: 'desc' }, take: limit });
-  return rows.map((m) => ({ id: m.id, title: m.title, body: m.body, createdAt: m.createdAt.toISOString(), emailed: m.emailed }));
+  return rows.map((m) => ({ id: m.id, title: m.title, body: m.body, createdAt: m.createdAt.toISOString(), expiresAt: m.expiresAt.toISOString(), active: m.expiresAt.getTime() > now }));
 }
 
-export type SendMessageResult = { ok: true; emails: number } | { error: 'NOT_OWNER' | 'TITLE' | 'BODY' };
+export type SendMessageResult = { ok: true; notified: number } | { error: 'NOT_OWNER' | 'TITLE' | 'BODY' };
 
-/** Publica el mensaje y, si se pidió, lo manda por mail (de a uno, en segundo plano) a los clientes con mail. */
+/**
+ * Publica el mensaje y les crea una notificación a los clientes conectados al gimnasio. Después le pide a la app que las
+ * entregue enseguida (si no se puede, el cron diario las entrega).
+ */
 export async function sendMessage(ownerUserId: string, gymId: string, raw: Parameters<typeof cleanMessage>[0]): Promise<SendMessageResult> {
   const gym = await ownedGym(ownerUserId, gymId);
   if (!gym) return { error: 'NOT_OWNER' };
   const input = cleanMessage(raw);
   if ('error' in input) return input;
-  await prisma.gymMessage.create({ data: { gymId, title: input.title, body: input.body, emailed: input.email } });
+  const now = new Date();
+  await prisma.gymMessage.create({
+    data: { gymId, title: input.title, body: input.body, expiresAt: new Date(now.getTime() + input.days * 24 * 60 * 60 * 1000) },
+  });
 
-  let emails: string[] = [];
-  if (input.email) {
-    const clients = await prisma.gymClient.findMany({ where: { gymId, active: true, email: { not: null } }, select: { email: true } });
-    emails = [...new Set(clients.map((c) => c.email!.trim().toLowerCase()).filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)))].slice(0, 500);
-  }
-  if (emails.length > 0) {
-    const mail = composeEmail({
-      subject: `${gym.name}: ${input.title}`,
-      preheader: input.body.slice(0, 120),
-      heading: input.title,
-      blocks: [
-        ...input.body.split(/\n{2,}/).map((t) => ({ type: 'p' as const, text: t.trim() })).filter((b) => b.text),
-        { type: 'note' as const, text: `Recibís este mensaje de ${gym.name}, que tiene tu mail en su lista de clientes.` },
-      ],
+  const members = await prisma.gymMember.findMany({ where: { gymId, status: 'ACTIVE' }, select: { userId: true } });
+  if (members.length > 0) {
+    await prisma.notification.createMany({
+      data: members.map((m) => ({
+        userId: m.userId,
+        kind: 'GYM_MESSAGE' as const,
+        title: gym.name,
+        body: `${input.title}: ${input.body}`.slice(0, 140),
+        url: '/dashboard',
+        scheduledFor: now,
+      })),
     });
-    after(async () => {
-      for (const to of emails) {
-        await sendMail({ to, subject: mail.subject, text: mail.text, html: mail.html });
-        await new Promise((r) => setTimeout(r, 600));
-      }
-    });
+    // Que lleguen enseguida: se le avisa a la app (necesita NOTIFY_SECRET en el panel y en la app; sin eso, llegan con el cron diario).
+    const base = process.env.MAIN_APP_URL?.trim().replace(/\/+$/, '') || 'https://www.forzaai.app';
+    const secret = process.env.NOTIFY_SECRET;
+    if (secret) {
+      after(async () => {
+        await fetch(`${base}/api/internal/notify-flush`, { method: 'POST', headers: { Authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(30_000) }).catch((e) => console.error('[mensajes] no se pudo avisar a la app:', e instanceof Error ? e.message : e));
+      });
+    }
   }
-  return { ok: true, emails: emails.length };
+  return { ok: true, notified: members.length };
+}
+
+/** Saca un mensaje de la pantalla principal de los clientes ahora mismo. */
+export async function endMessage(ownerUserId: string, gymId: string, id: string): Promise<boolean> {
+  if (!(await ownedGym(ownerUserId, gymId))) return false;
+  const res = await prisma.gymMessage.updateMany({ where: { id, gymId, expiresAt: { gt: new Date() } }, data: { expiresAt: new Date() } });
+  return res.count > 0;
 }

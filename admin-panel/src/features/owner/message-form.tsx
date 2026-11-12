@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { MESSAGE_DAYS, DEFAULT_MESSAGE_DAYS } from '@/features/gym/messages';
 import { sendClientMessage } from './message-actions';
 
 const ERRORS: Record<string, string> = {
@@ -15,20 +16,22 @@ const ERRORS: Record<string, string> = {
   BODY: 'Escribí el mensaje.',
 };
 
-/** Escribirle un aviso a los clientes del gimnasio (feriados, cambios de horario, novedades). */
-export function MessageForm({ clientsWithEmail }: { clientsWithEmail: number }) {
+const dayLabel = (d: number) => (d === 1 ? '1 día' : `${d} días`);
+
+/** Escribirle un aviso a todos los clientes conectados (feriados, cambios de horario, novedades). Para uno solo: WhatsApp desde su ficha. */
+export function MessageForm({ connected }: { connected: number }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
-  const [email, setEmail] = useState(false);
+  const [days, setDays] = useState<number>(DEFAULT_MESSAGE_DAYS);
 
   function send() {
-    if (!window.confirm(email ? `¿Mandar este mensaje a tus clientes en la app y por mail a ${clientsWithEmail}?` : '¿Publicar este mensaje en la app de tus clientes?')) return;
+    if (!window.confirm(`¿Publicar este mensaje? Lo van a ver ${connected} ${connected === 1 ? 'cliente conectado' : 'clientes conectados'} en la pantalla principal de la app durante ${dayLabel(days)}.`)) return;
     start(async () => {
-      const res = await sendClientMessage({ title, body, email });
+      const res = await sendClientMessage({ title, body, days });
       if ('ok' in res) {
-        toast.success(res.emails > 0 ? `Mensaje publicado. ${res.emails} mails en camino.` : 'Mensaje publicado.');
+        toast.success(res.notified > 0 ? `Mensaje publicado. Se avisa a ${res.notified} ${res.notified === 1 ? 'cliente' : 'clientes'}.` : 'Mensaje publicado.');
         setTitle('');
         setBody('');
         router.refresh();
@@ -46,12 +49,16 @@ export function MessageForm({ clientsWithEmail }: { clientsWithEmail: number }) 
         <span className="text-xs text-muted-foreground">Mensaje</span>
         <textarea value={body} maxLength={1500} rows={4} onChange={(e) => setBody(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="El gimnasio abre de 9 a 13. Las clases de la tarde se suspenden." />
       </label>
-      <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" className="mt-1" checked={email} onChange={(e) => setEmail(e.target.checked)} disabled={clientsWithEmail === 0} />
-        <span>
-          Mandar también por mail ({clientsWithEmail} {clientsWithEmail === 1 ? 'cliente tiene' : 'clientes tienen'} mail en tu lista)
-          <span className="block text-xs text-muted-foreground">Igual lo ven en la app los que ya están conectados. El mail llega a todos los de tu lista.</span>
-        </span>
+      <label className="block space-y-1">
+        <span className="text-xs text-muted-foreground">Cuánto tiempo se muestra</span>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-48">
+          {MESSAGE_DAYS.map((d) => (
+            <option key={d} value={d}>
+              {dayLabel(d)}
+            </option>
+          ))}
+        </select>
+        <span className="block text-xs text-muted-foreground">Después desaparece solo de la pantalla de tus clientes. Podés sacarlo antes cuando quieras.</span>
       </label>
       <Button disabled={pending} onClick={send}>
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

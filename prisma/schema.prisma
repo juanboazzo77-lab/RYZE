@@ -217,6 +217,8 @@ enum NotificationKind {
   WEEKLY_CHECKIN
   PROTEIN_GOAL
   STREAK
+  /// Aviso del gimnasio a sus clientes conectados.
+  GYM_MESSAGE
 }
 
 enum NotificationChannel {
@@ -1135,6 +1137,8 @@ model GymMessage {
   body      String
   emailed   Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
+  /// Hasta cuándo se muestra en la pantalla principal de los clientes conectados; después desaparece.
+  expiresAt DateTime @map("expires_at")
 
   @@index([gymId, createdAt])
   @@map("gym_message")

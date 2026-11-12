@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { DateTime } from 'luxon';
-import type { NotificationKind } from '@prisma/client';
+import type { NotificationKind as PrismaNotificationKind } from '@prisma/client';
+
+/** Los avisos que la persona puede prender o apagar (el aviso de su gimnasio llega siempre). */
+type NotificationKind = Exclude<PrismaNotificationKind, 'GYM_MESSAGE'>;
 import { prisma } from '@/server/db';
 import { limitsFor, withGymAccess } from '@/server/entitlements';
-import { sendPushToUser } from '@/server/push';
+import { deliverDueNotifications } from '@/server/notify-due';
 import { computeNudges } from '@/server/nudges';
 
 /**
@@ -124,35 +127,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // --- Entrega por Web Push de todo lo pendiente ---
-  const pending = await prisma.notification.findMany({
-    where: { sentAt: null, scheduledFor: { lte: new Date() } },
-    orderBy: { scheduledFor: 'asc' },
-    take: 500,
-  });
-
-  let pushed = 0;
-  for (const n of pending) {
-    try {
-      const { sent } = await sendPushToUser(n.userId, {
-        title: n.title,
-        body: n.body ?? undefined,
-        url: n.url ?? '/dashboard',
-        tag: n.kind.toLowerCase(),
-      });
-      pushed += sent;
-    } catch (e) {
-      console.error('[cron] push falló', n.id, (e as Error).message);
-    }
-    await prisma.notification.update({ where: { id: n.id }, data: { sentAt: new Date() } });
-  }
+  // --- Entrega de todo lo pendiente (Web Push y, si hay, iPhone) ---
+  const { delivered, pushed } = await deliverDueNotifications();
 
   return NextResponse.json({
     ok: true,
     users: users.length,
     created,
     nudged,
-    delivered: pending.length,
+    delivered,
     pushed,
   });
 }

@@ -1,5 +1,8 @@
 import 'server-only';
-import type { NotificationKind, Profile } from '@prisma/client';
+import type { NotificationKind as PrismaNotificationKind, Profile } from '@prisma/client';
+
+/** Los avisos que la persona puede prender o apagar (el aviso de su gimnasio llega siempre). */
+type NotificationKind = Exclude<PrismaNotificationKind, 'GYM_MESSAGE'>;
 import { forUser } from '@/server/user-db';
 
 export const NOTIFICATION_KINDS: NotificationKind[] = [

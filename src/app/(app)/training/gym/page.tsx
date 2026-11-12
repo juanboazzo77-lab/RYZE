@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { CalendarCheck, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { listMemberRoutines } from '@/server/gym-routines';
-import { listMemberMessages } from '@/server/gym-messages';
+import { listActiveMessages } from '@/server/gym-messages';
 import { countExercises, levelLabel } from '@/features/gym/routines';
 import { Badge } from '@/components/ui/badge';
 
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 /** Las rutinas oficiales del gimnasio del socio. */
 export default async function GymRoutinesPage() {
   const ctx = await requireUser();
-  const [routines, messages] = ctx.gym ? await Promise.all([listMemberRoutines(ctx.gym.gymId), listMemberMessages(ctx.gym.gymId)]) : [[], []];
+  const [routines, messages] = ctx.gym ? await Promise.all([listMemberRoutines(ctx.gym.gymId), listActiveMessages(ctx.gym.gymId)]) : [[], []];
 
   return (
     <div className="space-y-4">
