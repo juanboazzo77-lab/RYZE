@@ -19,7 +19,7 @@ describe('hoja de clientes anotada a mano', () => {
       { nombre: 'Ana Pérez', mail: 'ANA@Gmail.com', telefono: '11 5555-1234', plan: 'Pase libre', cuota: '25000', vence: '20/11/2026' },
       { nombre: 'Luis Gómez', mail: null, telefono: null, cuota: null, vence: null },
     ]);
-    expect(lines).toEqual(['Ana Pérez, ana@gmail.com, 11 5555-1234, Plan: Pase libre, 25000, 20/11/2026', 'Luis Gómez']);
+    expect(lines).toEqual(['Ana Pérez, 11 5555-1234, ana@gmail.com, Plan: Pase libre, 25000, 20/11/2026', 'Luis Gómez']);
     // y esas líneas las entiende la carga de clientes
     const parsed = parseClientLines(lines.join('\n'));
     expect(parsed.invalid).toEqual([]);

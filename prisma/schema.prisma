@@ -1319,6 +1319,8 @@ model WebSubscription {
   gymId         String?   @db.Uuid @map("gym_id")
   gym           Gym?      @relation(fields: [gymId], references: [id], onDelete: SetNull)
   nextPaymentAt DateTime? @map("next_payment_at")
+  /// Teléfono (WhatsApp) que dio al activar el plan: el gimnasio lo identifica y lo vincula con su lista por este número.
+  phone         String?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 

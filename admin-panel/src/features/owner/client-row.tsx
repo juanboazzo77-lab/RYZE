@@ -86,6 +86,7 @@ export function ClientRow({ c, gymName, plans = [] }: { c: ClientRow; gymName: s
 
   const urgent = c.status === 'DUE_TODAY' || c.status === 'OVERDUE' || c.status === 'LAPSED';
   // Aviso por WhatsApp: solo si le toca pagar (hoy o atrasado) y hay un teléfono que sirve.
+  const chat = whatsappLink(c.phone, `Hola ${c.name.trim().split(/\s+/)[0] ?? ''}! Te escribo de ${gymName}.`);
   const wa = urgent ? whatsappLink(c.phone, reminderMessage({ name: c.name, gymName, daysLeft: c.daysLeft })) : null;
 
   return (
@@ -137,14 +138,14 @@ export function ClientRow({ c, gymName, plans = [] }: { c: ClientRow; gymName: s
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{FORZA_LABEL[c.forza]}</span>
         <div className="flex flex-wrap gap-1">
-          {wa ? (
+          {(wa ?? chat) ? (
             <a
-              href={wa}
+              href={wa ?? chat ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-secondary"
             >
-              Avisar por WhatsApp
+              {wa ? 'Avisar por WhatsApp' : 'WhatsApp'}
             </a>
           ) : null}
           <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>

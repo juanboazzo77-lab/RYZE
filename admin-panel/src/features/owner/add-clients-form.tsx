@@ -99,14 +99,14 @@ export function AddClientsForm({ defaultOpen = false }: { defaultOpen?: boolean 
         </p>
         <label className="block space-y-1">
           <span className="block text-xs text-muted-foreground">
-            Un cliente por línea: <span className="font-mono">Nombre, mail, teléfono, Plan: nombre del plan, cuota, vencimiento</span>. Solo el nombre es obligatorio; lo demás puede faltar. El vencimiento es el día que le toca pagar (por ejemplo 20/11/2026).
+            Un cliente por línea: <span className="font-mono">Nombre, WhatsApp, mail, Plan: nombre del plan, cuota, vencimiento</span>. Lo principal es el nombre y el número de WhatsApp; el mail es opcional y lo demás puede faltar. El vencimiento es el día que le toca pagar (por ejemplo 20/11/2026).
           </span>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={6}
             disabled={pending}
-            placeholder={'Ana Pérez, ana@gmail.com, 11 5555-1234, Plan: Pase libre, 25000, 20/11/2026\nLuis Gómez, luis@gmail.com\nMarta Ruiz'}
+            placeholder={'Ana Pérez, 11 5555-1234, ana@gmail.com, Plan: Pase libre, 25000, 20/11/2026\nLuis Gómez, 11 4444-9876\nMarta Ruiz, 11 6666-4321'}
             className="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
           />
         </label>

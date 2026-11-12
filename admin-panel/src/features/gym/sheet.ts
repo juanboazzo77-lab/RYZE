@@ -44,8 +44,8 @@ export function sheetRowsToLines(rows: SheetRow[]): string[] {
     const due = clean(r.vence, 12);
     const parts = [
       name,
-      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? email : '',
       /^[\d\s()+\-]{6,}$/.test(phone) ? phone : '',
+      /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? email : '',
       plan ? `Plan: ${plan}` : '',
       fee,
       /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(due) ? due : '',

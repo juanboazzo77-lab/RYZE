@@ -17,7 +17,7 @@ const MODEL = (): string => {
 };
 
 const PROMPT = `Esta es la foto de una hoja que un gimnasio completó a mano con sus clientes, usando una plantilla con estas columnas, en este orden:
-N°, Nombre y apellido, Mail, Teléfono, Plan, Cuota ($), Vence (día/mes/año).
+N°, Nombre y apellido, WhatsApp (teléfono), Mail, Plan, Cuota ($), Vence (día/mes/año).
 Cada renglón es UN cliente. Transcribí la hoja renglón por renglón, en el mismo orden en que está escrita.
 
 Reglas:

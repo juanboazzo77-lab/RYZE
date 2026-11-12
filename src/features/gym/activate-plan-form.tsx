@@ -14,6 +14,11 @@ export function ActivatePlanForm({ code, gymName, priceLabel, currentName }: { c
     <form action={action} className="space-y-3">
       <input type="hidden" name="code" value={code} />
       {/* Nombre y apellido: así el gimnasio sabe quién sos y puede asignarte tu plan. Si la cuenta ya lo tiene, no se pide. */}
+      <label className="block space-y-1 text-left">
+        <span className="block text-sm font-medium">Tu número de WhatsApp</span>
+        <input name="phone" type="tel" inputMode="tel" autoComplete="tel" required minLength={8} maxLength={30} placeholder="11 5555 1234" className="h-11 w-full rounded-xl border border-input bg-background px-3 text-base" />
+        <span className="block text-xs text-muted-foreground">{gymName} te identifica con tu número, así sabe quién sos y te asigna tu plan.</span>
+      </label>
       {needsName ? (
         <label className="block space-y-1 text-left">
           <span className="block text-sm font-medium">Tu nombre y apellido</span>
@@ -31,6 +36,7 @@ export function ActivatePlanForm({ code, gymName, priceLabel, currentName }: { c
           El pago por la web todavía no está habilitado. Guardamos que venís de <strong>{gymName}</strong>: pedile el alta a tu gimnasio o volvé en unos días.
         </p>
       ) : null}
+      {state.error === 'PHONE' ? <p className="text-sm text-destructive">Escribí tu número de WhatsApp con el código de área (por ejemplo, 11 5555 1234).</p> : null}
       {state.error === 'NAME' ? <p className="text-sm text-destructive">Escribí tu nombre y apellido completos (por ejemplo, Ana Pérez).</p> : null}
       {state.error === 'FAILED' ? <p className="text-sm text-destructive">No pudimos iniciar el pago. Probá de nuevo en unos minutos.</p> : null}
       {state.error === 'ALREADY_ACTIVE' ? <p className="text-sm text-muted-foreground">Tu plan ya está activo.</p> : null}

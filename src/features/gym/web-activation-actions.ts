@@ -8,10 +8,11 @@ import { cancelWebPlan, startSubscription } from '@/server/billing/mercadopago';
 import { setShareActivity } from '@/server/gyms';
 import { normalizeGymCode } from '@/features/gym/logic';
 import { cleanFullName, isFullName } from '@/features/gym/full-name';
+import { cleanPhone, isValidPhone } from '@/features/gym/phone';
 import { prisma } from '@/server/db';
 
 export interface ActivationState {
-  error?: 'NOT_FOUND' | 'NOT_READY' | 'FAILED' | 'ALREADY_ACTIVE' | 'NAME';
+  error?: 'NOT_FOUND' | 'NOT_READY' | 'FAILED' | 'ALREADY_ACTIVE' | 'NAME' | 'PHONE';
 }
 
 /**
@@ -32,10 +33,13 @@ export async function activateGymPlan(_prev: ActivationState, formData: FormData
   } else if (!isFullName(ctx.profile.name)) {
     return { error: 'NAME' };
   }
+  // El gimnasio identifica a sus clientes por el teléfono (WhatsApp): hace falta uno que sirva.
+  const phone = cleanPhone(formData.get('phone'));
+  if (!isValidPhone(phone)) return { error: 'PHONE' };
   await recordGymReferral(ctx.userId, gym.id);
 
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.forzaai.app';
-  const res = await startSubscription({ userId: ctx.userId, email: ctx.email, gymId: gym.id, backUrl: `${base.replace(/\/+$/, '')}/g/${encodeURIComponent(code)}?pago=ok` });
+  const res = await startSubscription({ userId: ctx.userId, email: ctx.email, gymId: gym.id, backUrl: `${base.replace(/\/+$/, '')}/g/${encodeURIComponent(code)}?pago=ok`, phone });
   if ('ok' in res) redirect(res.url);
   return { error: res.error === 'NOT_CONFIGURED' ? 'NOT_READY' : res.error };
 }

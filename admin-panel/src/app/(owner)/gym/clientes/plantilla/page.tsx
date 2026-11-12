@@ -12,8 +12,8 @@ const ROWS = 16;
 const COLS = [
   { label: 'N°', cls: 'w-[8mm] text-center' },
   { label: 'Nombre y apellido', cls: 'w-[52mm]' },
-  { label: 'Mail', cls: 'w-[54mm]' },
-  { label: 'Teléfono', cls: 'w-[32mm]' },
+  { label: 'WhatsApp (con código de área)', cls: 'w-[44mm]' },
+  { label: 'Mail (opcional)', cls: 'w-[42mm]' },
   { label: 'Plan', cls: 'w-[38mm]' },
   { label: 'Cuota ($)', cls: 'w-[22mm]' },
   { label: 'Vence (día/mes/año)', cls: 'w-[32mm]' },
@@ -39,7 +39,7 @@ export default async function ClientSheetTemplatePage() {
         <p className="text-sm text-muted-foreground">Si no querés estar con la compu todo el tiempo, imprimí esta hoja, anotá a tus clientes a mano y después le sacás una foto.</p>
         <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
           <li>Imprimila en hoja A4 (se imprime acostada).</li>
-          <li>Escribí un cliente por renglón, con letra clara, en este orden: nombre, mail, teléfono, plan, cuota y vencimiento. Solo el nombre es obligatorio. En «Plan» escribí el nombre del plan tal como lo cargaste en Planes del gimnasio.</li>
+          <li>Escribí un cliente por renglón, con letra clara, en este orden: nombre, WhatsApp, mail, plan, cuota y vencimiento. Lo principal es el nombre y el número de WhatsApp: el mail es opcional. En «Plan» escribí el nombre del plan tal como lo cargaste en Planes del gimnasio.</li>
           <li>Sacale una foto de frente, con buena luz y la hoja entera dentro de la imagen.</li>
           <li>
             En <strong>Clientes</strong>, tocá <strong>+ Cargar clientes</strong> y subí la foto. Revisás la lista que arma y la cargás.
@@ -87,7 +87,7 @@ export default async function ClientSheetTemplatePage() {
           </p>
         ) : null}
         <p className="mt-2 text-[11px] text-[#5b6472]">
-          Ejemplo: Ana Pérez · ana@gmail.com · 11 5555-1234 · Pase libre · 25000 · 20/11/2026. Vencimiento = el día que le toca pagar. Si una hoja se llena, seguí en otra y numerala.
+          Ejemplo: Ana Pérez · 11 5555-1234 · ana@gmail.com · Pase libre · 25000 · 20/11/2026. Vencimiento = el día que le toca pagar. Si una hoja se llena, seguí en otra y numerala.
         </p>
       </div>
     </div>

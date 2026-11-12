@@ -1,5 +1,6 @@
 import 'server-only';
 import { prisma } from '../db';
+import { phoneKey } from '@/features/gym/phone';
 import { DEFAULT_PRICE_ARS, buildPreapprovalBody, grantsAccess, mapMpStatus, payerEmailFor, priceFromEnv, type WebSubStatus } from './mercadopago-logic';
 
 /**
@@ -53,7 +54,7 @@ interface MpPreapproval {
  */
 export async function syncWebMembership(userId: string): Promise<void> {
   try {
-    const row = await prisma.webSubscription.findUnique({ where: { userId }, select: { status: true, gymId: true } });
+    const row = await prisma.webSubscription.findUnique({ where: { userId }, select: { status: true, gymId: true, phone: true } });
     if (!row) return;
     if (!grantsAccess(row.status)) {
       await prisma.gymMember.updateMany({ where: { userId, source: 'WEB', status: 'ACTIVE' }, data: { status: 'ENDED', endedAt: new Date() } });
@@ -77,9 +78,21 @@ export async function syncWebMembership(userId: string): Promise<void> {
     if (email && !email.endsWith('@sin-email.local')) {
       const has = await prisma.gymClient.findFirst({ where: { gymId: gym.id, active: true, email }, select: { id: true } });
       if (!has) {
-        await prisma.gymClient.create({
-          data: { gymId: gym.id, name: profile?.name?.trim() || email.split('@')[0]!, email, note: 'Se sumó por tu página y paga su plan de Forza AI por su cuenta.' },
-        });
+        // ¿El gimnasio ya lo tenía cargado por su teléfono? Entonces es la misma persona: se vincula (y hereda el plan que
+        // el gimnasio ya le asignó) en vez de duplicarla.
+        const key = phoneKey(row.phone);
+        let match: { id: string; email: string | null } | null = null;
+        if (key) {
+          const candidates = await prisma.gymClient.findMany({ where: { gymId: gym.id, active: true, phone: { not: null } }, select: { id: true, email: true, phone: true } });
+          match = candidates.find((c) => phoneKey(c.phone) === key && !c.email) ?? null;
+        }
+        if (match) {
+          await prisma.gymClient.update({ where: { id: match.id }, data: { email } });
+        } else {
+          await prisma.gymClient.create({
+            data: { gymId: gym.id, name: profile?.name?.trim() || email.split('@')[0]!, email, phone: row.phone ?? null, note: 'Se sumó por tu página y paga su plan de Forza AI por su cuenta.' },
+          });
+        }
       }
     }
   } catch (e) {
@@ -90,7 +103,7 @@ export async function syncWebMembership(userId: string): Promise<void> {
 export type StartResult = { ok: true; url: string } | { error: 'NOT_CONFIGURED' | 'ALREADY_ACTIVE' | 'FAILED' };
 
 /** Crea la suscripción de esta persona y devuelve la dirección de Mercado Pago donde la autoriza y paga. */
-export async function startSubscription(args: { userId: string; email: string; gymId: string | null; backUrl: string }): Promise<StartResult> {
+export async function startSubscription(args: { userId: string; email: string; gymId: string | null; backUrl: string; phone?: string | null }): Promise<StartResult> {
   if (!mpConfigured()) return { error: 'NOT_CONFIGURED' };
   const existing = await prisma.webSubscription.findUnique({ where: { userId: args.userId } });
   if (existing && grantsAccess(existing.status)) return { error: 'ALREADY_ACTIVE' };
@@ -102,9 +115,9 @@ export async function startSubscription(args: { userId: string; email: string; g
     if (!created.id || !created.init_point) return { error: 'FAILED' };
     await prisma.webSubscription.upsert({
       where: { userId: args.userId },
-      create: { userId: args.userId, providerId: created.id, status: 'PENDING', gymId: args.gymId },
+      create: { userId: args.userId, providerId: created.id, status: 'PENDING', gymId: args.gymId, phone: args.phone ?? null },
       // Una suscripción nueva reemplaza a la anterior (cancelada o que nunca se autorizó).
-      update: { providerId: created.id, status: 'PENDING', gymId: args.gymId ?? undefined, nextPaymentAt: null },
+      update: { providerId: created.id, status: 'PENDING', gymId: args.gymId ?? undefined, nextPaymentAt: null, phone: args.phone ?? undefined },
     });
     return { ok: true, url: created.init_point };
   } catch (e) {
