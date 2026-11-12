@@ -3,6 +3,7 @@ import { prisma } from './db';
 import { sendMail } from './alerts';
 import { composeEmail, type Block } from './email-template';
 import { daysBetween, feeStatus, type FeeStatus } from '@/features/gym/fees';
+import { clientReminderText, shouldRemind } from '@/features/gym/client-reminders';
 
 /**
  * Control de cuotas de los clientes de cada gimnasio (lo carga el gimnasio en su panel). Corre una vez por
@@ -70,6 +71,8 @@ export interface FeeRunResult {
   gyms: number;
   mailsSent: number;
   lapsed: number;
+  /** Recordatorios de cuota mandados a clientes. */
+  clientMails: number;
 }
 
 /** Corre el control diario de cuotas de todos los gimnasios activos. */
@@ -80,12 +83,16 @@ export async function runDailyFees(today = todayArgentina(), panelUrl?: string):
       id: true,
       name: true,
       owner: { select: { email: true } },
-      clients: { where: { active: true, paidUntil: { not: null } }, select: { name: true, email: true, paidUntil: true, feeAmount: true } },
+      clientReminders: true,
+      paymentLink: true,
+      paymentAlias: true,
+      clients: { where: { active: true, paidUntil: { not: null } }, select: { id: true, name: true, email: true, paidUntil: true, feeAmount: true, lastReminderOn: true } },
     },
   });
 
   let mailsSent = 0;
   let lapsed = 0;
+  let clientMails = 0;
   for (const g of gyms) {
     const lines: Line[] = [];
     const lapsedEmails: string[] = [];
@@ -105,8 +112,34 @@ export async function runDailyFees(today = todayArgentina(), panelUrl?: string):
       lapsed += res.count;
     }
 
+    // Recordatorios al cliente (solo si el dueño los prendió): 3 días antes, el día que vence y 3 días después.
+    if (g.clientReminders) {
+      for (const c of g.clients) {
+        if (!c.email || !/^[^s@]+@[^s@]+.[^s@]{2,}$/.test(c.email)) continue;
+        const paidUntil = c.paidUntil!.toISOString().slice(0, 10);
+        const daysLeft = daysBetween(today, paidUntil);
+        if (!shouldRemind(daysLeft, c.lastReminderOn ? c.lastReminderOn.toISOString().slice(0, 10) : null, today)) continue;
+        const t = clientReminderText({ clientName: c.name, gymName: g.name, daysLeft, dueLabel: paidUntil.slice(8, 10) + '/' + paidUntil.slice(5, 7), paymentLink: g.paymentLink, paymentAlias: g.paymentAlias });
+        const mail = composeEmail({
+          subject: t.subject,
+          preheader: t.lead,
+          heading: 'Tu cuota',
+          blocks: [
+            { type: 'p', text: t.lead },
+            ...(t.howToPay ? [{ type: 'p' as const, text: t.howToPay }] : []),
+            ...(g.paymentLink ? [{ type: 'button' as const, label: 'Pagar mi cuota', url: g.paymentLink }] : []),
+            { type: 'note', text: `Si ya pagaste, ignorá este mensaje. Te lo manda ${g.name}, que tiene tu mail en su lista de clientes.` },
+          ],
+        });
+        if (await sendMail({ to: c.email, subject: mail.subject, text: mail.text, html: mail.html })) {
+          clientMails += 1;
+          await prisma.gymClient.update({ where: { id: c.id }, data: { lastReminderOn: new Date(`${today}T00:00:00.000Z`) } });
+        }
+      }
+    }
+
     const reminder = buildOwnerReminder(g.name, lines, panelUrl);
     if (reminder && g.owner?.email && (await sendMail({ to: g.owner.email, subject: reminder.subject, text: reminder.text, html: reminder.html }))) mailsSent += 1;
   }
-  return { gyms: gyms.length, mailsSent, lapsed };
+  return { gyms: gyms.length, mailsSent, lapsed, clientMails };
 }

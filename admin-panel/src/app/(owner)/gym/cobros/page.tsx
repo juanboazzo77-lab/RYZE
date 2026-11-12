@@ -5,6 +5,8 @@ import { requireOwnerPage } from '@/lib/owner';
 import { getFinance } from '@/server/gym-finance';
 import { getPaymentInfo } from '@/server/gym-payment';
 import { money, monthLabel } from '@/features/owner/finance';
+import { prisma } from '@/server/db';
+import { ReminderToggle } from '@/features/owner/reminder-toggle';
 
 export const metadata: Metadata = { title: 'Cobros' };
 export const dynamic = 'force-dynamic';
@@ -28,11 +30,17 @@ export default async function GymFinancePage() {
   // Los QR de cobro son solo para gimnasios de Argentina (links de Mercado Pago y similares, en pesos).
   const qrAvailable = (await getPaymentInfo(owner.userId, owner.gym.id))?.currency === 'ARS';
   if (!f) return null;
+  const [gymRow, withEmail] = await Promise.all([
+    prisma.gym.findUnique({ where: { id: owner.gym.id }, select: { clientReminders: true } }),
+    prisma.gymClient.count({ where: { gymId: owner.gym.id, active: true, email: { not: null } } }),
+  ]);
   const max = Math.max(1, ...f.history.map((h) => h.collected));
   const delta = f.deltaPct === null ? undefined : `${f.deltaPct >= 0 ? '+' : ''}${f.deltaPct}% contra ${monthLabel(f.history[4]!.month)}`;
 
   return (
     <div className="space-y-4">
+      <ReminderToggle initial={gymRow?.clientReminders ?? false} clientsWithEmail={withEmail} />
+
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Cobros</h1>
