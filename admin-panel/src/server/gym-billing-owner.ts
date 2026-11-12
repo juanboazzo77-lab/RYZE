@@ -37,7 +37,7 @@ export async function getOwnerBilling(ownerUserId: string, gymId: string, now = 
   if (!gym) return null;
   const currency = asCurrency(gym.currency);
   const pricePerMember = Number(gym.pricePerMember);
-  const activeMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE', source: { not: 'WEB' } } });
+  const activeMembers = await prisma.gymMember.count({ where: { gymId, status: 'ACTIVE', source: { notIn: ['WEB', 'CODE'] } } });
   const payments = await prisma.gymPayment.findMany({ where: { gymId }, orderBy: { period: 'desc' }, take: 6 });
   const today = todayDate(now);
   const rows: OwnerBillingRow[] = payments.map((p) => ({

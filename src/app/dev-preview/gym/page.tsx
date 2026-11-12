@@ -3,6 +3,7 @@ import { CalendarDays, ChevronRight, Trophy } from 'lucide-react';
 import { GymBrandCard } from '@/features/gym/gym-brand-card';
 import { NextClassChip } from '@/features/gym/next-class-chip';
 import { ChallengeBanner } from '@/features/gym/challenge-banner';
+import { GymMessages } from '@/features/gym/gym-message-chip';
 import { ClassButton } from '@/features/gym/class-button';
 import { brandTheme } from '@/features/gym/brand';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
  * del folleto para gimnasios sin usar una cuenta real). En producción no existe (404).
  */
 
-const GYM = { gymId: 'demo', name: 'Iron Gym', logoUrl: null, brandColor: '#d9381e' };
+const GYM = { gymId: 'demo', name: 'Iron Gym', logoUrl: null, brandColor: '#d9381e', inviteCode: null, source: 'WEB', trialEndsAt: null };
 const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 const CLASSES = [
@@ -27,6 +28,7 @@ function Hub() {
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">Buen día, Ana</p>
       <GymBrandCard gym={GYM} routineCount={3} />
+      <GymMessages gymName={GYM.name} messages={[{ id: 'demo-feriado', title: 'El lunes es feriado', body: 'Abrimos de 9 a 13. Las clases de la tarde se suspenden.' }]} />
       <NextClassChip booking={{ name: 'Funcional', date: tomorrow, startTime: '19:00' }} />
       <ChallengeBanner challenge={{ title: '30 días sin faltar', status: 'ACTIVE', daysLeft: 12, joined: true }} />
       <section className="space-y-1 rounded-xl border bg-card p-3 text-sm">

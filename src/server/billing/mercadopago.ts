@@ -63,9 +63,10 @@ export async function syncWebMembership(userId: string): Promise<void> {
     if (!row.gymId) return;
     const gym = await prisma.gym.findFirst({ where: { id: row.gymId, status: 'ACTIVE' }, select: { id: true } });
     if (!gym) return;
-    const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true, gymId: true } });
+    const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true, gymId: true, source: true } });
     if (existing?.status === 'ACTIVE' && existing.gymId !== gym.id) return;
-    if (existing?.status !== 'ACTIVE') {
+    // Quien entró con el código y ahora paga su plan deja de estar en prueba: pasa a ser un cliente que paga por su cuenta.
+    if (existing?.status !== 'ACTIVE' || existing.source === 'CODE') {
       await prisma.gymMember.upsert({
         where: { userId },
         create: { gymId: gym.id, userId, source: 'WEB' },

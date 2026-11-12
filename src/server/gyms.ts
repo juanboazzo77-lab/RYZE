@@ -2,7 +2,9 @@ import 'server-only';
 import { prisma } from './db';
 import { gymContextLines, parseGymProfile } from '@/features/gym/catalog';
 import { normalizeHexColor, safeLogoUrl } from '@/features/gym/brand';
-import { asGymStatus, canJoin, normalizeEmail, normalizeGymCode, type JoinError } from '@/features/gym/logic';
+import { asGymStatus, normalizeGymCode, type JoinError } from '@/features/gym/logic';
+import { trialForJoin } from '@/features/gym/trial';
+import { recordGymReferral } from './gym-referrals';
 
 /**
  * Gimnasios. El gimnasio se anota solo (queda PENDING); el admin lo aprueba, le fija el cupo de socios y
@@ -19,15 +21,23 @@ export interface MemberGym {
   /** Marca del gimnasio: logo (dirección https) y color (#rrggbb), o null. */
   logoUrl: string | null;
   brandColor: string | null;
+  /** Código público del gimnasio (para mandar a la persona a su página). */
+  inviteCode: string | null;
+  /** Cómo entró: INVITE | WEB | CODE (con el código: tiene prueba de 3 días). */
+  source: string;
+  /** Fin de la prueba de quien entró con el código. */
+  trialEndsAt: Date | null;
 }
 
 /** El gimnasio activo al que pertenece la persona (con el gimnasio también activo), si tiene uno. */
 export async function getMemberGym(userId: string): Promise<MemberGym | null> {
   const m = await prisma.gymMember.findFirst({
     where: { userId, status: 'ACTIVE', gym: { status: 'ACTIVE' } },
-    select: { gymId: true, gym: { select: { name: true, logoUrl: true, brandColor: true } } },
+    select: { gymId: true, source: true, trialEndsAt: true, gym: { select: { name: true, logoUrl: true, brandColor: true, inviteCode: true } } },
   });
-  return m ? { gymId: m.gymId, name: m.gym.name, logoUrl: safeLogoUrl(m.gym.logoUrl), brandColor: normalizeHexColor(m.gym.brandColor) } : null;
+  return m
+    ? { gymId: m.gymId, name: m.gym.name, logoUrl: safeLogoUrl(m.gym.logoUrl), brandColor: normalizeHexColor(m.gym.brandColor), inviteCode: m.gym.inviteCode, source: m.source, trialEndsAt: m.trialEndsAt }
+    : null;
 }
 
 /** Quién es el gimnasio de un código (para mostrárselo antes de aceptar). Sólo si está activo. */
@@ -38,39 +48,34 @@ export async function previewGymCode(rawCode: string): Promise<{ name: string; c
   return g && asGymStatus(g.status) === 'ACTIVE' ? { name: g.name, city: g.city } : null;
 }
 
-/** El socio entra con el código. Se bloquea la fila del gimnasio para que el cupo no se pase por dos a la vez. */
+/**
+ * La persona entra a un gimnasio con su código: queda conectada con una prueba gratis de 3 días y después tiene que pagar
+ * su plan (por la página del gimnasio, con el QR, o uno propio). La prueba se da una sola vez por persona. No ocupa
+ * cupo ni se le cobra al gimnasio.
+ */
 export async function redeemGymCode(
   userId: string,
   rawCode: string,
   /** El socio aceptó que su gimnasio vea su nombre y su actividad (lo elige al ingresar el código). */
   shareActivity = false,
-): Promise<{ ok: true; gymName: string } | { error: JoinError }> {
+  now = new Date(),
+): Promise<{ ok: true; gymName: string; trialEndsAt: Date } | { error: JoinError }> {
   const code = normalizeGymCode(rawCode);
   if (!code) return { error: 'INVALID_CODE' };
-  const gym = await prisma.gym.findUnique({ where: { inviteCode: code }, select: { id: true } });
+  const gym = await prisma.gym.findFirst({ where: { inviteCode: code, status: 'ACTIVE' }, select: { id: true, name: true } });
   if (!gym) return { error: 'INVALID_CODE' };
 
-  return prisma.$transaction(async (tx) => {
-    const locked = await tx.$queryRaw<Array<{ name: string; status: string; member_limit: number }>>`
-      SELECT name, status, member_limit FROM gym WHERE id = ${gym.id}::uuid FOR UPDATE`;
-    const g = locked[0];
-    if (!g) return { error: 'INVALID_CODE' as const };
+  const existing = await prisma.gymMember.findUnique({ where: { userId }, select: { status: true, trialEndsAt: true } });
+  if (existing?.status === 'ACTIVE') return { error: 'ALREADY_MEMBER' };
+  const trialEndsAt = trialForJoin(existing?.trialEndsAt, now);
 
-    const existing = await tx.gymMember.findUnique({ where: { userId }, select: { gymId: true, status: true } });
-    if (existing?.status === 'ACTIVE') {
-      return { error: 'ALREADY_MEMBER' as const };
-    }
-    const activeMembers = await tx.gymMember.count({ where: { gymId: gym.id, status: 'ACTIVE', source: { not: 'WEB' } } });
-    const blocked = canJoin({ status: g.status, memberLimit: g.member_limit, activeMembers });
-    if (blocked) return { error: blocked };
-
-    await tx.gymMember.upsert({
-      where: { userId },
-      create: { gymId: gym.id, userId, shareActivity },
-      update: { gymId: gym.id, status: 'ACTIVE', source: 'INVITE', joinedAt: new Date(), endedAt: null, shareActivity },
-    });
-    return { ok: true as const, gymName: g.name };
+  await prisma.gymMember.upsert({
+    where: { userId },
+    create: { gymId: gym.id, userId, source: 'CODE', shareActivity, trialEndsAt },
+    update: { gymId: gym.id, status: 'ACTIVE', source: 'CODE', joinedAt: now, endedAt: null, shareActivity, trialEndsAt },
   });
+  await recordGymReferral(userId, gym.id).catch((e) => console.error('[gimnasio] no se pudo anotar de dónde vino:', e instanceof Error ? e.message : e));
+  return { ok: true, gymName: gym.name, trialEndsAt };
 }
 
 /** El socio se va del gimnasio y vuelve a su plan normal. */

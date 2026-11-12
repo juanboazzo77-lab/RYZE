@@ -2,6 +2,7 @@ import 'server-only';
 import { prisma } from './db';
 import { asClassesMode, weekBounds, type PlanRule } from '@/features/gym/plans';
 import { todayAR } from '@/features/gym/classes';
+import { trialState } from '@/features/gym/trial';
 
 /**
  * El plan de pago que el gimnasio le asignó a un socio. El gimnasio carga a sus clientes en su panel y les asigna un plan;
@@ -52,28 +53,46 @@ export interface MemberPlanStatus {
   awaitingPlan: boolean;
   /** Reservas que ya tiene esta semana. */
   usedThisWeek: number;
+  /** Entró con el código y su prueba de 3 días terminó sin pagar un plan: no puede reservar clases. */
+  trialEnded: boolean;
 }
 
 /** Para mostrarle al socio en la pantalla de clases: su plan y cuántas reservas lleva esta semana. */
 export async function getMemberPlanStatus(userId: string, gymId: string, now = new Date()): Promise<MemberPlanStatus> {
-  const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
-  if (!plan) return { plan: null, awaitingPlan, usedThisWeek: 0 };
-  return { plan, awaitingPlan: false, usedThisWeek: await bookingsInWeek(userId, gymId, todayAR(now)) };
+  const { plan, awaitingPlan, trialEnded } = await getMemberAccess(userId, gymId);
+  if (!plan) return { plan: null, awaitingPlan, usedThisWeek: 0, trialEnded };
+  return { plan, awaitingPlan: false, usedThisWeek: await bookingsInWeek(userId, gymId, todayAR(now)), trialEnded };
+}
+
+/** ¿Ya paga algún plan (uno propio de Forza AI o el de la página de un gimnasio)? */
+async function hasPaidPlan(userId: string): Promise<boolean> {
+  const [ent, web] = await Promise.all([
+    prisma.entitlement.findUnique({ where: { userId }, select: { tier: true } }),
+    prisma.webSubscription.findFirst({ where: { userId, status: 'AUTHORIZED' }, select: { id: true } }),
+  ]);
+  return (ent !== null && ent.tier !== 'FREE') || web !== null;
 }
 
 /**
  * Qué puede hacer el socio con las clases: su plan (si el gimnasio le asignó uno) o, si llegó por la página web del
  * gimnasio y todavía no tiene plan, queda esperando que el gimnasio lo confirme. Los socios que no llegaron por la web y
- * no tienen plan asignado no tienen restricciones.
+ * no tienen plan asignado no tienen restricciones. Quien entró con el código y terminó su prueba de 3 días sin pagar un
+ * plan no puede reservar (`trialEnded`).
  */
-export async function getMemberAccess(userId: string, gymId: string): Promise<{ plan: MemberPlan | null; awaitingPlan: boolean }> {
+export async function getMemberAccess(userId: string, gymId: string): Promise<{ plan: MemberPlan | null; awaitingPlan: boolean; trialEnded: boolean }> {
+  try {
+    const m = await prisma.gymMember.findFirst({ where: { userId, gymId, status: 'ACTIVE' }, select: { source: true, trialEndsAt: true } });
+    if (m && trialState(m) === 'ENDED' && !(await hasPaidPlan(userId))) return { plan: null, awaitingPlan: false, trialEnded: true };
+  } catch (e) {
+    console.error('[gym-plans] no se pudo leer la prueba del socio:', e instanceof Error ? e.message : e);
+  }
   const plan = await getMemberPlan(userId, gymId);
-  if (plan) return { plan, awaitingPlan: false };
+  if (plan) return { plan, awaitingPlan: false, trialEnded: false };
   try {
     const m = await prisma.gymMember.findFirst({ where: { userId, gymId, status: 'ACTIVE', source: 'WEB' }, select: { id: true } });
-    return { plan: null, awaitingPlan: Boolean(m) };
+    return { plan: null, awaitingPlan: Boolean(m), trialEnded: false };
   } catch (e) {
     console.error('[gym-plans] no se pudo leer el origen del socio:', e instanceof Error ? e.message : e);
-    return { plan: null, awaitingPlan: false };
+    return { plan: null, awaitingPlan: false, trialEnded: false };
   }
 }

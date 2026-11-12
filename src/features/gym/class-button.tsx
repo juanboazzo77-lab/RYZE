@@ -16,6 +16,7 @@ const BOOK_ERRORS: Record<string, string> = {
   NOT_FOUND: 'Esa clase ya no está.',
   NOT_IN_PLAN: 'Esta clase no está incluida en tu plan. Consultá en recepción.',
   AWAITING_PLAN: 'Tu gimnasio todavía tiene que confirmar tu plan. Consultá en recepción.',
+  TRIAL_ENDED: 'Terminó tu prueba gratis. Activá tu plan para reservar clases.',
   NOT_FULL: 'Todavía hay lugar: reservá directamente.',
   WEEK_LIMIT: 'Ya usaste todas las reservas de esta semana que te da tu plan.',
 };

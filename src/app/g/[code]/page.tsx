@@ -49,7 +49,8 @@ export default async function GymLandingPage({ params, searchParams }: { params:
   if (!gym) notFound();
 
   const ctx = await getUserContext();
-  const isMember = ctx?.gym?.gymId === gym.id;
+  // Quien entró con el código (prueba de 3 días) todavía no activó su plan: para él esta página sigue siendo para activarlo.
+  const isMember = ctx?.gym?.gymId === gym.id && ctx.gym.source !== 'CODE';
   // Si ya inició un pago que todavía no figura como activo, le preguntamos directo a Mercado Pago (sin esperar su
   // aviso). No depende de cómo vuelva de Mercado Pago: a veces la dirección de retorno pierde los parámetros.
   let planStatus = ctx ? await getWebPlanStatus(ctx.userId) : null;

@@ -112,7 +112,7 @@ export async function getTodaySummary(): Promise<TodaySummary> {
   const activeGyms = await prisma.gym.findMany({ where: { status: 'ACTIVE' }, select: { id: true, memberLimit: true } });
   const counts = await prisma.gymMember.groupBy({
     by: ['gymId'],
-    where: { status: 'ACTIVE', source: { not: 'WEB' }, gymId: { in: activeGyms.map((g) => g.id) } },
+    where: { status: 'ACTIVE', source: { notIn: ['WEB', 'CODE'] }, gymId: { in: activeGyms.map((g) => g.id) } },
     _count: { _all: true },
   });
   const byGym = new Map(counts.map((c) => [c.gymId, c._count._all]));

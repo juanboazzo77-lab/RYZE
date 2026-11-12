@@ -26,7 +26,7 @@ export default async function GymClassesPage() {
   const now = new Date();
   const [items, planStatus] = ctx.gym
     ? await Promise.all([listClassesForMember(ctx.userId, ctx.gym.gymId, now), getMemberPlanStatus(ctx.userId, ctx.gym.gymId, now)])
-    : [[] as ClassOccurrenceView[], { plan: null, awaitingPlan: false, usedThisWeek: 0 }];
+    : [[] as ClassOccurrenceView[], { plan: null, awaitingPlan: false, usedThisWeek: 0, trialEnded: false }];
   const today = todayAR(now);
   const plan = planStatus.plan;
   const planInfo = plan ? describePlan(plan) : null;
@@ -48,7 +48,19 @@ export default async function GymClassesPage() {
         </p>
       </div>
 
-      {planStatus.awaitingPlan ? (
+      {planStatus.trialEnded ? (
+        <section className="space-y-1 rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
+          <p className="font-semibold">Terminó tu prueba gratis</p>
+          <p className="text-xs text-muted-foreground">
+            Para reservar clases activá tu plan con {ctx.gym?.name ?? 'tu gimnasio'}.{' '}
+            {ctx.gym?.inviteCode ? (
+              <Link href={`/g/${ctx.gym.inviteCode}`} className="font-medium text-primary underline">
+                Activar mi plan
+              </Link>
+            ) : null}
+          </p>
+        </section>
+      ) : planStatus.awaitingPlan ? (
         <section className="space-y-1 rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
           <p className="font-semibold">Falta confirmar tu plan</p>
           <p className="text-xs text-muted-foreground">Tu gimnasio tiene que asignarte el plan que pagás con él para que puedas reservar clases. Pedilo en recepción.</p>

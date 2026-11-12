@@ -50,7 +50,9 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
   const slots = classes.map((c) => ({ id: c.id, weekday: c.weekday, startTime: c.startTime, durationMin: c.durationMin, capacity: c.capacity, row: c }));
   const occ = upcomingOccurrences(slots, now);
   if (occ.length === 0) return [];
-  const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
+  const { plan, awaitingPlan: awaitingConfirm, trialEnded } = await getMemberAccess(userId, gymId);
+  // Sin plan que lo habilite (el gimnasio todavía no se lo asignó, o terminó su prueba): no puede reservar.
+  const awaitingPlan = awaitingConfirm || trialEnded;
   const today = todayAR(now);
   const waiting = await prisma.gymWaitlist.findMany({ where: { userId, classId: { in: classes.map((c) => c.id) }, date: { gte: dateOf(todayAR(now)) } }, select: { classId: true, date: true } }).catch(() => []);
   const waitSet = new Set(waiting.map((w) => `${w.classId}|${w.date.toISOString().slice(0, 10)}`));
@@ -87,7 +89,7 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
   });
 }
 
-export type BookError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT' | 'AWAITING_PLAN';
+export type BookError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT' | 'AWAITING_PLAN' | 'TRIAL_ENDED';
 
 /** Reserva un lugar. Se bloquea la fila de la clase para que dos personas no se lleven el último lugar a la vez. */
 export async function bookClass(userId: string, gymId: string, classId: string, dateISO: string, now = new Date()): Promise<'ok' | BookError> {
@@ -97,7 +99,8 @@ export async function bookClass(userId: string, gymId: string, classId: string, 
     if (!cls || cls.weekday !== weekdayOf(dateISO)) return 'NOT_FOUND' as const;
     if (startInstant(dateISO, cls.startTime).getTime() <= now.getTime()) return 'STARTED' as const;
     // El plan de pago que le asignó el gimnasio: a qué tipos de clase se puede anotar y cuántas reservas por semana.
-    const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
+    const { plan, awaitingPlan, trialEnded } = await getMemberAccess(userId, gymId);
+    if (trialEnded) return 'TRIAL_ENDED' as const;
     if (awaitingPlan) return 'AWAITING_PLAN' as const;
     if (!planAllowsClass(plan, cls.name)) return 'NOT_IN_PLAN' as const;
     await tx.$queryRaw`SELECT id FROM gym_class WHERE id = ${classId}::uuid FOR UPDATE`;
@@ -130,7 +133,7 @@ export async function cancelBooking(userId: string, gymId: string, classId: stri
   return 'ok';
 }
 
-export type WaitError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'NOT_FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT' | 'AWAITING_PLAN';
+export type WaitError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'NOT_FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT' | 'AWAITING_PLAN' | 'TRIAL_ENDED';
 
 /** El socio se anota en la lista de espera de una clase que está completa. Se aplican las mismas reglas que para reservar. */
 export async function joinWaitlist(userId: string, gymId: string, classId: string, dateISO: string, now = new Date()): Promise<'ok' | WaitError> {
@@ -145,7 +148,8 @@ export async function joinWaitlist(userId: string, gymId: string, classId: strin
   ]);
   if (mine?.status === 'BOOKED') return 'ALREADY';
   if (booked < cls.capacity) return 'NOT_FULL';
-  const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
+  const { plan, awaitingPlan, trialEnded } = await getMemberAccess(userId, gymId);
+  if (trialEnded) return 'TRIAL_ENDED';
   if (awaitingPlan) return 'AWAITING_PLAN';
   if (!planAllowsClass(plan, cls.name)) return 'NOT_IN_PLAN';
   await prisma.gymWaitlist.upsert({ where: { classId_userId_date: { classId, userId, date } }, create: { classId, userId, date }, update: {} });

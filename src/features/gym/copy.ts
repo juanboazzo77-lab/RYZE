@@ -21,12 +21,13 @@ export const GYM = {
 
   // Socio (Ajustes)
   memberTitle: 'Gimnasio',
-  memberIntro: 'Si tu gimnasio usa Forza AI, ingresá su código y usás toda la app sin pagar.',
+  memberIntro: 'Si tu gimnasio usa Forza AI, ingresá su código y probás todo gratis 3 días. Después activás tu plan con tu gimnasio para seguir.',
   codeLabel: 'Código del gimnasio',
   codePlaceholder: 'ABCD-2345',
   join: 'Ingresar',
   joining: 'Ingresando…',
-  joined: '¡Listo! Ya usás Forza AI con {name}.',
+  joined: '¡Listo! Ya estás en {name}: probás todo gratis 3 días.',
+  joinedNoTrial: 'Ya estás conectado a {name}, pero tu prueba gratis ya la usaste: activá tu plan para seguir.',
   errInvalidCode: 'Ese código no existe o el gimnasio todavía no está activo.',
   errFull: 'Este gimnasio no tiene más lugares por ahora. Avisale al gimnasio.',
   errAlready: 'Ya estás en un gimnasio. Primero salí del actual.',
@@ -43,7 +44,12 @@ export const GYM = {
   joinShareHelp:
     'Así el gimnasio puede ayudarte si te alejás. Nunca ve tu peso, tus fotos ni tus comidas. Lo podés apagar cuando quieras en Ajustes, en Gimnasio.',
   noGymTitle: 'Todavía no estás en un gimnasio',
-  noGymText: 'Cuando te sumes al plan de tu gimnasio, acá vas a ver su marca, sus clases y sus retos.',
+  noGymText: 'Si tu gimnasio te pasó un código, ingresalo acá: probás todo gratis 3 días. Si escaneás el QR del gimnasio y activás tu plan, también queda conectado.',
+  trialActiveTitle: 'Prueba gratis: te quedan {days}',
+  trialActiveText: 'Probás todo con {name}. Para seguir cuando termine, activá tu plan: es el mismo que se activa escaneando el QR del gimnasio.',
+  trialEndedTitle: 'Terminó tu prueba gratis',
+  trialEndedText: 'Seguís conectado a {name}, pero para volver a usar tu plan, el coach y las clases activá tu plan con el gimnasio.',
+  activatePlan: 'Activar mi plan',
   rowDesc: 'Tu gimnasio en Forza AI',
   rowDescIn: 'Estás en {name}',
 

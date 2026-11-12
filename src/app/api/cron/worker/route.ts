@@ -6,6 +6,7 @@ import type { NotificationKind as PrismaNotificationKind } from '@prisma/client'
 type NotificationKind = Exclude<PrismaNotificationKind, 'GYM_MESSAGE'>;
 import { prisma } from '@/server/db';
 import { limitsFor, withGymAccess } from '@/server/entitlements';
+import { memberHasGymAccess } from '@/features/gym/trial';
 import { deliverDueNotifications } from '@/server/notify-due';
 import { computeNudges } from '@/server/nudges';
 
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
       weekStart: true,
       entitlement: { select: { tier: true, createdAt: true } },
       // Socios de un gimnasio y quienes pagan el plan por la web también tienen la revisión cada dos semanas.
-      gymMembership: { select: { status: true } },
+      gymMembership: { select: { status: true, source: true, trialEndsAt: true } },
       webSubscription: { select: { status: true } },
       notificationPreferences: { select: { kind: true, enabled: true, dayOfWeek: true } },
     },
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
   for (const u of users) {
     const prefByKind = new Map(u.notificationPreferences.map((p) => [p.kind, p]));
 
-    const gymAccess = u.gymMembership?.status === 'ACTIVE' || u.webSubscription?.status === 'AUTHORIZED';
+    const gymAccess = (u.gymMembership?.status === 'ACTIVE' && memberHasGymAccess(u.gymMembership)) || u.webSubscription?.status === 'AUTHORIZED';
     const ent = u.entitlement && gymAccess ? withGymAccess(u.entitlement) : u.entitlement;
     if (ent && limitsFor(ent).features.weekly_checkin) {
       const cp = prefByKind.get('WEEKLY_CHECKIN');

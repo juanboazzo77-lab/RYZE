@@ -18,6 +18,8 @@ import { countMemberRoutines } from '@/server/gym-routines';
 import { nextChallengeBanner } from '@/server/gym-challenges';
 import { listActiveMessages } from '@/server/gym-messages';
 import { GymMessages } from '@/features/gym/gym-message-chip';
+import { GymTrialCard } from '@/features/gym/gym-trial-card';
+import { trialDaysLeft, trialState } from '@/features/gym/trial';
 import { nextBookingFor } from '@/server/gym-classes';
 import { NextClassChip } from '@/features/gym/next-class-chip';
 import { ChallengeBanner } from '@/features/gym/challenge-banner';
@@ -37,6 +39,10 @@ export default async function DashboardPage() {
   // Los avisos vigentes del gimnasio (si no hay ninguno, no se muestra nada).
   const gymMessages = ctx.gym ? await listActiveMessages(ctx.gym.gymId) : [];
   const nextClass = ctx.gym ? await nextBookingFor(ctx.userId, ctx.gym.gymId) : null;
+
+  // Quien entró con el código: días que le quedan de prueba, o que active su plan si ya terminó (no se muestra si ya paga uno).
+  const gymTrial = ctx.gym ? trialState(ctx.gym) : 'NONE';
+  const showTrial = ctx.gym && ((gymTrial === 'ACTIVE' && ctx.entitlement.gymAccess) || (gymTrial === 'ENDED' && ctx.entitlement.tier === 'FREE'));
 
   const part = dayPart(ctx.profile.timezone);
   const greeting =
@@ -63,6 +69,7 @@ export default async function DashboardPage() {
 
       {ctx.gym ? <GymBrandCard gym={ctx.gym} routineCount={await countMemberRoutines(ctx.gym.gymId)} /> : null}
 
+      {showTrial && ctx.gym ? <GymTrialCard gymName={ctx.gym.name} gymCode={ctx.gym.inviteCode} state={gymTrial === 'ACTIVE' ? 'ACTIVE' : 'ENDED'} daysLeft={trialDaysLeft(ctx.gym.trialEndsAt)} /> : null}
       {ctx.gym && gymMessages.length > 0 ? <GymMessages gymName={ctx.gym.name} messages={gymMessages} /> : null}
       {nextClass ? <NextClassChip booking={nextClass} /> : null}
 

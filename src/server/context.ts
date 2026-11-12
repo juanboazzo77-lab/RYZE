@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from './supabase/server';
 import { prisma } from './db';
 import { withFullAccess, withGymAccess } from './entitlements';
 import { getMemberGym, type MemberGym } from './gyms';
+import { memberHasGymAccess } from '@/features/gym/trial';
 import { hasActiveWebPlan } from './billing/mercadopago';
 
 export interface UserContext {
@@ -72,8 +73,9 @@ export const getUserContext = cache(async (): Promise<UserContext | null> => {
     userId: profile.id,
     email: profile.email,
     profile,
-    // Un socio de gimnasio y quien paga el plan mensual por la web tienen el mismo acceso.
-    entitlement: withFullAccess(profile.email, gym || webPlan ? withGymAccess(entitlement) : entitlement),
+    // Un socio de gimnasio y quien paga el plan mensual por la web tienen el mismo acceso. Quien entró con el código solo
+    // lo tiene durante su prueba de 3 días; después tiene que pagar su plan.
+    entitlement: withFullAccess(profile.email, (gym && memberHasGymAccess(gym)) || webPlan ? withGymAccess(entitlement) : entitlement),
     gym,
     needsOnboarding: profile.onboardingCompletedAt === null,
   };
