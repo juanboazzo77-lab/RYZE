@@ -15,11 +15,12 @@ const BOOK_ERRORS: Record<string, string> = {
   BAD_DATE: 'Esa fecha no está disponible todavía.',
   NOT_FOUND: 'Esa clase ya no está.',
   NOT_IN_PLAN: 'Esta clase no está incluida en tu plan. Consultá en recepción.',
+  AWAITING_PLAN: 'Tu gimnasio todavía tiene que confirmar tu plan. Consultá en recepción.',
   WEEK_LIMIT: 'Ya usaste todas las reservas de esta semana que te da tu plan.',
 };
 
 /** Reservar, cancelar o ver por qué no se puede. */
-export function ClassButton({ classId, date, state, inPlan = true }: { classId: string; date: string; state: BookingState; inPlan?: boolean }) {
+export function ClassButton({ classId, date, state, inPlan = true, awaitingPlan = false }: { classId: string; date: string; state: BookingState; inPlan?: boolean; awaitingPlan?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
 
@@ -45,7 +46,7 @@ export function ClassButton({ classId, date, state, inPlan = true }: { classId: 
   if (state === 'BOOKABLE' && !inPlan)
     return (
       <Button size="sm" variant="ghost" disabled title="Esta clase no está incluida en tu plan">
-        No incluida
+        {awaitingPlan ? 'Falta tu plan' : 'No incluida'}
       </Button>
     );
   if (state === 'BOOKABLE')

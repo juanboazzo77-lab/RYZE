@@ -48,13 +48,32 @@ export async function bookingsInWeek(userId: string, gymId: string, dateISO: str
 
 export interface MemberPlanStatus {
   plan: MemberPlan | null;
+  /** Pagó su plan de Forza AI por la página del gimnasio y el gimnasio todavía no le asignó un plan: no puede reservar clases. */
+  awaitingPlan: boolean;
   /** Reservas que ya tiene esta semana. */
   usedThisWeek: number;
 }
 
 /** Para mostrarle al socio en la pantalla de clases: su plan y cuántas reservas lleva esta semana. */
 export async function getMemberPlanStatus(userId: string, gymId: string, now = new Date()): Promise<MemberPlanStatus> {
+  const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
+  if (!plan) return { plan: null, awaitingPlan, usedThisWeek: 0 };
+  return { plan, awaitingPlan: false, usedThisWeek: await bookingsInWeek(userId, gymId, todayAR(now)) };
+}
+
+/**
+ * Qué puede hacer el socio con las clases: su plan (si el gimnasio le asignó uno) o, si llegó por la página web del
+ * gimnasio y todavía no tiene plan, queda esperando que el gimnasio lo confirme. Los socios que no llegaron por la web y
+ * no tienen plan asignado no tienen restricciones.
+ */
+export async function getMemberAccess(userId: string, gymId: string): Promise<{ plan: MemberPlan | null; awaitingPlan: boolean }> {
   const plan = await getMemberPlan(userId, gymId);
-  if (!plan) return { plan: null, usedThisWeek: 0 };
-  return { plan, usedThisWeek: await bookingsInWeek(userId, gymId, todayAR(now)) };
+  if (plan) return { plan, awaitingPlan: false };
+  try {
+    const m = await prisma.gymMember.findFirst({ where: { userId, gymId, status: 'ACTIVE', source: 'WEB' }, select: { id: true } });
+    return { plan: null, awaitingPlan: Boolean(m) };
+  } catch (e) {
+    console.error('[gym-plans] no se pudo leer el origen del socio:', e instanceof Error ? e.message : e);
+    return { plan: null, awaitingPlan: false };
+  }
 }

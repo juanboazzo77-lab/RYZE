@@ -109,6 +109,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
             <>
               <p className="text-center font-semibold">¡Tu plan está activo!</p>
               <p className="text-center text-sm text-muted-foreground">Ya estás conectado a {gym.name}. Entrá a la app de Forza AI con esta misma cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
+              <p className="text-center text-xs text-muted-foreground">Para reservar clases, {gym.name} tiene que asignarte el plan que pagás con ellos: pedilo en recepción.</p>
               <StoreLinks />
               {ctx ? <ActivePlanPanel code={code} gymName={gym.name} initialShare={await getShareActivity(ctx.userId)} /> : null}
             </>

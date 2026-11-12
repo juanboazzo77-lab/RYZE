@@ -108,6 +108,12 @@ export function ClientRow({ c, gymName, plans = [] }: { c: ClientRow; gymName: s
         </div>
       </div>
 
+      {c.awaitingPlan ? (
+        <p className="rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-xs">
+          <strong>Pagó su plan de Forza AI.</strong> {plans.length > 0 ? 'Asignale el plan que paga con vos para que pueda reservar clases.' : 'Creá tus planes en Planes del gimnasio y asignale uno para que pueda reservar clases.'}
+        </p>
+      ) : null}
+
       {plans.length > 0 ? (
         <label className="flex items-center gap-2 text-xs text-muted-foreground">
           Plan

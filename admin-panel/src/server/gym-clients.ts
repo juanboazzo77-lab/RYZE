@@ -33,6 +33,8 @@ export interface ClientRow {
   /** Plan de pago del gimnasio que tiene asignado (null = sin plan). */
   planId: string | null;
   planName: string | null;
+  /** Pagó su plan de Forza AI por la página del gimnasio y todavía no tiene un plan del gimnasio asignado: no puede reservar clases. */
+  awaitingPlan: boolean;
 }
 
 async function ownedGym(ownerUserId: string, gymId: string) {
@@ -54,10 +56,11 @@ export async function listClients(ownerUserId: string, gymId: string, today = to
   const members = emails.length
     ? await prisma.gymMember.findMany({
         where: { gymId, status: { in: ['ACTIVE', 'LAPSED'] }, user: { email: { in: emails, mode: 'insensitive' } } },
-        select: { status: true, user: { select: { email: true } } },
+        select: { status: true, source: true, user: { select: { email: true } } },
       })
     : [];
   const memberBy = new Map(members.map((m) => [m.user.email.toLowerCase(), m.status]));
+  const webBy = new Set(members.filter((m) => m.source === 'WEB' && m.status === 'ACTIVE').map((m) => m.user.email.toLowerCase()));
 
   const forzaOf = (email: string | null): ForzaState => {
     if (!email) return 'NO_EMAIL';
@@ -82,6 +85,7 @@ export async function listClients(ownerUserId: string, gymId: string, today = to
       forza: forzaOf(c.email),
       planId: c.plan?.active ? c.plan.id : null,
       planName: c.plan?.active ? c.plan.name : null,
+      awaitingPlan: !(c.plan?.active) && !!c.email && webBy.has(c.email.toLowerCase()),
     };
   });
   // Primero lo que hay que cobrar ya; dentro de cada estado, por nombre.

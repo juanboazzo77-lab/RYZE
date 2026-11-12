@@ -40,6 +40,7 @@ export default async function GymHomePage() {
     { href: '/gym/clientes', title: 'Cargá tus clientes', hint: 'Podés anotarlos en papel y subir una foto. Así te avisamos cada día a quién le toca pagar.', done: clients.length > 0 },
     { href: '/gym/invitaciones', title: 'Imprimí tu QR y ponelo en el mostrador', hint: 'Tus clientes lo escanean, se crean la cuenta y activan su plan.', done: view.activeMembers > 0 },
   ];
+  const awaitingPlan = clients.filter((c) => c.awaitingPlan).length;
   const atRisk = view.sharedMembers.filter((m) => (m.daysSinceLastWorkout ?? m.joinedDaysAgo) >= INACTIVE_DAYS).slice(0, 5);
 
   return (
@@ -60,6 +61,13 @@ export default async function GymHomePage() {
         <Link href="/gym/avisos" className="block rounded-xl border border-primary/40 bg-primary/5 p-4">
           <p className="font-semibold">{unreadNotices === 1 ? 'Tenés 1 aviso nuevo de Forza AI' : `Tenés ${unreadNotices} avisos nuevos de Forza AI`}</p>
           <p className="text-sm text-muted-foreground">Tocá para leerlo.</p>
+        </Link>
+      ) : null}
+
+      {awaitingPlan > 0 ? (
+        <Link href="/gym/clientes?f=plan" className="block rounded-xl border border-warning/50 bg-warning/10 p-4">
+          <p className="font-semibold">{awaitingPlan === 1 ? '1 cliente espera que le asignes un plan' : `${awaitingPlan} clientes esperan que les asignes un plan`}</p>
+          <p className="text-sm text-muted-foreground">Pagaron su plan de Forza AI. Hasta que les asignes un plan del gimnasio no pueden reservar clases.</p>
         </Link>
       ) : null}
 

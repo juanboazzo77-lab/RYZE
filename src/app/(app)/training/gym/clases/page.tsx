@@ -26,7 +26,7 @@ export default async function GymClassesPage() {
   const now = new Date();
   const [items, planStatus] = ctx.gym
     ? await Promise.all([listClassesForMember(ctx.userId, ctx.gym.gymId, now), getMemberPlanStatus(ctx.userId, ctx.gym.gymId, now)])
-    : [[] as ClassOccurrenceView[], { plan: null, usedThisWeek: 0 }];
+    : [[] as ClassOccurrenceView[], { plan: null, awaitingPlan: false, usedThisWeek: 0 }];
   const today = todayAR(now);
   const plan = planStatus.plan;
   const planInfo = plan ? describePlan(plan) : null;
@@ -47,6 +47,13 @@ export default async function GymClassesPage() {
           Reservá tu lugar hasta con 7 días de anticipación. Podés cancelar hasta {CANCEL_BEFORE_MINUTES / 60} horas antes de que empiece.
         </p>
       </div>
+
+      {planStatus.awaitingPlan ? (
+        <section className="space-y-1 rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
+          <p className="font-semibold">Falta confirmar tu plan</p>
+          <p className="text-xs text-muted-foreground">Tu gimnasio tiene que asignarte el plan que pagás con él para que puedas reservar clases. Pedilo en recepción.</p>
+        </section>
+      ) : null}
 
       {plan && planInfo ? (
         <section className="space-y-1 rounded-xl border bg-card p-3 text-sm">
@@ -97,7 +104,7 @@ export default async function GymClassesPage() {
                       {c.description ? <p className="text-xs text-muted-foreground">{c.description}</p> : null}
                       <p className="mt-0.5 text-xs">{left === 0 ? <span className="text-warning">Completa</span> : <span className="text-muted-foreground">{left === 1 ? 'Queda 1 lugar' : `Quedan ${left} lugares`}</span>}</p>
                     </div>
-                    <ClassButton classId={c.classId} date={c.date} state={c.state} inPlan={c.inPlan} />
+                    <ClassButton classId={c.classId} date={c.date} state={c.state} inPlan={c.inPlan} awaitingPlan={c.awaitingPlan} />
                   </li>
                 );
               })}

@@ -6,15 +6,17 @@ import { countClients, listClients } from '@/server/gym-clients';
 import { listPlans } from '@/server/gym-plans';
 import { AddClientsForm } from '@/features/owner/add-clients-form';
 import { ClientRow } from '@/features/owner/client-row';
+import type { ClientRow as ClientRowData } from '@/server/gym-clients';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = { title: 'Clientes' };
 export const dynamic = 'force-dynamic';
 
 const FILTERS = [
-  { key: 'cobrar', label: 'Para cobrar', match: (s: string) => ['DUE_TODAY', 'OVERDUE', 'LAPSED'].includes(s) },
-  { key: 'semana', label: 'Vencen esta semana', match: (s: string) => ['DUE_TODAY', 'SOON'].includes(s) },
-  { key: 'aldia', label: 'Al día', match: (s: string) => s === 'OK' },
+  { key: 'cobrar', label: 'Para cobrar', match: (r: ClientRowData) => ['DUE_TODAY', 'OVERDUE', 'LAPSED'].includes(r.status) },
+  { key: 'semana', label: 'Vencen esta semana', match: (r: ClientRowData) => ['DUE_TODAY', 'SOON'].includes(r.status) },
+  { key: 'aldia', label: 'Al día', match: (r: ClientRowData) => r.status === 'OK' },
+  { key: 'plan', label: 'Esperan plan', match: (r: ClientRowData) => r.awaitingPlan },
   { key: 'todos', label: 'Todos', match: () => true },
 ] as const;
 
@@ -26,9 +28,10 @@ export default async function GymClientsPage({ searchParams }: { searchParams: P
   const counts = countClients(rows);
   const toCollect = counts.dueToday + counts.overdue + counts.lapsed;
   // Por defecto, lo que hay que cobrar; si no hay nada, todos.
-  const active = FILTERS.find((x) => x.key === f) ?? (toCollect > 0 ? FILTERS[0] : FILTERS[3]);
+  const awaiting = rows.filter((r) => r.awaitingPlan).length;
+  const active = FILTERS.find((x) => x.key === f) ?? (toCollect > 0 ? FILTERS[0] : FILTERS[4]);
   const term = (q ?? '').trim().toLowerCase();
-  const shown = rows.filter((r) => active.match(r.status) && (!term || r.name.toLowerCase().includes(term) || (r.email ?? '').includes(term)));
+  const shown = rows.filter((r) => active.match(r) && (!term || r.name.toLowerCase().includes(term) || (r.email ?? '').includes(term)));
 
   return (
     <div className="space-y-4">
@@ -46,6 +49,12 @@ export default async function GymClientsPage({ searchParams }: { searchParams: P
         </p>
       ) : counts.total > 0 ? (
         <p className="rounded-xl border p-3 text-sm text-muted-foreground">No hay cuotas para cobrar hoy. ¡Todo al día!</p>
+      ) : null}
+
+      {awaiting > 0 ? (
+        <Link href="/gym/clientes?f=plan" className="block rounded-xl border border-warning/50 bg-warning/10 p-3 text-sm">
+          <strong>{awaiting}</strong> {awaiting === 1 ? 'cliente pagó' : 'clientes pagaron'} su plan de Forza AI y {awaiting === 1 ? 'espera' : 'esperan'} que le asignes un plan del gimnasio para poder reservar clases.{plans.length === 0 ? ' Primero creá tus planes en Planes del gimnasio.' : ''}
+        </Link>
       ) : null}
 
       <AddClientsForm defaultOpen={counts.total === 0} />
