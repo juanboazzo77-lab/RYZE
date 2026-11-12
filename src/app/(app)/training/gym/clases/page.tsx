@@ -104,7 +104,7 @@ export default async function GymClassesPage() {
                       {c.description ? <p className="text-xs text-muted-foreground">{c.description}</p> : null}
                       <p className="mt-0.5 text-xs">{left === 0 ? <span className="text-warning">Completa</span> : <span className="text-muted-foreground">{left === 1 ? 'Queda 1 lugar' : `Quedan ${left} lugares`}</span>}</p>
                     </div>
-                    <ClassButton classId={c.classId} date={c.date} state={c.state} inPlan={c.inPlan} awaitingPlan={c.awaitingPlan} />
+                    <ClassButton classId={c.classId} date={c.date} state={c.state} inPlan={c.inPlan} awaitingPlan={c.awaitingPlan} onWaitlist={c.onWaitlist} />
                   </li>
                 );
               })}

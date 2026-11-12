@@ -13,6 +13,7 @@ import {
 } from '@/features/gym/classes';
 import { planAllowsClass, weeklyLimitReached } from '@/features/gym/plans';
 import { bookingsInWeek, getMemberAccess } from './gym-plans';
+import { sendUserMail } from './alerts';
 
 /**
  * Reservas de clases, del lado del socio. Todo sale del gimnasio ACTIVO de quien reserva (el `gymId` viene de su
@@ -36,6 +37,8 @@ export interface ClassOccurrenceView {
   state: BookingState;
   /** El plan de pago del socio incluye esta clase (si no tiene plan asignado, todas están incluidas). */
   inPlan: boolean;
+  /** El socio está en la lista de espera de esta clase. */
+  onWaitlist: boolean;
   /** El gimnasio todavía no le asignó un plan (llegó por la página web): no puede reservar hasta que se lo asigne. */
   awaitingPlan: boolean;
 }
@@ -49,6 +52,8 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
   if (occ.length === 0) return [];
   const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
   const today = todayAR(now);
+  const waiting = await prisma.gymWaitlist.findMany({ where: { userId, classId: { in: classes.map((c) => c.id) }, date: { gte: dateOf(todayAR(now)) } }, select: { classId: true, date: true } }).catch(() => []);
+  const waitSet = new Set(waiting.map((w) => `${w.classId}|${w.date.toISOString().slice(0, 10)}`));
   const bookings = await prisma.gymBooking.findMany({
     where: { classId: { in: classes.map((c) => c.id) }, status: 'BOOKED', date: { gte: dateOf(today), lte: dateOf(addDays(today, 7)) } },
     select: { classId: true, userId: true, date: true },
@@ -76,6 +81,7 @@ export async function listClassesForMember(userId: string, gymId: string, now = 
       booked,
       state: bookingState({ now, startsAt: o.startsAt, capacity: o.slot.capacity, booked, mine: mine.has(key) }),
       inPlan: !awaitingPlan && planAllowsClass(plan, o.slot.row.name),
+      onWaitlist: waitSet.has(key),
       awaitingPlan,
     };
   });
@@ -119,7 +125,62 @@ export async function cancelBooking(userId: string, gymId: string, classId: stri
   if (!booking) return 'NOT_FOUND';
   if (!canCancel(now, startInstant(dateISO, booking.class.startTime))) return 'TOO_LATE';
   await prisma.gymBooking.update({ where: { id: booking.id }, data: { status: 'CANCELLED', cancelledAt: now } });
+  // Se liberó un lugar: entra el primero de la lista de espera.
+  await promoteFromWaitlist(gymId, classId, dateISO, now).catch((e) => console.error('[lista-de-espera]', e instanceof Error ? e.message : e));
   return 'ok';
+}
+
+export type WaitError = 'NOT_FOUND' | 'BAD_DATE' | 'STARTED' | 'NOT_FULL' | 'ALREADY' | 'NOT_IN_PLAN' | 'WEEK_LIMIT' | 'AWAITING_PLAN';
+
+/** El socio se anota en la lista de espera de una clase que está completa. Se aplican las mismas reglas que para reservar. */
+export async function joinWaitlist(userId: string, gymId: string, classId: string, dateISO: string, now = new Date()): Promise<'ok' | WaitError> {
+  if (!withinBookingWindow(dateISO, now)) return 'BAD_DATE';
+  const cls = await prisma.gymClass.findFirst({ where: { id: classId, gymId, active: true } });
+  if (!cls || cls.weekday !== weekdayOf(dateISO)) return 'NOT_FOUND';
+  if (startInstant(dateISO, cls.startTime).getTime() <= now.getTime()) return 'STARTED';
+  const date = dateOf(dateISO);
+  const [mine, booked] = await Promise.all([
+    prisma.gymBooking.findUnique({ where: { classId_userId_date: { classId, userId, date } } }),
+    prisma.gymBooking.count({ where: { classId, date, status: 'BOOKED' } }),
+  ]);
+  if (mine?.status === 'BOOKED') return 'ALREADY';
+  if (booked < cls.capacity) return 'NOT_FULL';
+  const { plan, awaitingPlan } = await getMemberAccess(userId, gymId);
+  if (awaitingPlan) return 'AWAITING_PLAN';
+  if (!planAllowsClass(plan, cls.name)) return 'NOT_IN_PLAN';
+  await prisma.gymWaitlist.upsert({ where: { classId_userId_date: { classId, userId, date } }, create: { classId, userId, date }, update: {} });
+  return 'ok';
+}
+
+/** El socio sale de la lista de espera. */
+export async function leaveWaitlist(userId: string, gymId: string, classId: string, dateISO: string): Promise<boolean> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return false;
+  const res = await prisma.gymWaitlist.deleteMany({ where: { classId, userId, date: dateOf(dateISO), class: { gymId } } });
+  return res.count > 0;
+}
+
+/** Pasa al primero de la lista que puede reservar (por su plan) y le avisa por mail. Los que ya no pueden se sacan de la lista. */
+async function promoteFromWaitlist(gymId: string, classId: string, dateISO: string, now: Date): Promise<void> {
+  const date = dateOf(dateISO);
+  const queue = await prisma.gymWaitlist.findMany({ where: { classId, date }, orderBy: { createdAt: 'asc' }, take: 10, select: { userId: true } });
+  for (const q of queue) {
+    const res = await bookClass(q.userId, gymId, classId, dateISO, now);
+    if (res === 'FULL') return;
+    await prisma.gymWaitlist.deleteMany({ where: { classId, userId: q.userId, date } });
+    if (res !== 'ok') continue;
+    const [profile, cls] = await Promise.all([
+      prisma.profile.findUnique({ where: { id: q.userId }, select: { email: true } }),
+      prisma.gymClass.findUnique({ where: { id: classId }, select: { name: true, startTime: true } }),
+    ]);
+    if (profile?.email && cls) {
+      await sendUserMail({
+        to: profile.email,
+        subject: `Se liberó un lugar: quedaste anotado en ${cls.name}`,
+        text: `Se liberó un lugar en ${cls.name} del ${dateISO} a las ${cls.startTime} y quedaste anotado desde la lista de espera.\n\nSi no podés ir, cancelá tu reserva desde la app (Entrenamiento > Tu gimnasio > Clases) hasta 2 horas antes.`,
+      });
+    }
+    return;
+  }
 }
 
 /** La próxima clase que el socio tiene reservada (para el inicio). */

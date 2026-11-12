@@ -37,3 +37,21 @@ export async function sendAlert(args: { subject: string; text: string }): Promis
     return false;
   }
 }
+
+/** Un mail simple a una persona (por ejemplo, "se liberó un lugar en la clase"). Nunca tira una excepción. */
+export async function sendUserMail(args: { to: string; subject: string; text: string }): Promise<boolean> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return false;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'Forza AI <noreply@mail.forzaai.app>', to: [args.to], subject: args.subject.slice(0, 200), text: args.text.slice(0, 5000), reply_to: 'soporte@forzaai.app' }),
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error('[mail] no se pudo enviar', e instanceof Error ? e.message : e);
+    return false;
+  }
+}

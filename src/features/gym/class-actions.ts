@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireUser } from '@/server/context';
-import { bookClass, cancelBooking } from '@/server/gym-classes';
+import { bookClass, cancelBooking, joinWaitlist, leaveWaitlist } from '@/server/gym-classes';
 
 interface Result {
   ok?: boolean;
@@ -37,4 +37,26 @@ export async function cancelMyClass(raw: { classId: string; date: string }): Pro
   const res = await cancelBooking(ctx.userId, ctx.gym.gymId, parsed.data.classId, parsed.data.date);
   refresh();
   return res === 'ok' ? { ok: true } : { error: res };
+}
+
+/** Se anota en la lista de espera de una clase completa. */
+export async function joinMyWaitlist(raw: { classId: string; date: string }): Promise<Result> {
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const ctx = await requireUser();
+  if (!ctx.gym) return { error: 'NOT_MEMBER' };
+  const res = await joinWaitlist(ctx.userId, ctx.gym.gymId, parsed.data.classId, parsed.data.date);
+  refresh();
+  return res === 'ok' ? { ok: true } : { error: res };
+}
+
+/** Sale de la lista de espera. */
+export async function leaveMyWaitlist(raw: { classId: string; date: string }): Promise<Result> {
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const ctx = await requireUser();
+  if (!ctx.gym) return { error: 'NOT_MEMBER' };
+  const ok = await leaveWaitlist(ctx.userId, ctx.gym.gymId, parsed.data.classId, parsed.data.date);
+  refresh();
+  return ok ? { ok: true } : { error: 'NOT_FOUND' };
 }
