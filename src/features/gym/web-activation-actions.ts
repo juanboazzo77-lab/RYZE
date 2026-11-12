@@ -7,9 +7,11 @@ import { revalidatePath } from 'next/cache';
 import { cancelWebPlan, startSubscription } from '@/server/billing/mercadopago';
 import { setShareActivity } from '@/server/gyms';
 import { normalizeGymCode } from '@/features/gym/logic';
+import { cleanFullName, isFullName } from '@/features/gym/full-name';
+import { prisma } from '@/server/db';
 
 export interface ActivationState {
-  error?: 'NOT_FOUND' | 'NOT_READY' | 'FAILED' | 'ALREADY_ACTIVE';
+  error?: 'NOT_FOUND' | 'NOT_READY' | 'FAILED' | 'ALREADY_ACTIVE' | 'NAME';
 }
 
 /**
@@ -22,6 +24,14 @@ export async function activateGymPlan(_prev: ActivationState, formData: FormData
   const code = normalizeGymCode(String(formData.get('code') ?? ''));
   const gym = code ? await getGymLanding(code) : null;
   if (!code || !gym) return { error: 'NOT_FOUND' };
+  // El dueño del gimnasio tiene que poder ver quién es: nombre y apellido antes de pagar.
+  const typed = cleanFullName(formData.get('fullName'));
+  if (typed) {
+    if (!isFullName(typed)) return { error: 'NAME' };
+    await prisma.profile.update({ where: { id: ctx.userId }, data: { name: typed } });
+  } else if (!isFullName(ctx.profile.name)) {
+    return { error: 'NAME' };
+  }
   await recordGymReferral(ctx.userId, gym.id);
 
   const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.forzaai.app';

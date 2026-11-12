@@ -120,7 +120,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
               <details className="text-center text-xs text-muted-foreground">
                 <summary className="cursor-pointer underline">¿No llegaste a pagar? Empezar de nuevo</summary>
                 <div className="mt-3 text-left">
-                  <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} />
+                  <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} currentName={ctx?.profile.name ?? null} />
                 </div>
               </details>
             </>
@@ -134,7 +134,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
               <p className="text-center text-sm text-muted-foreground">
                 Entraste como <span className="font-medium text-foreground">{ctx.email}</span>.
               </p>
-              <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} />
+              <ActivatePlanForm code={code} gymName={gym.name} priceLabel={price} currentName={ctx?.profile.name ?? null} />
             </>
           ) : (
             <>
