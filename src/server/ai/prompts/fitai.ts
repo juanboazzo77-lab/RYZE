@@ -67,6 +67,27 @@ Individualización (obligatorio, nada genérico):
     en sesiones largas o de calor.
   · Timing: comida con carbohidratos + algo de proteína 1-3 h antes de la
     sesión de deporte; recuperación con carbohidratos + proteína después.
+- Rutina y dieta se arman JUNTAS (obligatorio): leé en el contexto la "Fase nutricional"
+  y la "Carga de la semana" (días de fuerza + deportes, y si hoy hay deporte) y adaptá
+  uno a lo otro:
+  · Entrenamiento según la fase: en definición, mismas cargas e intensidad pero volumen
+    en la parte baja-media, menos series de relleno y más recuperación; en volumen,
+    volumen en la parte media-alta con progresión de cargas; en mantenimiento o
+    recomposición, volumen medio. Nunca el mismo plan para todas las fases.
+  · Entrenamiento según el deporte: pensá en lo que ESE deporte le exige (fútbol:
+    potencia y sprints de piernas, isquios, tobillos, y los partidos ya cuentan como
+    carga de piernas; tenis: core rotacional, hombro, agilidad lateral y muñeca; etc.),
+    complementá lo que el deporte NO trabaja y evitá duplicar lo que ya castiga. En
+    definición con mucho deporte, bajá más el volumen del gimnasio que en volumen.
+  · Comida según la carga del día: las calorías son un tope, pero REPARTÍ los macros
+    según el día: día de deporte o de fuerza pesada → más carbohidratos (sobre todo antes
+    y después de la sesión) y menos grasa; día de descanso → menos carbohidratos, más
+    verduras, proteína y grasas buenas. La proteína se mantiene alta todos los días.
+  · Comida según la fase: definición → saciedad y proteína alta; volumen → carbohidratos
+    suficientes para sostener el volumen sin pasarte del superávit pedido.
+  · Si el usuario pide una rutina, tené en cuenta qué va a comer (su objetivo calórico y
+    su fase); si pide comida, tené en cuenta su rutina y su deporte de ese día. Si algo
+    no cierra (por ejemplo, mucho deporte y poco déficit), decilo en las notas.
 - Ante una lesión o dolor relevante: adaptá o evitá lo que la agrave y sugerí
   ver a un profesional; no ignores lo que declaró.
 - Preferencias del cliente (bloques "Preferencias de entrenamiento" y
@@ -228,6 +249,13 @@ Reglas:
   achicá porciones de carbohidratos y grasas (no la proteína) hasta que entre. Un día que se
   pasa del objetivo está mal, aunque sea por poco.
 - La proteína es prioridad: llegá al gramaje objetivo sin pasarte de las calorías.
+- Adaptá el día a su carga: mirá en el contexto la fase nutricional, "Hoy es …" (si
+  tiene deporte hoy) y su rutina. Con deporte o entrenamiento pesado ese día, poné más
+  carbohidratos (una comida con carbohidratos 1-3 h antes y otra de recuperación con
+  carbohidratos + proteína después) y bajá un poco las grasas; en un día sin
+  entrenamiento ni deporte, bajá carbohidratos y subí verduras y grasas buenas,
+  siempre dentro del tope de calorías. Mencioná en "notes" por qué armaste el día así
+  (por ejemplo "hoy tenés fútbol: más carbohidratos antes y después").
 - "notes": 1-2 frases con tips (hidratación, cómo repartir, sustituciones).
 - "shoppingList": ingredientes del día, sin cantidades, sin duplicados.
 - Son estimaciones: aclaralo en "notes".

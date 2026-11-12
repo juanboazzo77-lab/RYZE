@@ -5,7 +5,8 @@ import { forUser } from '@/server/user-db';
 import { can } from '@/server/entitlements';
 import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { weeklyWeightChangeKg, type DatedWeight } from '@/features/dashboard/compute';
-import { buildSportContextLines } from '@/features/sports/queries';
+import { buildSportContextLines, getSports } from '@/features/sports/queries';
+import { nutritionPhase, phaseContextLines, weekLoadContextLines } from './phase';
 import { buildCoachProfileLines } from '@/features/coach-profile/queries';
 import { MAX_MEMORIES } from '@/features/coach-memory/schema';
 import { getMemberGymContext } from '@/server/gyms';
@@ -205,6 +206,19 @@ export async function buildUserContextBlock(
     currentKg !== null
       ? `Peso actual ${currentKg} kg; cambio semanal ${weeklyChange ?? '—'} kg (${dated.length} registros en 30 d).`
       : 'Sin registros de peso.',
+  );
+
+  // Rutina y dieta van juntas: la fase (definición, volumen…) y la carga de la semana (fuerza + deportes, y si hoy hay
+  // deporte) para que el entrenamiento y la comida se adapten uno al otro.
+  const phase = nutritionPhase({ goalType: goal?.type ?? null, primaryGoal: profile.primaryGoal ?? null, weeklyRateKg: goal?.weeklyRateKg ?? null });
+  lines.push(...phaseContextLines(phase));
+  const sportList = await getSports(profile);
+  lines.push(
+    ...weekLoadContextLines({
+      gymDaysPerWeek: profile.daysAvailable ?? null,
+      sports: sportList.map((s) => ({ name: s.name, sessionsPerWeek: s.sessionsPerWeek, sessionDays: s.sessionDays })),
+      todayWeekday: DateTime.fromISO(todayISO).weekday,
+    }),
   );
 
   if (target) {
