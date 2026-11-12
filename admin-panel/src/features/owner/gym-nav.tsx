@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Bell, CalendarDays, ClipboardList, Dumbbell, Home, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, Users, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Activity, Bell, CalendarDays, ClipboardList, Dumbbell, Home, Megaphone, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, Users, Wallet, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Item {
@@ -39,6 +39,7 @@ const GROUPS: Group[] = [
       { href: '/gym/invitaciones', label: 'Mi QR e invitar', short: 'Mi QR', icon: QrCode, main: true },
       { href: '/gym/socios', label: 'Quién entrena', icon: Activity },
       { href: '/gym/clases', label: 'Clases', icon: CalendarDays },
+      { href: '/gym/mensajes', label: 'Mensajes a clientes', icon: Megaphone },
       { href: '/gym/retos', label: 'Retos', icon: Trophy },
       { href: '/gym/rutinas', label: 'Rutinas', icon: ClipboardList },
     ],

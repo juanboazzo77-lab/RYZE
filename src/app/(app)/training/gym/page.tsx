@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { CalendarCheck, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { listMemberRoutines } from '@/server/gym-routines';
+import { listMemberMessages } from '@/server/gym-messages';
 import { countExercises, levelLabel } from '@/features/gym/routines';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 /** Las rutinas oficiales del gimnasio del socio. */
 export default async function GymRoutinesPage() {
   const ctx = await requireUser();
-  const routines = ctx.gym ? await listMemberRoutines(ctx.gym.gymId) : [];
+  const [routines, messages] = ctx.gym ? await Promise.all([listMemberRoutines(ctx.gym.gymId), listMemberMessages(ctx.gym.gymId)]) : [[], []];
 
   return (
     <div className="space-y-4">
@@ -24,6 +25,23 @@ export default async function GymRoutinesPage() {
         <h1 className="text-2xl font-bold tracking-tight">{ctx.gym?.name ?? 'Tu gimnasio'}</h1>
         <p className="text-sm text-muted-foreground">Todo lo de tu gimnasio, en un solo lugar.</p>
       </div>
+
+      {messages.length > 0 ? (
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">Avisos de tu gimnasio</h2>
+          <ul className="space-y-2">
+            {messages.map((m) => (
+              <li key={m.id} className="space-y-1 rounded-xl border bg-card p-3 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="font-semibold">{m.title}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(m.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}</p>
+                </div>
+                <p className="whitespace-pre-line text-muted-foreground">{m.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/training/gym/clases" className="flex items-center gap-3 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent">

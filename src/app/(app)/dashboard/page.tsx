@@ -16,6 +16,8 @@ import { CoachProfileNudge } from '@/features/coach-profile/completion-card';
 import { GymBrandCard } from '@/features/gym/gym-brand-card';
 import { countMemberRoutines } from '@/server/gym-routines';
 import { nextChallengeBanner } from '@/server/gym-challenges';
+import { listMemberMessages } from '@/server/gym-messages';
+import { GymMessageChip } from '@/features/gym/gym-message-chip';
 import { nextBookingFor } from '@/server/gym-classes';
 import { NextClassChip } from '@/features/gym/next-class-chip';
 import { ChallengeBanner } from '@/features/gym/challenge-banner';
@@ -32,6 +34,8 @@ export default async function DashboardPage() {
     : false;
 
   const challenge = ctx.gym ? await nextChallengeBanner(ctx.userId, ctx.gym.gymId) : null;
+  // El último mensaje del gimnasio, si es de la última semana.
+  const gymMessage = ctx.gym ? ((await listMemberMessages(ctx.gym.gymId, 7, 1))[0] ?? null) : null;
   const nextClass = ctx.gym ? await nextBookingFor(ctx.userId, ctx.gym.gymId) : null;
 
   const part = dayPart(ctx.profile.timezone);
@@ -59,6 +63,7 @@ export default async function DashboardPage() {
 
       {ctx.gym ? <GymBrandCard gym={ctx.gym} routineCount={await countMemberRoutines(ctx.gym.gymId)} /> : null}
 
+      {gymMessage && ctx.gym ? <GymMessageChip gymName={ctx.gym.name} message={gymMessage} /> : null}
       {nextClass ? <NextClassChip booking={nextClass} /> : null}
 
       {challenge ? <ChallengeBanner challenge={challenge} /> : null}

@@ -297,6 +297,7 @@ model Profile {
   gymBookings             GymBooking[]
   gymReferral             GymReferral?
   webSubscription         WebSubscription?
+  gymWaitlist             GymWaitlist[]
   ownedGyms               Gym[]     @relation("GymOwner")
   dailyActivities         DailyActivity[]
   sportProfiles           SportProfile[]
@@ -1031,6 +1032,10 @@ model Gym {
   classes             GymClass[]
   plans               GymPlan[]
   noticeReads         GymNoticeRead[]
+  messages            GymMessage[]
+  staff               GymStaff[]
+  /// El dueño prendió los recordatorios automáticos de cuota a sus clientes (por mail).
+  clientReminders     Boolean     @default(false) @map("client_reminders")
   /// Color de la marca (#rrggbb) y logo (dirección pública), para lo que ve el socio dentro de la app.
   brandColor          String?     @map("brand_color")
   logoUrl             String?     @map("logo_url")
@@ -1087,6 +1092,8 @@ model GymClient {
   active     Boolean   @default(true)
   createdAt  DateTime  @default(now()) @map("created_at")
   /// Plan de pago del gimnasio que tiene este cliente (define a qué clases puede anotarse). Null = sin plan asignado.
+  /// Último día en que se le mandó un recordatorio de cuota (para no repetirlo).
+  lastReminderOn DateTime? @db.Date @map("last_reminder_on")
   planId     String?   @db.Uuid @map("plan_id")
   plan       GymPlan?  @relation(fields: [planId], references: [id], onDelete: SetNull)
   payments   GymClientPayment[]
@@ -1117,6 +1124,50 @@ model GymPlan {
 
   @@index([gymId, active])
   @@map("gym_plan")
+}
+
+/// Mensaje del dueño del gimnasio a sus clientes (se ve en la app del socio y, si se elige, le llega por mail).
+model GymMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  gymId     String   @db.Uuid @map("gym_id")
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  emailed   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([gymId, createdAt])
+  @@map("gym_message")
+}
+
+/// Un socio en la lista de espera de una clase para una fecha. Si alguien cancela, el primero de la lista entra.
+model GymWaitlist {
+  classId   String   @db.Uuid @map("class_id")
+  class     GymClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([classId, userId, date])
+  @@index([classId, date, createdAt])
+  @@index([userId])
+  @@map("gym_waitlist")
+}
+
+/// Persona del equipo del gimnasio con permisos limitados. role: RECEPTION (clientes, cobros, planes) | COACH (clases, retos, rutinas).
+model GymStaff {
+  id        String   @id @default(uuid()) @db.Uuid
+  gymId     String   @db.Uuid @map("gym_id")
+  gym       Gym      @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  /// En minúsculas.
+  email     String
+  role      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([gymId, email])
+  @@index([email])
+  @@map("gym_staff")
 }
 
 /// Aviso del administrador a los gimnasios. `gymIds` vacío = a todos; si no, solo a esos gimnasios.
@@ -1218,6 +1269,7 @@ model GymClass {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   bookings    GymBooking[]
+  waitlist    GymWaitlist[]
 
   @@index([gymId, active])
   @@map("gym_class")
