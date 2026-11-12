@@ -21,7 +21,7 @@ const refresh = () => {
 export async function saveBrandColorAction(raw: { color: string }): Promise<Result> {
   const color = z.string().max(20).safeParse(raw.color);
   if (!color.success) return { error: 'INVALID' };
-  const { userId, gym } = await requireOwner();
+  const { userId, gym } = await requireOwner({ ownerOnly: true });
   const res = await saveBrandColor(userId, gym.id, color.data.trim() === '' ? null : color.data);
   refresh();
   return res === 'ok' ? { ok: true } : { error: res };
@@ -31,14 +31,14 @@ export async function saveBrandColorAction(raw: { color: string }): Promise<Resu
 export async function uploadLogoAction(formData: FormData): Promise<Result<{ logoUrl: string }> & { error?: LogoError | 'INVALID' }> {
   const file = formData.get('logo');
   if (!(file instanceof File)) return { error: 'NO_FILE' };
-  const { userId, gym } = await requireOwner();
+  const { userId, gym } = await requireOwner({ ownerOnly: true });
   const res = await uploadLogo(userId, gym.id, file);
   refresh();
   return 'ok' in res ? { ok: true, data: { logoUrl: res.logoUrl } } : { error: res.error };
 }
 
 export async function removeLogoAction(): Promise<Result> {
-  const { userId, gym } = await requireOwner();
+  const { userId, gym } = await requireOwner({ ownerOnly: true });
   const ok = await removeLogo(userId, gym.id);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_OWNER' };
@@ -58,7 +58,7 @@ const routineSchema = z.object({
 export async function saveRoutineAction(raw: z.input<typeof routineSchema>): Promise<Result<{ id: string }>> {
   const parsed = routineSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const { userId, gym } = await requireOwner();
+  const { userId, gym } = await requireOwner({ ownerOnly: true });
   const { id, ...rest } = parsed.data;
   const res = await saveRoutine(userId, gym.id, id, rest);
   refresh();
@@ -68,7 +68,7 @@ export async function saveRoutineAction(raw: z.input<typeof routineSchema>): Pro
 export async function setRoutineActiveAction(raw: { id: string; active: boolean }): Promise<Result> {
   const id = z.string().uuid().safeParse(raw.id);
   if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireOwner();
+  const { userId } = await requireOwner({ ownerOnly: true });
   const ok = await setRoutineActive(userId, id.data, raw.active === true);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };
@@ -77,7 +77,7 @@ export async function setRoutineActiveAction(raw: { id: string; active: boolean 
 export async function deleteRoutineAction(raw: { id: string }): Promise<Result> {
   const id = z.string().uuid().safeParse(raw.id);
   if (!id.success) return { error: 'INVALID' };
-  const { userId } = await requireOwner();
+  const { userId } = await requireOwner({ ownerOnly: true });
   const ok = await deleteRoutine(userId, id.data);
   refresh();
   return ok ? { ok: true } : { error: 'NOT_FOUND' };

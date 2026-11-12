@@ -2,6 +2,7 @@ import 'server-only';
 import { after } from 'next/server';
 import { prisma } from './db';
 import { sendAlert } from './alerts';
+import { asStaffRole, type PanelRole } from '@/features/gym/staff';
 import { parseGymProfile, specialtyByKey, type GymProfile } from '@/features/gym/catalog';
 import { asInviteStatus, MAX_INVITES_PER_REQUEST, parseEmailList, type InviteStatus } from '@/features/gym/logic';
 
@@ -13,14 +14,38 @@ import { asInviteStatus, MAX_INVITES_PER_REQUEST, parseEmailList, type InviteSta
 /* ---------- Dueño del gimnasio ---------- */
 
 /** El gimnasio del que esta cuenta es dueña (el más reciente si hubiera más de uno), o null. */
-export async function getOwnedGym(userId: string): Promise<{ id: string; name: string } | null> {
+export async function getOwnedGym(userId: string): Promise<{ id: string; name: string; ownerUserId: string; role: PanelRole } | null> {
   const g = await prisma.gym.findFirst({
     // También los pendientes: el dueño ya puede entrar a su panel mientras el gimnasio está en revisión.
     where: { ownerUserId: userId, status: { in: ['ACTIVE', 'SUSPENDED', 'PENDING'] } },
     orderBy: { createdAt: 'desc' },
     select: { id: true, name: true },
   });
-  return g ?? null;
+  if (g) return { ...g, ownerUserId: userId, role: 'OWNER' };
+  return getStaffGym(userId);
+}
+
+/**
+ * Si esta cuenta es del equipo de un gimnasio (la dueña le dio acceso por su mail), devuelve ese gimnasio, el rol y el
+ * dueño: las pantallas y las acciones trabajan "como el dueño", pero solo en lo que el rol permite.
+ */
+export async function getStaffGym(userId: string): Promise<{ id: string; name: string; ownerUserId: string; role: PanelRole } | null> {
+  try {
+    const profile = await prisma.profile.findUnique({ where: { id: userId }, select: { email: true } });
+    const email = profile?.email?.trim().toLowerCase();
+    if (!email) return null;
+    const row = await prisma.gymStaff.findFirst({
+      where: { email, gym: { status: { in: ['ACTIVE', 'SUSPENDED', 'PENDING'] }, ownerUserId: { not: null } } },
+      orderBy: { createdAt: 'desc' },
+      select: { role: true, gym: { select: { id: true, name: true, ownerUserId: true } } },
+    });
+    const role = row ? asStaffRole(row.role) : null;
+    if (!row || !role || !row.gym.ownerUserId) return null;
+    return { id: row.gym.id, name: row.gym.name, ownerUserId: row.gym.ownerUserId, role };
+  } catch (e) {
+    console.error('[equipo] no se pudo leer el acceso del equipo:', e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 /** Días sin entrenar a partir de los cuales un socio cuenta como "en riesgo de irse". */

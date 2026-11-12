@@ -23,7 +23,13 @@ const under = (pathname: string, paths: string[]) => paths.some((p) => pathname 
  * de un gimnasio. (Cada pantalla y cada acción vuelve a comprobarlo: esto es la primera barrera, no la única.)
  */
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // La dirección viaja en un encabezado para que las pantallas y las acciones sepan desde dónde se las llama.
+  const forward = () => {
+    const h = new Headers(request.headers);
+    h.set('x-pathname', request.nextUrl.pathname);
+    return NextResponse.next({ request: { headers: h } });
+  };
+  let response = forward();
   const { pathname } = request.nextUrl;
 
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -33,7 +39,7 @@ export async function middleware(request: NextRequest) {
       },
       setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = forward();
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },

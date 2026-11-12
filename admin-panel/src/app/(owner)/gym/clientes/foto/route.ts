@@ -1,5 +1,6 @@
 import { getSessionUser } from '@/lib/owner';
 import { getOwnedGym } from '@/server/owner';
+import { pathAllowed } from '@/features/gym/staff';
 import { readClientSheet } from '@/server/ai-sheet';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: 'UNAUTHORIZED' }, { status: 401 });
   const gym = await getOwnedGym(user.userId);
-  if (!gym) return Response.json({ error: 'UNAUTHORIZED' }, { status: 403 });
+  if (!gym || !pathAllowed(gym.role, '/gym/clientes/foto')) return Response.json({ error: 'UNAUTHORIZED' }, { status: 403 });
   if (tooMany(user.userId)) return Response.json({ error: 'TOO_MANY' }, { status: 429 });
 
   let file: File | null = null;

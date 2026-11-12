@@ -22,7 +22,7 @@ const ownProfileSchema = z.object({
 export async function saveMyGymProfile(raw: z.input<typeof ownProfileSchema>): Promise<Result> {
   const parsed = ownProfileSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
-  const { userId, gym } = await requireOwner();
+  const { userId, gym } = await requireOwner({ ownerOnly: true });
   const ok = await saveOwnGymProfile(userId, gym.id, parsed.data);
   revalidatePath('/gym/equipamiento');
   return ok ? { ok: true } : { error: 'NOT_OWNER' };

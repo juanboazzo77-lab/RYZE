@@ -38,7 +38,17 @@ export default async function GymLayout({ children }: { children: React.ReactNod
   }
 
   // Hasta que no acepte la versión vigente de los términos, no ve el panel.
-  if (!(await hasAcceptedTerms(ctx.gym.id))) return <TermsGate gymName={ctx.gym.name} />;
+  if (!(await hasAcceptedTerms(ctx.gym.id))) {
+    if (ctx.role !== 'OWNER') {
+      return (
+        <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-3 px-4 text-center">
+          <h1 className="text-xl font-bold tracking-tight">Falta un paso del dueño</h1>
+          <p className="text-sm text-muted-foreground">El dueño de {ctx.gym.name} todavía tiene que aceptar los términos. Cuando lo haga, vas a poder usar el panel.</p>
+        </div>
+      );
+    }
+    return <TermsGate gymName={ctx.gym.name} />;
+  }
 
   const unread = await countUnreadNotices(ctx.gym.id);
 
@@ -49,7 +59,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
           <BrandMark size={36} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{ctx.gym.name}</p>
-            <p className="text-xs text-muted-foreground">Panel del gimnasio · Forza AI</p>
+            <p className="text-xs text-muted-foreground">Panel del gimnasio · Forza AI{ctx.role === 'RECEPTION' ? ' · Recepción' : ctx.role === 'COACH' ? ' · Profe' : ''}</p>
           </div>
         </div>
         <form action={signOutAction} className="flex items-center gap-2">
@@ -66,7 +76,7 @@ export default async function GymLayout({ children }: { children: React.ReactNod
 
       <div className="space-y-4 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0 print:block">
         <div className="print:hidden lg:sticky lg:top-6">
-          <GymNav unread={unread} />
+          <GymNav unread={unread} role={ctx.role} />
         </div>
         <div className="min-w-0 space-y-4">
           {children}

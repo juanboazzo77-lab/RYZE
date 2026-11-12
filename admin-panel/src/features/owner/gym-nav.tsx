@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, BarChart3, Bell, CalendarDays, ClipboardList, Dumbbell, Home, Megaphone, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, Users, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Activity, BarChart3, Bell, CalendarDays, ClipboardList, Dumbbell, Home, Megaphone, MoreHorizontal, Palette, QrCode, Receipt, Tags, Trophy, UserCog, Users, Wallet, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { pathAllowed, type PanelRole } from '@/features/gym/staff';
 
 interface Item {
   href: string;
@@ -22,7 +23,7 @@ interface Group {
 }
 
 /** El menú, agrupado por lo que el dueño hace: el día a día, lo que ofrece a sus clientes y la configuración. */
-const GROUPS: Group[] = [
+const ALL_GROUPS: Group[] = [
   {
     title: 'Día a día',
     items: [
@@ -51,12 +52,11 @@ const GROUPS: Group[] = [
       { href: '/gym/marca', label: 'Marca', icon: Palette },
       { href: '/gym/equipamiento', label: 'Equipamiento', icon: Dumbbell },
       { href: '/gym/facturacion', label: 'Lo que pagás a Forza AI', icon: Receipt },
+      { href: '/gym/equipo', label: 'Equipo', icon: UserCog },
     ],
   },
 ];
 
-const ALL = GROUPS.flatMap((g) => g.items);
-const MAIN = ALL.filter((i) => i.main);
 
 const isActive = (pathname: string, href: string) => (href === '/gym' ? pathname === '/gym' : pathname.startsWith(href));
 
@@ -64,13 +64,17 @@ const isActive = (pathname: string, href: string) => (href === '/gym' ? pathname
  * Menú del panel del gimnasio. En la computadora es una barra lateral con secciones; en el celular, una barra abajo con
  * lo principal y un botón "Más" que abre el resto (así nada queda escondido fuera de la pantalla).
  */
-export function GymNav({ unread = 0 }: { unread?: number }) {
+export function GymNav({ unread = 0, role = 'OWNER' }: { unread?: number; role?: PanelRole }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   // Al navegar se cierra el menú "Más".
   useEffect(() => setOpen(false), [pathname]);
 
+  // El equipo ve solo las secciones de su rol.
+  const GROUPS = ALL_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => pathAllowed(role, i.href)) })).filter((g) => g.items.length > 0);
+  const ALL = GROUPS.flatMap((g) => g.items);
+  const MAIN = ALL.filter((i) => i.main);
   const moreActive = ALL.some((i) => !i.main && isActive(pathname, i.href));
 
   return (
