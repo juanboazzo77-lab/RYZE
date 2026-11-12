@@ -14,5 +14,7 @@ export async function POST(req: NextRequest) {
   if (!secret) return NextResponse.json({ error: 'not_configured' }, { status: 503 });
   if (req.headers.get('authorization') !== `Bearer ${secret}`) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   const res = await deliverDueNotifications({ kinds: ['GYM_MESSAGE'], take: 1000 });
+  // Queda en el log cuántas notificaciones se entregaron y a cuántos dispositivos llegaron (0 = nadie las tiene activadas).
+  console.log(`[notify-flush] notificaciones entregadas: ${res.delivered}, dispositivos alcanzados: ${res.pushed}`);
   return NextResponse.json({ ok: true, ...res });
 }
