@@ -26,18 +26,25 @@ const BENEFITS = [
 ] as const;
 
 /** Página pública de un gimnasio: la abre el QR que el gimnasio pega en su local. */
-/** Descarga de la app. Los enlaces se cargan por variable cuando la app esté publicada; mientras tanto se avisa que viene. */
+/** Descarga de la app: está en el App Store (el link se puede cambiar por variable). Android todavía no. */
+const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim() || 'https://apps.apple.com/ar/app/forza-ai/id6812473503';
+
 function StoreLinks() {
-  const ios = process.env.NEXT_PUBLIC_APP_STORE_URL?.trim();
   const android = process.env.NEXT_PUBLIC_PLAY_STORE_URL?.trim();
-  if (!ios && !android) {
-    return <p className="text-center text-xs text-muted-foreground">Muy pronto vas a poder descargar la app desde App Store y Google Play. Entrá con esta misma cuenta.</p>;
-  }
   const cls = 'inline-flex h-11 flex-1 items-center justify-center rounded-full border text-sm font-semibold transition-colors hover:bg-secondary';
   return (
-    <div className="flex gap-2">
-      {ios ? <a href={ios} className={cls}>App Store</a> : null}
-      {android ? <a href={android} className={cls}>Google Play</a> : null}
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <a href={APP_STORE_URL} target="_blank" rel="noopener" className={cls}>
+          Descargar en el App Store
+        </a>
+        {android ? (
+          <a href={android} className={cls}>
+            Google Play
+          </a>
+        ) : null}
+      </div>
+      {android ? null : <p className="text-center text-xs text-muted-foreground">La versión de Android está en camino. Mientras tanto la podés usar desde el navegador en forzaai.app.</p>}
     </div>
   );
 }
@@ -109,7 +116,7 @@ export default async function GymLandingPage({ params, searchParams }: { params:
           {planStatus === 'AUTHORIZED' ? (
             <>
               <p className="text-center font-semibold">¡Tu plan está activo!</p>
-              <p className="text-center text-sm text-muted-foreground">Ya estás conectado a {gym.name}. Entrá a la app de Forza AI con esta misma cuenta y ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
+              <p className="text-center text-sm text-muted-foreground">Ya estás conectado a {gym.name}. Descargá la app de Forza AI e iniciá sesión con esta misma cuenta: ya tenés tu plan de entrenamiento, tu dieta y tu coach.</p>
               <p className="text-center text-xs text-muted-foreground">Para reservar clases, {gym.name} tiene que asignarte el plan que pagás con ellos: pedilo en recepción.</p>
               <StoreLinks />
               {ctx ? <ActivePlanPanel code={code} gymName={gym.name} initialShare={await getShareActivity(ctx.userId)} /> : null}
@@ -155,6 +162,12 @@ export default async function GymLandingPage({ params, searchParams }: { params:
             </>
           )}
         </div>
+
+        {planStatus === 'AUTHORIZED' ? null : (
+          <p className="rounded-2xl border bg-card p-3.5 text-center text-sm text-muted-foreground shadow-sm">
+            <strong className="text-foreground">Cómo es:</strong> pagás tu plan acá, en la web. Después descargás la app de Forza AI desde el App Store e iniciás sesión con la misma cuenta con la que pagaste.
+          </p>
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           Los planes de la IA son estimaciones y no reemplazan a un profesional.{' '}

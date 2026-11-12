@@ -14,6 +14,7 @@ import {
   Salad,
   ScanLine,
   ShieldCheck,
+  Smartphone,
   Trophy,
   Users,
   Wallet,
@@ -48,7 +49,7 @@ const PANEL = [
 const FAQ = [
   { q: '¿Cuánto me cuesta?', a: 'Nada. Cada cliente paga su plan por su cuenta ($9.000 por mes con Mercado Pago) y puede cancelar cuando quiera. Lo único que te pedimos es que le ofrezcas el plan a tus clientes y llegues a 10 con el plan.' },
   { q: '¿Me cobran comisión por mis cuotas?', a: 'No. Las cuotas de tu gimnasio son tuyas: las cobrás como siempre. El panel solo te ayuda a llevar el control.' },
-  { q: '¿Mis clientes tienen que instalar algo?', a: 'No. Se usa desde el celular en forzaai.app. La app de iPhone y Android está en camino.' },
+  { q: '¿Cómo usan la app mis clientes?', a: 'Pagan su plan en la web (con tu QR o tu link). Después descargan la app de Forza AI desde el App Store e inician sesión con la misma cuenta con la que pagaron. También la pueden usar desde el celular en forzaai.app. La versión de Android está en camino.' },
   { q: '¿Puedo llevar mis clientes aunque no usen la app?', a: 'Sí. Cargás tu lista y llevás cuotas y vencimientos desde el panel, estén o no en la app.' },
   { q: '¿Qué pasa si alguien entra solo con el código?', a: 'Prueba todo gratis 3 días. Después tiene que pagar su plan o escanear tu QR y activarlo para seguir.' },
   { q: '¿Qué datos de mis clientes veo?', a: 'Totales (cuántos entrenaron, cuántos se alejaron) y, solo si el cliente lo permite, su nombre y su última actividad. Nunca su peso, sus fotos ni sus comidas.' },
@@ -114,8 +115,8 @@ export default function ApplyPage() {
           <ol className="grid gap-3 sm:grid-cols-3">
             {[
               { t: 'Te damos tu QR y tu código', d: 'Imprimís el QR para el mostrador o mandás el link y el código por WhatsApp.' },
-              { t: 'Tu cliente se suma', d: 'Escanea el QR, crea su cuenta, deja su nombre y su WhatsApp y activa su plan mensual con Mercado Pago ($9.000 por mes).' },
-              { t: 'Queda conectado a tu gimnasio', d: 'Ve tu marca, tus rutinas, tus clases y tus retos. Aparece en tu lista de clientes.' },
+              { t: 'Tu cliente paga en la web', d: 'Escanea el QR, crea su cuenta, deja su nombre y su WhatsApp y activa su plan mensual con Mercado Pago ($9.000 por mes).' },
+              { t: 'Descarga la app y entra', d: 'Baja Forza AI del App Store e inicia sesión con la misma cuenta con la que pagó. Queda conectado a tu gimnasio y aparece en tu lista de clientes.' },
             ].map((s, i) => (
               <li key={s.t} className="rounded-2xl border bg-card p-4 shadow-sm">
                 <span className="mb-2 grid size-8 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">{i + 1}</span>
@@ -124,6 +125,15 @@ export default function ApplyPage() {
               </li>
             ))}
           </ol>
+          <div className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center">
+            <Smartphone className="size-6 shrink-0 text-primary" aria-hidden="true" />
+            <p className="flex-1 text-sm">
+              <strong>La app ya está en el App Store.</strong> Para pagar, tu cliente entra a la web (con tu QR o tu link); después descarga la app e inicia sesión con la misma cuenta con la que pagó. La versión de Android está en camino.
+            </p>
+            <a href="https://apps.apple.com/ar/app/forza-ai/id6812473503" target="_blank" rel="noopener" className="inline-flex h-11 shrink-0 items-center justify-center rounded-full border px-5 text-sm font-semibold transition-colors hover:bg-secondary">
+              Ver en el App Store
+            </a>
+          </div>
           <div className="flex items-start gap-3 rounded-2xl border bg-secondary/40 p-4 text-sm">
             <ScanLine className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
             <p>
@@ -225,7 +235,7 @@ export default function ApplyPage() {
             <GymApplyForm />
           </div>
           <p className="text-center text-xs text-muted-foreground">
-            Hoy los pagos por QR están disponibles para gimnasios de Argentina. Precio del plan del cliente: $9.000 ARS por mes, sujeto a cambios con aviso. Se usa desde el celular en forzaai.app, sin instalar nada.
+            Hoy los pagos por QR están disponibles para gimnasios de Argentina. Precio del plan del cliente: $9.000 ARS por mes, sujeto a cambios con aviso. La app está en el App Store; la versión de Android está en camino.
           </p>
         </section>
 

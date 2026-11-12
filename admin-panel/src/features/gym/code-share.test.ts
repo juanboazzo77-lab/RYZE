@@ -8,6 +8,7 @@ describe('shareCodeText', () => {
   it('lleva el nombre, el código y los días gratis', () => {
     const t = shareCodeText({ gymName: 'Iron Gym', code: 'ABCD-2345', url: 'https://www.forzaai.app' });
     expect(t).toContain('Iron Gym');
+    expect(t).toContain('App Store');
     expect(t).toContain('ABCD-2345');
     expect(t).toContain(`${GYM_TRIAL_DAYS} días`);
   });

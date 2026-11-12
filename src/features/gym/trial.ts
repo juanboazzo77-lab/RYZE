@@ -48,5 +48,5 @@ export function trialForJoin(previousTrialEndsAt: Date | null | undefined, now: 
 
 /** Cómo se muestra el código al compartirlo: texto para mandar por WhatsApp o redes. */
 export function shareCodeText(args: { gymName: string; code: string; url: string }): string {
-  return `Entrená con ${args.gymName} en Forza AI 💪\n\nCreá tu cuenta en ${args.url}, entrá a Ajustes → Gimnasio e ingresá el código ${args.code}. Probás todo gratis ${GYM_TRIAL_DAYS} días.`;
+  return `Entrená con ${args.gymName} en Forza AI 💪\n\nDescargá la app Forza AI en el App Store (o entrá a ${args.url}), creá tu cuenta, andá a Ajustes → Gimnasio e ingresá el código ${args.code}. Probás todo gratis ${GYM_TRIAL_DAYS} días.`;
 }
