@@ -64,3 +64,24 @@ export class AiNotConfiguredError extends AiError {
     this.name = 'AiNotConfiguredError';
   }
 }
+
+/**
+ * Lo que se le muestra a la persona cuando falla un pedido a la IA. Nunca lleva códigos ni detalles técnicos (eso queda
+ * en el log del servidor): el mensaje propio del error (límite, plan, sin configurar) o uno amable según el tipo de falla.
+ */
+export function friendlyAiMessage(e: unknown): string {
+  if (e instanceof AiRateLimitedError || e instanceof AiPermissionError || e instanceof AiNotConfiguredError) return e.userMessage;
+  if (e instanceof AiError) {
+    switch (e.code) {
+      case 'TIMEOUT':
+        return 'La IA está tardando más de lo normal. Probá de nuevo en un minuto.';
+      case 'INVALID_OUTPUT':
+        return 'La IA no pudo armar bien la respuesta esta vez. Probá de nuevo.';
+      case 'PROVIDER_ERROR':
+        return 'La IA tiene mucha demanda en este momento. Probá de nuevo en un minuto.';
+      default:
+        return e.userMessage;
+    }
+  }
+  return 'No pudimos generar la respuesta ahora. Probá de nuevo en un minuto.';
+}

@@ -34,7 +34,7 @@ export async function assertWithinLimits(
     });
     const used = rows.reduce((n, r) => n + r.messageCount, 0);
     if (used >= limits.aiCoachMessagesPerDay) {
-      throw new AiRateLimitedError(`coach ${used}/${limits.aiCoachMessagesPerDay}`);
+      throw new AiRateLimitedError(`coach ${used}/${limits.aiCoachMessagesPerDay}`, `Llegaste al límite de mensajes con el coach de hoy (${limits.aiCoachMessagesPerDay}). Mañana se renuevan.`);
     }
     return;
   }
@@ -47,7 +47,7 @@ export async function assertWithinLimits(
     });
     const used = rows.reduce((n, r) => n + r.messageCount, 0);
     if (used >= limits.aiQuickPerDay) {
-      throw new AiRateLimitedError(`lecturas ${used}/${limits.aiQuickPerDay}`);
+      throw new AiRateLimitedError(`lecturas ${used}/${limits.aiQuickPerDay}`, `Llegaste al límite de lecturas con IA de hoy (${limits.aiQuickPerDay}). Mañana se renuevan.`);
     }
     return;
   }
@@ -60,7 +60,7 @@ export async function assertWithinLimits(
     });
     const used = rows.reduce((n, r) => n + r.messageCount, 0);
     if (used >= limits.mealPlansPerMonth) {
-      throw new AiRateLimitedError(`planes de comida ${used}/${limits.mealPlansPerMonth}`);
+      throw new AiRateLimitedError(`planes de comida ${used}/${limits.mealPlansPerMonth}`, `Ya generaste tu plan de comidas de este mes (${limits.mealPlansPerMonth}). Se renueva el mes que viene.`);
     }
     return;
   }

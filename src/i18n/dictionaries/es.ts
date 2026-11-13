@@ -943,7 +943,7 @@ export const es = {
       briefPh: 'Ej: sin lácteos, algo rápido para el almuerzo, presupuesto ajustado…',
       generate: 'Generar el día',
       regenerate: 'Generar otro',
-      genError: 'No se pudo generar el plan. Probá de nuevo.',
+      genError: 'No se pudo generar el plan ahora. Probá de nuevo en un minuto.',
       dayTotal: 'Total del día',
       target: 'objetivo',
       shopping: 'Lista de compras',
