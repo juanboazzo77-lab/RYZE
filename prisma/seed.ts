@@ -285,6 +285,109 @@ const MEATS: FoodSeed[] = [
   { name: 'Panceta ahumada', kcal: 458, p: 13, c: 0.7, f: 45, verified: true, servingQty: 8, servingUnit: 'g', servingLabel: '1 lonja' },
 ];
 
+/**
+ * Alimentos básicos crudos (o secos, tal como se compran): cereales y harinas, legumbres secas, tubérculos, huevos,
+ * frutas, pescados y mariscos, lácteos, frutos secos y semillas. Valores por 100 g. Fuente: USDA FoodData Central.
+ * Los aproximados van como no verificados. La migración 20261113120000_raw_basic_foods carga los mismos en producción.
+ */
+const RAW_BASICS: FoodSeed[] = [
+  // Cereales, granos y harinas (crudos / secos)
+  { name: 'Arroz blanco (crudo)', kcal: 365, p: 7.1, c: 80, f: 0.7, verified: true },
+  { name: 'Arroz integral (crudo)', kcal: 370, p: 7.9, c: 77.2, f: 2.9, verified: true },
+  { name: 'Fideos secos (crudos)', kcal: 371, p: 13, c: 74.7, f: 1.5, verified: true },
+  { name: 'Quinoa (cruda)', kcal: 368, p: 14.1, c: 64.2, f: 6.1, verified: true },
+  { name: 'Cuscús (crudo)', kcal: 376, p: 12.8, c: 77.4, f: 0.6, verified: true },
+  { name: 'Trigo burgol (crudo)', kcal: 342, p: 12.3, c: 75.9, f: 1.3, verified: true },
+  { name: 'Cebada perlada (cruda)', kcal: 352, p: 9.9, c: 77.7, f: 1.2, verified: true },
+  { name: 'Mijo (crudo)', kcal: 378, p: 11, c: 72.8, f: 4.2, verified: true },
+  { name: 'Harina de trigo 000', kcal: 364, p: 10.3, c: 76.3, f: 1, verified: true },
+  { name: 'Harina de trigo integral', kcal: 340, p: 13.2, c: 72, f: 2.5, verified: true },
+  { name: 'Polenta / Harina de maíz (cruda)', kcal: 361, p: 6.9, c: 76.9, f: 3.9, verified: true },
+  { name: 'Maicena (almidón de maíz)', kcal: 381, p: 0.3, c: 91.3, f: 0.1, verified: true },
+  // Legumbres secas (crudas)
+  { name: 'Lentejas secas (crudas)', kcal: 352, p: 24.6, c: 63.4, f: 1.1, verified: true },
+  { name: 'Garbanzos secos (crudos)', kcal: 378, p: 20.5, c: 62.9, f: 6, verified: true },
+  { name: 'Poroto negro seco (crudo)', kcal: 341, p: 21.6, c: 62.4, f: 1.4, verified: true },
+  { name: 'Poroto colorado seco (crudo)', kcal: 337, p: 23.6, c: 60, f: 0.8, verified: true },
+  { name: 'Poroto blanco seco (crudo)', kcal: 337, p: 22.3, c: 60.8, f: 1.5, verified: true },
+  { name: 'Arvejas secas partidas (crudas)', kcal: 341, p: 24.6, c: 60.4, f: 1.2, verified: true },
+  { name: 'Habas secas (crudas)', kcal: 341, p: 26.1, c: 58.3, f: 1.5, verified: true },
+  { name: 'Soja seca (cruda)', kcal: 446, p: 36.5, c: 30.2, f: 19.9, verified: true },
+  { name: 'Tofu firme', kcal: 144, p: 17.3, c: 2.8, f: 8.7, verified: true },
+  // Tubérculos y hortalizas crudas
+  { name: 'Papa (cruda)', kcal: 77, p: 2, c: 17.5, f: 0.1, verified: true },
+  { name: 'Batata (cruda)', kcal: 86, p: 1.6, c: 20.1, f: 0.1, verified: true },
+  { name: 'Mandioca (cruda)', kcal: 160, p: 1.4, c: 38.1, f: 0.3, verified: true },
+  { name: 'Choclo (crudo)', kcal: 86, p: 3.3, c: 18.7, f: 1.4, verified: true },
+  { name: 'Zapallo (crudo)', kcal: 26, p: 1, c: 6.5, f: 0.1, verified: true },
+  { name: 'Zapallo anco (crudo)', kcal: 45, p: 1, c: 11.7, f: 0.1, verified: true },
+  { name: 'Chaucha (cruda)', kcal: 31, p: 1.8, c: 7, f: 0.2, verified: true },
+  { name: 'Arvejas frescas (crudas)', kcal: 81, p: 5.4, c: 14.5, f: 0.4, verified: true },
+  { name: 'Espárragos (crudos)', kcal: 20, p: 2.2, c: 3.9, f: 0.1, verified: true },
+  { name: 'Alcaucil (crudo)', kcal: 47, p: 3.3, c: 10.5, f: 0.2, verified: true },
+  { name: 'Repollitos de Bruselas (crudos)', kcal: 43, p: 3.4, c: 9, f: 0.3, verified: true },
+  // Huevos (crudos)
+  { name: 'Clara de huevo (cruda)', kcal: 52, p: 10.9, c: 0.7, f: 0.2, verified: true, servingQty: 33, servingUnit: 'g', servingLabel: '1 clara' },
+  { name: 'Yema de huevo (cruda)', kcal: 322, p: 15.9, c: 3.6, f: 26.5, verified: true, servingQty: 17, servingUnit: 'g', servingLabel: '1 yema' },
+  // Frutas frescas
+  { name: 'Naranja', kcal: 47, p: 0.9, c: 11.8, f: 0.1, verified: true, servingQty: 130, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Mandarina', kcal: 53, p: 0.8, c: 13.3, f: 0.3, verified: true, servingQty: 90, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Pomelo', kcal: 42, p: 0.8, c: 10.7, f: 0.1, verified: true },
+  { name: 'Limón', kcal: 29, p: 1.1, c: 9.3, f: 0.3, verified: true },
+  { name: 'Pera', kcal: 57, p: 0.4, c: 15.2, f: 0.1, verified: true, servingQty: 180, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Durazno', kcal: 39, p: 0.9, c: 9.5, f: 0.3, verified: true, servingQty: 150, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Ciruela', kcal: 46, p: 0.7, c: 11.4, f: 0.3, verified: true, servingQty: 65, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Damasco', kcal: 48, p: 1.4, c: 11.1, f: 0.4, verified: true, servingQty: 35, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Cereza', kcal: 63, p: 1.1, c: 16, f: 0.2, verified: true },
+  { name: 'Uva', kcal: 69, p: 0.7, c: 18.1, f: 0.2, verified: true },
+  { name: 'Frutilla', kcal: 32, p: 0.7, c: 7.7, f: 0.3, verified: true },
+  { name: 'Arándanos', kcal: 57, p: 0.7, c: 14.5, f: 0.3, verified: true },
+  { name: 'Frambuesa', kcal: 52, p: 1.2, c: 11.9, f: 0.7, verified: true },
+  { name: 'Sandía', kcal: 30, p: 0.6, c: 7.6, f: 0.2, verified: true },
+  { name: 'Melón', kcal: 34, p: 0.8, c: 8.2, f: 0.2, verified: true },
+  { name: 'Ananá', kcal: 50, p: 0.5, c: 13.1, f: 0.1, verified: true },
+  { name: 'Kiwi', kcal: 61, p: 1.1, c: 14.7, f: 0.5, verified: true, servingQty: 70, servingUnit: 'g', servingLabel: '1 unidad' },
+  { name: 'Mango', kcal: 60, p: 0.8, c: 15, f: 0.4, verified: true },
+  { name: 'Papaya', kcal: 43, p: 0.5, c: 10.8, f: 0.3, verified: true },
+  { name: 'Higo', kcal: 74, p: 0.8, c: 19.2, f: 0.3, verified: true },
+  { name: 'Granada', kcal: 83, p: 1.7, c: 18.7, f: 1.2, verified: true },
+  { name: 'Dátiles', kcal: 277, p: 1.8, c: 75, f: 0.2, verified: true },
+  { name: 'Pasas de uva', kcal: 299, p: 3.1, c: 79.2, f: 0.5, verified: true },
+  // Pescados y mariscos (crudos)
+  { name: 'Merluza (cruda)', kcal: 82, p: 17.8, c: 0, f: 0.7, verified: false },
+  { name: 'Salmón (crudo)', kcal: 208, p: 20.4, c: 0, f: 13.4, verified: true },
+  { name: 'Atún fresco (crudo)', kcal: 144, p: 23.3, c: 0, f: 4.9, verified: true },
+  { name: 'Trucha (cruda)', kcal: 141, p: 19.9, c: 0, f: 6.2, verified: true },
+  { name: 'Caballa (cruda)', kcal: 205, p: 18.6, c: 0, f: 13.9, verified: true },
+  { name: 'Camarones (crudos)', kcal: 85, p: 20.1, c: 0.2, f: 0.5, verified: true },
+  { name: 'Calamar (crudo)', kcal: 92, p: 15.6, c: 3.1, f: 1.4, verified: true },
+  { name: 'Mejillones (crudos)', kcal: 86, p: 11.9, c: 3.7, f: 2.2, verified: true },
+  // Lácteos
+  { name: 'Leche entera', kcal: 61, p: 3.2, c: 4.8, f: 3.3, verified: true },
+  { name: 'Yogur natural entero', kcal: 61, p: 3.5, c: 4.7, f: 3.3, verified: true },
+  { name: 'Yogur griego natural', kcal: 97, p: 9, c: 3.9, f: 5, verified: true },
+  { name: 'Ricota', kcal: 174, p: 11.3, c: 3, f: 13, verified: true },
+  { name: 'Queso mozzarella', kcal: 300, p: 22.2, c: 2.2, f: 22.4, verified: true },
+  { name: 'Queso parmesano rallado', kcal: 431, p: 38, c: 4.1, f: 29, verified: true },
+  { name: 'Crema de leche', kcal: 340, p: 2.8, c: 2.8, f: 36.1, verified: true },
+  { name: 'Manteca', kcal: 717, p: 0.9, c: 0.1, f: 81, verified: true, servingQty: 14, servingUnit: 'g', servingLabel: '1 cda' },
+  // Frutos secos y semillas (crudos)
+  { name: 'Nueces', kcal: 654, p: 15.2, c: 13.7, f: 65.2, verified: true, servingQty: 30, servingUnit: 'g', servingLabel: '1 puñado' },
+  { name: 'Castañas de cajú', kcal: 553, p: 18.2, c: 30.2, f: 43.9, verified: true, servingQty: 30, servingUnit: 'g', servingLabel: '1 puñado' },
+  { name: 'Maní (crudo)', kcal: 567, p: 25.8, c: 16.1, f: 49.2, verified: true, servingQty: 30, servingUnit: 'g', servingLabel: '1 puñado' },
+  { name: 'Pistachos', kcal: 560, p: 20.2, c: 27.2, f: 45.3, verified: true, servingQty: 30, servingUnit: 'g', servingLabel: '1 puñado' },
+  { name: 'Avellanas', kcal: 628, p: 15, c: 16.7, f: 60.8, verified: true, servingQty: 30, servingUnit: 'g', servingLabel: '1 puñado' },
+  { name: 'Semillas de chía', kcal: 486, p: 16.5, c: 42.1, f: 30.7, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 cda' },
+  { name: 'Semillas de lino', kcal: 534, p: 18.3, c: 28.9, f: 42.2, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 cda' },
+  { name: 'Semillas de girasol', kcal: 584, p: 20.8, c: 20, f: 51.5, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 cda' },
+  { name: 'Semillas de zapallo', kcal: 559, p: 30.2, c: 10.7, f: 49, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 cda' },
+  { name: 'Semillas de sésamo', kcal: 573, p: 17.7, c: 23.5, f: 49.7, verified: true, servingQty: 10, servingUnit: 'g', servingLabel: '1 cda' },
+  // Aceites, azúcares y otros básicos
+  { name: 'Aceite de girasol', kcal: 884, p: 0, c: 0, f: 100, verified: true, servingQty: 10, servingUnit: 'ml', servingLabel: '1 cda' },
+  { name: 'Azúcar blanca', kcal: 387, p: 0, c: 100, f: 0, verified: true, servingQty: 4, servingUnit: 'g', servingLabel: '1 cdita' },
+  { name: 'Miel', kcal: 304, p: 0.3, c: 82.4, f: 0, verified: true, servingQty: 21, servingUnit: 'g', servingLabel: '1 cda' },
+];
+
 async function main() {
   // Secuencial a propósito: DATABASE_URL usa connection_limit=15 (pooler).
   for (const a of ACHIEVEMENTS) {
@@ -323,7 +426,7 @@ async function main() {
 
   // Alimentos: additivo por nombre (SYSTEM). Re-ejecutable; sólo crea los que
   // faltan. Secuencial por el connection_limit=15 del pooler.
-  const allFoods = [...FOODS, ...VEGETABLES, ...MEATS];
+  const allFoods = [...FOODS, ...VEGETABLES, ...MEATS, ...RAW_BASICS];
   let addedFoods = 0;
   for (const f of allFoods) {
     const existing = await prisma.food.findFirst({
@@ -349,7 +452,7 @@ async function main() {
   }
   console.log(
     `✓ alimentos: +${addedFoods} nuevos (${allFoods.length} en la lista; ` +
-      `${VEGETABLES.length} verduras, ${MEATS.length} carnes)`,
+      `${VEGETABLES.length} verduras, ${MEATS.length} carnes, ${RAW_BASICS.length} crudos básicos)`,
   );
 }
 
