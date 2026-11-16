@@ -3,16 +3,17 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Brain, Check, Loader2, Pencil, RotateCcw, Send, Sparkles, Undo2 } from 'lucide-react';
+import { Brain, Check, Dumbbell, HeartPulse, Loader2, MessageCircle, Pencil, RotateCcw, Salad, Send, Sparkles, TrendingUp, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Switch } from '@/components/ui/switch';
 import { DecimalInput } from '@/components/form/decimal-input';
-import { useT } from '@/i18n/provider';
+import { useI18n, useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import type { CoachMessage } from './queries';
+import { COACH_TOPICS, groupByDay, type CoachTopic, type DayLabel } from './topics';
 import {
   addCoachExerciseToPlan,
   addCoachFoodToToday,
@@ -376,16 +377,55 @@ function EditSuggestion({
 }
 
 interface Props {
-  initialMessages: CoachMessage[];
+  /** Los mensajes de cada tema (cada tema es una conversación aparte). */
+  initialThreads: Record<CoachTopic, CoachMessage[]>;
   usage: { used: number; limit: number };
   /** Los cambios que pide el cliente se aplican solos, sin tocar "Editar". */
   autoApply: boolean;
+  /** Tema con que se abre (si no, el de la última charla). */
+  initialTopic?: CoachTopic;
 }
 
-export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply }: Props) {
-  const t = useT();
+const TOPIC_ICONS: Record<CoachTopic, typeof Dumbbell> = {
+  training: Dumbbell,
+  nutrition: Salad,
+  progress: TrendingUp,
+  health: HeartPulse,
+  general: MessageCircle,
+};
+
+/** Primer tema con charla: así se vuelve donde se estaba; sin charlas, "Entrenamiento". */
+function firstTopic(threads: Record<CoachTopic, CoachMessage[]>): CoachTopic {
+  let best: CoachTopic = 'training';
+  let bestAt = '';
+  for (const t of COACH_TOPICS) {
+    const last = threads[t][threads[t].length - 1]?.createdAt ?? '';
+    if (last > bestAt) {
+      best = t;
+      bestAt = last;
+    }
+  }
+  return best;
+}
+
+/** Texto del separador de día: Hoy, Ayer o "lunes 10 de noviembre". */
+function dayText(label: DayLabel, locale: string, today: string, yesterday: string): string {
+  if (label.kind === 'today') return today;
+  if (label.kind === 'yesterday') return yesterday;
+  const d = new Date(`${label.key}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return '';
+  const text = d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  // Solo la primera letra en mayúscula ("Viernes, 13 de noviembre").
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, initialTopic }: Props) {
+  const { t, locale } = useI18n();
   const tc = t.coach;
-  const [messages, setMessages] = useState<CoachMessage[]>(initialMessages);
+  const tt = tc.topics;
+  const [threads, setThreads] = useState<Record<CoachTopic, CoachMessage[]>>(initialThreads);
+  const [topic, setTopic] = useState<CoachTopic>(() => initialTopic ?? firstTopic(initialThreads));
+  const messages = threads[topic];
   // Alimento sugerido por mensaje de respuesta (sólo vive mientras la pantalla está abierta).
   const [foods, setFoods] = useState<Record<string, CoachFood>>({});
   const [exercises, setExercises] = useState<
@@ -408,26 +448,34 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
   const [used, setUsed] = useState(usage.used);
   const [pending, start] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, pending]);
+  }, [messages, pending, topic]);
 
   const atLimit = used >= usage.limit;
+  const groups = groupByDay(messages);
+
+  function addMessage(forTopic: CoachTopic, msg: CoachMessage) {
+    setThreads((all) => ({ ...all, [forTopic]: [...all[forTopic], msg] }));
+  }
 
   function submit() {
     const text = draft.trim();
     if (!text || pending || atLimit) return;
+    // La respuesta vuelve al tema en que se preguntó, aunque la persona cambie de tema mientras espera.
+    const sentTopic = topic;
     const userMsg: CoachMessage = {
       id: `local-${Date.now()}`,
       role: 'user',
       content: text,
       createdAt: new Date().toISOString(),
     };
-    setMessages((m) => [...m, userMsg]);
+    addMessage(sentTopic, userMsg);
     setDraft('');
     start(async () => {
-      const res = await sendCoachMessage({ text });
+      const res = await sendCoachMessage({ text, topic: sentTopic });
       if (res.ok && res.data) {
         const replyId = `reply-${Date.now()}`;
         const food = res.data.food;
@@ -449,18 +497,15 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
         if (exercise) {
           setExercises((x) => ({ ...x, [replyId]: { exercise, planDays: res.data!.planDays } }));
         }
-        setMessages((m) => [
-          ...m,
-          {
-            id: replyId,
-            role: 'assistant',
-            content: res.data!.reply,
-            createdAt: new Date().toISOString(),
-          },
-        ]);
+        addMessage(sentTopic, {
+          id: replyId,
+          role: 'assistant',
+          content: res.data!.reply,
+          createdAt: new Date().toISOString(),
+        });
         setUsed((n) => n + 1);
       } else {
-        setMessages((m) => m.filter((x) => x.id !== userMsg.id));
+        setThreads((all) => ({ ...all, [sentTopic]: all[sentTopic].filter((x) => x.id !== userMsg.id) }));
         setDraft(text);
         toast.error(res.error || tc.error);
       }
@@ -479,16 +524,37 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
 
   function reset() {
     if (!confirm(tc.resetConfirm)) return;
+    const resetTopic = topic;
     start(async () => {
-      await resetCoachConversation();
-      setMessages([]);
+      await resetCoachConversation({ topic: resetTopic });
+      setThreads((all) => ({ ...all, [resetTopic]: [] }));
     });
   }
 
+  function pickSuggestion(text: string) {
+    setDraft(text);
+    inputRef.current?.focus();
+  }
+
+  const hints: Record<CoachTopic, string> = {
+    training: tt.trainingHint,
+    nutrition: tt.nutritionHint,
+    progress: tt.progressHint,
+    health: tt.healthHint,
+    general: tt.generalHint,
+  };
+  const asks: Record<CoachTopic, [string, string]> = {
+    training: [tt.trainingAsk1, tt.trainingAsk2],
+    nutrition: [tt.nutritionAsk1, tt.nutritionAsk2],
+    progress: [tt.progressAsk1, tt.progressAsk2],
+    health: [tt.healthAsk1, tt.healthAsk2],
+    general: [tt.generalAsk1, tt.generalAsk2],
+  };
+
   return (
     <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
-      <div className="flex items-center justify-between gap-2 pb-2">
-        <p className="text-xs text-muted-foreground tabular-nums">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+        <p className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
           {interpolate(tc.usageToday, { used, limit: usage.limit })}
         </p>
         <div className="flex gap-2">
@@ -504,12 +570,34 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
               {tc.newPlanCta}
             </Link>
           </Button>
-          {messages.length > 0 ? (
-            <Button variant="ghost" size="sm" onClick={reset} disabled={pending}>
-              <RotateCcw className="size-4" />
-              {tc.reset}
-            </Button>
-          ) : null}
+        </div>
+      </div>
+
+      {/* Temas: cada uno es una charla aparte */}
+      <div className="-mx-4 overflow-x-auto px-4 pb-2" role="tablist" aria-label={tt.label}>
+        <div className="flex w-max gap-2">
+          {COACH_TOPICS.map((id) => {
+            const Icon = TOPIC_ICONS[id];
+            const active = id === topic;
+            const count = threads[id].length;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTopic(id)}
+                className={cn(
+                  'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors',
+                  active ? 'border-primary bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-secondary',
+                )}
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {tt[id]}
+                {count > 0 && !active ? <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" /> : null}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -521,63 +609,76 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
         <Switch checked={autoApply} onCheckedChange={changeAutoApply} aria-label={tc.editAutoToggle} />
       </label>
 
-      <div className="flex-1 space-y-3 overflow-y-auto pb-4">
+      <div className="flex-1 space-y-3 overflow-y-auto pb-4 pt-3">
         {messages.length === 0 ? (
-          <p className="mx-auto max-w-md py-10 text-center text-sm text-muted-foreground">
-            {tc.empty}
-          </p>
-        ) : (
-          messages.map((m) => (
-            <div key={m.id} className="space-y-2">
-              <div className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-                <div
-                  className={cn(
-                    'max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm',
-                    m.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-foreground',
-                  )}
+          <div className="mx-auto max-w-md space-y-4 py-8 text-center">
+            <p className="text-sm text-muted-foreground">{hints[topic]}</p>
+            <div className="flex flex-col items-center gap-2">
+              {asks[topic].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => pickSuggestion(q)}
+                  disabled={pending || atLimit}
+                  className="rounded-full border bg-card px-3.5 py-2 text-left text-sm transition-colors hover:bg-secondary disabled:opacity-50"
                 >
-                  {m.content}
+                  {q}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{tc.empty}</p>
+          </div>
+        ) : (
+          groups.map((g) => (
+            <div key={g.key} className="space-y-3">
+              <p className="sticky top-0 z-10 mx-auto w-fit rounded-full bg-secondary px-3 py-0.5 text-center text-[11px] font-medium text-muted-foreground">
+                {dayText(g.label, locale, tt.today, tt.yesterday)}
+              </p>
+              {g.items.map((m) => (
+                <div key={m.id} className="space-y-2">
+                  <div className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+                    <div
+                      className={cn(
+                        'max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm',
+                        m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground',
+                      )}
+                    >
+                      {m.content}
+                    </div>
+                  </div>
+                  {edits[m.id] ? (
+                    <div className="flex justify-start">
+                      <EditSuggestion
+                        edits={edits[m.id]!.edits}
+                        alreadyApplied={edits[m.id]!.applied}
+                        initialUndo={edits[m.id]!.undo}
+                        initialCounts={edits[m.id]!.counts}
+                        failed={edits[m.id]!.failed}
+                        autoApply={autoApply}
+                        onAutoApplyChange={changeAutoApply}
+                        onClose={() => setEdits((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))}
+                      />
+                    </div>
+                  ) : null}
+                  {exercises[m.id] ? (
+                    <div className="flex justify-start">
+                      <ExerciseSuggestion
+                        exercise={exercises[m.id]!.exercise}
+                        planDays={exercises[m.id]!.planDays}
+                        onClose={() => setExercises((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))}
+                      />
+                    </div>
+                  ) : null}
+                  {foods[m.id] ? (
+                    <div className="flex justify-start">
+                      <FoodSuggestion
+                        food={foods[m.id]!}
+                        onClose={() => setFoods((f) => Object.fromEntries(Object.entries(f).filter(([id]) => id !== m.id)))}
+                      />
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              {edits[m.id] ? (
-                <div className="flex justify-start">
-                  <EditSuggestion
-                    edits={edits[m.id]!.edits}
-                    alreadyApplied={edits[m.id]!.applied}
-                    initialUndo={edits[m.id]!.undo}
-                    initialCounts={edits[m.id]!.counts}
-                    failed={edits[m.id]!.failed}
-                    autoApply={autoApply}
-                    onAutoApplyChange={changeAutoApply}
-                    onClose={() =>
-                      setEdits((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))
-                    }
-                  />
-                </div>
-              ) : null}
-              {exercises[m.id] ? (
-                <div className="flex justify-start">
-                  <ExerciseSuggestion
-                    exercise={exercises[m.id]!.exercise}
-                    planDays={exercises[m.id]!.planDays}
-                    onClose={() =>
-                      setExercises((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== m.id)))
-                    }
-                  />
-                </div>
-              ) : null}
-              {foods[m.id] ? (
-                <div className="flex justify-start">
-                  <FoodSuggestion
-                    food={foods[m.id]!}
-                    onClose={() =>
-                      setFoods((f) => Object.fromEntries(Object.entries(f).filter(([id]) => id !== m.id)))
-                    }
-                  />
-                </div>
-              ) : null}
+              ))}
             </div>
           ))
         )}
@@ -593,8 +694,17 @@ export function CoachChat({ initialMessages, usage, autoApply: initialAutoApply 
       </div>
 
       <div className="sticky bottom-0 space-y-1.5 border-t bg-background pt-3">
+        {messages.length > 0 ? (
+          <div className="flex justify-end">
+            <Button variant="ghost" size="sm" onClick={reset} disabled={pending}>
+              <RotateCcw className="size-4" />
+              {tc.reset}
+            </Button>
+          </div>
+        ) : null}
         <div className="flex items-end gap-2">
           <Textarea
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {

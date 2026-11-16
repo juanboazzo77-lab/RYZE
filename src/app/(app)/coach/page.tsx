@@ -3,7 +3,7 @@ import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { aiConfigured } from '@/server/ai/config';
 import { usageSnapshot } from '@/server/ai/usage';
-import { getCoachThread } from '@/features/coach/queries';
+import { getCoachThreads } from '@/features/coach/queries';
 import { CoachChat } from '@/features/coach/chat';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -21,8 +21,8 @@ export default async function CoachPage() {
     );
   }
 
-  const [thread, usage] = await Promise.all([
-    getCoachThread(ctx.userId),
+  const [threads, usage] = await Promise.all([
+    getCoachThreads(ctx.userId),
     usageSnapshot(ctx.userId, ctx.entitlement, ctx.profile.timezone),
   ]);
 
@@ -33,7 +33,7 @@ export default async function CoachPage() {
         <p className="text-sm text-muted-foreground">{t.coach.subtitle}</p>
       </div>
       <CoachChat
-        initialMessages={thread.messages}
+        initialThreads={threads}
         usage={{ used: usage.coachUsed, limit: usage.coachLimit }}
         autoApply={ctx.profile.coachAutoApply}
       />

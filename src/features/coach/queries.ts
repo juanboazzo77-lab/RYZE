@@ -1,5 +1,6 @@
 import 'server-only';
 import { forUser } from '@/server/user-db';
+import { COACH_TOPICS, topicOfTitle, type CoachTopic } from './topics';
 
 export interface CoachMessage {
   id: string;
@@ -57,4 +58,28 @@ export async function getLatestPlanDraft(userId: string): Promise<PlanGeneration
   });
   if (!gen) return null;
   return { id: gen.id, createdAt: gen.createdAt.toISOString(), payload: gen.payload };
+}
+
+/** Los mensajes de cada tema, del más viejo al más nuevo (los últimos de cada tema, para no cargar de más). */
+export async function getCoachThreads(userId: string, perTopic = 80): Promise<Record<CoachTopic, CoachMessage[]>> {
+  const db = forUser(userId);
+  const convos = await db.aiConversation.findMany({
+    where: { kind: 'COACH' },
+    select: {
+      title: true,
+      messages: { orderBy: { createdAt: 'desc' }, take: perTopic, select: { id: true, role: true, content: true, createdAt: true } },
+    },
+  });
+  const out = Object.fromEntries(COACH_TOPICS.map((t) => [t, [] as CoachMessage[]])) as Record<CoachTopic, CoachMessage[]>;
+  for (const c of convos) {
+    const topic = topicOfTitle(c.title);
+    for (const m of c.messages) {
+      out[topic].push({ id: m.id, role: m.role === 'ASSISTANT' ? 'assistant' : 'user', content: m.content, createdAt: m.createdAt.toISOString() });
+    }
+  }
+  for (const t of COACH_TOPICS) {
+    out[t].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (out[t].length > perTopic) out[t] = out[t].slice(-perTopic);
+  }
+  return out;
 }

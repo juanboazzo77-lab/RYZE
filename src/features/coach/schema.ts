@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import { PLAN_STYLES } from './plan-styles';
+import { COACH_TOPICS } from './topics';
 
 export const sendMessageSchema = z.object({
   text: z.string().trim().min(1).max(2000),
+  /** De qué tema es la charla (cada tema es una conversación aparte). Sin tema: "otras consultas". */
+  topic: z.enum(COACH_TOPICS).default('general'),
 });
-export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type SendMessageInput = z.input<typeof sendMessageSchema>;
+
+export const resetConversationSchema = z.object({ topic: z.enum(COACH_TOPICS).default('general') });
 
 export const generatePlanSchema = z.object({
   brief: z.string().trim().max(600),

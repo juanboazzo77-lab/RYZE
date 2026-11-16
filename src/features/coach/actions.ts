@@ -34,10 +34,12 @@ import {
 } from '@/lib/nutrition/targets';
 import { planDraftSchema, widenReps, type PlanDraft, type NutritionDraft } from './plan-schema';
 import { STYLE_PROMPT } from './plan-styles';
+import { topicConversationFilter } from './topics';
 import { normalizeName } from '@/lib/training/volume';
 import {
   acceptPlanSchema,
   generatePlanSchema,
+  resetConversationSchema,
   sendMessageSchema,
   type AcceptPlanInput,
   type GeneratePlanInput,
@@ -86,8 +88,9 @@ export async function sendCoachMessage(
   const { userId, profile, entitlement } = await requireUser();
   const db = forUser(userId);
 
+  const topic = parsed.data.topic;
   const convo = await db.aiConversation.findFirst({
-    where: { kind: 'COACH' },
+    where: topicConversationFilter(topic),
     orderBy: { updatedAt: 'desc' },
     select: {
       id: true,
@@ -111,6 +114,7 @@ export async function sendCoachMessage(
       entitlement,
       history,
       userMessage: parsed.data.text,
+      topic,
     });
     reply = res.text;
     food = res.food;
@@ -125,7 +129,7 @@ export async function sendCoachMessage(
   let conversationId = convo?.id;
   if (!conversationId) {
     const created = await db.aiConversation.create({
-      data: { userId, kind: 'COACH' },
+      data: { userId, kind: 'COACH', title: topic },
       select: { id: true },
     });
     conversationId = created.id;
@@ -786,10 +790,13 @@ export async function addCoachFoodToToday(
   return res.ok ? { ok: true } : { error: res.error };
 }
 
-export async function resetCoachConversation(): Promise<Result> {
+/** Borra la conversación de UN tema (los otros temas no se tocan). */
+export async function resetCoachConversation(raw: { topic?: string } = {}): Promise<Result> {
+  const parsed = resetConversationSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
   const db = forUser(userId);
-  await db.aiConversation.deleteMany({ where: { kind: 'COACH' } });
+  await db.aiConversation.deleteMany({ where: topicConversationFilter(parsed.data.topic) });
   revalidatePath('/coach');
   return { ok: true };
 }

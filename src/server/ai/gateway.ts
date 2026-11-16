@@ -16,6 +16,7 @@ import {
 } from './prompts/fitai';
 import { assertWithinLimits, recordUsage } from './usage';
 import { AiError } from './errors';
+import { topicPromptNote, type CoachTopic } from '@/features/coach/topics';
 import type { AiChatMessage, AiContentBlock, AiStructuredResult, AiToolSpec } from './providers/types';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { planDraftSchema, type PlanDraft } from '@/features/coach/plan-schema';
@@ -105,6 +106,8 @@ export async function runCoachTurn(args: {
   entitlement: Pick<Entitlement, 'tier' | 'createdAt'>;
   history: CoachHistoryMsg[];
   userMessage: string;
+  /** De qué tema es la charla (entrenamiento, alimentación…): el coach se enfoca en eso. */
+  topic?: CoachTopic;
 }): Promise<{
   text: string;
   food: CoachFood | null;
@@ -113,11 +116,12 @@ export async function runCoachTurn(args: {
   /** Qué camino tomó el servidor (para diagnosticar desde la pantalla). */
   diag: string;
 }> {
-  const { profile, entitlement, history, userMessage } = args;
+  const { profile, entitlement, history, userMessage, topic } = args;
   await assertWithinLimits(profile.id, entitlement, 'coach_chat', profile.timezone);
 
   const contextBlock = await buildUserContextBlock(profile, entitlement);
-  const system = coachSystemPrompt(profile.locale, contextBlock);
+  const topicNote = topic ? topicPromptNote(topic) : '';
+  const system = coachSystemPrompt(profile.locale, contextBlock) + (topicNote ? `\n\n${topicNote}` : '');
   const editSystem = coachEditSystemPrompt(profile.locale, contextBlock, profile.coachAutoApply);
   // Modelo liviano primero (barato); si falla o devuelve vacío, se reintenta con el grande.
   const models = [...new Set([modelFor('coach_chat'), modelFor('generate_plan')])];
