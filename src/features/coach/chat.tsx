@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { Brain, Check, Dumbbell, HeartPulse, Loader2, MessageCircle, Pencil, RotateCcw, Salad, Send, Sparkles, TrendingUp, Undo2 } from 'lucide-react';
+import { ArrowLeft, Brain, Check, ChevronRight, Dumbbell, History, HeartPulse, Loader2, MessageCircle, Pencil, Plus, Salad, Send, Sparkles, TrendingUp, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -13,12 +13,14 @@ import { useI18n, useT } from '@/i18n/provider';
 import { interpolate } from '@/i18n/interpolate';
 import { cn } from '@/lib/utils';
 import type { CoachMessage } from './queries';
-import { COACH_TOPICS, groupByDay, type CoachTopic, type DayLabel } from './topics';
+import { COACH_TOPICS, groupByDay, type CoachHistoryItem, type CoachTopic, type DayLabel } from './topics';
 import {
   addCoachExerciseToPlan,
   addCoachFoodToToday,
   applyCoachEdit,
-  resetCoachConversation,
+  archiveCoachConversation,
+  loadCoachConversation,
+  reopenCoachConversation,
   sendCoachMessage,
   setCoachAutoApply,
   undoCoachEdit,
@@ -379,6 +381,8 @@ function EditSuggestion({
 interface Props {
   /** Los mensajes de cada tema (cada tema es una conversación aparte). */
   initialThreads: Record<CoachTopic, CoachMessage[]>;
+  /** Las conversaciones guardadas (archivadas), de la más reciente a la más vieja. */
+  initialHistory: CoachHistoryItem[];
   usage: { used: number; limit: number };
   /** Los cambios que pide el cliente se aplican solos, sin tocar "Editar". */
   autoApply: boolean;
@@ -408,6 +412,30 @@ function firstTopic(threads: Record<CoachTopic, CoachMessage[]>): CoachTopic {
   return best;
 }
 
+/** Un mensaje del chat (burbuja). */
+function Bubble({ m }: { m: CoachMessage }) {
+  return (
+    <div className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
+      <div
+        className={cn(
+          'max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm',
+          m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground',
+        )}
+      >
+        {m.content}
+      </div>
+    </div>
+  );
+}
+
+/** Fecha corta de una conversación guardada ("12 nov"; con el año si es de otro año). */
+function shortDate(iso: string, locale: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(locale, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 /** Texto del separador de día: Hoy, Ayer o "lunes 10 de noviembre". */
 function dayText(label: DayLabel, locale: string, today: string, yesterday: string): string {
   if (label.kind === 'today') return today;
@@ -419,11 +447,138 @@ function dayText(label: DayLabel, locale: string, today: string, yesterday: stri
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, initialTopic }: Props) {
+/** Conversaciones guardadas: la lista, y al tocar una se lee completa y se puede seguir. */
+function HistoryPanel({
+  items,
+  busy,
+  onClose,
+  onResume,
+}: {
+  items: CoachHistoryItem[];
+  busy: boolean;
+  onClose: () => void;
+  onResume: (item: CoachHistoryItem) => void;
+}) {
   const { t, locale } = useI18n();
   const tc = t.coach;
   const tt = tc.topics;
+  const th = tc.history;
+  const [open, setOpen] = useState<CoachHistoryItem | null>(null);
+  const [messages, setMessages] = useState<CoachMessage[] | null>(null);
+  const [, start] = useTransition();
+
+  function view(item: CoachHistoryItem) {
+    setOpen(item);
+    setMessages(null);
+    start(async () => {
+      const res = await loadCoachConversation({ id: item.id });
+      if (res.ok && res.data) setMessages(res.data.messages);
+      else {
+        toast.error(tc.error);
+        setOpen(null);
+      }
+    });
+  }
+
+  const count = (n: number) => (n === 1 ? th.one : interpolate(th.count, { n }));
+  const nameOf = (i: CoachHistoryItem) => i.title || tt[i.topic];
+
+  if (open) {
+    const groups = groupByDay(messages ?? []);
+    const Icon = TOPIC_ICONS[open.topic];
+    return (
+      <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
+        <div className="flex items-start gap-2 pb-3">
+          <Button variant="ghost" size="icon" onClick={() => setOpen(null)} aria-label={th.back} className="-ml-2 size-9 shrink-0">
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div className="min-w-0">
+            <p className="truncate text-base font-semibold">{nameOf(open)}</p>
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Icon className="size-3.5" aria-hidden="true" />
+              {tt[open.topic]} · {shortDate(open.updatedAt, locale)} · {count(open.messageCount)}
+            </p>
+          </div>
+        </div>
+        <p className="rounded-lg bg-secondary px-3 py-1.5 text-xs text-muted-foreground">{th.reading}</p>
+        <div className="flex-1 space-y-3 overflow-y-auto pb-4 pt-3">
+          {messages === null ? (
+            <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              {th.loading}
+            </p>
+          ) : (
+            groups.map((g) => (
+              <div key={g.key} className="space-y-3">
+                <p className="sticky top-0 z-10 mx-auto w-fit rounded-full bg-secondary px-3 py-0.5 text-center text-[11px] font-medium text-muted-foreground">
+                  {dayText(g.label, locale, tt.today, tt.yesterday)}
+                </p>
+                {g.items.map((m) => (
+                  <Bubble key={m.id} m={m} />
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+        <div className="sticky bottom-0 border-t bg-background pt-3">
+          <Button className="w-full" onClick={() => onResume(open)} disabled={busy || messages === null}>
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <MessageCircle className="size-4" />}
+            {th.resume}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
+      <div className="flex items-center gap-2 pb-3">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={th.back} className="-ml-2 size-9 shrink-0">
+          <ArrowLeft className="size-4" />
+        </Button>
+        <h2 className="text-base font-semibold">{th.title}</h2>
+      </div>
+      {items.length === 0 ? (
+        <p className="mx-auto max-w-sm py-10 text-center text-sm text-muted-foreground">{th.empty}</p>
+      ) : (
+        <ul className="space-y-2">
+          {items.map((i) => {
+            const Icon = TOPIC_ICONS[i.topic];
+            return (
+              <li key={i.id}>
+                <button
+                  type="button"
+                  onClick={() => view(i)}
+                  className="flex w-full items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left transition-colors hover:bg-secondary"
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary text-foreground">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{nameOf(i)}</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {tt[i.topic]} · {shortDate(i.updatedAt, locale)} · {count(i.messageCount)}
+                    </span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export function CoachChat({ initialThreads, initialHistory, usage, autoApply: initialAutoApply, initialTopic }: Props) {
+  const { t, locale } = useI18n();
+  const tc = t.coach;
+  const tt = tc.topics;
+  const th = tc.history;
   const [threads, setThreads] = useState<Record<CoachTopic, CoachMessage[]>>(initialThreads);
+  const [history, setHistory] = useState<CoachHistoryItem[]>(initialHistory);
+  const [showHistory, setShowHistory] = useState(false);
   const [topic, setTopic] = useState<CoachTopic>(() => initialTopic ?? firstTopic(initialThreads));
   const messages = threads[topic];
   // Alimento sugerido por mensaje de respuesta (sólo vive mientras la pantalla está abierta).
@@ -522,12 +677,46 @@ export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, 
     });
   }
 
-  function reset() {
-    if (!confirm(tc.resetConfirm)) return;
-    const resetTopic = topic;
+  /** Pone las conversaciones guardadas más nuevas primero (sin repetir ninguna). */
+  function mergeHistory(saved: CoachHistoryItem[], without?: string) {
+    setHistory((h) => {
+      const ids = new Set(saved.map((x) => x.id));
+      return [...saved, ...h.filter((x) => !ids.has(x.id) && x.id !== without)].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    });
+  }
+
+  /** Empezar una conversación nueva: la actual NO se borra, queda guardada con su nombre en "Anteriores". */
+  function newConversation() {
+    const fromTopic = topic;
     start(async () => {
-      await resetCoachConversation({ topic: resetTopic });
-      setThreads((all) => ({ ...all, [resetTopic]: [] }));
+      const res = await archiveCoachConversation({ topic: fromTopic });
+      if (!res.ok) {
+        toast.error(tc.error);
+        return;
+      }
+      setThreads((all) => ({ ...all, [fromTopic]: [] }));
+      const saved = res.data?.saved ?? [];
+      if (saved.length > 0) {
+        mergeHistory(saved);
+        toast.success(th.saved);
+      }
+    });
+  }
+
+  /** Seguir una conversación guardada: pasa a ser la abierta de su tema. */
+  function resume(item: CoachHistoryItem) {
+    start(async () => {
+      const res = await reopenCoachConversation({ id: item.id });
+      if (!res.ok || !res.data) {
+        toast.error(tc.error);
+        return;
+      }
+      const d = res.data;
+      setThreads((all) => ({ ...all, [d.topic]: d.messages }));
+      mergeHistory(d.saved, item.id);
+      setTopic(d.topic);
+      setShowHistory(false);
+      toast.success(th.resumed);
     });
   }
 
@@ -550,6 +739,10 @@ export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, 
     health: [tt.healthAsk1, tt.healthAsk2],
     general: [tt.generalAsk1, tt.generalAsk2],
   };
+
+  if (showHistory) {
+    return <HistoryPanel items={history} busy={pending} onClose={() => setShowHistory(false)} onResume={resume} />;
+  }
 
   return (
     <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
@@ -636,16 +829,7 @@ export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, 
               </p>
               {g.items.map((m) => (
                 <div key={m.id} className="space-y-2">
-                  <div className={cn('flex', m.role === 'user' ? 'justify-end' : 'justify-start')}>
-                    <div
-                      className={cn(
-                        'max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm',
-                        m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground',
-                      )}
-                    >
-                      {m.content}
-                    </div>
-                  </div>
+                  <Bubble m={m} />
                   {edits[m.id] ? (
                     <div className="flex justify-start">
                       <EditSuggestion
@@ -694,14 +878,19 @@ export function CoachChat({ initialThreads, usage, autoApply: initialAutoApply, 
       </div>
 
       <div className="sticky bottom-0 space-y-1.5 border-t bg-background pt-3">
-        {messages.length > 0 ? (
-          <div className="flex justify-end">
-            <Button variant="ghost" size="sm" onClick={reset} disabled={pending}>
-              <RotateCcw className="size-4" />
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowHistory(true)} disabled={pending}>
+            <History className="size-4" />
+            {th.open}
+            {history.length > 0 ? <span className="tabular-nums text-muted-foreground">({history.length})</span> : null}
+          </Button>
+          {messages.length > 0 ? (
+            <Button variant="ghost" size="sm" onClick={newConversation} disabled={pending}>
+              <Plus className="size-4" />
               {tc.reset}
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
         <div className="flex items-end gap-2">
           <Textarea
             ref={inputRef}

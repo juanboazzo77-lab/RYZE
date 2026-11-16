@@ -34,11 +34,13 @@ import {
 } from '@/lib/nutrition/targets';
 import { planDraftSchema, widenReps, type PlanDraft, type NutritionDraft } from './plan-schema';
 import { STYLE_PROMPT } from './plan-styles';
-import { topicConversationFilter } from './topics';
+import { conversationTitle, topicConversationFilter, topicOfStored, type CoachHistoryItem, type CoachTopic } from './topics';
+import { firstUserTexts, historySelect, toHistoryItem, type CoachMessage } from './queries';
 import { normalizeName } from '@/lib/training/volume';
 import {
   acceptPlanSchema,
   generatePlanSchema,
+  conversationIdSchema,
   resetConversationSchema,
   sendMessageSchema,
   type AcceptPlanInput,
@@ -129,7 +131,7 @@ export async function sendCoachMessage(
   let conversationId = convo?.id;
   if (!conversationId) {
     const created = await db.aiConversation.create({
-      data: { userId, kind: 'COACH', title: topic },
+      data: { userId, kind: 'COACH', topic, title: conversationTitle(parsed.data.text) },
       select: { id: true },
     });
     conversationId = created.id;
@@ -790,15 +792,89 @@ export async function addCoachFoodToToday(
   return res.ok ? { ok: true } : { error: res.error };
 }
 
-/** Borra la conversación de UN tema (los otros temas no se tocan). */
-export async function resetCoachConversation(raw: { topic?: string } = {}): Promise<Result> {
+/**
+ * Archiva las conversaciones abiertas que cumplen el filtro: no se borran, quedan guardadas con un nombre (sale de lo primero
+ * que se preguntó). Las que no tienen mensajes no se guardan.
+ */
+async function archiveOpenConversations(
+  db: ReturnType<typeof forUser>,
+  where: ReturnType<typeof topicConversationFilter>,
+): Promise<CoachHistoryItem[]> {
+  const open = await db.aiConversation.findMany({ where, select: historySelect });
+  const withMessages = open.filter((c) => c._count.messages > 0);
+  const emptyIds = open.filter((c) => c._count.messages === 0).map((c) => c.id);
+  if (emptyIds.length > 0) await db.aiConversation.deleteMany({ where: { id: { in: emptyIds } } });
+  const firstTexts = await firstUserTexts(db, withMessages.filter((c) => !c.title?.trim()).map((c) => c.id));
+  const now = new Date();
+  const saved: CoachHistoryItem[] = [];
+  for (const c of withMessages) {
+    const item = toHistoryItem(c, firstTexts.get(c.id));
+    await db.aiConversation.updateMany({ where: { id: c.id }, data: { archivedAt: now, title: item.title || null } });
+    saved.push(item);
+  }
+  return saved;
+}
+
+/** Empieza una conversación nueva en UN tema: la actual se guarda en el historial (no se borra). Los otros temas no se tocan. */
+export async function archiveCoachConversation(raw: { topic?: string } = {}): Promise<Result<{ saved: CoachHistoryItem[] }>> {
   const parsed = resetConversationSchema.safeParse(raw);
   if (!parsed.success) return { error: 'INVALID' };
   const { userId } = await requireUser();
   const db = forUser(userId);
-  await db.aiConversation.deleteMany({ where: topicConversationFilter(parsed.data.topic) });
+  const saved = await archiveOpenConversations(db, topicConversationFilter(parsed.data.topic));
   revalidatePath('/coach');
-  return { ok: true };
+  return { ok: true, data: { saved } };
+}
+
+async function conversationMessages(db: ReturnType<typeof forUser>, userId: string, id: string): Promise<CoachMessage[]> {
+  const rows = await db.aiMessage.findMany({
+    where: { conversationId: id, conversation: { userId } },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+    select: { id: true, role: true, content: true, createdAt: true },
+  });
+  return rows
+    .reverse()
+    .map((m) => ({ id: m.id, role: m.role === 'ASSISTANT' ? 'assistant' : 'user', content: m.content, createdAt: m.createdAt.toISOString() }));
+}
+
+/** Los mensajes de una conversación guardada, para leerla desde el historial. */
+export async function loadCoachConversation(raw: { id: string }): Promise<Result<{ messages: CoachMessage[] }>> {
+  const parsed = conversationIdSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+  const convo = await db.aiConversation.findFirst({ where: { id: parsed.data.id, kind: 'COACH' }, select: { id: true } });
+  if (!convo) return { error: 'NOT_FOUND' };
+  return { ok: true, data: { messages: await conversationMessages(db, userId, convo.id) } };
+}
+
+/**
+ * Sigue una conversación guardada: pasa a ser la abierta de su tema (y la que estaba abierta en ese tema se guarda en el
+ * historial). Devuelve los mensajes para mostrarlos y la que se acaba de guardar.
+ */
+export async function reopenCoachConversation(
+  raw: { id: string },
+): Promise<Result<{ topic: CoachTopic; messages: CoachMessage[]; saved: CoachHistoryItem[] }>> {
+  const parsed = conversationIdSchema.safeParse(raw);
+  if (!parsed.success) return { error: 'INVALID' };
+  const { userId } = await requireUser();
+  const db = forUser(userId);
+  const convo = await db.aiConversation.findFirst({
+    where: { id: parsed.data.id, kind: 'COACH' },
+    select: { id: true, topic: true, archivedAt: true },
+  });
+  if (!convo) return { error: 'NOT_FOUND' };
+  const topic = topicOfStored(convo.topic);
+
+  let saved: CoachHistoryItem[] = [];
+  if (convo.archivedAt) {
+    saved = await archiveOpenConversations(db, topicConversationFilter(topic));
+    // Pasa a ser la última charla del tema: así es la que el coach sigue al mandar el próximo mensaje.
+    await db.aiConversation.updateMany({ where: { id: convo.id }, data: { archivedAt: null, updatedAt: new Date() } });
+  }
+  revalidatePath('/coach');
+  return { ok: true, data: { topic, messages: await conversationMessages(db, userId, convo.id), saved } };
 }
 
 /* ------------------------------------------------------------------ */

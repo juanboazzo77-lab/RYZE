@@ -809,12 +809,18 @@ model AiConversation {
   userId    String             @db.Uuid @map("user_id")
   user      Profile            @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind      AiConversationKind @default(COACH)
+  /// Nombre de la conversación (sale de lo que se habló); se muestra en el historial.
   title     String?
+  /// Tema del chat del coach (training | nutrition | progress | health | general). Sin tema: "otras consultas".
+  topic     String?
+  /// Al empezar una conversación nueva del mismo tema, la anterior se archiva (no se borra).
+  archivedAt DateTime?         @map("archived_at")
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
   messages  AiMessage[]
 
   @@index([userId, kind])
+  @@index([userId, kind, archivedAt])
   @@map("ai_conversation")
 }
 

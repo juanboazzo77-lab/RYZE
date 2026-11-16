@@ -12,14 +12,55 @@ export function isCoachTopic(value: unknown): value is CoachTopic {
   return typeof value === 'string' && (COACH_TOPICS as readonly string[]).includes(value);
 }
 
-/** El tema de una conversación guardada. Las conversaciones viejas (sin título) quedan en "Otras consultas". */
-export function topicOfTitle(title: string | null | undefined): CoachTopic {
-  return isCoachTopic(title) ? title : DEFAULT_COACH_TOPIC;
+/** El tema de una conversación guardada. Las conversaciones viejas (sin tema) quedan en "Otras consultas". */
+export function topicOfStored(topic: string | null | undefined): CoachTopic {
+  return isCoachTopic(topic) ? topic : DEFAULT_COACH_TOPIC;
 }
 
-/** Filtro de base de datos para encontrar las conversaciones de un tema (el general incluye las viejas sin título). */
-export function topicConversationFilter(topic: CoachTopic): { kind: 'COACH'; OR: Array<{ title: string | null }> } {
-  return { kind: 'COACH', OR: topic === DEFAULT_COACH_TOPIC ? [{ title: null }, { title: DEFAULT_COACH_TOPIC }] : [{ title: topic }] };
+type TopicWhere = { topic: string | null };
+
+function topicWhere(topic: CoachTopic): TopicWhere[] {
+  return topic === DEFAULT_COACH_TOPIC ? [{ topic: null }, { topic: DEFAULT_COACH_TOPIC }] : [{ topic }];
+}
+
+/** Las conversaciones ABIERTAS de un tema (las archivadas quedan en el historial). El general incluye las viejas sin tema. */
+export function topicConversationFilter(topic: CoachTopic): { kind: 'COACH'; archivedAt: null; OR: TopicWhere[] } {
+  return { kind: 'COACH', archivedAt: null, OR: topicWhere(topic) };
+}
+
+/* ---------- Nombre de la conversación ---------- */
+
+const TITLE_MAX = 48;
+const GREETING = /^(buen[oa]s?\s+(d[ií]as?|tardes?|noches?)|hola+|buenas+|hey|ey|che|holis|hello|hi|ol[aá])\b[\s,.!:;-]*/i;
+
+/**
+ * Nombre de una conversación a partir de lo primero que se preguntó: sin saludo, sin signos de pregunta sueltos,
+ * con la primera letra en mayúscula y cortado en una palabra entera. Sin nada útil, devuelve null.
+ */
+export function conversationTitle(firstMessage: string | null | undefined): string | null {
+  let s = (firstMessage ?? '').replace(/\s+/g, ' ').trim();
+  for (let i = 0; i < 2; i++) s = s.replace(GREETING, '').trim();
+  // Se queda con la primera oración (hasta el primer punto o signo de cierre), sin signos de apertura.
+  s = s.replace(/^[¿¡"'“‘(\s]+/, '');
+  const firstSentence = s.split(/(?<=[.?!])\s+/)[0] ?? s;
+  s = firstSentence.replace(/[?!.…\s]+$/g, '').replace(/[¿¡]/g, '').trim();
+  if (s.length < 3) return null;
+  if (s.length > TITLE_MAX) {
+    const cut = s.slice(0, TITLE_MAX);
+    const lastSpace = cut.lastIndexOf(' ');
+    s = `${(lastSpace > 20 ? cut.slice(0, lastSpace) : cut).replace(/[,;:\s]+$/, '')}…`;
+  }
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** Una conversación archivada, como se muestra en el historial (sin los mensajes). */
+export interface CoachHistoryItem {
+  id: string;
+  topic: CoachTopic;
+  title: string;
+  /** Última actividad (ISO). */
+  updatedAt: string;
+  messageCount: number;
 }
 
 /** Qué le decimos a la IA sobre el tema de la charla (el coach se enfoca en eso, sin cerrarse a otras preguntas). */

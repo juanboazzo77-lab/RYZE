@@ -1,14 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { COACH_TOPICS, dayLabel, groupByDay, isCoachTopic, localDayKey, topicConversationFilter, topicOfTitle, topicPromptNote } from './topics';
+import {
+  COACH_TOPICS,
+  conversationTitle,
+  dayLabel,
+  groupByDay,
+  isCoachTopic,
+  localDayKey,
+  topicConversationFilter,
+  topicOfStored,
+  topicPromptNote,
+} from './topics';
 
-describe('topicOfTitle', () => {
+describe('topicOfStored', () => {
   it('reconoce los temas guardados', () => {
-    for (const t of COACH_TOPICS) expect(topicOfTitle(t)).toBe(t);
+    for (const t of COACH_TOPICS) expect(topicOfStored(t)).toBe(t);
   });
   it('las conversaciones viejas o raras quedan en "otras consultas"', () => {
-    expect(topicOfTitle(null)).toBe('general');
-    expect(topicOfTitle(undefined)).toBe('general');
-    expect(topicOfTitle('cualquier cosa')).toBe('general');
+    expect(topicOfStored(null)).toBe('general');
+    expect(topicOfStored(undefined)).toBe('general');
+    expect(topicOfStored('cualquier cosa')).toBe('general');
   });
 });
 
@@ -21,11 +31,40 @@ describe('isCoachTopic', () => {
 });
 
 describe('topicConversationFilter', () => {
-  it('el tema general incluye las conversaciones viejas sin título', () => {
-    expect(topicConversationFilter('general').OR).toEqual([{ title: null }, { title: 'general' }]);
+  it('el tema general incluye las conversaciones viejas sin tema', () => {
+    expect(topicConversationFilter('general').OR).toEqual([{ topic: null }, { topic: 'general' }]);
   });
   it('los otros temas buscan solo el suyo', () => {
-    expect(topicConversationFilter('nutrition')).toEqual({ kind: 'COACH', OR: [{ title: 'nutrition' }] });
+    expect(topicConversationFilter('nutrition')).toEqual({ kind: 'COACH', archivedAt: null, OR: [{ topic: 'nutrition' }] });
+  });
+  it('solo trae las conversaciones abiertas: las archivadas quedan en el historial', () => {
+    for (const t of COACH_TOPICS) expect(topicConversationFilter(t).archivedAt).toBeNull();
+  });
+});
+
+describe('conversationTitle', () => {
+  it('usa lo primero que se preguntó, sin signos de pregunta y con mayúscula', () => {
+    expect(conversationTitle('¿Cómo puedo progresar en mis ejercicios?')).toBe('Cómo puedo progresar en mis ejercicios');
+    expect(conversationTitle('me duele la rodilla')).toBe('Me duele la rodilla');
+  });
+  it('saca el saludo del principio', () => {
+    expect(conversationTitle('Hola! Me duele la rodilla cuando bajo escaleras')).toBe('Me duele la rodilla cuando bajo escaleras');
+    expect(conversationTitle('Buenas tardes, qué puedo cenar hoy?')).toBe('Qué puedo cenar hoy');
+  });
+  it('se queda con la primera oración', () => {
+    expect(conversationTitle('Quiero bajar de peso. Tengo 30 años y entreno 3 veces por semana.')).toBe('Quiero bajar de peso');
+  });
+  it('corta en una palabra entera si es muy largo', () => {
+    const t = conversationTitle('Quiero saber cómo organizar mi semana de entrenamiento si trabajo de noche y duermo poco')!;
+    expect(t.length).toBeLessThanOrEqual(49);
+    expect(t.endsWith('…')).toBe(true);
+    expect(t.startsWith('Quiero saber cómo organizar mi semana')).toBe(true);
+  });
+  it('sin nada útil devuelve null', () => {
+    expect(conversationTitle('')).toBeNull();
+    expect(conversationTitle('   ')).toBeNull();
+    expect(conversationTitle('hola')).toBeNull();
+    expect(conversationTitle(null)).toBeNull();
   });
 });
 

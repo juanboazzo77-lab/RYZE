@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { CoachChat } from '@/features/coach/chat';
 import { COACH_TOPICS, isCoachTopic, type CoachTopic } from '@/features/coach/topics';
 import type { CoachMessage } from '@/features/coach/queries';
+import type { CoachHistoryItem } from '@/features/coach/topics';
 
 /**
  * Cómo se ve el chat con el coach, con datos de ejemplo: SÓLO en desarrollo (sirve para revisar la pantalla sin una
@@ -33,6 +34,13 @@ const THREADS: Record<CoachTopic, CoachMessage[]> = {
   general: [],
 };
 
+const HISTORY: CoachHistoryItem[] = [
+  { id: 'h1', topic: 'health', title: 'Me duele la rodilla cuando bajo escaleras', updatedAt: day(2, 20, 0), messageCount: 8 },
+  { id: 'h2', topic: 'nutrition', title: 'Qué puedo cenar liviano después de entrenar', updatedAt: day(6, 21, 30), messageCount: 4 },
+  { id: 'h3', topic: 'training', title: 'Cómo organizar mi semana si trabajo de noche y duermo poco…', updatedAt: day(20, 18, 0), messageCount: 12 },
+  { id: 'h4', topic: 'general', title: '', updatedAt: day(400, 10, 0), messageCount: 1 },
+];
+
 export default async function DevCoachPreview({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
   const { t } = await searchParams;
@@ -43,7 +51,7 @@ export default async function DevCoachPreview({ searchParams }: { searchParams: 
       <style>{'nextjs-portal { display: none !important; }'}</style>
       <h1 className="text-2xl font-bold tracking-tight">AI Coach</h1>
       <p className="pb-3 text-sm text-muted-foreground">Tu entrenador y guía de nutrición. Responde con tus datos reales.</p>
-      <CoachChat initialThreads={THREADS} usage={{ used: 2, limit: 5 }} autoApply={false} initialTopic={topic} />
+      <CoachChat initialThreads={THREADS} initialHistory={HISTORY} usage={{ used: 2, limit: 5 }} autoApply={false} initialTopic={topic} />
     </div>
   );
 }

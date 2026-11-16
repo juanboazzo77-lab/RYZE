@@ -10,6 +10,7 @@ export const sendMessageSchema = z.object({
 export type SendMessageInput = z.input<typeof sendMessageSchema>;
 
 export const resetConversationSchema = z.object({ topic: z.enum(COACH_TOPICS).default('general') });
+export const conversationIdSchema = z.object({ id: z.string().uuid() });
 
 export const generatePlanSchema = z.object({
   brief: z.string().trim().max(600),
