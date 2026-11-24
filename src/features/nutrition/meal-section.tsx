@@ -16,12 +16,15 @@ export function MealSection({
   mealType,
   entries,
   total,
+  target,
   frequentMeals,
 }: {
   date: string;
   mealType: MealType;
   entries: DayEntry[];
   total: MacroTotals;
+  /** Objetivo diario de la persona, para mostrar qué parte del día es cada alimento. */
+  target: MacroTotals | null;
   frequentMeals: FrequentMeal[];
 }) {
   const t = useT();
@@ -51,7 +54,7 @@ export function MealSection({
         ) : (
           <div className="divide-y">
             {entries.map((e) => (
-              <EntryRow key={e.id} entry={e} />
+              <EntryRow key={e.id} entry={e} target={target} />
             ))}
           </div>
         )}

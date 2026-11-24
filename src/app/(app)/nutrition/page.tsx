@@ -63,6 +63,7 @@ export default async function NutritionPage({
           mealType={m}
           entries={log.meals[m]}
           total={log.mealTotals[m]}
+          target={log.target}
           frequentMeals={frequent}
         />
       ))}

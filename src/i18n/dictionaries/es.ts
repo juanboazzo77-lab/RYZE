@@ -1043,6 +1043,7 @@ export const es = {
       },
     },
     actions: { edit: 'Editar', duplicate: 'Duplicar', deleteE: 'Eliminar', save: 'Guardar', move: 'Mover a otra comida', moveTo: 'Mover a:' },
+    detail: { portion: 'Porción', meal: 'Comida', macros: 'Macronutrientes', ofCalories: '{pct}% de las calorías', ofTarget: '{pct}% del objetivo diario', reference: 'Referencia por 100 g', estimatedNote: 'Valores estimados: pueden variar un poco.', cancel: 'Cancelar' },
     saveFrequentTitle: 'Guardar comida frecuente',
     frequentNameLabel: 'Nombre de la comida',
     frequentPickTitle: 'Elegí una comida frecuente',

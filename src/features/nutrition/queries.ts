@@ -19,6 +19,10 @@ export interface DayEntry {
   fatG: number;
   isEstimated: boolean;
   position: number;
+  /** Marca del alimento, si la tiene. */
+  brand: string | null;
+  /** Valores del alimento por 100 g, para mostrar de referencia en el detalle. Null en entradas sin alimento (fotos, manuales). */
+  per100: { kcal: number; proteinG: number; carbsG: number; fatG: number } | null;
 }
 
 export interface DayLog {
@@ -59,7 +63,9 @@ export async function getDayLog(profile: Profile, dateISO: string): Promise<DayL
         fatG: true,
         isEstimated: true,
         position: true,
-        food: { select: { name: true, brand: true } },
+        food: {
+          select: { name: true, brand: true, kcalPer100: true, proteinPer100: true, carbsPer100: true, fatPer100: true },
+        },
       },
     }),
   ]);
@@ -79,6 +85,15 @@ export async function getDayLog(profile: Profile, dateISO: string): Promise<DayL
       fatG: Math.round(e.fatG * 10) / 10,
       isEstimated: e.isEstimated,
       position: e.position,
+      brand: e.food?.brand ?? null,
+      per100: e.food
+        ? {
+            kcal: Math.round(e.food.kcalPer100),
+            proteinG: Math.round(e.food.proteinPer100 * 10) / 10,
+            carbsG: Math.round(e.food.carbsPer100 * 10) / 10,
+            fatG: Math.round(e.food.fatPer100 * 10) / 10,
+          }
+        : null,
     });
   }
 

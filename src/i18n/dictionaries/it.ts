@@ -1045,6 +1045,7 @@ export const it: Dictionary = {
       },
     },
     actions: { edit: 'Modifica', duplicate: 'Duplica', deleteE: 'Elimina', save: 'Salva', move: 'Sposta in un altro pasto', moveTo: 'Sposta in:' },
+    detail: { portion: 'Porzione', meal: 'Pasto', macros: 'Macronutrienti', ofCalories: '{pct}% delle calorie', ofTarget: '{pct}% dell’obiettivo giornaliero', reference: 'Riferimento per 100 g', estimatedNote: 'Valori stimati: possono variare un po’.', cancel: 'Annulla' },
     saveFrequentTitle: 'Salva pasto frequente',
     frequentNameLabel: 'Nome del pasto',
     frequentPickTitle: 'Scegli un pasto frequente',

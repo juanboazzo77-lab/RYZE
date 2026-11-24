@@ -1045,6 +1045,7 @@ export const de: Dictionary = {
       },
     },
     actions: { edit: 'Bearbeiten', duplicate: 'Duplizieren', deleteE: 'Löschen', save: 'Speichern', move: 'In eine andere Mahlzeit verschieben', moveTo: 'Verschieben nach:' },
+    detail: { portion: 'Portion', meal: 'Mahlzeit', macros: 'Makronährstoffe', ofCalories: '{pct} % der Kalorien', ofTarget: '{pct} % des Tagesziels', reference: 'Referenz pro 100 g', estimatedNote: 'Geschätzte Werte: Sie können etwas abweichen.', cancel: 'Abbrechen' },
     saveFrequentTitle: 'Häufige Mahlzeit speichern',
     frequentNameLabel: 'Name der Mahlzeit',
     frequentPickTitle: 'Häufige Mahlzeit auswählen',

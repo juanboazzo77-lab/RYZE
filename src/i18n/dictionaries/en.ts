@@ -1045,6 +1045,7 @@ export const en: Dictionary = {
       },
     },
     actions: { edit: 'Edit', duplicate: 'Duplicate', deleteE: 'Delete', save: 'Save', move: 'Move to another meal', moveTo: 'Move to:' },
+    detail: { portion: 'Serving', meal: 'Meal', macros: 'Macronutrients', ofCalories: '{pct}% of calories', ofTarget: '{pct}% of daily target', reference: 'Reference per 100 g', estimatedNote: 'Estimated values: they may vary a bit.', cancel: 'Cancel' },
     saveFrequentTitle: 'Save frequent meal',
     frequentNameLabel: 'Meal name',
     frequentPickTitle: 'Pick a frequent meal',

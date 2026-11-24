@@ -1045,6 +1045,7 @@ export const fr: Dictionary = {
       },
     },
     actions: { edit: 'Modifier', duplicate: 'Dupliquer', deleteE: 'Supprimer', save: 'Enregistrer', move: 'Déplacer vers un autre repas', moveTo: 'Déplacer vers :' },
+    detail: { portion: 'Portion', meal: 'Repas', macros: 'Macronutriments', ofCalories: '{pct} % des calories', ofTarget: '{pct} % de l’objectif du jour', reference: 'Référence pour 100 g', estimatedNote: 'Valeurs estimées : elles peuvent varier un peu.', cancel: 'Annuler' },
     saveFrequentTitle: 'Enregistrer un repas fréquent',
     frequentNameLabel: 'Nom du repas',
     frequentPickTitle: 'Choisissez un repas fréquent',
