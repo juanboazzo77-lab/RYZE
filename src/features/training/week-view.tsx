@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Dumbbell } from 'lucide-react';
+import { Check, Dumbbell } from 'lucide-react';
 import type { Dictionary } from '@/i18n';
 import type { OverviewDay } from './queries';
 import { pickHeroDay } from './today-pick';
@@ -43,11 +43,31 @@ export function WeekView({
             <p className="mt-1 text-sm opacity-90">
               {[extraWeekday(hero.day), `${hero.day.exerciseCount} ${t.training.exercises}`].filter(Boolean).join(' · ')}
             </p>
-            <StartWorkoutButton
-              planDayId={hero.day.id}
-              label={t.training.start}
-              className="mt-4 h-12 w-full rounded-full bg-white text-base font-bold text-primary shadow-sm hover:bg-white/90"
-            />
+            {hero.day.done ? (
+              // Ya se hizo esta semana: se avisa en vez del botón grande. Sigue pudiendo repetirse, pero sin invitar a eso.
+              <div className="mt-4 space-y-2.5">
+                <div className="flex items-start gap-2.5 rounded-2xl bg-white/15 p-3">
+                  <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold leading-snug">{t.training.heroDone}</p>
+                    <p className="text-xs opacity-90">{t.training.heroDoneHint}</p>
+                  </div>
+                </div>
+                <StartWorkoutButton
+                  planDayId={hero.day.id}
+                  label={t.training.repeat}
+                  variant="ghost"
+                  icon={false}
+                  className="h-9 w-full rounded-full text-sm font-semibold text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
+                />
+              </div>
+            ) : (
+              <StartWorkoutButton
+                planDayId={hero.day.id}
+                label={t.training.start}
+                className="mt-4 h-12 w-full rounded-full bg-white text-base font-bold text-primary shadow-sm hover:bg-white/90"
+              />
+            )}
           </div>
         </div>
       ) : null}
@@ -77,7 +97,9 @@ export function WeekView({
               const isHero = hero?.day.id === d.id && hero.isToday;
               return (
                 <li key={d.id} className={`flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-colors ${isHero ? 'border-primary/60 bg-accent' : ''}`}>
-                  <span className={`grid size-11 shrink-0 place-items-center rounded-xl text-base font-extrabold ${isHero ? 'bg-primary text-primary-foreground' : 'bg-accent text-primary'}`}>{i + 1}</span>
+                  <span className={`grid size-11 shrink-0 place-items-center rounded-xl text-base font-extrabold ${isHero || d.done ? 'bg-primary text-primary-foreground' : 'bg-accent text-primary'}`}>
+                    {d.done ? <Check aria-hidden="true" className="size-5" /> : i + 1}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 font-semibold leading-snug">{d.name}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -85,9 +107,15 @@ export function WeekView({
                       <span>
                         {d.exerciseCount} {t.training.exercises}
                       </span>
+                      {d.done ? <span className="rounded-full bg-primary/15 px-2 py-0.5 font-semibold text-primary">{t.training.doneThisWeek}</span> : null}
                     </div>
                   </div>
-                  <StartWorkoutButton planDayId={d.id} label="" ariaLabel={`${t.training.start}: ${d.name}`} className="size-11 shrink-0 rounded-full p-0" />
+                  {d.done ? (
+                    // Hecho esta semana: el botón de empezar queda apagado (se puede repetir, pero ya no es "lo que toca").
+                    <StartWorkoutButton planDayId={d.id} label="" variant="outline" ariaLabel={`${t.training.repeat}: ${d.name}`} className="size-11 shrink-0 rounded-full p-0 text-muted-foreground" />
+                  ) : (
+                    <StartWorkoutButton planDayId={d.id} label="" ariaLabel={`${t.training.start}: ${d.name}`} className="size-11 shrink-0 rounded-full p-0" />
+                  )}
                 </li>
               );
             })}

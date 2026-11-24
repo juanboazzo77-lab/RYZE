@@ -754,6 +754,10 @@ export const it: Dictionary = {
     heroToday: 'Oggi tocca a te',
     heroNext: 'Il prossimo',
     yourWeek: 'La tua settimana',
+    doneThisWeek: 'Completato questa settimana',
+    heroDone: 'Hai già completato questo allenamento questa settimana',
+    heroDoneHint: 'La prossima settimana tornerà in programma.',
+    repeat: 'Ripeti',
     weekdays: {
       '1': 'Lunedì',
       '2': 'Martedì',

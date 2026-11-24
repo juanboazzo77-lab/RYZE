@@ -5,19 +5,26 @@ import { NewPlanButton } from '@/features/training/new-plan-button';
 import { AddFoodDialog } from '@/features/nutrition/add-food-dialog';
 import { Button } from '@/components/ui/button';
 
-/** Vista de la semana de entrenamiento y del cuadro de agregar alimento con datos de ejemplo, SÓLO en desarrollo. En producción no existe (404). */
-export default async function DevTrainingPreview() {
+/**
+ * Vista de la semana de entrenamiento y del cuadro de agregar alimento con datos de ejemplo, SÓLO en desarrollo.
+ * En producción no existe (404). `?hecho=a,b` marca esos días como completados esta semana; `?hoy=2` cambia el día de hoy.
+ */
+export default async function DevTrainingPreview({ searchParams }: { searchParams: Promise<{ hecho?: string; hoy?: string }> }) {
   if (process.env.NODE_ENV === 'production') notFound();
+  const sp = await searchParams;
   const { t } = await getT();
+  const done = new Set((sp.hecho ?? '').split(',').filter(Boolean));
   const days = [
     { id: 'a', name: 'Lunes - Empuje (pecho, hombro y tríceps)', weekday: 1, exerciseCount: 8 },
     { id: 'b', name: 'Martes - Pierna pesada', weekday: 2, exerciseCount: 8 },
     { id: 'c', name: 'Miércoles - Tirón (espalda y bíceps)', weekday: 3, exerciseCount: 8 },
     { id: 'd', name: 'Jueves - Fútbol específico', weekday: 4, exerciseCount: 7 },
     { id: 'e', name: 'Viernes - Torso (pecho y espalda)', weekday: 5, exerciseCount: 8 },
-  ];
+  ].map((d) => ({ ...d, done: done.has(d.id) }));
+  const today = Number(sp.hoy) >= 1 && Number(sp.hoy) <= 7 ? Number(sp.hoy) : 3;
   return (
     <div className="mx-auto max-w-md space-y-5 px-4 py-6">
+      <style>{'nextjs-portal { display: none !important; }'}</style>
       <h1 className="text-3xl font-extrabold tracking-tight">{t.training.title}</h1>
       <div className="flex gap-2">
         <NewPlanButton />
@@ -27,7 +34,7 @@ export default async function DevTrainingPreview() {
           </Button>
         </AddFoodDialog>
       </div>
-      <WeekView plan={{ id: 'p', name: 'Híbrido Fútbol + Estética Juanse', days }} t={t} todayWeekday={3} showHero />
+      <WeekView plan={{ id: 'p', name: 'Híbrido Fútbol + Estética Juanse', days }} t={t} todayWeekday={today} showHero />
     </div>
   );
 }

@@ -9,6 +9,8 @@ export interface OverviewDay {
   name: string;
   weekday: number | null;
   exerciseCount: number;
+  /** Ya se completó este día de la rutina en la semana en curso (vuelve a false al empezar la semana siguiente). */
+  done: boolean;
 }
 export interface OverviewPlan {
   id: string;
@@ -72,6 +74,7 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
             name: d.name,
             weekday: weekdayThisWeek(d, shift, done),
             exerciseCount: d._count.exercises,
+            done: done.has(d.id),
           })),
         }
       : null,

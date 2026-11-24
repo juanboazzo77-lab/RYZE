@@ -752,6 +752,10 @@ export const es = {
     heroToday: 'Hoy te toca',
     heroNext: 'Lo que viene',
     yourWeek: 'Tu semana',
+    doneThisWeek: 'Completado esta semana',
+    heroDone: 'Ya completaste este entrenamiento esta semana',
+    heroDoneHint: 'La semana que viene vuelve a tocarte.',
+    repeat: 'Repetir',
     weekdays: {
       '1': 'Lunes',
       '2': 'Martes',
