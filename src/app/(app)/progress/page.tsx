@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BarChart3, CalendarRange, Camera, ClipboardCheck, TrendingDown, TrendingUp, Trophy, Users } from 'lucide-react';
+import { BarChart3, CalendarRange, Camera, ClipboardCheck, Flame, TrendingDown, TrendingUp, Trophy, Users } from 'lucide-react';
 import { requireUser } from '@/server/context';
 import { getT } from '@/i18n/server';
 import { rangeToDays } from '@/lib/progress/weight';
@@ -61,6 +61,13 @@ export default async function ProgressPage({
         >
           <BarChart3 className="size-4 text-primary" />
           {t.stats.title}
+        </Link>
+        <Link
+          href="/progress/consistency"
+          className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium hover:bg-secondary/50"
+        >
+          <Flame className="size-4 text-primary" />
+          {t.consistency.title}
         </Link>
         <Link
           href="/progress/achievements"
