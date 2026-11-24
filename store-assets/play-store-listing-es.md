@@ -36,7 +36,10 @@ Entrenamiento, nutrición y un coach con IA que te conoce de verdad
 ✨ PARA QUIÉN ES
 Para quien entrena en el gimnasio o en casa y quiere dejar de improvisar: objetivos claros, datos reales y un coach que no te da respuestas genéricas.
 
-Probá todo gratis los primeros 7 días, sin restricciones. Después elegí el plan que se adapte a vos.
+🏢 SI ENTRENÁS EN UN GIMNASIO
+Si tu gimnasio usa Forza AI, entrás con el código que te dan, ves sus rutinas, retos y mensajes, y tenés un plan de gimnasio propio. El gimnasio se paga en la web: después iniciás sesión en la app con la misma cuenta.
+
+Probá todo gratis los primeros 3 días, sin restricciones. Después elegí el plan que se adapte a vos.
 
 ---
 *Forza AI no reemplaza el consejo de un profesional de la salud. Las recomendaciones nutricionales y de entrenamiento son orientativas.*
