@@ -37,7 +37,10 @@ trabajo vive en la rama `app-offline`.
 6. La pantalla muestra lo último que bajó más lo pendiente encima.
 7. Cada cuenta guarda lo suyo. No se puede cerrar sesión borrando cambios sin subir sin confirmarlo.
 
-### Reglas que tiene que cumplir el servidor (próximo paso)
+### Reglas del servidor (`src/server/mobile`, ruta `POST /api/mobile/v1/sync`)
+
+Para sumar algo que la app pueda subir se agrega un manejador en `handlers.ts` con su validación y sus pruebas. Hoy
+existe `weight.log`.
 
 - Guardar el identificador de cada operación aplicada: si llega repetida, responder `duplicate` sin volver a aplicarla.
 - Aplicar en orden y, ante una falla pasajera, cortar y devolver sólo lo procesado.
@@ -50,6 +53,11 @@ trabajo vive en la rama `app-offline`.
 Gana el cambio **hecho más tarde** (hora en que la persona lo hizo, no en que se subió). Los entrenamientos y los
 registros nuevos no chocan porque cada uno tiene su identificador. Un entrenamiento terminado nunca vuelve a quedar
 sin terminar.
+
+Para comparar horas, cada tabla que se pueda editar desde los dos lados necesita una columna `edited_at` (cuándo la
+persona hizo el cambio). `updated_at` no sirve: la base lo reemplaza por la hora del servidor en cada cambio. Un
+disparador completa `edited_at` cuando quien actualiza no lo manda (la web), así la web no necesita cambios. Ver la
+migración `20261125180000_mobile_sync` (hoy está en `weight_entry`).
 
 ## Inicio de sesión
 

@@ -283,6 +283,7 @@ model Profile {
   workoutPlans            WorkoutPlan[]
   workouts                Workout[]
   personalRecords         PersonalRecord[]
+  syncOps                SyncOp[]
   weightEntries           WeightEntry[]
   aiConversations         AiConversation[]
   aiGenerations           AiGeneration[]
@@ -681,6 +682,10 @@ model WeightEntry {
   note      String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  /// Cuándo la persona hizo el último cambio. En la web es el momento de guardar (lo pone la base); desde la app
+  /// es la hora del teléfono, aunque se suba días después. Con esto se decide qué cambio gana. Ver la
+  /// migración 20261125180000_mobile_sync.
+  editedAt  DateTime? @default(now()) @map("edited_at")
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -1482,4 +1487,22 @@ model AdminNote {
 
   @@index([status, createdAt])
   @@map("admin_note")
+}
+
+/// Cambios que subió la app independiente. Sirve para no aplicar dos veces el mismo si se reintenta.
+model SyncOp {
+  userId    String   @db.Uuid @map("user_id")
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Lo genera el teléfono.
+  opId      String   @db.Uuid @map("op_id")
+  type      String
+  /// applied | rejected
+  status    String
+  reason    String?
+  /// Cuándo lo hizo la persona (hora del teléfono).
+  createdAt DateTime @map("created_at")
+  appliedAt DateTime @default(now()) @map("applied_at")
+
+  @@id([userId, opId])
+  @@map("sync_op")
 }

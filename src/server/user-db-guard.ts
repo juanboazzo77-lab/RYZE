@@ -28,6 +28,7 @@ export const USER_MODELS = new Set<string>([
   'CoachProfile',
   'PhysiqueAnalysis',
   'CoachMemory',
+  'SyncOp',
 ]);
 
 export const WHERE_OPS = new Set([
