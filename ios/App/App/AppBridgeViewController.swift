@@ -14,6 +14,9 @@ class AppBridgeViewController: CAPBridgeViewController {
     /// Abre en la web la ruta de un enlace forzaai://app/<ruta> (por ejemplo, el toque a un widget).
     func open(url: URL) {
         guard url.scheme == "forzaai" else { return }
+        // Sólo en la app que carga la web. La app independiente tiene sus pantallas adentro: cargar la web la sacaría
+        // de la app (y sin señal quedaría en blanco), así que ahí el enlace sólo la abre.
+        guard bridge?.config.serverURL.scheme == "https" else { return }
         var path = url.path
         if path.isEmpty { path = "/" }
         // Sólo rutas internas: empiezan con una sola "/".

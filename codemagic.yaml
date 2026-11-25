@@ -76,3 +76,95 @@ workflows:
         # la ficha, dejalo en false y subí a revisión manualmente desde
         # App Store Connect cuando esté todo listo.
         submit_to_app_store: false
+
+  # La app independiente (funciona sin internet). Va sólo a TestFlight, como versión 2.0; la que está en el App Store
+  # no cambia hasta que se decida publicar la nueva. Se arranca a mano desde Codemagic.
+  ios-app-nueva:
+    name: App nueva (sin internet) — TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      # Nombre del grupo de integración "App Store Connect" que se crea en
+      # Codemagic → Team settings → Integrations → App Store Connect,
+      # usando una API Key de App Store Connect con rol "App Manager"
+      # (la misma clase de clave que ya generamos para RevenueCat:
+      # Users and Access → Integrations → App Store Connect API).
+      app_store_connect: forzaai_asc
+    environment:
+      xcode: latest
+      node: 22.13.0
+      groups:
+        # Contiene CERTIFICATE_PRIVATE_KEY: la clave RSA que
+        # app-store-connect fetch-signing-files usa para generar un
+        # certificado de distribución nuevo (Apple nunca devuelve la clave
+        # privada de un certificado ya creado, así que la aportamos nosotros).
+        - ios_signing
+      vars:
+        # capacitor.config.ts arma la app con sus pantallas adentro.
+        FORZA_APP: "nueva"
+        # Las dos son públicas (ya viajan en la web). Lo que protege los datos es la seguridad por filas de la base.
+        NEXT_PUBLIC_SUPABASE_URL: "https://qbahkmpbufzlhaznmflz.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWhrbXBidWZ6bGhhem5tZmx6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNzEwNzAsImV4cCI6MjEwMzk0NzA3MH0.R0hAUi54q1rcbeC8EyYiLKhn4ed0_0lKf3CZYkMEqtI"
+        BUNDLE_ID: "app.forzaai.mobile"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Instalar dependencias
+        script: |
+          # El "pnpm" de esta imagen es un shim de corepack, que tiene dos
+          # bugs distintos (verificación de firmas y un ERR_VM_DYNAMIC_
+          # IMPORT_CALLBACK_MISSING al ejecutar la versión descargada).
+          # Instalamos el pnpm real vía npm, forzando para pisar el shim.
+          npm install -g pnpm@11.25.0 --force
+          pnpm install --frozen-lockfile
+      - name: Armar las pantallas de la app
+        script: |
+          pnpm app:typecheck
+          pnpm app:build
+      - name: Sincronizar Capacitor (iOS)
+        script: |
+          npx cap sync ios
+          # Si la app quedara apuntando a la web, no sería la independiente: se corta acá.
+          if grep -q '"url"' ios/App/App/capacitor.config.json; then echo "La config sigue cargando la web"; exit 1; fi
+          test -f ios/App/App/public/index.html
+      - name: Configurar firma automática (App Store Connect API)
+        script: |
+          keychain initialize
+          # CERTIFICATE_PRIVATE_KEY_B64 está en base64 (una sola línea) porque
+          # el campo de variables de Codemagic no preserva bien los saltos de
+          # línea de una clave PEM pegada directamente. La decodificamos a un
+          # archivo temporal y la pasamos por @file: en vez de por variable.
+          echo "$CERTIFICATE_PRIVATE_KEY_B64" | base64 --decode > /tmp/ios_distribution_key.pem
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --certificate-key "@file:/tmp/ios_distribution_key.pem" \
+            --create
+          rm -f /tmp/ios_distribution_key.pem
+          keychain add-certificates
+          xcode-project use-profiles --project "$XCODE_PROJECT"
+      - name: Compilar y exportar el .ipa
+        script: |
+          # Apple rechaza subir un .ipa con la misma versión + número de
+          # build que uno ya subido antes ("attribute already used").
+          # app-store-connect get-latest-build-number devolvió 0/1 de nuevo
+          # (probablemente porque el build anterior no había terminado de
+          # "publicarse" del lado de Apple todavía). Usamos en cambio el
+          # propio contador de builds de Codemagic ($BUILD_NUMBER, único y
+          # siempre creciente para este workflow) para no depender de eso.
+          echo "Usando BUILD_NUMBER=$BUILD_NUMBER como CFBundleVersion"
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-xcargs "CURRENT_PROJECT_VERSION=$BUILD_NUMBER MARKETING_VERSION=2.0"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # Poné en true cuando ya quieras que cada build suba directo a
+        # revisión de App Store (además de TestFlight). Mientras se arma
+        # la ficha, dejalo en false y subí a revisión manualmente desde
+        # App Store Connect cuando esté todo listo.
+        submit_to_app_store: false

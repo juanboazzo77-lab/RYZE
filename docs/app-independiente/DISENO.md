@@ -98,6 +98,25 @@ Se publica cuando está completa.
 - `pnpm app:typecheck` y `pnpm app:build` — revisar y armar los archivos que van dentro de la app (`mobile/dist`)
 - `pnpm test` — incluye las pruebas de sincronización
 
+## Armar las versiones de prueba (paso 0.6)
+
+`capacitor.config.ts` arma la app independiente sólo con `FORZA_APP=nueva`; sin eso arma la actual.
+
+- **iPhone:** en Codemagic, flujo "App nueva (sin internet) — TestFlight" (`ios-app-nueva`). Sale como versión 2.0 y sólo
+  a TestFlight. Usa el mismo identificador que la app actual: en el teléfono donde se instale, la reemplaza (se vuelve a
+  la actual reinstalándola desde el App Store; los datos de la cuenta están en el servidor).
+- **Android:** `FORZA_APP=nueva pnpm app:build && FORZA_APP=nueva npx cap sync android`, y en `android/`
+  `./gradlew assembleDebug` con Java 21. Después correr `npx cap sync android` **sin** la variable, para que el próximo
+  armado no salga con la app nueva por error.
+- Pendiente para más adelante: los widgets de iPhone todavía no reciben datos de la app nueva.
+
+### Prueba en modo avión
+
+1. Con internet: abrir, iniciar sesión y esperar "Todo está subido". Revisar que estén los pesos.
+2. Activar el modo avión, cerrar la app del todo y abrirla: tiene que abrir con los datos.
+3. Cargar un peso: queda "sin subir". Cerrar la app del todo y abrirla: sigue ahí.
+4. Sacar el modo avión: pasa a "Todo está subido" solo, y el peso aparece en la web.
+
 ## A decidir más adelante
 
 - Cómo actualizar pantallas sin pasar por las tiendas (si se quiere), respetando sus reglas.
