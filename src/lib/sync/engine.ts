@@ -76,6 +76,8 @@ export class SyncEngine {
   /** Las escrituras van en fila: dos cambios a la vez no se pisan. */
   private writes: Promise<unknown> = Promise.resolve();
   private running: Promise<SyncOutcome> | null = null;
+  /** Después de cerrar sesión no se escribe más nada: una descarga en curso no puede volver a guardar la cuenta. */
+  private closed = false;
   private listeners = new Set<(state: SyncState) => void>();
   private readonly newId: () => string;
   private readonly now: () => Date;
@@ -122,6 +124,7 @@ export class SyncEngine {
   /** Cambia el estado y lo guarda. Si no se puede guardar, el estado en memoria no cambia y el error sube. */
   private commit(change: (state: SyncState) => SyncState): Promise<void> {
     const run = async () => {
+      if (this.closed) throw new Error('SESION_CERRADA');
       const next = change(this.state);
       await this.options.store.set(keyOf(this.options.userId), JSON.stringify(next));
       this.state = next;
@@ -208,11 +211,17 @@ export class SyncEngine {
   /** Para cerrar sesión: se niega a borrar si queda algo sin subir, salvo que se pida expresamente. */
   async clear({ discardPending = false }: { discardPending?: boolean } = {}): Promise<boolean> {
     await this.load();
-    await this.writes;
-    if (!discardPending && this.state.outbox.length > 0) return false;
-    await this.options.store.remove(keyOf(this.options.userId));
-    this.state = emptyState();
-    for (const listener of this.listeners) listener(this.state);
-    return true;
+    // Va en la misma fila que los guardados: lo que se anote justo antes se tiene en cuenta.
+    const run = async () => {
+      if (!discardPending && this.state.outbox.length > 0) return false;
+      await this.options.store.remove(keyOf(this.options.userId));
+      this.closed = true;
+      this.state = emptyState();
+      for (const listener of this.listeners) listener(this.state);
+      return true;
+    };
+    const result = this.writes.then(run, run);
+    this.writes = result.catch(() => undefined);
+    return result;
   }
 }

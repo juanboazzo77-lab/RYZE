@@ -78,6 +78,30 @@ describe('fileStore', () => {
     }
   });
 
+  it('guardados y lecturas al mismo tiempo no se pisan ni ven el archivo desaparecido', async () => {
+    const f = fakeFiles();
+    // Cada paso tarda un poco distinto, para que se crucen si no van en fila.
+    let turn = 0;
+    const slow = <T,>(v: Promise<T>) => new Promise<T>((res, rej) => setTimeout(() => v.then(res, rej), (turn++ * 7) % 5));
+    const store = fileStore({
+      read: (n) => slow(f.api.read(n)),
+      write: (n, d) => slow(Promise.resolve()).then(() => f.api.write(n, d)),
+      remove: (n) => slow(Promise.resolve()).then(() => f.api.remove(n)),
+      rename: (a, b) => slow(Promise.resolve()).then(() => f.api.rename(a, b)),
+    });
+    await store.set('a', 'v0');
+    const reads: Array<Promise<string | null>> = [];
+    const writes = Array.from({ length: 8 }, (_, i) => {
+      reads.push(store.get('a'));
+      const w = store.set('a', `v${i + 1}`);
+      reads.push(store.get('a'));
+      return w;
+    });
+    await Promise.all(writes);
+    expect((await Promise.all(reads)).every((v) => v !== null && /^v\d$/.test(v))).toBe(true);
+    expect(await store.get('a')).toBe('v8');
+  });
+
   it('si el archivo existe y no se puede leer, falla en vez de decir que no hay nada', async () => {
     const f = fakeFiles();
     const store = fileStore({ ...f.api, read: async () => Promise.reject(new Error('bloqueado')) });

@@ -291,4 +291,34 @@ describe('cerrar sesión', () => {
     expect(await engine.clear({ discardPending: true })).toBe(true);
     expect(store.dump()).toEqual({});
   });
+
+  it('una descarga que estaba en camino no vuelve a guardar la cuenta que ya salió', async () => {
+    const store = memoryStore();
+    const server = fakeServer();
+    server.data = { secreto: 'de ana' };
+    let release!: () => void;
+    const original = server.transport.pull.bind(server.transport);
+    server.transport.pull = async () => {
+      await new Promise<void>((r) => (release = r));
+      return original();
+    };
+    const engine = make(store, server.transport);
+    const syncing = engine.sync();
+    await new Promise((r) => setTimeout(r, 5));
+    expect(await engine.clear()).toBe(true);
+    release();
+    expect((await syncing).status).toBe('offline');
+    expect(store.dump()).toEqual({});
+    await expect(engine.enqueue('a', 1)).rejects.toThrow('SESION_CERRADA');
+  });
+
+  it('si se anota algo justo antes de cerrar sesión, no se borra sin avisar', async () => {
+    const engine = make(memoryStore(), fakeServer().transport);
+    await engine.load();
+    const saving = engine.enqueue('a', 1);
+    const cleared = engine.clear();
+    await saving;
+    expect(await cleared).toBe(false);
+    expect(engine.getState().outbox).toHaveLength(1);
+  });
 });

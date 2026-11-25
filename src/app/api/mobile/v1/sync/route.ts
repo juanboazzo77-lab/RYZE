@@ -4,7 +4,7 @@ import { forUser } from '@/server/user-db';
 import { applyOperations } from '@/server/mobile/apply';
 import { authenticateMobile } from '@/server/mobile/auth';
 import { buildHandlers, type MobileTx } from '@/server/mobile/handlers';
-import { corsHeaders } from '@/server/mobile/http';
+import { mobileHeaders } from '@/server/mobile/route-headers';
 import { prismaSyncLog } from '@/server/mobile/sync-log';
 
 export const dynamic = 'force-dynamic';
@@ -13,18 +13,13 @@ export const maxDuration = 60;
 /** Una tanda normal (50 cambios) ocupa unos pocos kilobytes. */
 const MAX_BODY_CHARS = 256 * 1024;
 
-const headersFor = (request: Request) => ({
-  ...corsHeaders(request.headers.get('origin'), process.env.NODE_ENV === 'production'),
-  'Cache-Control': 'no-store',
-});
-
 export function OPTIONS(request: Request) {
-  return new NextResponse(null, { status: 204, headers: headersFor(request) });
+  return new NextResponse(null, { status: 204, headers: mobileHeaders(request) });
 }
 
 /** Puerta de entrada de la app independiente: recibe lo que la persona hizo (con o sin señal) y lo aplica. */
 export async function POST(request: Request) {
-  const headers = headersFor(request);
+  const headers = mobileHeaders(request);
   const reply = (body: unknown, status: number) => NextResponse.json(body, { status, headers });
 
   try {

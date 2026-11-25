@@ -65,6 +65,21 @@ La app inicia sesión con la misma cuenta (Supabase) y guarda la sesión en el t
 manda esa sesión en cada pedido (`Authorization: Bearer`), no cookies. La primera vez hace falta internet; después se
 puede abrir sin señal.
 
+- Quién tiene la sesión abierta se guarda aparte (`mobile/src/account.ts`): abrir la app no depende de renovar nada.
+- Si la sesión venció y no hay señal para renovarla, la persona sigue adentro (`src/lib/sync/session-token.ts`). Sólo se
+  le pide entrar de nuevo si el servidor dice que ya no vale, y nunca se borra lo pendiente.
+- Lo pendiente de una cuenta jamás se sube con la sesión de otra.
+- Cerrar sesión borra del teléfono los datos y la sesión; si queda algo sin subir, avisa antes.
+
+## Descarga de datos
+
+`GET /api/mobile/v1/snapshot` devuelve lo que la app muestra sin conexión (hoy: perfil y pesos). Su forma está en
+`src/lib/sync/data.ts`, compartida por el servidor y la app, junto con cómo se ve cada cambio todavía sin subir
+(`reducers`). Para sumar datos: ampliar el esquema, `src/server/mobile/snapshot.ts` y los `reducers`.
+
+La app toma del `.env` sólo las dos claves públicas de Supabase al armarse (`mobile/vite.config.ts`). Se puede apuntar
+a otro servidor con `FORZA_API_URL`.
+
 ## Etapas
 
 | Etapa | Contenido |

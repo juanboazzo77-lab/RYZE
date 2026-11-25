@@ -1,0 +1,55 @@
+import { z } from 'zod';
+import type { Reducer } from './engine';
+
+/**
+ * Los datos de la persona que la app guarda en el teléfono: la misma forma en el servidor (que los arma) y en la app
+ * (que los muestra). Cada etapa suma lo que necesita.
+ */
+
+export const weightSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  weightKg: z.number(),
+  note: z.string().nullable(),
+});
+
+export const appDataSchema = z.object({
+  profile: z.object({
+    name: z.string().nullable(),
+    email: z.string(),
+    timezone: z.string(),
+    unitSystem: z.enum(['METRIC', 'IMPERIAL']),
+    weekStart: z.number().int(),
+    locale: z.string(),
+  }),
+  /** Del más nuevo al más viejo. */
+  weights: z.array(weightSchema),
+});
+
+export type AppData = z.infer<typeof appDataSchema>;
+export type WeightRow = AppData['weights'][number];
+
+const weightPayload = z.object({ date: weightSchema.shape.date, weightKg: z.number(), note: z.string().optional() });
+
+/** Cómo se ve cada cambio todavía sin subir. Aplicarlo dos veces da lo mismo. */
+export const reducers: Record<string, Reducer> = {
+  'weight.log': (data, op) => {
+    const p = weightPayload.safeParse(op.payload);
+    if (!p.success) return data;
+    const current = (data.weights as WeightRow[] | undefined) ?? [];
+    const row: WeightRow = { date: p.data.date, weightKg: p.data.weightKg, note: p.data.note || null };
+    const weights = [...current.filter((w) => w.date !== row.date), row].sort((a, b) => b.date.localeCompare(a.date));
+    return { ...data, weights };
+  },
+};
+
+/** Lo que se muestra: lo bajado del servidor con lo pendiente encima. Null si todavía no se bajó nada utilizable. */
+export function readAppData(view: Record<string, unknown>): AppData | null {
+  const parsed = appDataSchema.safeParse(view);
+  return parsed.success ? parsed.data : null;
+}
+
+/** "78,4" o "78.4" → 78.4. Null si no es un número. */
+export function parseDecimal(raw: string): number | null {
+  const text = raw.trim().replace(',', '.');
+  return /^\d{1,4}(\.\d{1,2})?$/.test(text) ? Number(text) : null;
+}
