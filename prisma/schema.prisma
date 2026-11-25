@@ -1462,3 +1462,24 @@ model PushSubscription {
   @@index([userId])
   @@map("push_subscription")
 }
+
+/// Buzón del administrador: errores y mejoras anotados desde el panel de gestión, para revisarlos después.
+/// No es de un usuario de la app: solo se accede desde el panel (requireAdmin) y desde scripts/buzon.mjs.
+model AdminNote {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// BUG | IDEA
+  kind      String
+  text      String
+  /// PENDING | DOING | DONE
+  status    String   @default("PENDING")
+  /// Ruta de la captura dentro del depósito privado (si adjuntó una).
+  photoPath String?  @map("photo_path")
+  /// Qué se hizo con el pedido.
+  reply     String?
+  createdBy String   @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@map("admin_note")
+}
