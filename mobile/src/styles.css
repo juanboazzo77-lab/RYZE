@@ -1,0 +1,3 @@
+/* Los mismos colores y estilos que la web: un solo lugar para el diseño. */
+@import '../../src/app/globals.css';
+@source '.';

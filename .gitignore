@@ -49,3 +49,6 @@ pnpm-debug.log*
 # testing
 /coverage
 /.tools/
+
+# app independiente (archivos armados)
+/mobile/dist/
