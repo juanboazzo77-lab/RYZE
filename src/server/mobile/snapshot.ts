@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { AppData } from '@/lib/sync/data';
+import { MAX_PAST } from '@/lib/sync/workout';
 import { PROTOCOL_VERSION, type Snapshot } from '@/lib/sync/protocol';
 
 /** Algo más de un año de registros diarios. */
@@ -10,6 +11,41 @@ const RECENT_DAYS = 15;
 const HISTORY_WORKOUTS = 20;
 
 export type SnapshotDb = Pick<PrismaClient, 'weightEntry' | 'profile' | 'workoutPlan' | 'workout' | 'personalRecord'>;
+
+/** Los últimos entrenamientos terminados, con sus series y récords, para el historial sin conexión. */
+async function pastWorkouts(db: SnapshotDb) {
+  const rows = await db.workout.findMany({
+    where: { status: 'COMPLETED', finishedAt: { not: null } },
+    orderBy: { finishedAt: 'desc' },
+    take: MAX_PAST,
+    select: {
+      id: true,
+      name: true,
+      finishedAt: true,
+      durationSeconds: true,
+      perceivedEffort: true,
+      personalRecords: { select: { exerciseId: true, type: true } },
+      exercises: {
+        orderBy: { orderIndex: 'asc' },
+        select: {
+          id: true,
+          exerciseId: true,
+          exercise: { select: { name: true, type: true } },
+          sets: {
+            orderBy: { setNumber: 'asc' },
+            select: { setNumber: true, weightKg: true, reps: true, durationSeconds: true, distanceMeters: true, isWarmup: true, isCompleted: true },
+          },
+        },
+      },
+    },
+  });
+  return rows.map(({ personalRecords, exercises, finishedAt, ...w }) => ({
+    ...w,
+    finishedAt: finishedAt!.toISOString(),
+    records: personalRecords,
+    exercises: exercises.map(({ exercise, ...e }) => ({ ...e, name: exercise.name, type: exercise.type })),
+  }));
+}
 
 /** Por cada ejercicio de la rutina: las series de la última vez y el récord de peso (igual que en la web). */
 async function exerciseHistory(db: SnapshotDb, exerciseIds: string[]) {
@@ -97,6 +133,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
     }),
   ]);
   if (!profile) throw new Error('SIN_PERFIL');
+  const past = await pastWorkouts(db);
   const history = await exerciseHistory(db, [...new Set(plan?.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)) ?? [])]);
 
   const data: AppData = {
@@ -126,6 +163,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
         w.planDayId && w.finishedAt ? [{ planDayId: w.planDayId, finishedAt: w.finishedAt.toISOString() }] : [],
       ),
       history,
+      past,
     },
   };
   return { protocol: PROTOCOL_VERSION, takenAt: now.toISOString(), data };

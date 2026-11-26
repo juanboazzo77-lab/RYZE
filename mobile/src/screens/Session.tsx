@@ -392,7 +392,11 @@ function FinishDialog({
         <DialogHeader>
           <DialogTitle>{t.training.session.finishConfirm}</DialogTitle>
         </DialogHeader>
-        {noneDone ? <p className="text-sm text-warning">Todavía no marcaste ninguna serie como hecha.</p> : null}
+        {noneDone ? (
+          <p className="text-sm text-warning">
+            Todavía no marcaste ninguna serie como hecha. Si finalizás ahora, el día queda como completado sin nada anotado.
+          </p>
+        ) : null}
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">{t.training.session.effort}</p>
           <div className="flex flex-wrap gap-1.5">
@@ -404,12 +408,19 @@ function FinishDialog({
           </div>
         </div>
         {failed ? <p role="alert" className="text-sm text-warning">No se pudo guardar en el teléfono. El entrenamiento sigue abierto: probá de nuevo.</p> : null}
+        {noneDone ? (
+          // Sin nada anotado lo fácil es seguir: finalizar vacío tiene que ser una decisión.
+          <Button disabled={busy} onClick={() => onOpenChange(false)}>
+            Seguir entrenando
+          </Button>
+        ) : null}
         <div className="flex gap-2">
           <Button variant="ghost" className="text-destructive" disabled={busy} onClick={onDiscard}>
             {t.training.session.cancelWorkout}
           </Button>
           <Button
             className="flex-1"
+            variant={noneDone ? 'outline' : 'default'}
             disabled={busy}
             onClick={() => {
               setBusy(true);
@@ -420,7 +431,7 @@ function FinishDialog({
               });
             }}
           >
-            {busy ? t.common.loading : t.training.session.finish}
+            {busy ? t.common.loading : noneDone ? 'Finalizar igual' : t.training.session.finish}
           </Button>
         </div>
       </DialogContent>

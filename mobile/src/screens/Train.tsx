@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Play } from 'lucide-react';
+import { History as HistoryIcon, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WEEK_BUTTONS, WeekLayout } from '@/features/training/week-layout';
 import type { Dictionary } from '@/i18n';
@@ -27,12 +27,14 @@ export function Train({
   data,
   hasActive,
   onPick,
+  onHistory,
 }: {
   t: Dictionary;
   data: AppData;
   /** Hay un entrenamiento en curso: no se ofrece empezar otro arriba. */
   hasActive: boolean;
   onPick: (planDayId: string) => void;
+  onHistory: () => void;
 }) {
   const now = useNow();
   const training = data.training;
@@ -41,7 +43,13 @@ export function Train({
 
   return (
     <>
-      <h1 className="text-3xl font-extrabold tracking-tight">{t.training.title}</h1>
+      <div className="space-y-3">
+        <h1 className="text-3xl font-extrabold tracking-tight">{t.training.title}</h1>
+        <Button variant="outline" size="sm" className="rounded-full" onClick={onHistory}>
+          <HistoryIcon className="size-4" />
+          {t.training.history.title}
+        </Button>
+      </div>
       {!training ? (
         <Card className="text-sm text-muted-foreground">Conectate a internet una vez para bajar tu rutina. Después la ves sin señal.</Card>
       ) : !plan || !week ? (

@@ -4,7 +4,7 @@ import { DraftStore } from './draft-store';
 import { memoryStore, type KeyValueStore } from './store';
 import {
   addSet, applyCompleted, completedWorkoutSchema, finishDraft, newDraft, patchSet, progress, removeExercise, removeSet,
-  volumeKg, WORKOUT_OP,
+  volumeKg, MAX_PAST, WORKOUT_OP,
 } from './workout';
 
 let n = 0;
@@ -144,5 +144,29 @@ describe('DraftStore', () => {
     await store.update(() => sample());
     await store.clear();
     expect(files.dump()).toEqual({});
+  });
+});
+
+describe('historial sin conexión', () => {
+  const base = { plan: null, recentWorkouts: [], history: {} };
+
+  it('lo recién terminado aparece primero, sin duplicarse, y con los récords que ya tenga', () => {
+    const w = finishDraft(sample(), 8, END);
+    const out = applyCompleted(base, w);
+    expect(out.past![0]).toMatchObject({ id: w.workoutId, name: 'Empuje', durationSeconds: 3900, records: [] });
+    expect(out.past![0]!.exercises[0]!.sets).toHaveLength(3);
+    const fromServer = { ...out, past: [{ ...out.past![0]!, records: [{ exerciseId: PRESS, type: 'MAX_WEIGHT' as const }] }] };
+    expect(applyCompleted(fromServer, w).past).toEqual(fromServer.past);
+  });
+
+  it('guarda sólo los últimos, del más nuevo al más viejo', () => {
+    let training = applyCompleted(base, finishDraft(sample(), null, END));
+    for (let i = 1; i <= MAX_PAST + 5; i++) {
+      const d = { ...sample(), workoutId: newId() };
+      training = applyCompleted(training, finishDraft(d, null, new Date(END.getTime() + i * 86400000)));
+    }
+    expect(training.past).toHaveLength(MAX_PAST);
+    const dates = training.past!.map((p) => p.finishedAt);
+    expect(dates).toEqual([...dates].sort().reverse());
   });
 });

@@ -29,6 +29,36 @@ export const planExerciseSchema = z.object({
   notes: z.string().nullable(),
 });
 
+/** Un entrenamiento ya terminado, como lo muestra el historial. */
+export const pastWorkoutSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  finishedAt: z.string(),
+  durationSeconds: z.number().nullable(),
+  perceivedEffort: z.number().nullable(),
+  /** Récords que se lograron en ese entrenamiento (los calcula el servidor al recibirlo). */
+  records: z.array(z.object({ exerciseId: z.string(), type: z.enum(['MAX_WEIGHT', 'MAX_REPS', 'MAX_VOLUME', 'EST_1RM']) })),
+  exercises: z.array(
+    z.object({
+      id: z.string(),
+      exerciseId: z.string(),
+      name: z.string(),
+      type: z.enum(['STRENGTH', 'CARDIO']),
+      sets: z.array(
+        z.object({
+          setNumber: z.number(),
+          weightKg: z.number().nullable(),
+          reps: z.number().nullable(),
+          durationSeconds: z.number().nullable(),
+          distanceMeters: z.number().nullable(),
+          isWarmup: z.boolean(),
+          isCompleted: z.boolean(),
+        }),
+      ),
+    }),
+  ),
+});
+
 export const trainingSchema = z.object({
   /** La rutina activa, o null si no tiene. */
   plan: z
@@ -46,6 +76,8 @@ export const trainingSchema = z.object({
   /** Entrenamientos terminados hace poco. Qué está "hecho esta semana" se calcula en el teléfono, así se reinicia solo
    * al empezar la semana siguiente aunque no haya señal. */
   recentWorkouts: z.array(z.object({ planDayId: z.string(), finishedAt: z.string() })),
+  /** Los últimos entrenamientos, del más nuevo al más viejo. */
+  past: z.array(pastWorkoutSchema).optional(),
   /** Por ejercicio de la rutina: lo que se hizo la última vez y el mejor peso. */
   history: z
     .record(
@@ -75,6 +107,7 @@ export const appDataSchema = z.object({
 export type AppData = z.infer<typeof appDataSchema>;
 export type Training = z.infer<typeof trainingSchema>;
 export type TrainingPlan = NonNullable<Training['plan']>;
+export type PastWorkout = z.infer<typeof pastWorkoutSchema>;
 export type PlanExerciseRow = z.infer<typeof planExerciseSchema>;
 export type WeightRow = AppData['weights'][number];
 

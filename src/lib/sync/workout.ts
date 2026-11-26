@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { PlanExerciseRow, Training } from './data';
+import type { PastWorkout, PlanExerciseRow, Training } from './data';
 
 /**
  * Un entrenamiento hecho en la app. Mientras dura es un BORRADOR que vive sólo en el teléfono y se guarda con cada
@@ -8,6 +8,8 @@ import type { PlanExerciseRow, Training } from './data';
  */
 
 export const WORKOUT_OP = 'workout.complete';
+/** Cuántos entrenamientos se guardan en el teléfono para el historial. */
+export const MAX_PAST = 30;
 
 const MAX_EXERCISES = 40;
 const MAX_SETS = 30;
@@ -160,8 +162,27 @@ export const finishDraft = (draft: Draft, perceivedEffort: number | null, now: D
 
 export type ExerciseHistory = NonNullable<Training['history']>[string];
 
-/** Lo que cambia en los datos guardados al terminar un entrenamiento que todavía no subió: el día queda hecho y lo
- * cargado pasa a ser "la última vez" de cada ejercicio. */
+/** Un entrenamiento recién terminado, como se ve en el historial. Los récords llegan cuando el servidor lo recibe. */
+export const toPast = (w: CompletedWorkout): PastWorkout => ({
+  id: w.workoutId,
+  name: w.name,
+  finishedAt: w.finishedAt,
+  durationSeconds: Math.max(0, Math.round((Date.parse(w.finishedAt) - Date.parse(w.startedAt)) / 1000)),
+  perceivedEffort: w.perceivedEffort,
+  records: [],
+  exercises: w.exercises.map((e) => ({
+    id: e.id,
+    exerciseId: e.exerciseId,
+    name: e.name,
+    type: e.type,
+    sets: e.sets.map(({ setNumber, weightKg, reps, durationSeconds, distanceMeters, isWarmup, isCompleted }) => ({
+      setNumber, weightKg, reps, durationSeconds, distanceMeters, isWarmup, isCompleted,
+    })),
+  })),
+});
+
+/** Lo que cambia en los datos guardados al terminar un entrenamiento que todavía no subió: el día queda hecho, entra en
+ * el historial y lo cargado pasa a ser "la última vez" de cada ejercicio. */
 export function applyCompleted(training: Training, workout: CompletedWorkout): Training {
   const recent = workout.planDayId
     ? [
@@ -181,5 +202,9 @@ export function applyCompleted(training: Training, workout: CompletedWorkout): T
       bestWeightKg: best > (previous?.bestWeightKg ?? 0) ? best : (previous?.bestWeightKg ?? null),
     };
   }
-  return { ...training, recentWorkouts: recent, history };
+  // Si ya estaba (el servidor lo recibió y la respuesta se perdió), se deja el que ya hay, que trae los récords.
+  const past = training.past?.some((p) => p.id === workout.workoutId)
+    ? training.past
+    : [toPast(workout), ...(training.past ?? [])].sort((a, b) => b.finishedAt.localeCompare(a.finishedAt)).slice(0, MAX_PAST);
+  return { ...training, recentWorkouts: recent, history, past };
 }

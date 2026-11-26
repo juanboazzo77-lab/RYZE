@@ -12,6 +12,7 @@ import { useDraft } from '../use-draft';
 import { useSync, type SyncStatus } from '../use-sync';
 import { Button, Card, Screen } from '../ui';
 import { Login } from './Login';
+import { History } from './History';
 import { Ready, Session, Summary } from './Session';
 import { Train } from './Train';
 import { Weight } from './Weight';
@@ -42,6 +43,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
   const [readyDayId, setReadyDayId] = useState<string | null>(null);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [finished, setFinished] = useState<CompletedWorkout | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [settings, setSettings] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -223,6 +225,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
       tab={settings ? null : tab}
       onTab={(next) => {
         setSettings(false);
+        setHistoryOpen(false);
         setTab(next);
         window.scrollTo(0, 0);
       }}
@@ -261,10 +264,19 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
       ) : !data ? (
         waiting
       ) : tab === 'train' ? (
-        <>
-          {activeCard}
-          <Train t={t} data={data} hasActive={Boolean(active)} onPick={pickDay} />
-        </>
+        historyOpen ? (
+          <History
+            t={t}
+            data={data}
+            pendingIds={new Set(state.outbox.filter((o) => o.type === WORKOUT_OP).map((o) => (o.payload as { workoutId: string }).workoutId))}
+            onBack={() => setHistoryOpen(false)}
+          />
+        ) : (
+          <>
+            {activeCard}
+            <Train t={t} data={data} hasActive={Boolean(active)} onPick={pickDay} onHistory={() => setHistoryOpen(true)} />
+          </>
+        )
       ) : (
         <>
           {activeCard}
