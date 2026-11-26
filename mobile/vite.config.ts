@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { onlinePlugin } from './online-plugin';
 
 const here = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
@@ -19,7 +20,7 @@ export default defineConfig(({ mode }) => {
     root: here('.'),
     // Rutas relativas: dentro del teléfono los archivos no se sirven desde la raíz de un dominio.
     base: './',
-    plugins: [react(), tailwindcss()],
+    plugins: [onlinePlugin(), react(), tailwindcss()],
     resolve: { alias: { '@': here('../src') } },
     // Sólo estos tres valores entran en la app, y los tres son públicos. Se nombran uno por uno a propósito: lo que
     // va dentro de la app lo puede leer cualquiera.

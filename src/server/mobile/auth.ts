@@ -1,10 +1,10 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type User } from '@supabase/supabase-js';
 import { prisma } from '@/server/db';
 import { bearerToken, isInvalidSession } from './http';
 
 export type MobileAuth =
-  | { status: 'ok'; userId: string; timezone: string }
+  | { status: 'ok'; userId: string; timezone: string; user: User }
   /** Sin sesión válida: la app pide iniciar sesión de nuevo (sin borrar lo pendiente). */
   | { status: 'unauthorized' }
   /** No se pudo comprobar: la app reintenta más tarde. */
@@ -32,7 +32,7 @@ export async function authenticateMobile(request: Request): Promise<MobileAuth> 
 
   // Igual que en la web: si todavía no existen las filas de la cuenta, se crean.
   const existing = await prisma.profile.findUnique({ where: { id: user.id }, select: { timezone: true } });
-  if (existing) return { status: 'ok', userId: user.id, timezone: existing.timezone };
+  if (existing) return { status: 'ok', userId: user.id, timezone: existing.timezone, user };
   const created = await prisma.profile.upsert({
     where: { id: user.id },
     update: {},
@@ -44,5 +44,5 @@ export async function authenticateMobile(request: Request): Promise<MobileAuth> 
     select: { timezone: true },
   });
   await prisma.entitlement.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
-  return { status: 'ok', userId: user.id, timezone: created.timezone };
+  return { status: 'ok', userId: user.id, timezone: created.timezone, user };
 }

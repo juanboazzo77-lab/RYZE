@@ -57,7 +57,6 @@ const es = {
   downloading: 'Bajando tus datos…',
   notDownloaded: 'Todavía no se bajaron tus datos. Conectate a internet una vez y quedan guardados en el teléfono.',
   needOnce: 'Conectate a internet una vez para bajar estos datos. Después los ves sin señal.',
-  comingStage: 'Esta sección llega a la app nueva en la etapa {n}. Mientras tanto la tenés en la app del App Store y en la web.',
   hello: 'Hola',
 
   todayWeight: 'Tu peso de hoy ({unit})',
@@ -89,6 +88,10 @@ const es = {
   dontLogout: 'No cerrar',
   logoutAnyway: 'Cerrar y perderlos',
   settingsOnWeb: 'El perfil, los objetivos, las notificaciones, tu plan, el gimnasio y la cuenta se cambian en forzaai.app. Llegan a la app en la etapa 4.',
+  coachNeedsInternet: "El coach necesita internet. Todo lo demás de la app sigue funcionando sin señal.",
+  onlineLoading: "Cargando…",
+  onlineFailed: "No se pudo conectar con el servidor. Probá de nuevo.",
+  stillOnWeb: "Esto todavía está sólo en forzaai.app. Llega a la app más adelante.",
 };
 
 export type AppText = { [K in keyof typeof es]: string };
@@ -143,7 +146,6 @@ const en: AppText = {
   downloading: 'Downloading your data…',
   notDownloaded: 'Your data has not been downloaded yet. Connect to the internet once and it stays saved on the phone.',
   needOnce: 'Connect to the internet once to download this. After that you can see it offline.',
-  comingStage: 'This section arrives in the new app at stage {n}. Meanwhile you have it in the App Store app and on the web.',
   hello: 'Hi',
   todayWeight: 'Your weight today ({unit})',
   save: 'Save',
@@ -171,6 +173,10 @@ const en: AppText = {
   dontLogout: 'Stay signed in',
   logoutAnyway: 'Sign out and lose them',
   settingsOnWeb: 'Profile, goals, notifications, your plan, your gym and your account are changed at forzaai.app. They arrive in the app at stage 4.',
+  coachNeedsInternet: "The coach needs internet. Everything else in the app keeps working offline.",
+  onlineLoading: "Loading…",
+  onlineFailed: "Could not reach the server. Try again.",
+  stillOnWeb: "This is still only at forzaai.app. It will come to the app later.",
 };
 
 const pt: AppText = {
@@ -223,7 +229,6 @@ const pt: AppText = {
   downloading: 'Baixando seus dados…',
   notDownloaded: 'Seus dados ainda não foram baixados. Conecte-se à internet uma vez e eles ficam salvos no celular.',
   needOnce: 'Conecte-se à internet uma vez para baixar estes dados. Depois você os vê sem sinal.',
-  comingStage: 'Esta seção chega ao app novo na etapa {n}. Enquanto isso, ela está no app da App Store e na web.',
   hello: 'Olá',
   todayWeight: 'Seu peso de hoje ({unit})',
   save: 'Salvar',
@@ -251,6 +256,10 @@ const pt: AppText = {
   dontLogout: 'Não sair',
   logoutAnyway: 'Sair e perder',
   settingsOnWeb: 'Perfil, objetivos, notificações, seu plano, academia e conta são alterados em forzaai.app. Chegam ao app na etapa 4.',
+  coachNeedsInternet: "O coach precisa de internet. O resto do app continua funcionando sem sinal.",
+  onlineLoading: "Carregando…",
+  onlineFailed: "Não foi possível conectar ao servidor. Tente de novo.",
+  stillOnWeb: "Isto ainda está só em forzaai.app. Chega ao app mais adiante.",
 };
 
 const fr: AppText = {
@@ -303,7 +312,6 @@ const fr: AppText = {
   downloading: 'Téléchargement de tes données…',
   notDownloaded: "Tes données ne sont pas encore téléchargées. Connecte-toi une fois et elles restent sur le téléphone.",
   needOnce: 'Connecte-toi une fois pour télécharger ces données. Ensuite tu les vois hors ligne.',
-  comingStage: "Cette section arrive dans la nouvelle appli à l'étape {n}. En attendant, elle est dans l'appli de l'App Store et sur le web.",
   hello: 'Salut',
   todayWeight: "Ton poids aujourd'hui ({unit})",
   save: 'Enregistrer',
@@ -331,6 +339,10 @@ const fr: AppText = {
   dontLogout: 'Rester connecté',
   logoutAnyway: 'Se déconnecter et les perdre',
   settingsOnWeb: "Profil, objectifs, notifications, abonnement, salle et compte se modifient sur forzaai.app. Ils arrivent dans l'appli à l'étape 4.",
+  coachNeedsInternet: "Le coach a besoin d'internet. Le reste de l'appli continue de fonctionner hors ligne.",
+  onlineLoading: "Chargement…",
+  onlineFailed: "Impossible de joindre le serveur. Réessaie.",
+  stillOnWeb: "Ceci n'est encore que sur forzaai.app. Cela arrivera plus tard dans l'appli.",
 };
 
 const de: AppText = {
@@ -383,7 +395,6 @@ const de: AppText = {
   downloading: 'Deine Daten werden geladen…',
   notDownloaded: 'Deine Daten wurden noch nicht geladen. Geh einmal online, dann bleiben sie auf dem Handy.',
   needOnce: 'Geh einmal online, um diese Daten zu laden. Danach siehst du sie ohne Netz.',
-  comingStage: 'Dieser Bereich kommt in Etappe {n} in die neue App. Bis dahin findest du ihn in der App-Store-App und im Web.',
   hello: 'Hallo',
   todayWeight: 'Dein Gewicht heute ({unit})',
   save: 'Speichern',
@@ -411,6 +422,10 @@ const de: AppText = {
   dontLogout: 'Angemeldet bleiben',
   logoutAnyway: 'Abmelden und verlieren',
   settingsOnWeb: 'Profil, Ziele, Mitteilungen, Abo, Studio und Konto änderst du auf forzaai.app. In der App kommen sie in Etappe 4.',
+  coachNeedsInternet: "Der Coach braucht Internet. Der Rest der App funktioniert weiter ohne Netz.",
+  onlineLoading: "Wird geladen…",
+  onlineFailed: "Der Server ist nicht erreichbar. Versuch es noch einmal.",
+  stillOnWeb: "Das gibt es bisher nur auf forzaai.app. Es kommt später in die App.",
 };
 
 const it: AppText = {
@@ -463,7 +478,6 @@ const it: AppText = {
   downloading: 'Sto scaricando i tuoi dati…',
   notDownloaded: 'I tuoi dati non sono ancora stati scaricati. Connettiti una volta e restano salvati sul telefono.',
   needOnce: 'Connettiti una volta per scaricare questi dati. Poi li vedi senza segnale.',
-  comingStage: "Questa sezione arriva nella nuova app alla fase {n}. Intanto la trovi nell'app dell'App Store e sul web.",
   hello: 'Ciao',
   todayWeight: 'Il tuo peso di oggi ({unit})',
   save: 'Salva',
@@ -491,6 +505,10 @@ const it: AppText = {
   dontLogout: 'Non uscire',
   logoutAnyway: 'Esci e perdile',
   settingsOnWeb: "Profilo, obiettivi, notifiche, abbonamento, palestra e account si modificano su forzaai.app. Arrivano nell'app alla fase 4.",
+  coachNeedsInternet: "Il coach richiede internet. Il resto dell'app continua a funzionare senza segnale.",
+  onlineLoading: "Caricamento…",
+  onlineFailed: "Impossibile raggiungere il server. Riprova.",
+  stillOnWeb: "Questo per ora è solo su forzaai.app. Arriverà nell'app più avanti.",
 };
 
 export const APP_TEXT: Record<Locale, AppText> = { es, en, pt, fr, de, it };
@@ -512,6 +530,9 @@ const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => void listeners.delete(listener);
 };
+
+/** Para el código que no es una pantalla. */
+export const currentAppLocale = () => current;
 
 export const useAppLocale = () => useSyncExternalStore(subscribe, () => current);
 export const useText = () => APP_TEXT[useAppLocale()];

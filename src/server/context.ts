@@ -2,6 +2,7 @@ import 'server-only';
 import { cache } from 'react';
 import type { Entitlement, Profile } from '@prisma/client';
 import { createSupabaseServerClient } from './supabase/server';
+import { currentMobileUser } from './mobile/as-user';
 import { prisma } from './db';
 import { effectiveEntitlement } from './effective-entitlement';
 import { getMemberGym, type MemberGym } from './gyms';
@@ -20,6 +21,9 @@ export interface UserContext {
 
 /** Usuario autenticado en Supabase (o null). Memoizado por request. */
 export const getSession = cache(async () => {
+  // Una llamada de la app ya comprobada en su propia puerta (ver `mobile/as-user.ts`).
+  const mobile = currentMobileUser();
+  if (mobile) return mobile;
   const supabase = await createSupabaseServerClient();
   // Mismo motivo que en el middleware: nunca dejar la request colgada si
   // Supabase Auth no responde.

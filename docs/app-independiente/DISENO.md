@@ -146,6 +146,20 @@ Se publica cuando está completa.
 - Con internet (etapa 4): chequeo semanal, fotos, amigos, reporte, perfil, objetivos, notificaciones, plan, gimnasio y
   cuenta. Ojo para publicar en las tiendas: hace falta poder **eliminar la cuenta desde la app**.
 
+## Lo que necesita internet (etapa 4)
+
+No se encola: si no hay señal se avisa en el momento.
+
+- La app usa **las mismas pantallas de la web**. Al armarla, `mobile/online-plugin.ts` cambia cada archivo de acciones de
+  la lista `REMOTE` por su reemplazo en `mobile/src/online/`, y **corta la compilación** si se cuela código del servidor.
+- `POST /api/mobile/v1/rpc` corre la función de la web como la persona de la sesión (`runAsMobileUser`), así que valen las
+  mismas validaciones y límites del plan. Sólo se puede llamar lo escrito en `src/server/mobile/rpc-table.ts`.
+- Para sumar una pantalla: agregar sus funciones a `rpc-table.ts` (revisando que no usen cookies ni redirijan), crear el
+  reemplazo con los mismos nombres, anotarlo en `REMOTE` y sumar su archivo a `styles.css`.
+- Hecho: **coach** (chat y conversaciones). Falta: memoria y plan nuevo con IA, foto/escáner/describir, chequeo, fotos,
+  amigos, reporte, registro de cuenta, perfil y objetivos, planes y pagos, gimnasio, notificaciones, eliminar cuenta.
+- Apple y Google: dentro de la app no puede haber enlaces para pagar por fuera de la tienda.
+
 ## Armar las versiones de prueba (paso 0.6)
 
 `capacitor.config.ts` arma la app independiente sólo con `FORZA_APP=nueva`; sin eso arma la actual.

@@ -24,5 +24,6 @@
 @source '../../src/features/settings/appearance-view.tsx';
 @source '../../src/components/form';
 @source '../../src/features/stats/stats-body.tsx';
+@source '../../src/features/coach/chat.tsx';
 @source '../../src/features/consistency';
 @source '../../src/features/gamification/achievements-grid.tsx';

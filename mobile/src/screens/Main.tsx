@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { AlertTriangle, Check, CloudOff, RefreshCw } from 'lucide-react';
 import { getDictionary } from '@/i18n';
 import { normalizeLocale } from '@/i18n/config';
@@ -9,13 +9,15 @@ import { uuid } from '@/lib/sync/engine';
 import { FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP } from '@/lib/sync/nutrition';
 import { ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from '@/lib/sync/progress';
 import { completedWorkoutSchema, finishDraft, newDraft, WORKOUT_OP, type CompletedWorkout } from '@/lib/sync/workout';
-import { signOut, type Account } from '../account';
+import { accessTokenFor, signOut, type Account } from '../account';
+import { setRpcSession } from '../online/rpc';
 import { Shell, type Tab } from '../shell';
 import { APP_TEXT, deviceLocale, setAppLocale, type AppText } from '../strings';
 import { useDraft } from '../use-draft';
 import { useSync, type SyncStatus } from '../use-sync';
 import { Button, Card, Screen } from '../ui';
 import { Login } from './Login';
+import { Coach } from './Coach';
 import { History } from './History';
 import { Nutrition } from './Nutrition';
 import { Progress } from './Progress';
@@ -23,9 +25,6 @@ import { Ready, Session, Summary } from './Session';
 import { Settings } from './Settings';
 import { Train } from './Train';
 import { Weight } from './Weight';
-
-/** Secciones que todavía no están en la app nueva, y en qué etapa llegan. */
-const COMING: Partial<Record<Tab, number>> = { coach: 4 };
 
 function rejectedReason(s: AppText, reason: string): string {
   const reasons: Record<string, string> = {
@@ -93,6 +92,20 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
     if (data) setAppLocale(locale);
     document.documentElement.lang = locale;
   }, [data, locale]);
+
+  // Lo que necesita internet habla con el servidor con la sesión de esta cuenta, y avisa cuando cambió algo allá.
+  useEffect(() => {
+    setRpcSession(() => accessTokenFor(account.userId));
+    const refresh = () => void syncNow();
+    window.addEventListener('forza:server-changed', refresh);
+    return () => {
+      setRpcSession(null);
+      window.removeEventListener('forza:server-changed', refresh);
+    };
+  }, [account.userId, syncNow]);
+  const uploadPending = useCallback(async () => {
+    await syncNow();
+  }, [syncNow]);
 
   // Si la app se cerró justo después de terminar, el entrenamiento ya está en la cola: el borrador sobra.
   const workoutQueued = drafts.draft
@@ -305,11 +318,8 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
           onKeep={() => setLeaving(false)}
           onLogoutAnyway={() => void leave(true)}
         />
-      ) : COMING[tab] ? (
-        <>
-          <h1 className="text-2xl font-bold tracking-tight">{t.nav[tab]}</h1>
-          <Card className="text-sm text-muted-foreground">{interpolate(s.comingStage, { n: COMING[tab]! })}</Card>
-        </>
+      ) : tab === 'coach' ? (
+        <Coach t={t} beforeLoad={uploadPending} />
       ) : !data ? (
         waiting
       ) : tab === 'nutrition' ? (
