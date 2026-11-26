@@ -8,3 +8,10 @@
 @source '../../src/features/training/rest-timer.tsx';
 @source '../../src/components/form/decimal-input.tsx';
 @source '../../src/features/training/progress-badges.tsx';
+@source '../../src/features/nutrition/day-totals-card.tsx';
+@source '../../src/features/nutrition/day-nav-bar.tsx';
+@source '../../src/features/nutrition/meal-card.tsx';
+@source '../../src/features/nutrition/entry-item.tsx';
+@source '../../src/features/nutrition/food-pick.tsx';
+@source '../../src/components/charts/calorie-ring.tsx';
+@source '../../src/components/charts/macro-bar.tsx';

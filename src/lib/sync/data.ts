@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Reducer } from './engine';
+import { applyFoodOp, FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP, nutritionSchema } from './nutrition';
 import { applyCompleted, completedWorkoutSchema, WORKOUT_OP } from './workout';
 
 /**
@@ -102,6 +103,7 @@ export const appDataSchema = z.object({
   weights: z.array(weightSchema),
   /** Falta en los datos guardados por versiones anteriores de la app, hasta que vuelven a sincronizar. */
   training: trainingSchema.optional(),
+  nutrition: nutritionSchema.optional(),
 });
 
 export type AppData = z.infer<typeof appDataSchema>;
@@ -113,8 +115,16 @@ export type WeightRow = AppData['weights'][number];
 
 const weightPayload = z.object({ date: weightSchema.shape.date, weightKg: z.number(), note: z.string().optional() });
 
+const foodReducer: Reducer = (data, op) => {
+  const nutrition = nutritionSchema.safeParse(data.nutrition);
+  return nutrition.success ? { ...data, nutrition: applyFoodOp(nutrition.data, op.type, op.payload) } : data;
+};
+
 /** Cómo se ve cada cambio todavía sin subir. Aplicarlo dos veces da lo mismo. */
 export const reducers: Record<string, Reducer> = {
+  [FOOD_ADD_OP]: foodReducer,
+  [FOOD_UPDATE_OP]: foodReducer,
+  [FOOD_DELETE_OP]: foodReducer,
   [WORKOUT_OP]: (data, op) => {
     const workout = completedWorkoutSchema.safeParse(op.payload);
     const training = trainingSchema.safeParse(data.training);

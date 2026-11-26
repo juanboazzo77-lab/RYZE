@@ -438,6 +438,8 @@ model FoodEntry {
   position    Int             @default(0)
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
+  /// Cuándo la persona hizo el último cambio (ver WeightEntry.editedAt).
+  editedAt    DateTime?       @default(now()) @map("edited_at")
 
   @@index([userId, date])
   @@index([foodId])

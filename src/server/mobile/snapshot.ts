@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import type { AppData } from '@/lib/sync/data';
 import { MAX_PAST } from '@/lib/sync/workout';
 import { PROTOCOL_VERSION, type Snapshot } from '@/lib/sync/protocol';
+import { nutritionSnapshot, type NutritionDb } from './nutrition-snapshot';
 
 /** Algo más de un año de registros diarios. */
 const MAX_WEIGHTS = 400;
@@ -10,7 +11,7 @@ const RECENT_DAYS = 15;
 /** Entrenamientos anteriores que se miran para saber qué se hizo "la última vez" en cada ejercicio. */
 const HISTORY_WORKOUTS = 20;
 
-export type SnapshotDb = Pick<PrismaClient, 'weightEntry' | 'profile' | 'workoutPlan' | 'workout' | 'personalRecord'>;
+export type SnapshotDb = Pick<PrismaClient, 'weightEntry' | 'profile' | 'workoutPlan' | 'workout' | 'personalRecord'> & NutritionDb;
 
 /** Los últimos entrenamientos terminados, con sus series y récords, para el historial sin conexión. */
 async function pastWorkouts(db: SnapshotDb) {
@@ -134,6 +135,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
   ]);
   if (!profile) throw new Error('SIN_PERFIL');
   const past = await pastWorkouts(db);
+  const nutrition = await nutritionSnapshot(db, profile.timezone, now);
   const history = await exerciseHistory(db, [...new Set(plan?.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)) ?? [])]);
 
   const data: AppData = {
@@ -165,6 +167,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
       history,
       past,
     },
+    nutrition,
   };
   return { protocol: PROTOCOL_VERSION, takenAt: now.toISOString(), data };
 }

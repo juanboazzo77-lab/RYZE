@@ -113,6 +113,21 @@ Se publica cuando está completa.
 - Todavía no está en la app: agregar ejercicios que no son de la rutina, entrenamiento libre, cambiar un ejercicio por
   una variante y las fotos de los ejercicios.
 
+## Comer sin conexión
+
+- Se bajan las comidas de los últimos 60 días, el objetivo, las comidas guardadas y **la biblioteca de alimentos entera**
+  (hoy son 275; tope 4000), así se puede buscar sin señal (`src/lib/nutrition/food-search.ts`; a diferencia de la web no
+  corrige errores de tipeo). Los "recientes" salen de las comidas guardadas en el teléfono.
+- Tres operaciones (`src/lib/sync/nutrition.ts`): `food.add` (uno o varios, con identificador creado en el teléfono),
+  `food.update` y `food.delete`. Manejadores en `src/server/mobile/food-handlers.ts`.
+- `food_entry` tiene `edited_at` (migración `20261125230000_food_entry_edited_at`): un cambio o borrado hecho en el teléfono
+  no pisa uno posterior hecho en la web.
+- Igual que en la web, al cambiar la cantidad sólo se recalculan los valores de lo que viene de la biblioteca.
+- Piezas de pantalla compartidas con la web: `day-totals-card.tsx`, `day-nav-bar.tsx`, `meal-card.tsx`, `entry-item.tsx` y
+  `food-pick.tsx`.
+- Todavía no está en la app: crear un alimento nuevo para la biblioteca (a mano se cargan sólo los totales), guardar una
+  comida como frecuente, el historial y el plan con IA. El escáner, la foto y "describir" necesitan internet (etapa 4).
+
 ## Armar las versiones de prueba (paso 0.6)
 
 `capacitor.config.ts` arma la app independiente sólo con `FORZA_APP=nueva`; sin eso arma la actual.

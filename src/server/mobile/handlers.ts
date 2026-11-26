@@ -1,8 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { addDaysISO, isoToUtcDate, localTodayISO } from '@/lib/date';
 import { completedWorkoutSchema, WORKOUT_OP } from '@/lib/sync/workout';
-import { DateTime } from 'luxon';
+import { buildFoodHandlers } from './food-handlers';
+import { checkDay } from './check-day';
 import { RejectedOperation, type Handler } from './apply';
 
 /**
@@ -11,7 +11,7 @@ import { RejectedOperation, type Handler } from './apply';
  * cualquiera.
  */
 
-export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise'>;
+export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise' | 'food' | 'foodEntry'>;
 
 const MAX_DURATION_SECONDS = 24 * 60 * 60;
 
@@ -21,19 +21,10 @@ const weightSchema = z.object({
   note: z.string().trim().max(200).optional(),
 });
 
-/** Fecha que existe de verdad (no "31 de febrero") y no posterior a mañana según cuándo se anotó. */
-function checkDay(date: string, at: Date, timezone: string) {
-  const parsed = isoToUtcDate(date);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
-    throw new RejectedOperation('INVALID');
-  }
-  const limit = addDaysISO(localTodayISO(timezone, DateTime.fromJSDate(at)), 1);
-  if (date > limit) throw new RejectedOperation('FUTURE_DATE');
-  return parsed;
-}
-
 export function buildHandlers({ userId, timezone }: { userId: string; timezone: string }): Record<string, Handler<MobileTx>> {
   return {
+    ...buildFoodHandlers({ userId, timezone }),
+
     /** Un entrenamiento terminado en la app, entero. */
     [WORKOUT_OP]: async (tx, { payload, at }) => {
       const p = completedWorkoutSchema.safeParse(payload);

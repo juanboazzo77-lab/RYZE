@@ -5,6 +5,7 @@ import { normalizeLocale } from '@/i18n/config';
 import { I18nProvider } from '@/i18n/provider';
 import { readAppData, reducers } from '@/lib/sync/data';
 import { uuid } from '@/lib/sync/engine';
+import { FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP } from '@/lib/sync/nutrition';
 import { completedWorkoutSchema, finishDraft, newDraft, WORKOUT_OP, type CompletedWorkout } from '@/lib/sync/workout';
 import { signOut, type Account } from '../account';
 import { Shell, type Tab } from '../shell';
@@ -13,6 +14,7 @@ import { useSync, type SyncStatus } from '../use-sync';
 import { Button, Card, Screen } from '../ui';
 import { Login } from './Login';
 import { History } from './History';
+import { Nutrition } from './Nutrition';
 import { Ready, Session, Summary } from './Session';
 import { Train } from './Train';
 import { Weight } from './Weight';
@@ -25,7 +27,21 @@ const REJECTED: Record<string, string> = {
 };
 
 /** Secciones que todavía no están en la app nueva, y en qué etapa llegan. */
-const COMING: Partial<Record<Tab, number>> = { nutrition: 2, progress: 3, coach: 4 };
+const COMING: Partial<Record<Tab, number>> = { progress: 3, coach: 4 };
+
+const FOOD_OPS: Record<string, string> = {
+  [FOOD_ADD_OP]: 'Comida anotada',
+  [FOOD_UPDATE_OP]: 'Cambio en una comida',
+  [FOOD_DELETE_OP]: 'Comida eliminada',
+};
+
+/** Qué era lo que no se pudo subir, para que la persona lo pueda reconocer. */
+function foodLabel(type: string, payload: unknown): string {
+  if (!FOOD_OPS[type]) return '';
+  const p = payload as { date?: string; items?: Array<{ name?: string }> };
+  const names = p.items?.map((i) => i.name).filter(Boolean).join(', ');
+  return `${FOOD_OPS[type]}${p.date ? ` del ${p.date}` : ''}${names ? `: ${names}` : ''}. `;
+}
 
 function syncText(status: SyncStatus, pending: number): string {
   if (status === 'syncing') return pending > 0 ? 'Subiendo… lo que cargaste ya está guardado en el teléfono' : 'Sincronizando…';
@@ -203,6 +219,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
             <p className="min-w-0">
               {r.type === WORKOUT_OP ? `Entrenamiento "${(r.payload as { name?: string }).name ?? ''}". ` : ''}
               {r.type === 'weight.log' ? `Peso del ${(r.payload as { date?: string }).date ?? '?'}: ${(r.payload as { weightKg?: number }).weightKg ?? '?'} kg. ` : ''}
+              {foodLabel(r.type, r.payload)}
               {REJECTED[r.reason] ?? 'El servidor lo rechazó.'}
             </p>
             <Button variant="outline" className="shrink-0" onClick={() => void engine.dismissRejected(r.id)}>Entendido</Button>
@@ -263,6 +280,19 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
         </>
       ) : !data ? (
         waiting
+      ) : tab === 'nutrition' ? (
+        <I18nProvider locale={normalizeLocale(data.profile.locale.toLowerCase())} t={t}>
+          {activeCard}
+          <Nutrition
+            t={t}
+            data={data}
+            outbox={state.outbox}
+            onChange={async (type, payload) => {
+              await engine.enqueue(type, payload);
+              void syncNow();
+            }}
+          />
+        </I18nProvider>
       ) : tab === 'train' ? (
         historyOpen ? (
           <History

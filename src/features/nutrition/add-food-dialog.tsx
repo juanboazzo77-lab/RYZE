@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { DecimalInput } from '@/components/form/decimal-input';
 import { toast } from 'sonner';
 import { Camera, Check, Loader2, Pencil, ScanLine, Search, Sparkles, Trash2, UtensilsCrossed } from 'lucide-react';
@@ -19,10 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { NativeSelect } from '@/components/ui/native-select';
 import { PhotoPicker } from '@/components/form/photo-picker';
 import { useT } from '@/i18n/provider';
-import { MEASURE_UNITS, computeEntryMacros } from '@/lib/nutrition/food-math';
 import { cn } from '@/lib/utils';
 import type { FoodSearchResult } from '@/server/nutrition/food-provider';
 import type { MealPhotoEstimate } from './meal-photo-schema';
@@ -36,6 +34,7 @@ import {
   searchFoodAction,
 } from './actions';
 import { BarcodeScanner } from './barcode-scanner';
+import { FoodResultList, QuantityView } from './food-pick';
 
 export function AddFoodDialog({
   date,
@@ -709,25 +708,7 @@ function SearchTab({
       ) : results.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">{td.noResults}</p>
       ) : (
-        <ul className="divide-y">
-          {results.map((f) => (
-            <li key={f.id ?? f.name}>
-              <button
-                onClick={() => setPicked(f)}
-                className="flex w-full items-center justify-between gap-3 py-2.5 text-left hover:bg-secondary/50"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{f.name}</span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {f.brand ? `${f.brand} · ` : ''}
-                    {Math.round(f.kcalPer100)} kcal {td.per100}
-                  </span>
-                </span>
-                {f.verified ? <Check className="size-4 shrink-0 text-success" /> : null}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <FoodResultList foods={results} per100={td.per100} onPick={setPicked} />
       )}
     </div>
   );
@@ -747,21 +728,9 @@ function QuantityStep({
   onDone: () => void;
 }) {
   const t = useT();
-  const td = t.nutrition.dialog;
-  const hasServing = Boolean(food.servingQty && food.servingQty > 0);
-  const [quantity, setQuantity] = useState(hasServing ? 1 : 100);
-  const [unit, setUnit] = useState<string>(hasServing ? 'porción' : 'g');
   const [pending, start] = useTransition();
 
-  const preview = useMemo(
-    () => computeEntryMacros(food, quantity || 0, unit),
-    [food, quantity, unit],
-  );
-
-  const units = hasServing ? (['porción', 'unidad', 'g'] as const) : MEASURE_UNITS;
-
-  function submit() {
-    if (!quantity || quantity <= 0) return;
+  function submit(quantity: number, unit: string) {
     start(async () => {
       const res = await addFoodEntry({
         date,
@@ -779,57 +748,7 @@ function QuantityStep({
     });
   }
 
-  return (
-    <div className="space-y-4 py-2">
-      <div>
-        <p className="text-sm font-medium">{food.name}</p>
-        {food.brand ? <p className="text-xs text-muted-foreground">{food.brand}</p> : null}
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>{td.quantity}</Label>
-          <DecimalInput
-            value={Number.isFinite(quantity) ? quantity : null}
-            onValueChange={(v) => setQuantity(v ?? NaN)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>{td.unit}</Label>
-          <NativeSelect value={unit} onChange={(e) => setUnit(e.target.value)}>
-            {units.map((u) => (
-              <option key={u} value={u}>
-                {u === 'porción' && food.servingLabel ? `${u} (${food.servingLabel})` : u}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      </div>
-
-      <div className="rounded-lg bg-secondary/60 p-3 text-sm">
-        <p className="mb-1 text-xs text-muted-foreground">
-          {td.previewFor.replace('{q}', String(quantity || 0)).replace('{u}', unit)}
-        </p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
-          <span className="font-semibold">{preview.kcal} kcal</span>
-          <span>P {preview.proteinG} g</span>
-          <span>C {preview.carbsG} g</span>
-          <span>G {preview.fatG} g</span>
-        </div>
-        {preview.isEstimated ? (
-          <p className={cn('mt-1 text-xs text-warning')}>{t.nutrition.estimatedBadge}</p>
-        ) : null}
-      </div>
-
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="flex-1" disabled={pending}>
-          {t.common.back}
-        </Button>
-        <Button onClick={submit} className="flex-1" disabled={pending || !quantity}>
-          {pending ? td.adding : td.add}
-        </Button>
-      </div>
-    </div>
-  );
+  return <QuantityView food={food} pending={pending} onBack={onBack} onAdd={submit} />;
 }
 
 /* ---------------- Manual ---------------- */

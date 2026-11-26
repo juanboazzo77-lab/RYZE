@@ -1,26 +1,11 @@
-import { useEffect, useState } from 'react';
 import { History as HistoryIcon, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WEEK_BUTTONS, WeekLayout } from '@/features/training/week-layout';
 import type { Dictionary } from '@/i18n';
 import type { AppData } from '@/lib/sync/data';
 import { weekFromTraining } from '@/lib/sync/week';
+import { useNow } from '../use-now';
 import { Card } from '../ui';
-
-/** La hora, actualizada al volver a la app y cada minuto: "hoy te toca" tiene que cambiar solo, aunque no haya señal. */
-function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const tick = () => setNow(new Date());
-    const timer = window.setInterval(tick, 60_000);
-    document.addEventListener('visibilitychange', tick);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', tick);
-    };
-  }, []);
-  return now;
-}
 
 export function Train({
   t,
