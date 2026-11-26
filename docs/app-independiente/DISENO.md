@@ -98,6 +98,21 @@ Se publica cuando está completa.
 - `pnpm app:typecheck` y `pnpm app:build` — revisar y armar los archivos que van dentro de la app (`mobile/dist`)
 - `pnpm test` — incluye las pruebas de sincronización
 
+## Entrenar sin conexión
+
+- Mientras se entrena, el entrenamiento es un **borrador** que vive sólo en el teléfono y se guarda con cada cambio
+  (`src/lib/sync/draft-store.ts`). Si la app se cierra, al abrirla se continúa.
+- Al terminar se sube **entero, en una sola operación** (`workout.complete`, `src/lib/sync/workout.ts`): el servidor
+  nunca tiene un entrenamiento a medias. Primero entra en la cola y recién después se borra el borrador; si la app se
+  cierra justo ahí, el borrador se descarta porque ya está en la cola, y el servidor además ignora un entrenamiento con
+  un identificador que ya tiene.
+- La pantalla muestra enseguida el día como hecho y la nueva "última vez", aunque falte subirlo.
+- Un tipo de operación que el servidor todavía no conoce no se rechaza: queda en la cola hasta que lo conozca. Aun así,
+  **el servidor se publica antes** que la versión de la app que manda algo nuevo.
+- Piezas de pantalla compartidas con la web: `week-layout.tsx`, `session-parts.tsx`, `rest-timer.tsx`.
+- Todavía no está en la app: agregar ejercicios que no son de la rutina, entrenamiento libre, cambiar un ejercicio por
+  una variante y las fotos de los ejercicios.
+
 ## Armar las versiones de prueba (paso 0.6)
 
 `capacitor.config.ts` arma la app independiente sólo con `FORZA_APP=nueva`; sin eso arma la actual.

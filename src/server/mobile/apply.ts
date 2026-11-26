@@ -5,7 +5,8 @@ import type { Operation, OperationResult } from '@/lib/sync/protocol';
  * reglas por separado:
  *   - cada operación se aplica una sola vez, aunque el teléfono la reintente;
  *   - en orden; ante una falla pasajera se corta y el resto queda para después;
- *   - lo que nunca se va a poder aplicar se rechaza (el teléfono lo muestra, no lo borra).
+ *   - lo que nunca se va a poder aplicar se rechaza (el teléfono lo muestra, no lo borra);
+ *   - lo que este servidor todavía no sabe recibir (una app más nueva) NO se rechaza: queda pendiente en el teléfono.
  */
 
 export class RejectedOperation extends Error {
@@ -57,11 +58,9 @@ export async function applyOperations<Tx>({
         continue;
       }
       const handler = Object.hasOwn(handlers, op.type) ? handlers[op.type] : undefined;
-      if (!handler) {
-        // No se anota: si el servidor aprende ese tipo más adelante, se puede volver a mandar.
-        results.push({ id: op.id, status: 'rejected', reason: 'UNKNOWN_TYPE' });
-        continue;
-      }
+      // Se corta acá: sigue en la cola del teléfono (y lo que viene después, para no desordenar) hasta que el
+      // servidor lo sepa recibir. Rechazarlo lo sacaría de la cola para siempre.
+      if (!handler) throw new Error('TIPO_DESCONOCIDO ' + op.type);
       try {
         await log.applyOnce(op, at, (tx) => handler(tx, { payload: op.payload, at }));
         results.push({ id: op.id, status: 'applied' });

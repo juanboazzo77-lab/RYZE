@@ -1,20 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Check, CloudOff, RefreshCw } from 'lucide-react';
 import { getDictionary } from '@/i18n';
 import { normalizeLocale } from '@/i18n/config';
+import { I18nProvider } from '@/i18n/provider';
 import { readAppData, reducers } from '@/lib/sync/data';
+import { uuid } from '@/lib/sync/engine';
+import { completedWorkoutSchema, finishDraft, newDraft, WORKOUT_OP, type CompletedWorkout } from '@/lib/sync/workout';
 import { signOut, type Account } from '../account';
 import { Shell, type Tab } from '../shell';
+import { useDraft } from '../use-draft';
 import { useSync, type SyncStatus } from '../use-sync';
 import { Button, Card, Screen } from '../ui';
 import { Login } from './Login';
+import { Ready, Session, Summary } from './Session';
 import { Train } from './Train';
 import { Weight } from './Weight';
 
 const REJECTED: Record<string, string> = {
   INVALID: 'El dato no es válido.',
   FUTURE_DATE: 'La fecha es posterior a hoy.',
-  UNKNOWN_TYPE: 'El servidor todavía no sabe recibirlo.',
+  UNKNOWN_EXERCISE: 'Un ejercicio ya no existe en el servidor.',
+  CONFLICT: 'Choca con algo que ya estaba guardado.',
 };
 
 /** Secciones que todavía no están en la app nueva, y en qué etapa llegan. */
@@ -30,12 +36,24 @@ function syncText(status: SyncStatus, pending: number): string {
 
 export function Main({ account, onSignedOut }: { account: Account; onSignedOut: () => void }) {
   const { engine, state, loaded, loadError, retryLoad, status, syncNow } = useSync(account);
+  const drafts = useDraft(account.userId);
   const [tab, setTab] = useState<Tab>('home');
+  /** El día elegido, antes de arrancar. */
+  const [readyDayId, setReadyDayId] = useState<string | null>(null);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [finished, setFinished] = useState<CompletedWorkout | null>(null);
   const [settings, setSettings] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  /** Cambia al tocar una sección, para volver a su pantalla principal. */
-  const [visit, setVisit] = useState(0);
+
+  // Si la app se cerró justo después de terminar, el entrenamiento ya está en la cola: el borrador sobra.
+  const workoutQueued = drafts.draft
+    ? [...state.outbox, ...state.rejected].some((o) => o.type === WORKOUT_OP && (o.payload as { workoutId?: string }).workoutId === drafts.draft!.workoutId)
+    : false;
+  const clearDraft = drafts.clear;
+  useEffect(() => {
+    if (workoutQueued) void clearDraft().catch(() => undefined);
+  }, [workoutQueued, clearDraft]);
 
   if (renewing) {
     return (
@@ -51,28 +69,109 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
     );
   }
 
-  if (loadError) {
+  if (loadError || drafts.loadError) {
     return (
       <Screen>
         <Card className="space-y-2 border-warning text-sm">
           <p>No se pudieron leer los datos guardados. No se borró nada.</p>
-          <Button variant="outline" onClick={retryLoad}>Probar de nuevo</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              retryLoad();
+              drafts.retryLoad();
+            }}
+          >
+            Probar de nuevo
+          </Button>
         </Card>
       </Screen>
     );
   }
-  if (!loaded) return <Screen><p className="text-sm text-muted-foreground">Abriendo…</p></Screen>;
+  if (!loaded || !drafts.ready) return <Screen><p className="text-sm text-muted-foreground">Abriendo…</p></Screen>;
 
   const data = readAppData(engine.view(reducers));
   const t = getDictionary(normalizeLocale(data?.profile.locale.toLowerCase()));
   const pending = state.outbox.length;
   const upToDate = pending === 0 && (status === 'ok' || status === 'idle' || status === 'syncing');
 
+  const active = drafts.draft && !workoutQueued ? drafts.draft : null;
+
+  /** Con un entrenamiento abierto, "empezar" lo retoma: nunca hay dos a la vez. */
+  const pickDay = (planDayId: string) => {
+    if (active) setSessionOpen(true);
+    else setReadyDayId(planDayId);
+  };
+
+  if (finished) {
+    return <Summary t={t} workout={finished} pending={pending > 0} onClose={() => setFinished(null)} />;
+  }
+
+  const readyDay = data?.training?.plan?.days.find((d) => d.id === readyDayId);
+  if (readyDay && !active) {
+    return (
+      <Ready
+        t={t}
+        day={readyDay}
+        onBack={() => setReadyDayId(null)}
+        onStart={() => {
+          void drafts.update(() => newDraft(readyDay, uuid, new Date())).catch(() => undefined);
+          setReadyDayId(null);
+          setSessionOpen(true);
+        }}
+      />
+    );
+  }
+
+  if (sessionOpen && active) {
+    return (
+      <I18nProvider locale={normalizeLocale(data?.profile.locale.toLowerCase())} t={t}>
+        <Session
+          t={t}
+          draft={active}
+          history={data?.training?.history}
+          saveError={drafts.saveError}
+          update={drafts.update}
+          onMinimize={() => setSessionOpen(false)}
+          onDiscard={() => {
+            void drafts.clear().catch(() => undefined);
+            setSessionOpen(false);
+          }}
+          onFinish={async (effort) => {
+            const workout = completedWorkoutSchema.parse(finishDraft(active, effort, new Date()));
+            // Primero queda en la cola de subida; recién después se suelta el borrador.
+            await engine.enqueue(WORKOUT_OP, workout);
+            setSessionOpen(false);
+            setFinished(workout);
+            await drafts.clear().catch(() => undefined);
+            void syncNow();
+          }}
+        />
+      </I18nProvider>
+    );
+  }
+
+  const activeCard = active ? (
+    <Card className="flex items-center justify-between gap-3 border-primary/50 bg-accent">
+      <div className="min-w-0">
+        <p className="truncate font-semibold">{active.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {t.training.inProgressSince.replace('{time}', new Date(active.startedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }))}
+        </p>
+      </div>
+      <Button className="shrink-0" onClick={() => setSessionOpen(true)}>{t.training.resume}</Button>
+    </Card>
+  ) : null;
+
   async function leave(discardPending: boolean) {
+    if (drafts.draft && !discardPending) {
+      setLeaving(true);
+      return;
+    }
     if (!(await engine.clear({ discardPending }))) {
       setLeaving(true);
       return;
     }
+    await drafts.clear();
     await signOut();
     onSignedOut();
   }
@@ -100,6 +199,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
         {state.rejected.map((r) => (
           <div key={r.id} className="flex items-start justify-between gap-3">
             <p className="min-w-0">
+              {r.type === WORKOUT_OP ? `Entrenamiento "${(r.payload as { name?: string }).name ?? ''}". ` : ''}
               {r.type === 'weight.log' ? `Peso del ${(r.payload as { date?: string }).date ?? '?'}: ${(r.payload as { weightKg?: number }).weightKg ?? '?'} kg. ` : ''}
               {REJECTED[r.reason] ?? 'El servidor lo rechazó.'}
             </p>
@@ -124,7 +224,6 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
       onTab={(next) => {
         setSettings(false);
         setTab(next);
-        setVisit((v) => v + 1);
         window.scrollTo(0, 0);
       }}
       onSettings={() => setSettings(true)}
@@ -142,7 +241,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
           <p className="text-sm text-muted-foreground">{account.email} · versión de prueba</p>
           {leaving ? (
             <Card className="space-y-3 border-warning text-sm">
-              <p>Hay cambios sin subir. Si cerrás sesión ahora, <strong>se pierden</strong>.</p>
+              <p>Hay cambios sin subir o un entrenamiento en curso. Si cerrás sesión ahora, <strong>se pierden</strong>.</p>
               <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" onClick={() => setLeaving(false)}>No cerrar</Button>
                 <Button variant="outline" className="text-warning" onClick={() => void leave(true)}>Cerrar y perderlos</Button>
@@ -162,9 +261,13 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
       ) : !data ? (
         waiting
       ) : tab === 'train' ? (
-        <Train key={visit} t={t} data={data} />
+        <>
+          {activeCard}
+          <Train t={t} data={data} hasActive={Boolean(active)} onPick={pickDay} />
+        </>
       ) : (
         <>
+          {activeCard}
           <p className="text-lg font-bold">Hola{data.profile.name ? `, ${data.profile.name.split(' ')[0]}` : ''}</p>
           <Weight
             data={data}

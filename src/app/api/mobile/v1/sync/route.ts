@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { pushRequestSchema, type PushResponse } from '@/lib/sync/protocol';
+import { completedWorkoutSchema, WORKOUT_OP } from '@/lib/sync/workout';
 import { forUser } from '@/server/user-db';
 import { applyOperations } from '@/server/mobile/apply';
 import { authenticateMobile } from '@/server/mobile/auth';
@@ -55,8 +56,21 @@ export async function POST(request: Request) {
       onError: (op, e) => console.error('[mobile/sync] quedó pendiente', op.type, op.id, e instanceof Error ? e.message : e),
     });
 
+    // Lo mismo que hace la web al guardar: récords y logros. Nunca frenan la sincronización.
     const applied = new Set(results.filter((r) => r.status === 'applied').map((r) => r.id));
-    if (parsed.data.operations.some((o) => o.type === 'weight.log' && applied.has(o.id))) {
+    const done = parsed.data.operations.filter((o) => applied.has(o.id));
+    for (const o of done.filter((x) => x.type === WORKOUT_OP)) {
+      const w = completedWorkoutSchema.safeParse(o.payload);
+      if (!w.success) continue;
+      try {
+        const saved = await db.workout.findFirst({ where: { id: w.data.workoutId }, select: { finishedAt: true } });
+        const { detectAndRecordPrs } = await import('@/features/training/pr-detect');
+        if (saved?.finishedAt) await detectAndRecordPrs(db, userId, w.data.workoutId, saved.finishedAt);
+      } catch (e) {
+        console.error('[mobile/sync] récords', e instanceof Error ? e.message : e);
+      }
+    }
+    if (done.length > 0) {
       try {
         const { syncAchievements } = await import('@/features/gamification/sync');
         await syncAchievements(db, userId, timezone);

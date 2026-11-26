@@ -4,3 +4,6 @@
 /* Las piezas de diseño que se comparten con la web. */
 @source '../../src/components/ui';
 @source '../../src/features/training/week-layout.tsx';
+@source '../../src/features/training/session-parts.tsx';
+@source '../../src/features/training/rest-timer.tsx';
+@source '../../src/components/form/decimal-input.tsx';

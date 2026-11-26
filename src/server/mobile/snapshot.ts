@@ -6,8 +6,41 @@ import { PROTOCOL_VERSION, type Snapshot } from '@/lib/sync/protocol';
 const MAX_WEIGHTS = 400;
 /** Alcanza para saber qué se hizo esta semana en cualquier zona horaria, y la anterior. */
 const RECENT_DAYS = 15;
+/** Entrenamientos anteriores que se miran para saber qué se hizo "la última vez" en cada ejercicio. */
+const HISTORY_WORKOUTS = 20;
 
-export type SnapshotDb = Pick<PrismaClient, 'weightEntry' | 'profile' | 'workoutPlan' | 'workout'>;
+export type SnapshotDb = Pick<PrismaClient, 'weightEntry' | 'profile' | 'workoutPlan' | 'workout' | 'personalRecord'>;
+
+/** Por cada ejercicio de la rutina: las series de la última vez y el récord de peso (igual que en la web). */
+async function exerciseHistory(db: SnapshotDb, exerciseIds: string[]) {
+  const history: Record<string, { lastTime: Array<{ weightKg: number | null; reps: number | null }>; bestWeightKg: number | null }> = {};
+  if (exerciseIds.length === 0) return history;
+  const [prior, records] = await Promise.all([
+    db.workout.findMany({
+      where: { status: 'COMPLETED', exercises: { some: { exerciseId: { in: exerciseIds } } } },
+      orderBy: { finishedAt: 'desc' },
+      take: HISTORY_WORKOUTS,
+      select: {
+        exercises: {
+          where: { exerciseId: { in: exerciseIds } },
+          select: { exerciseId: true, sets: { where: { isCompleted: true }, orderBy: { setNumber: 'asc' }, select: { weightKg: true, reps: true } } },
+        },
+      },
+    }),
+    db.personalRecord.findMany({
+      where: { exerciseId: { in: exerciseIds }, type: 'MAX_WEIGHT' },
+      select: { exerciseId: true, value: true },
+    }),
+  ]);
+  const entry = (id: string) => (history[id] ??= { lastTime: [], bestWeightKg: null });
+  for (const w of prior) {
+    for (const e of w.exercises) {
+      if (e.sets.length > 0 && entry(e.exerciseId).lastTime.length === 0) entry(e.exerciseId).lastTime = e.sets;
+    }
+  }
+  for (const r of records) entry(r.exerciseId).bestWeightKg = Math.max(entry(r.exerciseId).bestWeightKg ?? 0, r.value);
+  return history;
+}
 
 /**
  * La foto de los datos que la app guarda para mostrarlos sin conexión. `db` tiene que venir acotada a la persona
@@ -64,6 +97,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
     }),
   ]);
   if (!profile) throw new Error('SIN_PERFIL');
+  const history = await exerciseHistory(db, [...new Set(plan?.days.flatMap((d) => d.exercises.map((e) => e.exerciseId)) ?? [])]);
 
   const data: AppData = {
     profile,
@@ -91,6 +125,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
       recentWorkouts: recent.flatMap((w) =>
         w.planDayId && w.finishedAt ? [{ planDayId: w.planDayId, finishedAt: w.finishedAt.toISOString() }] : [],
       ),
+      history,
     },
   };
   return { protocol: PROTOCOL_VERSION, takenAt: now.toISOString(), data };

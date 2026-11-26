@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Reducer } from './engine';
+import { applyCompleted, completedWorkoutSchema, WORKOUT_OP } from './workout';
 
 /**
  * Los datos de la persona que la app guarda en el teléfono: la misma forma en el servidor (que los arma) y en la app
@@ -45,6 +46,15 @@ export const trainingSchema = z.object({
   /** Entrenamientos terminados hace poco. Qué está "hecho esta semana" se calcula en el teléfono, así se reinicia solo
    * al empezar la semana siguiente aunque no haya señal. */
   recentWorkouts: z.array(z.object({ planDayId: z.string(), finishedAt: z.string() })),
+  /** Por ejercicio de la rutina: lo que se hizo la última vez y el mejor peso. */
+  history: z
+    .record(
+      z.object({
+        lastTime: z.array(z.object({ weightKg: z.number().nullable(), reps: z.number().nullable() })),
+        bestWeightKg: z.number().nullable(),
+      }),
+    )
+    .optional(),
 });
 
 export const appDataSchema = z.object({
@@ -72,6 +82,12 @@ const weightPayload = z.object({ date: weightSchema.shape.date, weightKg: z.numb
 
 /** Cómo se ve cada cambio todavía sin subir. Aplicarlo dos veces da lo mismo. */
 export const reducers: Record<string, Reducer> = {
+  [WORKOUT_OP]: (data, op) => {
+    const workout = completedWorkoutSchema.safeParse(op.payload);
+    const training = trainingSchema.safeParse(data.training);
+    if (!workout.success || !training.success) return data;
+    return { ...data, training: applyCompleted(training.data, workout.data) };
+  },
   'weight.log': (data, op) => {
     const p = weightPayload.safeParse(op.payload);
     if (!p.success) return data;

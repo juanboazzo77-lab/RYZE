@@ -77,12 +77,14 @@ describe('applyOperations', () => {
     expect(errors).toEqual([op(2, '').id]);
   });
 
-  it('un tipo que el servidor no conoce se rechaza sin anotarlo', async () => {
-    const f = fakeLog();
+  it('lo que el servidor todavía no sabe recibir queda pendiente en el teléfono: ni se rechaza ni se adelanta lo demás', async () => {
     for (const type of ['otra.cosa', 'constructor', '__proto__']) {
-      expect(await run(f.log, [op(1, 'a', type)])).toMatchObject([{ status: 'rejected', reason: 'UNKNOWN_TYPE' }]);
+      const f = fakeLog();
+      const res = await run(f.log, [op(1, 'a'), op(2, 'b', type), op(3, 'c')]);
+      expect(res.map((r) => r.id)).toEqual([op(1, '').id]);
+      expect(f.changes).toEqual(['a']);
+      expect(f.records.size).toBe(1);
     }
-    expect(f.records.size).toBe(0);
   });
 
   it('si dos envíos del mismo cambio chocan, el segundo responde que ya estaba', async () => {
