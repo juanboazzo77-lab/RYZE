@@ -123,7 +123,7 @@ export const TIER_LIMITS: Record<EntitlementTier, TierLimits> = {
       ai_generate_plan: true,
       ai_meal_plan: true,
       weekly_checkin: true,
-      advanced_stats: false,
+      advanced_stats: true,
       progression_analysis: true,
       coach_profile: false,
       physique_analysis: false,

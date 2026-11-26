@@ -86,18 +86,18 @@ describe('entitlements', () => {
     expect(showAds({ tier: 'BASIC' })).toBe(false);
   });
 
-  it('PRO habilita las features PRO pero no estadísticas avanzadas ni el perfil de coaching', () => {
+  it('PRO habilita las features PRO, con estadísticas avanzadas, pero no el perfil de coaching', () => {
     const pro = { tier: 'PRO' as const, createdAt: daysAgo(30) };
     expect(limitsFor(pro).aiCoachMessagesPerDay).toBe(30);
     expect(limitsFor(pro).aiPlansPerMonth).toBe(4);
     expect(limitsFor(pro).checkinEveryWeeks).toBe(2);
     expect(can(pro, 'weekly_checkin')).toBe(true);
     expect(can(pro, 'progression_analysis')).toBe(true);
-    expect(can(pro, 'advanced_stats')).toBe(false);
+    expect(can(pro, 'advanced_stats')).toBe(true);
     expect(can(pro, 'coach_profile')).toBe(false);
   });
 
-  it('COACH es el plan más top: todo lo de PRO + estadísticas avanzadas + el perfil de coaching', () => {
+  it('COACH es el plan más top: todo lo de PRO + el perfil de coaching y más cupos de IA', () => {
     const coach = { tier: 'COACH' as const, createdAt: daysAgo(30) };
     const pro = { tier: 'PRO' as const, createdAt: daysAgo(30) };
     expect(can(coach, 'coach_profile')).toBe(true);
