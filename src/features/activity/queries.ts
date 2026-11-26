@@ -2,17 +2,9 @@ import 'server-only';
 import type { Profile } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { localTodayISO } from '@/lib/date';
-import { averageSteps, type DaySteps } from '@/lib/activity/steps';
+import { activityView, type ActivityView } from '@/lib/activity/view';
 
-export interface ActivityView {
-  todayISO: string;
-  todaySteps: number | null;
-  avg7: number | null;
-  avg30: number | null;
-  /** Últimos 30 días, más reciente al final, para el gráfico. */
-  series: DaySteps[];
-  recent: Array<{ date: string; steps: number; activeMinutes: number | null }>;
-}
+export type { ActivityView };
 
 export async function getActivity(profile: Profile): Promise<ActivityView> {
   const db = forUser(profile.id);
@@ -25,26 +17,10 @@ export async function getActivity(profile: Profile): Promise<ActivityView> {
     select: { date: true, steps: true, activeMinutes: true },
   });
 
-  const series: DaySteps[] = rows.map((r) => ({
-    date: r.date.toISOString().slice(0, 10),
-    steps: r.steps,
-  }));
-
-  return {
+  return activityView(
+    rows.map((r) => ({ date: r.date.toISOString().slice(0, 10), steps: r.steps, activeMinutes: r.activeMinutes })),
     todayISO,
-    todaySteps: series.find((s) => s.date === todayISO)?.steps ?? null,
-    avg7: averageSteps(series, todayISO, 7),
-    avg30: averageSteps(series, todayISO, 30),
-    series,
-    recent: rows
-      .slice(-7)
-      .reverse()
-      .map((r) => ({
-        date: r.date.toISOString().slice(0, 10),
-        steps: r.steps,
-        activeMinutes: r.activeMinutes,
-      })),
-  };
+  );
 }
 
 /** Promedio de pasos de la semana del check-in (para el reporte del Coach). */

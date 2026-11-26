@@ -2,14 +2,8 @@ import 'server-only';
 import type { Profile } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { localTodayISO } from '@/lib/date';
-import {
-  linearTrend,
-  movingAverage,
-  periodChangeKg,
-  recentAverage,
-  type Trend,
-  type WeightPoint,
-} from '@/lib/progress/weight';
+import type { WeightPoint } from '@/lib/progress/weight';
+import { weightSummary, type WeightSummary } from '@/lib/progress/summary';
 
 export interface WeightEntryDTO {
   id: string;
@@ -18,22 +12,10 @@ export interface WeightEntryDTO {
   note: string | null;
 }
 
-export interface WeightPageData {
+export interface WeightPageData extends WeightSummary {
   todayISO: string;
   rangeDays: number;
-  entries: WeightEntryDTO[]; // dentro del rango, asc
-  chart: Array<{ date: string; weight: number | null; avg: number }>;
-  firstKg: number | null;
-  currentKg: number | null;
-  startKg: number | null; // goal.startWeightKg ?? primer registro
-  targetKg: number | null;
-  totalChangeKg: number | null;
-  stats: {
-    weekAvg: number | null;
-    weeklyChangeKg: number | null;
-    monthlyChangeKg: number | null;
-    trend: Trend | null;
-  };
+  entries: WeightEntryDTO[]; // todo el historial, del más nuevo al más viejo
 }
 
 export async function getWeightPage(profile: Profile, rangeDays: number): Promise<WeightPageData> {
@@ -57,23 +39,7 @@ export async function getWeightPage(profile: Profile, rangeDays: number): Promis
     weightKg: e.weightKg,
   }));
 
-  const firstKg = points[0]?.weightKg ?? null;
-  const currentKg = points[points.length - 1]?.weightKg ?? null;
-  const startKg = goal?.startWeightKg ?? firstKg;
-  const targetKg = goal?.targetWeightKg ?? null;
-  const totalChangeKg =
-    currentKg !== null && startKg !== null ? Math.round((currentKg - startKg) * 10) / 10 : null;
-
-  // Ventana del gráfico
-  const cutoffIdx = Math.max(0, points.length && rangeDays < 100000 ? findCutoff(points, todayISO, rangeDays) : 0);
-  const inRange = points.slice(cutoffIdx);
-  const maAll = movingAverage(points, 7);
-  const maByDate = new Map(maAll.map((m) => [m.date, m.weightKg]));
-  const chart = inRange.map((p) => ({
-    date: p.date,
-    weight: p.weightKg,
-    avg: maByDate.get(p.date) ?? p.weightKg,
-  }));
+  const summary = weightSummary(points, goal, todayISO, rangeDays);
 
   // A diferencia del gráfico (acotado a `rangeDays`), la lista de "Registros"
   // se navega semana por semana en el cliente (ver EntryList) y necesita el
@@ -88,29 +54,5 @@ export async function getWeightPage(profile: Profile, rangeDays: number): Promis
     }))
     .reverse();
 
-  return {
-    todayISO,
-    rangeDays,
-    entries,
-    chart,
-    firstKg,
-    currentKg,
-    startKg,
-    targetKg,
-    totalChangeKg,
-    stats: {
-      weekAvg: recentAverage(points, todayISO, 7),
-      weeklyChangeKg: periodChangeKg(points, todayISO, 7),
-      monthlyChangeKg: periodChangeKg(points, todayISO, 30),
-      trend: linearTrend(inRange.length >= 3 ? inRange : points),
-    },
-  };
-}
-
-function findCutoff(points: WeightPoint[], todayISO: string, rangeDays: number): number {
-  const cutoff = new Date(`${todayISO}T00:00:00Z`);
-  cutoff.setUTCDate(cutoff.getUTCDate() - rangeDays);
-  const cutoffISO = cutoff.toISOString().slice(0, 10);
-  const idx = points.findIndex((p) => p.date >= cutoffISO);
-  return idx < 0 ? points.length : idx;
+  return { todayISO, rangeDays, entries, ...summary };
 }

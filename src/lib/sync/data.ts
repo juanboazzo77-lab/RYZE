@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Reducer } from './engine';
+import { activityDaySchema, applyActivityOp, dayOnlySchema, weightGoalSchema, ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from './progress';
 import { applyFoodOp, FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP, nutritionSchema } from './nutrition';
 import { applyCompleted, completedWorkoutSchema, WORKOUT_OP } from './workout';
 
@@ -104,6 +105,10 @@ export const appDataSchema = z.object({
   /** Falta en los datos guardados por versiones anteriores de la app, hasta que vuelven a sincronizar. */
   training: trainingSchema.optional(),
   nutrition: nutritionSchema.optional(),
+  /** El peso de partida y el objetivo, si tiene. */
+  goal: weightGoalSchema.nullable().optional(),
+  /** Pasos de los últimos días, del más viejo al más nuevo. */
+  activity: z.array(activityDaySchema).optional(),
 });
 
 export type AppData = z.infer<typeof appDataSchema>;
@@ -120,8 +125,20 @@ const foodReducer: Reducer = (data, op) => {
   return nutrition.success ? { ...data, nutrition: applyFoodOp(nutrition.data, op.type, op.payload) } : data;
 };
 
+const activityReducer: Reducer = (data, op) => {
+  const days = z.array(activityDaySchema).safeParse(data.activity);
+  return days.success ? { ...data, activity: applyActivityOp(days.data, op.type, op.payload) } : data;
+};
+
 /** Cómo se ve cada cambio todavía sin subir. Aplicarlo dos veces da lo mismo. */
 export const reducers: Record<string, Reducer> = {
+  [ACTIVITY_LOG_OP]: activityReducer,
+  [ACTIVITY_DELETE_OP]: activityReducer,
+  [WEIGHT_DELETE_OP]: (data, op) => {
+    const p = dayOnlySchema.safeParse(op.payload);
+    if (!p.success) return data;
+    return { ...data, weights: ((data.weights as WeightRow[] | undefined) ?? []).filter((w) => w.date !== p.data.date) };
+  },
   [FOOD_ADD_OP]: foodReducer,
   [FOOD_UPDATE_OP]: foodReducer,
   [FOOD_DELETE_OP]: foodReducer,

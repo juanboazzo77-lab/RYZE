@@ -15,3 +15,9 @@
 @source '../../src/features/nutrition/food-pick.tsx';
 @source '../../src/components/charts/calorie-ring.tsx';
 @source '../../src/components/charts/macro-bar.tsx';
+@source '../../src/components/charts/progress-line-chart.tsx';
+@source '../../src/features/progress/weight-chart.tsx';
+@source '../../src/features/progress/weight-dialog.tsx';
+@source '../../src/features/progress/weight-stats.tsx';
+@source '../../src/features/progress/weight-week-list.tsx';
+@source '../../src/features/activity/activity-card.tsx';

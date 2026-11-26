@@ -6,6 +6,7 @@ import { I18nProvider } from '@/i18n/provider';
 import { readAppData, reducers } from '@/lib/sync/data';
 import { uuid } from '@/lib/sync/engine';
 import { FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP } from '@/lib/sync/nutrition';
+import { ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from '@/lib/sync/progress';
 import { completedWorkoutSchema, finishDraft, newDraft, WORKOUT_OP, type CompletedWorkout } from '@/lib/sync/workout';
 import { signOut, type Account } from '../account';
 import { Shell, type Tab } from '../shell';
@@ -15,6 +16,7 @@ import { Button, Card, Screen } from '../ui';
 import { Login } from './Login';
 import { History } from './History';
 import { Nutrition } from './Nutrition';
+import { Progress } from './Progress';
 import { Ready, Session, Summary } from './Session';
 import { Train } from './Train';
 import { Weight } from './Weight';
@@ -27,12 +29,15 @@ const REJECTED: Record<string, string> = {
 };
 
 /** Secciones que todavía no están en la app nueva, y en qué etapa llegan. */
-const COMING: Partial<Record<Tab, number>> = { progress: 3, coach: 4 };
+const COMING: Partial<Record<Tab, number>> = { coach: 4 };
 
 const FOOD_OPS: Record<string, string> = {
   [FOOD_ADD_OP]: 'Comida anotada',
   [FOOD_UPDATE_OP]: 'Cambio en una comida',
   [FOOD_DELETE_OP]: 'Comida eliminada',
+  [WEIGHT_DELETE_OP]: 'Peso eliminado',
+  [ACTIVITY_LOG_OP]: 'Pasos anotados',
+  [ACTIVITY_DELETE_OP]: 'Pasos eliminados',
 };
 
 /** Qué era lo que no se pudo subir, para que la persona lo pueda reconocer. */
@@ -284,6 +289,19 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
         <I18nProvider locale={normalizeLocale(data.profile.locale.toLowerCase())} t={t}>
           {activeCard}
           <Nutrition
+            t={t}
+            data={data}
+            outbox={state.outbox}
+            onChange={async (type, payload) => {
+              await engine.enqueue(type, payload);
+              void syncNow();
+            }}
+          />
+        </I18nProvider>
+      ) : tab === 'progress' ? (
+        <I18nProvider locale={normalizeLocale(data.profile.locale.toLowerCase())} t={t}>
+          {activeCard}
+          <Progress
             t={t}
             data={data}
             outbox={state.outbox}

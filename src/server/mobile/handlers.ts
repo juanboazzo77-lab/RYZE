@@ -2,6 +2,7 @@ import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { completedWorkoutSchema, WORKOUT_OP } from '@/lib/sync/workout';
 import { buildFoodHandlers } from './food-handlers';
+import { buildProgressHandlers } from './progress-handlers';
 import { checkDay } from './check-day';
 import { RejectedOperation, type Handler } from './apply';
 
@@ -11,7 +12,7 @@ import { RejectedOperation, type Handler } from './apply';
  * cualquiera.
  */
 
-export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise' | 'food' | 'foodEntry'>;
+export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise' | 'food' | 'foodEntry' | 'dailyActivity'>;
 
 const MAX_DURATION_SECONDS = 24 * 60 * 60;
 
@@ -24,6 +25,7 @@ const weightSchema = z.object({
 export function buildHandlers({ userId, timezone }: { userId: string; timezone: string }): Record<string, Handler<MobileTx>> {
   return {
     ...buildFoodHandlers({ userId, timezone }),
+    ...buildProgressHandlers({ userId, timezone }),
 
     /** Un entrenamiento terminado en la app, entero. */
     [WORKOUT_OP]: async (tx, { payload, at }) => {
