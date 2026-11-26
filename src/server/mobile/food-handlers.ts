@@ -14,6 +14,7 @@ const SOURCE: Record<AddItem['kind'], FoodEntrySource> = {
   duplicate: 'MANUAL',
   meal: 'FREQUENT',
   copy: 'COPIED',
+  ai: 'AI_PARSE',
 };
 
 const FOOD_MATH = { kcalPer100: true, proteinPer100: true, carbsPer100: true, fatPer100: true, servingQty: true } as const;

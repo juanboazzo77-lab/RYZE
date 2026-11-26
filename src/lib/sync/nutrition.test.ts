@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { searchLibrary } from '@/lib/nutrition/food-search';
 import { readAppData, reducers } from './data';
 import {
-  applyFoodOp, dayData, foodAddSchema, foodUpdateSchema, itemFromEntry, itemFromFood, itemFromManual, recentFoods,
+  applyFoodOp, dayData, foodAddSchema, foodUpdateSchema, itemFromEntry, itemFromEstimate, itemFromFood, itemFromManual, recentFoods,
   FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP, type EntryRowData, type LibraryFood, type Nutrition,
 } from './nutrition';
 
@@ -30,6 +30,12 @@ describe('anotar comidas sin señal', () => {
     const out = applyFoodOp(base([row(0), row(1)]), FOOD_ADD_OP, { date: '2026-11-25', items: [item] });
     expect(out.entries.at(-1)).toMatchObject({ id: id(200), date: '2026-11-25', position: 2, name: 'Yogur natural' });
     expect(out.entries.at(-1)).not.toHaveProperty('kind');
+  });
+
+  it('lo que estima la IA entra con los redondeos de la web y marcado como estimado', () => {
+    const item = itemFromEstimate({ name: 'Ñoquis con salsa', grams: 0.4, kcal: 412.6, proteinG: 11.26, carbsG: 63.04, fatG: 12.35 }, 'DINNER', id(205));
+    expect(item).toMatchObject({ foodId: null, customName: 'Ñoquis con salsa', quantity: 1, unit: 'g', kcal: 413, proteinG: 11.3, carbsG: 63, fatG: 12.4, isEstimated: true, kind: 'ai' });
+    expect(foodAddSchema.safeParse({ date: '2026-11-25', items: [item] }).success).toBe(true);
   });
 
   it('aplicado dos veces no duplica', () => {

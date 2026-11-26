@@ -13,6 +13,10 @@
 @source '../../src/features/nutrition/meal-card.tsx';
 @source '../../src/features/nutrition/entry-item.tsx';
 @source '../../src/features/nutrition/food-pick.tsx';
+@source '../../src/features/nutrition/food-tabs-list.tsx';
+@source '../../src/features/nutrition/ai-tabs.tsx';
+@source '../../src/features/nutrition/barcode-scanner.tsx';
+@source '../../src/features/nutrition/manual-tab.tsx';
 @source '../../src/components/charts/calorie-ring.tsx';
 @source '../../src/components/charts/macro-bar.tsx';
 @source '../../src/components/charts/progress-line-chart.tsx';

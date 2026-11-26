@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { itemFromFood, itemFromManual, type LibraryFood } from '@/lib/sync/nutrition';
+import { itemFromEstimate, itemFromFood, itemFromManual, type LibraryFood } from '@/lib/sync/nutrition';
 import { RejectedOperation } from './apply';
 import { buildHandlers, type MobileTx } from './handlers';
 
@@ -62,6 +62,13 @@ const existing = (extra: Partial<Row> = {}): Row => ({
 });
 
 describe('food.add', () => {
+  it('lo estimado por la IA queda con el mismo origen que en la web y con los valores del teléfono', async () => {
+    const f = fakeDb();
+    const item = itemFromEstimate({ name: 'Tarta de verdura', grams: 250, kcal: 480, proteinG: 18, carbsG: 40, fatG: 27 }, 'LUNCH', id(210));
+    await run('food.add', f.tx, { date: '2026-11-25', items: [item] });
+    expect(f.rows[0]).toMatchObject({ foodId: null, customName: 'Tarta de verdura', quantity: 250, unit: 'g', kcal: 480, isEstimated: true, source: 'AI_PARSE' });
+  });
+
   it('guarda con el identificador y la hora del teléfono, y calcula los valores con la biblioteca', async () => {
     const f = fakeDb([existing()]);
     const item = { ...itemFromFood(ARROZ, 'LUNCH', 200, 'g', id(200)), kcal: 1 };

@@ -13,6 +13,7 @@ const from =
 
 const coach = () => import('@/features/coach/actions');
 const coachScreen = () => import('./coach-screen');
+const nutrition = () => import('@/features/nutrition/actions');
 
 export const RPC_TABLE: RpcTable = {
   'coach.screen': from(coachScreen, 'coachScreen'),
@@ -25,4 +26,9 @@ export const RPC_TABLE: RpcTable = {
   'coach.archiveCoachConversation': from(coach, 'archiveCoachConversation'),
   'coach.loadCoachConversation': from(coach, 'loadCoachConversation'),
   'coach.reopenCoachConversation': from(coach, 'reopenCoachConversation'),
+  // De la alimentación sólo lo que necesita internet: anotar pasa por la sincronización.
+  'food.lookupBarcode': from(nutrition, 'lookupBarcodeAction'),
+  'food.estimatePhoto': from(nutrition, 'estimateMealPhotoAction'),
+  'food.estimateText': from(nutrition, 'estimateMealTextAction'),
+  'food.create': from(nutrition, 'createCustomFood'),
 };

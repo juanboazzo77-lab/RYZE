@@ -95,7 +95,7 @@ export const addItemSchema = z
     fatG: amount,
     isEstimated: z.boolean(),
     /** De dónde salió. Con "food" el servidor vuelve a calcular los valores con la biblioteca. */
-    kind: z.enum(['food', 'manual', 'meal', 'copy', 'duplicate']),
+    kind: z.enum(['food', 'manual', 'meal', 'copy', 'duplicate', 'ai']),
   })
   .refine((v) => v.foodId || v.customName, { message: 'foodId o customName requerido' });
 export type AddItem = z.infer<typeof addItemSchema>;
@@ -275,6 +275,29 @@ export function itemFromEntry(entry: Copyable, mealType: Meal, kind: 'meal' | 'c
     fatG,
     isEstimated,
     kind,
+  };
+}
+
+/** Algo que estimó la IA (foto o descripción), con los mismos redondeos que usa la web. */
+export function itemFromEstimate(
+  item: { name: string; grams: number } & MacroTotals,
+  mealType: Meal,
+  id: string,
+): AddItem {
+  return {
+    id,
+    mealType,
+    foodId: null,
+    customName: item.name,
+    name: item.name,
+    quantity: Math.max(1, Math.round(item.grams)),
+    unit: 'g',
+    kcal: Math.round(item.kcal),
+    proteinG: one(item.proteinG),
+    carbsG: one(item.carbsG),
+    fatG: one(item.fatG),
+    isEstimated: true,
+    kind: 'ai',
   };
 }
 

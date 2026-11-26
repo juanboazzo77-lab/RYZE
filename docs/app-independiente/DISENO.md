@@ -156,8 +156,15 @@ No se encola: si no hay señal se avisa en el momento.
   mismas validaciones y límites del plan. Sólo se puede llamar lo escrito en `src/server/mobile/rpc-table.ts`.
 - Para sumar una pantalla: agregar sus funciones a `rpc-table.ts` (revisando que no usen cookies ni redirijan), crear el
   reemplazo con los mismos nombres, anotarlo en `REMOTE` y sumar su archivo a `styles.css`.
-- Hecho: **coach** (chat y conversaciones). Falta: memoria y plan nuevo con IA, foto/escáner/describir, chequeo, fotos,
-  amigos, reporte, registro de cuenta, perfil y objetivos, planes y pagos, gimnasio, notificaciones, eliminar cuenta.
+- Hecho: **coach** (chat y conversaciones) y **escáner, foto, describir y producto nuevo**. Falta: memoria y plan nuevo
+  con IA, chequeo, fotos, amigos, reporte, registro de cuenta, perfil y objetivos, planes y pagos, gimnasio,
+  notificaciones, eliminar cuenta.
+- Las piezas de pantalla (`ai-tabs.tsx`, `manual-tab.tsx`, `food-tabs-list.tsx`) no llaman a ninguna acción: reciben por
+  parámetro cómo pedir y cómo anotar. Por eso no hace falta reemplazar el archivo de acciones de alimentación.
+- Con internet sólo se **pide** (buscar el código, estimar, guardar un producto nuevo). **Anotar** siempre pasa por la
+  cola de subida: si la señal se corta después de la estimación, igual se puede agregar. Lo estimado viaja como
+  `kind: 'ai'` y queda con el mismo origen que en la web. Publicar el servidor antes de compilar la app.
+- La cámara sólo se puede comprobar en un teléfono real (los permisos ya están en `Info.plist` y en el manifiesto).
 - Apple y Google: dentro de la app no puede haber enlaces para pagar por fuera de la tienda.
 
 ## Armar las versiones de prueba (paso 0.6)

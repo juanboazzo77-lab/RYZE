@@ -92,6 +92,8 @@ const es = {
   onlineLoading: "Cargando…",
   onlineFailed: "No se pudo conectar con el servidor. Probá de nuevo.",
   stillOnWeb: "Esto todavía está sólo en forzaai.app. Llega a la app más adelante.",
+  foodNeedsInternet: "Escanear, la foto y describir necesitan internet. Buscar y cargar a mano funcionan sin señal.",
+  newFoodNeedsInternet: "Para guardar un producto nuevo necesitás internet. Podés cargarlo como total y funciona sin señal.",
 };
 
 export type AppText = { [K in keyof typeof es]: string };
@@ -177,6 +179,8 @@ const en: AppText = {
   onlineLoading: "Loading…",
   onlineFailed: "Could not reach the server. Try again.",
   stillOnWeb: "This is still only at forzaai.app. It will come to the app later.",
+  foodNeedsInternet: "Scanning, photo and describe need internet. Search and manual entry work offline.",
+  newFoodNeedsInternet: "Saving a new product needs internet. You can add it as a total, which works offline.",
 };
 
 const pt: AppText = {
@@ -260,6 +264,8 @@ const pt: AppText = {
   onlineLoading: "Carregando…",
   onlineFailed: "Não foi possível conectar ao servidor. Tente de novo.",
   stillOnWeb: "Isto ainda está só em forzaai.app. Chega ao app mais adiante.",
+  foodNeedsInternet: "Escanear, a foto e descrever precisam de internet. Buscar e adicionar manualmente funcionam sem sinal.",
+  newFoodNeedsInternet: "Para salvar um produto novo você precisa de internet. Pode adicionar como total, que funciona sem sinal.",
 };
 
 const fr: AppText = {
@@ -343,6 +349,8 @@ const fr: AppText = {
   onlineLoading: "Chargement…",
   onlineFailed: "Impossible de joindre le serveur. Réessaie.",
   stillOnWeb: "Ceci n'est encore que sur forzaai.app. Cela arrivera plus tard dans l'appli.",
+  foodNeedsInternet: "Le scan, la photo et la description nécessitent internet. La recherche et la saisie manuelle fonctionnent hors ligne.",
+  newFoodNeedsInternet: "Pour enregistrer un nouveau produit, il faut internet. Vous pouvez l’ajouter en total, ce qui fonctionne hors ligne.",
 };
 
 const de: AppText = {
@@ -426,6 +434,8 @@ const de: AppText = {
   onlineLoading: "Wird geladen…",
   onlineFailed: "Der Server ist nicht erreichbar. Versuch es noch einmal.",
   stillOnWeb: "Das gibt es bisher nur auf forzaai.app. Es kommt später in die App.",
+  foodNeedsInternet: "Scannen, Foto und Beschreiben brauchen Internet. Suchen und manuelles Eintragen funktionieren offline.",
+  newFoodNeedsInternet: "Um ein neues Produkt zu speichern, brauchst du Internet. Als Gesamtwert eintragen geht auch offline.",
 };
 
 const it: AppText = {
@@ -509,6 +519,8 @@ const it: AppText = {
   onlineLoading: "Caricamento…",
   onlineFailed: "Impossibile raggiungere il server. Riprova.",
   stillOnWeb: "Questo per ora è solo su forzaai.app. Arriverà nell'app più avanti.",
+  foodNeedsInternet: "Scansione, foto e descrizione richiedono internet. Ricerca e inserimento manuale funzionano offline.",
+  newFoodNeedsInternet: "Per salvare un prodotto nuovo serve internet. Puoi aggiungerlo come totale, che funziona offline.",
 };
 
 export const APP_TEXT: Record<Locale, AppText> = { es, en, pt, fr, de, it };

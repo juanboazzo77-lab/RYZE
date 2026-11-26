@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Camera, ImagePlus, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { downscaleImage } from '@/lib/image/downscale';
+import { uuid } from '@/lib/sync/engine';
 
 interface PhotoItem {
   id: string;
@@ -31,7 +32,7 @@ export function PhotoPicker({
   large?: boolean;
 }) {
   const [items, setItems] = useState<PhotoItem[]>(() =>
-    value.map((dataUrl) => ({ id: crypto.randomUUID(), dataUrl })),
+    value.map((dataUrl) => ({ id: uuid(), dataUrl })),
   );
   const [processing, setProcessing] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -53,7 +54,7 @@ export function PhotoPicker({
     for (const file of Array.from(files).slice(0, room)) {
       if (!file.type.startsWith('image/')) continue;
       try {
-        added.push({ id: crypto.randomUUID(), dataUrl: await downscaleImage(file) });
+        added.push({ id: uuid(), dataUrl: await downscaleImage(file) });
       } catch {
         toast.error(labels.error);
       }
