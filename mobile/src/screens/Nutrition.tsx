@@ -18,6 +18,7 @@ import {
   dayData, foodAddSchema, foodUpdateSchema, itemFromEntry, FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP, MAX_ITEMS, MEALS,
   type AddItem, type EntryView, type Meal, type Nutrition as NutritionData,
 } from '@/lib/sync/nutrition';
+import { useText } from '../strings';
 import { useNow } from '../use-now';
 import { Card } from '../ui';
 import { AddFoodSheet } from './AddFood';
@@ -46,6 +47,7 @@ export function Nutrition({
   onChange: (type: string, payload: unknown) => Promise<void>;
 }) {
   const now = useNow();
+  const s = useText();
   const todayISO = localTodayISO(data.profile.timezone, DateTime.fromJSDate(now));
   /** null = hoy, así cambia solo a medianoche. */
   const [chosen, setChosen] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export function Nutrition({
     return (
       <>
         <h1 className="text-2xl font-bold tracking-tight">{t.nutrition.title}</h1>
-        <Card className="text-sm text-muted-foreground">Conectate a internet una vez para bajar tus comidas. Después las ves y las anotás sin señal.</Card>
+        <Card className="text-sm text-muted-foreground">{s.needOnce}</Card>
       </>
     );
   }
@@ -74,7 +76,7 @@ export function Nutrition({
       setError(null);
       return true;
     } catch {
-      setError('No se pudo guardar en el teléfono. Probá de nuevo.');
+      setError(s.saveFailed);
       return false;
     }
   }
@@ -85,7 +87,7 @@ export function Nutrition({
     for (let i = 0; i < items.length; i += MAX_ITEMS) {
       const batch = foodAddSchema.safeParse({ date, items: items.slice(i, i + MAX_ITEMS) });
       if (!batch.success) {
-        setError('Hay un valor que no es válido. Revisalo.');
+        setError(s.invalidValue);
         return false;
       }
       batches.push(batch.data);
@@ -97,7 +99,7 @@ export function Nutrition({
   async function update(entryId: string, change: { quantity?: number; unit?: string; mealType?: Meal }): Promise<boolean> {
     const payload = foodUpdateSchema.safeParse({ entryId, ...change });
     if (!payload.success) {
-      setError('Hay un valor que no es válido. Revisalo.');
+      setError(s.invalidValue);
       return false;
     }
     return save(FOOD_UPDATE_OP, payload.data);
@@ -114,7 +116,7 @@ export function Nutrition({
       entry={entry}
       target={day.target}
       pending={false}
-      badge={pending.has(entry.id) ? <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning">sin subir</span> : null}
+      badge={pending.has(entry.id) ? <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning">{s.pendingBadge}</span> : null}
       onSave={async (quantity, unit) => (quantity === entry.quantity && unit === entry.unit ? true : update(entry.id, { quantity, unit }))}
       onMove={(mealType) => void update(entry.id, { mealType })}
       onDuplicate={() => duplicate(entry.id)}
@@ -133,7 +135,7 @@ export function Nutrition({
 
       <DayNavBar dateISO={date} todayISO={todayISO} minISO={nutrition.since} onGo={(iso) => setChosen(iso === todayISO ? null : iso)} />
       {date === nutrition.since ? (
-        <p className="text-center text-xs text-muted-foreground">La app guarda los últimos 60 días. Los anteriores están en la web.</p>
+        <p className="text-center text-xs text-muted-foreground">{s.lastDays}</p>
       ) : null}
       {error ? <Card className="border-warning text-sm text-warning">{error}</Card> : null}
 
@@ -240,6 +242,7 @@ function CopyDaySheet({
   onAdd: (items: AddItem[]) => Promise<boolean>;
   onClose: () => void;
 }) {
+  const s = useText();
   const [from, setFrom] = useState(() => addDaysISO(toDate, -1));
   const [busy, setBusy] = useState(false);
   const source = nutrition.entries.filter((e) => e.date === from).sort((a, b) => a.position - b.position);
@@ -254,7 +257,7 @@ function CopyDaySheet({
           <Label>{t.nutrition.copyFromLabel}</Label>
           <Input type="date" value={from} min={nutrition.since} max={todayISO} onChange={(e) => setFrom(e.target.value)} />
         </div>
-        {usable && source.length === 0 ? <p className="text-sm text-muted-foreground">Ese día no tiene nada anotado.</p> : null}
+        {usable && source.length === 0 ? <p className="text-sm text-muted-foreground">{s.emptyDay}</p> : null}
         <Button
           disabled={busy || !usable || source.length === 0}
           onClick={async () => {

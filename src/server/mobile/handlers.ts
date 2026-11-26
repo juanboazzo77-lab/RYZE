@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { completedWorkoutSchema, WORKOUT_OP } from '@/lib/sync/workout';
+import { prefsSchema, PREFS_OP } from '@/lib/sync/data';
 import { buildFoodHandlers } from './food-handlers';
 import { buildProgressHandlers } from './progress-handlers';
 import { checkDay } from './check-day';
@@ -12,7 +13,7 @@ import { RejectedOperation, type Handler } from './apply';
  * cualquiera.
  */
 
-export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise' | 'food' | 'foodEntry' | 'dailyActivity'>;
+export type MobileTx = Pick<PrismaClient, 'weightEntry' | 'syncOp' | 'workout' | 'workoutPlan' | 'exercise' | 'food' | 'foodEntry' | 'dailyActivity' | 'profile'>;
 
 const MAX_DURATION_SECONDS = 24 * 60 * 60;
 
@@ -26,6 +27,15 @@ export function buildHandlers({ userId, timezone }: { userId: string; timezone: 
   return {
     ...buildFoodHandlers({ userId, timezone }),
     ...buildProgressHandlers({ userId, timezone }),
+
+    /** Idioma y unidades. El perfil no pasa por el acotado por usuario: se usa siempre el id de la sesión. */
+    [PREFS_OP]: async (tx, { payload, at }) => {
+      const p = prefsSchema.safeParse(payload);
+      if (!p.success) throw new RejectedOperation('INVALID');
+      const current = await tx.profile.findUnique({ where: { id: userId }, select: { prefsEditedAt: true } });
+      if (!current || (current.prefsEditedAt && current.prefsEditedAt.getTime() > at.getTime())) return;
+      await tx.profile.update({ where: { id: userId }, data: { ...p.data, prefsEditedAt: at } });
+    },
 
     /** Un entrenamiento terminado en la app, entero. */
     [WORKOUT_OP]: async (tx, { payload, at }) => {

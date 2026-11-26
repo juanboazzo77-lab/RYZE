@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 /** Claro, oscuro o como el teléfono, igual que en la web. Es una preferencia: si no se puede guardar, no pasa nada. */
 export const THEMES = ['light', 'dark', 'system'] as const;
@@ -22,22 +22,34 @@ function apply(theme: Theme) {
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
 }
 
+// Uno solo para toda la app: el botón de arriba y los ajustes muestran siempre lo mismo.
+let current: Theme = 'system';
+const listeners = new Set<() => void>();
+
+function setTheme(theme: Theme) {
+  current = theme;
+  apply(theme);
+  try {
+    localStorage.setItem(KEY, theme);
+  } catch {
+    /* sólo es una preferencia */
+  }
+  listeners.forEach((l) => l());
+}
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => void listeners.delete(listener);
+};
+
 /** Antes del primer dibujo, para que no haya un destello del tema equivocado. */
-export const applyStoredTheme = () => apply(read());
+export function applyStoredTheme() {
+  current = read();
+  apply(current);
+  systemDark().addEventListener('change', () => apply(current));
+}
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(read);
-  useEffect(() => {
-    apply(theme);
-    try {
-      localStorage.setItem(KEY, theme);
-    } catch {
-      /* sólo es una preferencia */
-    }
-    const media = systemDark();
-    const onChange = () => apply(theme);
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, [theme]);
-  return { theme, next: () => setTheme((t) => THEMES[(THEMES.indexOf(t) + 1) % THEMES.length]!) };
+  const theme = useSyncExternalStore(subscribe, () => current);
+  return { theme, setTheme, next: () => setTheme(THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]!) };
 }

@@ -4,6 +4,7 @@ import { WEEK_BUTTONS, WeekLayout } from '@/features/training/week-layout';
 import type { Dictionary } from '@/i18n';
 import type { AppData } from '@/lib/sync/data';
 import { weekFromTraining } from '@/lib/sync/week';
+import { useText } from '../strings';
 import { useNow } from '../use-now';
 import { Card } from '../ui';
 
@@ -22,6 +23,7 @@ export function Train({
   onHistory: () => void;
 }) {
   const now = useNow();
+  const s = useText();
   const training = data.training;
   const plan = training?.plan ?? null;
   const week = plan && training ? weekFromTraining(plan, training.recentWorkouts, data.profile, now) : null;
@@ -36,7 +38,7 @@ export function Train({
         </Button>
       </div>
       {!training ? (
-        <Card className="text-sm text-muted-foreground">Conectate a internet una vez para bajar tu rutina. Después la ves sin señal.</Card>
+        <Card className="text-sm text-muted-foreground">{s.needOnce}</Card>
       ) : !plan || !week ? (
         <Card className="text-sm text-muted-foreground">{t.training.noPlans}</Card>
       ) : (

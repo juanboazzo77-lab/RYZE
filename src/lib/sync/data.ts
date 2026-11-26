@@ -148,6 +148,12 @@ function withHistory(data: Record<string, unknown>, workout: CompletedWorkout): 
   return out;
 }
 
+/** Idioma y unidades cambiados desde la app. */
+export const PREFS_OP = 'prefs.update';
+export const prefsSchema = z
+  .object({ locale: z.enum(['ES', 'EN', 'PT', 'FR', 'DE', 'IT']).optional(), unitSystem: z.enum(['METRIC', 'IMPERIAL']).optional() })
+  .refine((v) => v.locale || v.unitSystem, { message: 'sin cambios' });
+
 const activityReducer: Reducer = (data, op) => {
   const days = z.array(activityDaySchema).safeParse(data.activity);
   return days.success ? { ...data, activity: applyActivityOp(days.data, op.type, op.payload) } : data;
@@ -155,6 +161,10 @@ const activityReducer: Reducer = (data, op) => {
 
 /** Cómo se ve cada cambio todavía sin subir. Aplicarlo dos veces da lo mismo. */
 export const reducers: Record<string, Reducer> = {
+  [PREFS_OP]: (data, op) => {
+    const p = prefsSchema.safeParse(op.payload);
+    return p.success && data.profile ? { ...data, profile: { ...(data.profile as object), ...p.data } } : data;
+  },
   [ACTIVITY_LOG_OP]: activityReducer,
   [ACTIVITY_DELETE_OP]: activityReducer,
   [WEIGHT_DELETE_OP]: (data, op) => {

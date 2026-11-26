@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { loadAccount, type Account } from './account';
 import { Main } from './screens/Main';
 import { Login } from './screens/Login';
+import { useText } from './strings';
 import { Button, Card, Screen } from './ui';
 
 type State = { step: 'opening' } | { step: 'error' } | { step: 'ready'; account: Account | null };
@@ -9,6 +10,7 @@ type State = { step: 'opening' } | { step: 'error' } | { step: 'ready'; account:
 /** Al abrir se mira en el teléfono quién tiene la sesión: no hace falta internet. */
 export function App() {
   const [state, setState] = useState<State>({ step: 'opening' });
+  const s = useText();
 
   const open = useCallback(() => {
     setState({ step: 'opening' });
@@ -18,13 +20,13 @@ export function App() {
   }, []);
   useEffect(open, [open]);
 
-  if (state.step === 'opening') return <Screen><p className="text-sm text-muted-foreground">Abriendo…</p></Screen>;
+  if (state.step === 'opening') return <Screen><p className="text-sm text-muted-foreground">{s.opening}</p></Screen>;
   if (state.step === 'error') {
     return (
       <Screen>
         <Card className="space-y-2 border-warning text-sm">
-          <p>No se pudo abrir tu cuenta guardada. No se borró nada.</p>
-          <Button variant="outline" onClick={open}>Probar de nuevo</Button>
+          <p>{s.openError}</p>
+          <Button variant="outline" onClick={open}>{s.tryAgain}</Button>
         </Card>
       </Screen>
     );

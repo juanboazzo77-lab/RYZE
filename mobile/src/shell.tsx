@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import type { Dictionary } from '@/i18n';
 import { cn } from '@/lib/utils';
 import logo from '../../public/brand/logo.png';
+import { useText } from './strings';
 import { useTheme } from './theme';
 
 export type Tab = (typeof NAV_ITEMS)[number]['labelKey'];
@@ -26,6 +27,7 @@ export function Shell({
   children: ReactNode;
 }) {
   const { theme, next } = useTheme();
+  const s = useText();
   const ThemeIcon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Monitor;
   return (
     <div className="flex min-h-screen flex-col">
@@ -37,7 +39,7 @@ export function Shell({
           <span className="text-sm font-bold tracking-tight">FORZA AI</span>
         </button>
         <div className="ml-auto flex items-center gap-1">
-          <Button variant="ghost" size="icon" aria-label="Cambiar tema" onClick={next}>
+          <Button variant="ghost" size="icon" aria-label={s.changeTheme} onClick={next}>
             <ThemeIcon className="size-4" />
           </Button>
           <Button variant="ghost" size="icon" aria-label={t.nav.settings} onClick={onSettings}>

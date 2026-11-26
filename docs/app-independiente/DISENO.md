@@ -128,6 +128,24 @@ Se publica cuando está completa.
 - Todavía no está en la app: crear un alimento nuevo para la biblioteca (a mano se cargan sólo los totales), guardar una
   comida como frecuente, el historial y el plan con IA. El escáner, la foto y "describir" necesitan internet (etapa 4).
 
+## Progreso y ajustes sin conexión
+
+- Operaciones: `weight.delete`, `activity.log`, `activity.delete` (`src/lib/sync/progress.ts`) y `prefs.update`
+  (idioma y unidades). Para el "gana el cambio más tardío": `daily_activity.edited_at` y `profile.prefs_edited_at`
+  (la web lo marca en `updateAppearance`).
+- Se bajan además: objetivo de peso, 30 días de pasos, los entrenamientos de las últimas semanas resumidos, los 10
+  récords recientes, todos los días entrenados (constancia) y los logros. Los logros y récords los calcula el servidor:
+  sin señal se ven como quedaron. Un entrenamiento terminado sin señal sí cuenta enseguida en estadísticas y constancia.
+- **Plan:** qué se puede ver lo decide el servidor (`access` en la descarga, `src/server/mobile/access.ts`) con la misma
+  regla que la web (`src/server/effective-entitlement.ts`). Hoy sólo Estadísticas depende del plan. Si viene de la prueba
+  gratis, sin señal también se termina a su hora.
+- Cuentas compartidas con la web: `src/lib/progress/summary.ts`, `src/lib/stats/compute.ts`, `src/lib/activity/view.ts`,
+  `src/features/consistency/view.ts`.
+- Textos: lo que existe en la web sale de `src/i18n`; lo propio de la app está en `mobile/src/strings.ts` (6 idiomas;
+  un texto nuevo no compila si falta en alguno).
+- Con internet (etapa 4): chequeo semanal, fotos, amigos, reporte, perfil, objetivos, notificaciones, plan, gimnasio y
+  cuenta. Ojo para publicar en las tiendas: hace falta poder **eliminar la cuenta desde la app**.
+
 ## Armar las versiones de prueba (paso 0.6)
 
 `capacitor.config.ts` arma la app independiente sólo con `FORZA_APP=nueva`; sin eso arma la actual.

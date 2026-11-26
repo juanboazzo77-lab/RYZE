@@ -19,10 +19,9 @@ import type { QueuedOperation } from '@/lib/sync/engine';
 import { ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from '@/lib/sync/progress';
 import { weightUnitLabel } from '@/lib/units';
 import { cn } from '@/lib/utils';
+import { useText } from '../strings';
 import { useNow } from '../use-now';
 import { Section, type ProgressSection } from './ProgressSections';
-
-const pendingBadge = <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold normal-case text-warning">sin subir</span>;
 
 const datesOf = (outbox: QueuedOperation[], types: string[]) =>
   new Set(outbox.filter((o) => types.includes(o.type)).map((o) => (o.payload as { date: string }).date));
@@ -42,6 +41,8 @@ export function Progress({
   onChange: (type: string, payload: unknown) => Promise<void>;
 }) {
   const now = useNow();
+  const s = useText();
+  const pendingBadge = <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold normal-case text-warning">{s.pendingBadge}</span>;
   const todayISO = localTodayISO(data.profile.timezone, DateTime.fromJSDate(now));
   const { weekStart, unitSystem } = data.profile;
   const currentWeekKey = weekStartISO(todayISO, weekStart);
@@ -63,7 +64,7 @@ export function Progress({
       toast.success(done);
       return true;
     } catch {
-      toast.error('No se pudo guardar en el teléfono. Probá de nuevo.');
+      toast.error(s.saveFailed);
       return false;
     }
   }
@@ -129,7 +130,7 @@ export function Progress({
             </button>
           ))}
         </div>
-        <p className="text-center text-xs text-muted-foreground">Chequeo, fotos, amigos y reporte necesitan internet: llegan en la etapa 4.</p>
+        <p className="text-center text-xs text-muted-foreground">{s.needsInternetSections}</p>
       </div>
 
       <WeightHeadline t={t} summary={summary} unitSystem={unitSystem} />

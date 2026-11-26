@@ -261,6 +261,8 @@ model Profile {
   injuries               String?
   locale                 Locale           @default(ES)
   unitSystem             UnitSystem       @default(METRIC) @map("unit_system")
+  /// Cuándo la persona cambió idioma o unidades (web o app): gana el cambio hecho más tarde.
+  prefsEditedAt DateTime? @map("prefs_edited_at")
   timezone               String           @default("America/Argentina/Buenos_Aires")
   weekStart              Int              @default(1) @map("week_start")
   onboardingCompletedAt  DateTime?        @map("onboarding_completed_at")

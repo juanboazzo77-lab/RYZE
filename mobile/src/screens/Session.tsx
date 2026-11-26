@@ -15,6 +15,8 @@ import {
 import { fireConfetti } from '@/lib/confetti';
 import { cn } from '@/lib/utils';
 import { uuid } from '@/lib/sync/engine';
+import { interpolate } from '@/i18n/interpolate';
+import { useAppLocale, useText } from '../strings';
 
 type PlanDay = TrainingPlan['days'][number];
 
@@ -118,6 +120,7 @@ export function Session({
   onFinish: (effort: number | null) => Promise<void>;
 }) {
   const ts = t.training.session;
+  const s = useText();
   const [now, setNow] = useState(() => Date.now());
   const [finishOpen, setFinishOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -202,7 +205,7 @@ export function Session({
 
       {saveError ? (
         <p role="alert" className="bg-warning/15 px-3 py-1.5 text-center text-xs font-medium text-warning">
-          No se pudo guardar en el teléfono. No cierres la app y liberá espacio.
+          {s.sessionSaveFailed}
         </p>
       ) : null}
 
@@ -384,6 +387,7 @@ function FinishDialog({
   onDiscard: () => void;
 }) {
   const [effort, setEffort] = useState<number | null>(null);
+  const s = useText();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   return (
@@ -394,24 +398,24 @@ function FinishDialog({
         </DialogHeader>
         {noneDone ? (
           <p className="text-sm text-warning">
-            Todavía no marcaste ninguna serie como hecha. Si finalizás ahora, el día queda como completado sin nada anotado.
+            {s.nothingDone}
           </p>
         ) : null}
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">{t.training.session.effort}</p>
           <div className="flex flex-wrap gap-1.5">
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <button key={n} type="button" onClick={() => setEffort(n === effort ? null : n)} aria-pressed={effort === n} aria-label={`Esfuerzo ${n}`} className={cn('size-9 rounded-md border text-sm font-medium tabular-nums', effort === n && 'border-primary bg-primary text-primary-foreground')}>
+              <button key={n} type="button" onClick={() => setEffort(n === effort ? null : n)} aria-pressed={effort === n} aria-label={interpolate(s.effortLabel, { n })} className={cn('size-9 rounded-md border text-sm font-medium tabular-nums', effort === n && 'border-primary bg-primary text-primary-foreground')}>
                 {n}
               </button>
             ))}
           </div>
         </div>
-        {failed ? <p role="alert" className="text-sm text-warning">No se pudo guardar en el teléfono. El entrenamiento sigue abierto: probá de nuevo.</p> : null}
+        {failed ? <p role="alert" className="text-sm text-warning">{s.finishSaveFailed}</p> : null}
         {noneDone ? (
           // Sin nada anotado lo fácil es seguir: finalizar vacío tiene que ser una decisión.
           <Button disabled={busy} onClick={() => onOpenChange(false)}>
-            Seguir entrenando
+            {s.keepTraining}
           </Button>
         ) : null}
         <div className="flex gap-2">
@@ -431,7 +435,7 @@ function FinishDialog({
               });
             }}
           >
-            {busy ? t.common.loading : noneDone ? 'Finalizar igual' : t.training.session.finish}
+            {busy ? t.common.loading : noneDone ? s.finishAnyway : t.training.session.finish}
           </Button>
         </div>
       </DialogContent>
@@ -443,10 +447,12 @@ function FinishDialog({
 export function Summary({ t, workout, pending, onClose }: { t: Dictionary; workout: CompletedWorkout; pending: boolean; onClose: () => void }) {
   const minutes = Math.max(1, Math.round((Date.parse(workout.finishedAt) - Date.parse(workout.startedAt)) / 60000));
   const { done, total } = progress(workout);
+  const s = useText();
+  const locale = useAppLocale();
   const stats = [
-    { label: 'Duración', value: `${minutes} min` },
-    { label: 'Series', value: `${done}/${total}` },
-    { label: 'Volumen', value: `${volumeKg(workout).toLocaleString('es-AR')} kg` },
+    { label: s.duration, value: `${minutes} min` },
+    { label: s.sets, value: `${done}/${total}` },
+    { label: s.volume, value: `${volumeKg(workout).toLocaleString(locale)} kg` },
   ];
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-background px-6 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-center">
@@ -454,19 +460,19 @@ export function Summary({ t, workout, pending, onClose }: { t: Dictionary; worko
         <Check className="size-10" strokeWidth={3} />
       </span>
       <div>
-        <h1 className="text-2xl font-extrabold">¡Entrenamiento terminado!</h1>
+        <h1 className="text-2xl font-extrabold">{s.workoutDone}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{workout.name}</p>
       </div>
       <div className="grid w-full max-w-sm grid-cols-3 gap-2">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border bg-card p-3">
-            <p className="text-lg font-bold tabular-nums">{s.value}</p>
-            <p className="text-xs text-muted-foreground">{s.label}</p>
+        {stats.map((item) => (
+          <div key={item.label} className="rounded-xl border bg-card p-3">
+            <p className="text-lg font-bold tabular-nums">{item.value}</p>
+            <p className="text-xs text-muted-foreground">{item.label}</p>
           </div>
         ))}
       </div>
       <p className="max-w-sm text-sm text-muted-foreground" role="status">
-        {pending ? 'Quedó guardado en el teléfono. Se sube solo cuando haya señal.' : 'Guardado y subido a tu cuenta.'}
+        {pending ? s.savedLocally : s.savedAndUploaded}
       </p>
       <Button size="lg" className="w-full max-w-sm" onClick={onClose}>
         {t.training.title}

@@ -1,9 +1,11 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useOnline } from './platform/use-online';
+import { useText } from './strings';
 
 export function Screen({ children }: { children: ReactNode }) {
   const online = useOnline();
+  const s = useText();
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(1.5rem+env(safe-area-inset-top))]">
       <header className="flex items-center justify-between gap-3">
@@ -12,7 +14,7 @@ export function Screen({ children }: { children: ReactNode }) {
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${online ? 'bg-primary/15 text-primary' : 'bg-warning/15 text-warning'}`}
         >
           {online ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
-          {online ? 'Con conexión' : 'Sin conexión'}
+          {online ? s.withSignal : s.noSignal}
         </span>
       </header>
       {children}

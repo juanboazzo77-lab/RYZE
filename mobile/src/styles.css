@@ -21,6 +21,8 @@
 @source '../../src/features/progress/weight-stats.tsx';
 @source '../../src/features/progress/weight-week-list.tsx';
 @source '../../src/features/activity/activity-card.tsx';
+@source '../../src/features/settings/appearance-view.tsx';
+@source '../../src/components/form';
 @source '../../src/features/stats/stats-body.tsx';
 @source '../../src/features/consistency';
 @source '../../src/features/gamification/achievements-grid.tsx';

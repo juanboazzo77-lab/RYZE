@@ -65,6 +65,8 @@ export async function updateAppearance(raw: AppearancePayload): Promise<ActionRe
     data: {
       ...(parsed.data.locale ? { locale: parsed.data.locale } : {}),
       ...(parsed.data.unitSystem ? { unitSystem: parsed.data.unitSystem } : {}),
+      // Para que un cambio hecho antes en la app sin señal no pise éste.
+      prefsEditedAt: new Date(),
     },
   });
   revalidatePath('/', 'layout');

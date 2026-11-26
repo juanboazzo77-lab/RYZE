@@ -6,6 +6,7 @@ import { ImprovementBadges, PrBadges } from '@/features/training/progress-badges
 import type { Dictionary } from '@/i18n';
 import type { AppData, PastWorkout } from '@/lib/sync/data';
 import { compareToPrev, sessionMetrics } from '@/lib/training/progress';
+import { useText } from '../strings';
 
 /** El historial y el detalle de cada entrenamiento, con el mismo diseño que la web, sin conexión. */
 
@@ -19,13 +20,15 @@ const done = (sets: PastWorkout['exercises'][number]['sets']) => sets.filter((s)
 const volumeOf = (w: PastWorkout) => sessionMetrics(w.exercises.flatMap((e) => done(e.sets))).volume;
 
 function Pending() {
-  return <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-semibold text-warning">sin subir</span>;
+  const s = useText();
+  return <span className="shrink-0 rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-semibold text-warning">{s.pendingBadge}</span>;
 }
 
 export function History({ t, data, pendingIds, onBack }: { t: Dictionary; data: AppData; pendingIds: Set<string>; onBack: () => void }) {
   const locale = data.profile.locale.toLowerCase();
   const items = data.training?.past;
   const [openId, setOpenId] = useState<string | null>(null);
+  const s = useText();
   const open = items?.find((w) => w.id === openId) ?? null;
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export function History({ t, data, pendingIds, onBack }: { t: Dictionary; data: 
       </button>
       <h1 className="text-2xl font-bold tracking-tight">{t.training.history.title}</h1>
       {!items ? (
-        <Card className="p-4 text-sm text-muted-foreground">Conectate a internet una vez para bajar tu historial.</Card>
+        <Card className="p-4 text-sm text-muted-foreground">{s.needOnce}</Card>
       ) : items.length === 0 ? (
         <Card className="p-4 text-sm text-muted-foreground">{t.training.history.empty}</Card>
       ) : (
@@ -90,6 +93,7 @@ function Detail({
   pending: boolean;
   onBack: () => void;
 }) {
+  const s = useText();
   const prTypes = [...new Set(workout.records.map((r) => r.type))];
   const prsOf = (exerciseId: string) => workout.records.filter((r) => r.exerciseId === exerciseId).map((r) => r.type);
   /** La vez anterior de ese ejercicio, entre lo que está guardado en el teléfono. */
@@ -118,16 +122,16 @@ function Detail({
           {new Date(workout.finishedAt).toLocaleString(locale, { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: timezone })}
         </p>
         <h1 className="text-2xl font-bold tracking-tight">{workout.name}</h1>
-        {pending ? <p className="mt-1 text-xs text-warning">Todavía sin subir. Los récords se calculan cuando haya señal.</p> : null}
+        {pending ? <p className="mt-1 text-xs text-warning">{s.historyPending}</p> : null}
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        {stats.map((s) => (
-          <Card key={s.label}>
+        {stats.map((item) => (
+          <Card key={item.label}>
             <CardContent className="flex flex-col items-center gap-1 px-1 py-4 text-center">
-              {s.icon}
-              <span className="text-lg font-bold tabular-nums">{s.value}</span>
-              <span className="text-xs text-muted-foreground">{s.label}</span>
+              {item.icon}
+              <span className="text-lg font-bold tabular-nums">{item.value}</span>
+              <span className="text-xs text-muted-foreground">{item.label}</span>
             </CardContent>
           </Card>
         ))}

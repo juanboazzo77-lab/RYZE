@@ -10,6 +10,7 @@ import { FoodResultList, QuantityView } from '@/features/nutrition/food-pick';
 import type { Dictionary } from '@/i18n';
 import { searchLibrary } from '@/lib/nutrition/food-search';
 import { uuid } from '@/lib/sync/engine';
+import { useText } from '../strings';
 import { itemFromEntry, itemFromFood, itemFromManual, recentFoods, type AddItem, type LibraryFood, type Meal, type Nutrition, type RecentFood } from '@/lib/sync/nutrition';
 
 type Picked = { food: LibraryFood; initial?: { quantity: number; unit: string } } | { recent: RecentFood };
@@ -32,6 +33,7 @@ export function AddFoodSheet({
   onClose: () => void;
 }) {
   const td = t.nutrition.dialog;
+  const s = useText();
   const [picked, setPicked] = useState<Picked | null>(null);
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
@@ -114,7 +116,7 @@ export function AddFoodSheet({
                   <p className="py-6 text-center text-sm text-muted-foreground">{td.searchHint}</p>
                 ) : (
                   <>
-                    <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recientes</p>
+                    <p className="pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{s.recents}</p>
                     <ul className="divide-y">
                       {recents.map((r) => (
                         <li key={r.key}>

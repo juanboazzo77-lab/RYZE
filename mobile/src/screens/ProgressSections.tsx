@@ -9,6 +9,7 @@ import { addDaysISO, localTodayISO } from '@/lib/date';
 import { computeStats } from '@/lib/stats/compute';
 import type { AppData } from '@/lib/sync/data';
 import { hasStats } from '@/lib/sync/progress';
+import { useText } from '../strings';
 import { useNow } from '../use-now';
 import { Card } from '../ui';
 
@@ -24,8 +25,6 @@ function Back({ label, onBack }: { label: string; onBack: () => void }) {
     </button>
   );
 }
-
-const MISSING = <Card className="text-sm text-muted-foreground">Conectate a internet una vez para bajar estos datos. Después los ves sin señal.</Card>;
 
 /** Las comidas de los últimos 30 días sumadas por día, como las mira la web. */
 function foodByDay(data: AppData, todayISO: string) {
@@ -53,11 +52,13 @@ export function Section({
   onBack: () => void;
 }) {
   const now = useNow();
+  const s = useText();
+  const missing = <Card className="text-sm text-muted-foreground">{s.needOnce}</Card>;
   const todayISO = localTodayISO(data.profile.timezone, DateTime.fromJSDate(now));
   const back = <Back label={t.progress.title} onBack={onBack} />;
 
   if (section === 'consistency') {
-    if (!data.trainedDays) return <>{back}{MISSING}</>;
+    if (!data.trainedDays) return <>{back}{missing}</>;
     return (
       <ConsistencyBody
         t={t}
@@ -82,7 +83,7 @@ export function Section({
             items={data.achievements.map((a) => ({ ...a, unlockedAt: a.unlockedAt ? new Date(a.unlockedAt) : null }))}
           />
         ) : (
-          MISSING
+          missing
         )}
       </div>
     );
@@ -94,7 +95,7 @@ export function Section({
       <h1 className="text-2xl font-bold tracking-tight">{t.stats.title}</h1>
     </>
   );
-  if (!data.stats || !data.access) return <div className="space-y-4">{header}{MISSING}</div>;
+  if (!data.stats || !data.access) return <div className="space-y-4">{header}{missing}</div>;
   if (!hasStats(data.access, now)) {
     // La misma regla que la web. Sin botón de compra: los pagos llegan a la app en la etapa 4.
     return (
