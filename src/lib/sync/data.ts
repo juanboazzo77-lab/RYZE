@@ -12,6 +12,41 @@ export const weightSchema = z.object({
   note: z.string().nullable(),
 });
 
+export const planExerciseSchema = z.object({
+  id: z.string(),
+  exerciseId: z.string(),
+  name: z.string(),
+  type: z.enum(['STRENGTH', 'CARDIO']),
+  primaryMuscle: z.string(),
+  targetSets: z.number().int(),
+  targetRepsMin: z.number().nullable(),
+  targetRepsMax: z.number().nullable(),
+  targetRir: z.number().nullable(),
+  restSeconds: z.number().nullable(),
+  targetDurationSec: z.number().nullable(),
+  targetDistanceMeters: z.number().nullable(),
+  notes: z.string().nullable(),
+});
+
+export const trainingSchema = z.object({
+  /** La rutina activa, o null si no tiene. */
+  plan: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      weekShift: z.number().int(),
+      /** yyyy-mm-dd de la semana en la que se pidió correr los días. */
+      weekShiftStart: z.string().nullable(),
+      days: z.array(
+        z.object({ id: z.string(), name: z.string(), weekday: z.number().int().nullable(), exercises: z.array(planExerciseSchema) }),
+      ),
+    })
+    .nullable(),
+  /** Entrenamientos terminados hace poco. Qué está "hecho esta semana" se calcula en el teléfono, así se reinicia solo
+   * al empezar la semana siguiente aunque no haya señal. */
+  recentWorkouts: z.array(z.object({ planDayId: z.string(), finishedAt: z.string() })),
+});
+
 export const appDataSchema = z.object({
   profile: z.object({
     name: z.string().nullable(),
@@ -23,9 +58,14 @@ export const appDataSchema = z.object({
   }),
   /** Del más nuevo al más viejo. */
   weights: z.array(weightSchema),
+  /** Falta en los datos guardados por versiones anteriores de la app, hasta que vuelven a sincronizar. */
+  training: trainingSchema.optional(),
 });
 
 export type AppData = z.infer<typeof appDataSchema>;
+export type Training = z.infer<typeof trainingSchema>;
+export type TrainingPlan = NonNullable<Training['plan']>;
+export type PlanExerciseRow = z.infer<typeof planExerciseSchema>;
 export type WeightRow = AppData['weights'][number];
 
 const weightPayload = z.object({ date: weightSchema.shape.date, weightKg: z.number(), note: z.string().optional() });

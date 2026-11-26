@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadAccount, type Account } from './account';
-import { Home } from './screens/Home';
+import { Main } from './screens/Main';
 import { Login } from './screens/Login';
 import { Button, Card, Screen } from './ui';
 
@@ -31,7 +31,7 @@ export function App() {
   }
   const { account } = state;
   return account ? (
-    <Home key={account.userId} account={account} onSignedOut={() => setState({ step: 'ready', account: null })} />
+    <Main key={account.userId} account={account} onSignedOut={() => setState({ step: 'ready', account: null })} />
   ) : (
     <Login onSignedIn={(next) => setState({ step: 'ready', account: next })} />
   );

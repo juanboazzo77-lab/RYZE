@@ -2,16 +2,9 @@ import 'server-only';
 import type { ExerciseType, MuscleGroup, Profile, WorkoutStatus } from '@prisma/client';
 import { forUser } from '@/server/user-db';
 import { addDaysISO, isoToUtcDate, localTodayISO, weekStartISO } from '@/lib/date';
-import { activeWeekShift, doneWeekdays, weekdayThisWeek } from './weekday';
+import { overviewDays, type OverviewDay } from './overview';
 
-export interface OverviewDay {
-  id: string;
-  name: string;
-  weekday: number | null;
-  exerciseCount: number;
-  /** Ya se completó este día de la rutina en la semana en curso (vuelve a false al empezar la semana siguiente). */
-  done: boolean;
-}
+export type { OverviewDay };
 export interface OverviewPlan {
   id: string;
   name: string;
@@ -58,24 +51,22 @@ export async function getTrainingOverview(profile: Profile): Promise<TrainingOve
     }),
   ]);
 
-  const shift = activePlan
-    ? activeWeekShift(activePlan, weekStart)
-    : 0;
-  const done = doneWeekdays(doneRows, profile.timezone, weekStart);
-
   return {
     activeWorkout: activeWorkout ?? null,
     activePlan: activePlan
       ? {
           id: activePlan.id,
           name: activePlan.name,
-          days: activePlan.days.map((d) => ({
-            id: d.id,
-            name: d.name,
-            weekday: weekdayThisWeek(d, shift, done),
-            exerciseCount: d._count.exercises,
-            done: done.has(d.id),
-          })),
+          days: overviewDays(
+            {
+              weekShift: activePlan.weekShift,
+              weekShiftStart: activePlan.weekShiftStart,
+              days: activePlan.days.map((d) => ({ id: d.id, name: d.name, weekday: d.weekday, exerciseCount: d._count.exercises })),
+            },
+            doneRows,
+            profile.timezone,
+            weekStart,
+          ),
         }
       : null,
     plans: plans.map((p) => ({

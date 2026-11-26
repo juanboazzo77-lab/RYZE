@@ -1,3 +1,6 @@
 /* Los mismos colores y estilos que la web: un solo lugar para el diseño. */
 @import '../../src/app/globals.css';
 @source '.';
+/* Las piezas de diseño que se comparten con la web. */
+@source '../../src/components/ui';
+@source '../../src/features/training/week-layout.tsx';
