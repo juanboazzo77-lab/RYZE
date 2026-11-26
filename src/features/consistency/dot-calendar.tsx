@@ -1,4 +1,4 @@
-import type { YearGridView } from './queries';
+import type { YearGridView } from './view';
 
 const STEP = 12;
 const RADIUS = 4.3;

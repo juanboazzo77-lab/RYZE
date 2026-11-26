@@ -191,6 +191,11 @@ function trialEndMs(entitlement: TrialInfo): number {
   return Math.max(base, entitlement.bonusUntil?.getTime() ?? 0);
 }
 
+/** Cuándo se termina la prueba gratis, para quien está en ella. Null si no está en prueba. */
+export function trialEndsAt(entitlement: TrialInfo): Date | null {
+  return !entitlement.gymAccess && isInTrial(entitlement) ? new Date(trialEndMs(entitlement)) : null;
+}
+
 /** ¿La cuenta FREE todavía está dentro de la ventana de prueba gratis? */
 export function isInTrial(entitlement: TrialInfo): boolean {
   if (entitlement.tier !== 'FREE') return false;

@@ -1,13 +1,16 @@
+import { DateTime } from 'luxon';
 import { z } from 'zod';
 import type { Reducer } from './engine';
-import { activityDaySchema, applyActivityOp, dayOnlySchema, weightGoalSchema, ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from './progress';
+import { accessSchema, achievementSchema, activityDaySchema, addToStats, applyActivityOp, dayOnlySchema, statsDataSchema, weightGoalSchema, ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from './progress';
 import { applyFoodOp, FOOD_ADD_OP, FOOD_DELETE_OP, FOOD_UPDATE_OP, nutritionSchema } from './nutrition';
-import { applyCompleted, completedWorkoutSchema, WORKOUT_OP } from './workout';
+import { applyCompleted, completedWorkoutSchema, WORKOUT_OP, type CompletedWorkout } from './workout';
 
 /**
  * Los datos de la persona que la app guarda en el teléfono: la misma forma en el servidor (que los arma) y en la app
  * (que los muestra). Cada etapa suma lo que necesita.
  */
+
+const dateISOSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const weightSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -109,6 +112,12 @@ export const appDataSchema = z.object({
   goal: weightGoalSchema.nullable().optional(),
   /** Pasos de los últimos días, del más viejo al más nuevo. */
   activity: z.array(activityDaySchema).optional(),
+  access: accessSchema.optional(),
+  stats: statsDataSchema.optional(),
+  /** Todos los días (en la zona de la persona) en que terminó al menos un entrenamiento. */
+  trainedDays: z.array(dateISOSchema).optional(),
+  /** Los calcula el servidor: sin señal se ven como quedaron la última vez. */
+  achievements: z.array(achievementSchema).optional(),
 });
 
 export type AppData = z.infer<typeof appDataSchema>;
@@ -124,6 +133,20 @@ const foodReducer: Reducer = (data, op) => {
   const nutrition = nutritionSchema.safeParse(data.nutrition);
   return nutrition.success ? { ...data, nutrition: applyFoodOp(nutrition.data, op.type, op.payload) } : data;
 };
+
+/** El entrenamiento recién terminado también cuenta en las estadísticas y en el calendario de constancia. */
+function withHistory(data: Record<string, unknown>, workout: CompletedWorkout): Record<string, unknown> {
+  const out = { ...data };
+  const stats = statsDataSchema.safeParse(data.stats);
+  if (stats.success) out.stats = addToStats(stats.data, workout);
+  const days = z.array(dateISOSchema).safeParse(data.trainedDays);
+  const timezone = (data.profile as { timezone?: string } | undefined)?.timezone;
+  if (days.success && timezone) {
+    const day = DateTime.fromISO(workout.finishedAt).setZone(timezone).toISODate();
+    if (day && !days.data.includes(day)) out.trainedDays = [...days.data, day];
+  }
+  return out;
+}
 
 const activityReducer: Reducer = (data, op) => {
   const days = z.array(activityDaySchema).safeParse(data.activity);
@@ -146,7 +169,7 @@ export const reducers: Record<string, Reducer> = {
     const workout = completedWorkoutSchema.safeParse(op.payload);
     const training = trainingSchema.safeParse(data.training);
     if (!workout.success || !training.success) return data;
-    return { ...data, training: applyCompleted(training.data, workout.data) };
+    return withHistory({ ...data, training: applyCompleted(training.data, workout.data) }, workout.data);
   },
   'weight.log': (data, op) => {
     const p = weightPayload.safeParse(op.payload);

@@ -65,6 +65,8 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
   const [sessionOpen, setSessionOpen] = useState(false);
   const [finished, setFinished] = useState<CompletedWorkout | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  /** Cambia al tocar la barra de abajo: Progreso vuelve a su pantalla principal. */
+  const [progressVisit, setProgressVisit] = useState(0);
   const [settings, setSettings] = useState(false);
   const [renewing, setRenewing] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -248,6 +250,7 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
       onTab={(next) => {
         setSettings(false);
         setHistoryOpen(false);
+        setProgressVisit((n) => n + 1);
         setTab(next);
         window.scrollTo(0, 0);
       }}
@@ -302,7 +305,9 @@ export function Main({ account, onSignedOut }: { account: Account; onSignedOut: 
         <I18nProvider locale={normalizeLocale(data.profile.locale.toLowerCase())} t={t}>
           {activeCard}
           <Progress
+            key={progressVisit}
             t={t}
+            locale={normalizeLocale(data.profile.locale.toLowerCase())}
             data={data}
             outbox={state.outbox}
             onChange={async (type, payload) => {

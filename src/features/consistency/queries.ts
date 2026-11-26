@@ -2,22 +2,10 @@ import 'server-only';
 import { DateTime } from 'luxon';
 import type { Profile } from '@prisma/client';
 import { forUser } from '@/server/user-db';
-import { addDaysISO, localTodayISO } from '@/lib/date';
-import { workoutStreak } from '@/features/dashboard/compute';
-import { buildYearGrid, longestStreak, yearsToShow, type DotCell, type YearGrid } from './grid';
+import { localTodayISO } from '@/lib/date';
+import { consistencyView, type ConsistencyView, type YearGridView } from './view';
 
-/** Lo que necesita la pantalla en el navegador: sin la fecha de cada punto, para no mandar datos de más. */
-export type YearGridView = Omit<YearGrid, 'cells'> & { cells: Array<Pick<DotCell, 'col' | 'row' | 'state'>> };
-
-export interface ConsistencyView {
-  todayISO: string;
-  streak: number;
-  longest: number;
-  /** Días distintos con entrenamiento, en todo el historial. */
-  totalDays: number;
-  /** Del año actual al más viejo con entrenamientos. */
-  years: YearGridView[];
-}
+export type { ConsistencyView, YearGridView };
 
 /** Los días (en la zona horaria de la persona) en que terminó al menos un entrenamiento. */
 export async function getConsistency(profile: Profile): Promise<ConsistencyView> {
@@ -35,16 +23,5 @@ export async function getConsistency(profile: Profile): Promise<ConsistencyView>
     if (iso) trained.add(iso);
   }
 
-  const years = yearsToShow(trained, todayISO).map((y) => {
-    const g = buildYearGrid(y, trained, todayISO, profile.weekStart);
-    return { ...g, cells: g.cells.map(({ col, row, state }) => ({ col, row, state })) };
-  });
-
-  return {
-    todayISO,
-    streak: workoutStreak(trained, todayISO, addDaysISO),
-    longest: longestStreak(trained),
-    totalDays: trained.size,
-    years,
-  };
+  return consistencyView(trained, todayISO, profile.weekStart);
 }

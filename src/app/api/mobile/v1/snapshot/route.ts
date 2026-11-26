@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { forUser } from '@/server/user-db';
+import { mobileAccess } from '@/server/mobile/access';
 import { authenticateMobile } from '@/server/mobile/auth';
 import { mobileHeaders } from '@/server/mobile/route-headers';
 import { buildSnapshot, type SnapshotDb } from '@/server/mobile/snapshot';
@@ -19,7 +20,8 @@ export async function GET(request: Request) {
     if (auth.status === 'unauthorized') return reply({ error: 'UNAUTHORIZED' }, 401);
     if (auth.status === 'unavailable') return reply({ error: 'UNAVAILABLE' }, 503);
     const db = forUser(auth.userId) as unknown as SnapshotDb;
-    return reply(await buildSnapshot(db, auth.userId, new Date()), 200);
+    const access = await mobileAccess(auth.userId);
+    return reply(await buildSnapshot(db, auth.userId, new Date(), access), 200);
   } catch (e) {
     console.error('[mobile/snapshot] falló', e instanceof Error ? e.message : e);
     return reply({ error: 'SERVER' }, 500);

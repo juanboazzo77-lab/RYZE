@@ -84,7 +84,13 @@ async function exerciseHistory(db: SnapshotDb, exerciseIds: string[]) {
  * La foto de los datos que la app guarda para mostrarlos sin conexión. `db` tiene que venir acotada a la persona
  * (`forUser`); el perfil se pide por su propio id. Se elige campo por campo: nada de la base viaja por las dudas.
  */
-export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): Promise<Snapshot> {
+export async function buildSnapshot(
+  db: SnapshotDb,
+  userId: string,
+  now: Date,
+  /** Qué incluye su plan (lo calcula quien llama, ver `access.ts`). */
+  access?: AppData['access'],
+): Promise<Snapshot> {
   const since = new Date(now.getTime() - RECENT_DAYS * 24 * 60 * 60 * 1000);
   const [profile, weights, plan, recent] = await Promise.all([
     db.profile.findUnique({
@@ -171,6 +177,7 @@ export async function buildSnapshot(db: SnapshotDb, userId: string, now: Date): 
     },
     nutrition,
     ...progress,
+    access,
   };
   return { protocol: PROTOCOL_VERSION, takenAt: now.toISOString(), data };
 }

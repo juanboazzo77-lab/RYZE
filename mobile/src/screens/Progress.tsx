@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
-import { Pencil, Trash2 } from 'lucide-react';
+import { BarChart3, Flame, Pencil, Trash2, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { ACTIVITY_DELETE_OP, ACTIVITY_LOG_OP, WEIGHT_DELETE_OP } from '@/lib/syn
 import { weightUnitLabel } from '@/lib/units';
 import { cn } from '@/lib/utils';
 import { useNow } from '../use-now';
+import { Section, type ProgressSection } from './ProgressSections';
 
 const pendingBadge = <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold normal-case text-warning">sin subir</span>;
 
@@ -28,11 +29,13 @@ const datesOf = (outbox: QueuedOperation[], types: string[]) =>
 
 export function Progress({
   t,
+  locale,
   data,
   outbox,
   onChange,
 }: {
   t: Dictionary;
+  locale: string;
   data: AppData;
   outbox: QueuedOperation[];
   /** Guarda un cambio en el teléfono y trata de subirlo. */
@@ -45,6 +48,7 @@ export function Progress({
   const [range, setRange] = useState<WeightRange>('30');
   /** null = esta semana, así cambia sola. */
   const [chosenWeek, setChosenWeek] = useState<string | null>(null);
+  const [section, setSection] = useState<ProgressSection | null>(null);
   const week = chosenWeek ?? currentWeekKey;
 
   const points = useMemo(() => [...data.weights].reverse(), [data.weights]);
@@ -93,9 +97,40 @@ export function Progress({
     />
   );
 
+  const open = (next: ProgressSection | null) => {
+    setSection(next);
+    window.scrollTo(0, 0);
+  };
+  if (section) {
+    return <Section section={section} t={t} locale={locale} data={data} onBack={() => open(null)} />;
+  }
+
+  const sections = [
+    { key: 'stats' as const, label: t.stats.title, Icon: BarChart3, color: 'text-primary' },
+    { key: 'consistency' as const, label: t.consistency.title, Icon: Flame, color: 'text-primary' },
+    { key: 'achievements' as const, label: t.gamification.title, Icon: Trophy, color: 'text-warning' },
+  ];
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold tracking-tight">{t.progress.title}</h1>
+
+      <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          {sections.map(({ key, label, Icon, color }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => open(key)}
+              className="flex flex-col items-center gap-1 rounded-lg border bg-card p-3 text-center text-xs font-medium active:bg-secondary/50"
+            >
+              <Icon className={cn('size-4', color)} />
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-center text-xs text-muted-foreground">Chequeo, fotos, amigos y reporte necesitan internet: llegan en la etapa 4.</p>
+      </div>
 
       <WeightHeadline t={t} summary={summary} unitSystem={unitSystem} />
       {dialog()}

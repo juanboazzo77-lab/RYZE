@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Download, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n/provider';
-import type { YearGridView } from './queries';
+import type { YearGridView } from './view';
 
 // Formato vertical (9:16): entra bien como historia de Instagram / estado de WhatsApp.
 const W = 1080;
@@ -131,6 +131,7 @@ export function ConsistencyShare({
   monthNames,
   labels,
   shareText,
+  canDownload = true,
 }: {
   name: string;
   streak: number;
@@ -138,6 +139,8 @@ export function ConsistencyShare({
   monthNames: string[];
   labels: ShareLabels;
   shareText: string;
+  /** En la app no hay descargas: la imagen se guarda desde el menú de compartir. */
+  canDownload?: boolean;
 }) {
   const t = useT();
   const r = t.report;
@@ -190,15 +193,17 @@ export function ConsistencyShare({
     <div className="space-y-3">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={labels.title} className="mx-auto w-full max-w-xs rounded-2xl border shadow-sm" />
-      <div className="mx-auto grid max-w-xs grid-cols-2 gap-2">
+      <div className={canDownload ? 'mx-auto grid max-w-xs grid-cols-2 gap-2' : 'mx-auto grid max-w-xs gap-2'}>
         <Button onClick={() => void share()}>
           <Share2 />
           {r.share}
         </Button>
-        <Button variant="outline" onClick={() => void download()}>
-          <Download />
-          {r.download}
-        </Button>
+        {canDownload ? (
+          <Button variant="outline" onClick={() => void download()}>
+            <Download />
+            {r.download}
+          </Button>
+        ) : null}
       </div>
       <p className="mx-auto max-w-xs text-center text-xs text-muted-foreground">{r.saveHint}</p>
     </div>
